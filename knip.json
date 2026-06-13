@@ -1,0 +1,11 @@
+{
+  "entry": [
+    "apps/*/src/main.ts",
+    "apps/admin/src/main.tsx",
+    "packages/*/src/index.ts",
+    "packages/capabilities/*/src/index.ts",
+    "scripts/guards/*.mjs"
+  ],
+  "ignore": ["apps/admin/dist/**"],
+  "project": ["**/*.{ts,tsx,mjs,cjs}"]
+}

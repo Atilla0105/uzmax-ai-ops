@@ -1,0 +1,7 @@
+*.md
+docs/**
+node_modules/**
+apps/admin/dist/**
+coverage/**
+playwright-report/**
+test-results/**

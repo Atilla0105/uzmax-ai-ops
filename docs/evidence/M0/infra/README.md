@@ -4,8 +4,8 @@
 
 ## OCM-00A 当前状态
 
-> status: partial_projects_created__blocked_by_supabase_limit_telegram_render_sentry  
-> decision: Gate 0 仍为 No-Go；GitHub、Vercel、OpenAI key 已建立，Supabase dev 因免费项目上限未能创建，Telegram/Render/Sentry 仍有安全输入或登录阻塞。  
+> status: gate0_minimum_ready__render_services_deferred_to_m0_01  
+> decision: Gate 0 最低基础设施已满足；GitHub、Supabase dev、Vercel、OpenAI key、Telegram 测试 bot、Sentry project 已建立或验证，Render dashboard 已登录但服务创建延后到 M0-01 代码骨架/Blueprint。  
 > local_precheck: 当前目录已初始化为 git repo 并推送 GitHub；仍未发现 `package.json`、CI 配置、Render 配置。
 
 ## 2026-06-13 平台发现摘要
@@ -13,11 +13,12 @@
 | 域 | 发现 | 当前判定 |
 |---|---|---|
 | GitHub / CI | 私有 repo `Atilla0105/uzmax-ai-ops` 已创建并推送 `main` | repo 已就绪；CI/分支保护待 M0-01 |
-| Supabase | `uzmax-dev` 创建成本为 0/monthly，但创建失败：free active project limit 2/2 | 需暂停/删除一个旧 free 项目、升级，或显式改用非干净分支方案 |
+| Supabase | `uzmax-dev` / `enyocaykcgcfcswycujg` 已创建，`ap-south-1`，`ACTIVE_HEALTHY`，public 表 0，security advisor 0 | dev 可用于 SPK-03/SPK-04 |
 | Vercel | 独立 project `uzmax-admin` 已创建，project id `prj_5XhdIOD2zxmDASwimiYCXZICC1F5` | 项目已就绪；待 app 骨架后绑定/部署 |
 | OpenAI Platform | `Uzmax` key 已创建到 Personal / Default project，并写入本地 `.env.local`；HTTP 200 验证通过 | key 可用于 dev；真实客户消息仍受 ADR-003 阻断 |
-| Render / Sentry | 内置浏览器未登录 Render/Sentry；本机无 Render CLI、无 Sentry CLI；当前工具无 Render/Sentry 直连 | 需项目 owner 登录内置浏览器或提供 API key |
-| Telegram | 当前无可自动读取 bot/token 的安全通道 | 测试 bot 名称与 token 保管位置仍待补 |
+| Render | dashboard 已登录 `muxuk's workspace`；命名策略 `uzmax-api/worker/cron/redis` | 服务创建等 M0-01 代码骨架与 `render.yaml` 后执行 |
+| Sentry | org `uzmax` 下已创建 project `uzmax-platform`，platform `Nest.js` | M0 可用；DSN 不进文档 |
+| Telegram | 测试 bot `uzmaxAdminBot` / id `8575860511` 已通过 `getMe` 验证；token 位于 `.env.local` | SPK-01 可用 |
 
 ## Gate 0 最低输入
 

@@ -1,7 +1,7 @@
 # Observability Manifest
 
 > evidence_id: M0-infra-observability  
-> status: sentry_login_or_token_required  
+> status: sentry_project_ready  
 > owner: 项目 owner 决策；AI agent 记录/验证  
 > timebox: 0.5 个工作日  
 > secret_policy: DSN、webhook、alert token 不进仓库
@@ -10,7 +10,7 @@
 
 | 项目 | 值 |
 |---|---|
-| Sentry project / 等价工具 | pending，内置浏览器停在 Sentry login |
+| Sentry project / 等价工具 | `uzmax-platform`，org `uzmax`，platform `Nest.js` |
 | 日志平台 | Render logs + application structured logs 计划值；M1 前复核 |
 | traceId 规则 | `x-request-id` / `trace_id` 计划值 |
 | 告警渠道 | pending |
@@ -23,14 +23,15 @@
 |---|---|
 | Sentry CLI | not_installed |
 | Sentry connector | 当前未暴露 |
-| 内置浏览器登录态 | `https://sentry.io/auth/login/`，未登录 |
-| 当前判定 | 需要项目 owner 登录内置浏览器 Sentry 或提供受控 auth token；可先采用日志/traceId 规范 |
+| 内置浏览器登录态 | 已登录 `https://uzmax.sentry.io/` |
+| project URL | `https://uzmax.sentry.io/projects/uzmax-platform/` |
+| 当前判定 | Sentry 初始项目已创建；DSN 不写入文档，代码接入时通过 env 管理 |
 
 ## M0/M1 输入
 
 | 检查项 | 状态 | 记录 |
 |---|---|---|
-| Sentry project / 等价工具 | blocked_pending_sentry_login_or_token | 可先写等价工具或顺延记录 |
+| Sentry project / 等价工具 | ready | `uzmax-platform` |
 | 日志与 traceId 规则 | planned | M0-01 可先建立命名约定 |
 | 告警渠道 | waiting_project_owner | 可先写手动告警渠道 |
 | 环境名规范 | planned | `dev` / `staging` / `prod` |
@@ -41,12 +42,12 @@
 
 | 项目 | 状态/记录 |
 |---|---|
-| M0 判定输入 | blocked_pending_sentry_login_or_token__not_Gate0_blocker |
+| M0 判定输入 | ready_for_M0 |
 | 实际失败分支 | M0 可记录为 P1，但 GA-0 前必须闭合 |
 
 ## 签收
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | action_required | 需登录 Sentry 或确认等价工具 |
-| AI agent | evidence_ready | 工具缺口、浏览器登录状态和最小 trace/log 规范已记录 |
+| 项目 owner | accepted | 已授权登录 Sentry |
+| AI agent | evidence_ready | Sentry project 已创建；未提交 DSN/secret |

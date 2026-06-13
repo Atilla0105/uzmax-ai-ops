@@ -1,7 +1,7 @@
 # Render Environment Manifest
 
 > evidence_id: M0-infra-render  
-> status: tool_access_missing__dashboard_verification_pending  
+> status: login_or_api_key_required  
 > owner: 项目 owner 决策；AI agent 记录/验证  
 > timebox: 0.5-1 个工作日  
 > secret_policy: Render env vars 只存 Render/受控密钥管理，不进仓库
@@ -21,7 +21,8 @@
 |---|---|
 | Render CLI | not_installed |
 | Render connector | 当前未暴露可用 list services 工具 |
-| 当前判定 | 需通过 dashboard/browser 验证或在 M0-00 写顺延记录 |
+| 内置浏览器登录态 | `https://dashboard.render.com/login`，未登录 |
+| 当前判定 | 需要项目 owner 登录内置浏览器 Render，或提供 `RENDER_API_KEY` 后配置 Render MCP/CLI |
 
 ## M0/M1 输入
 
@@ -38,12 +39,12 @@
 
 | 项目 | 状态/记录 |
 |---|---|
-| Gate 0/M1 判定输入 | deferred_dashboard_verification_pending |
+| Gate 0/M1 判定输入 | blocked_pending_render_login_or_api_key |
 | 实际失败分支 | Render/Redis 缺失不应被 Vercel 长任务替代；改路径必须写 ADR |
 
 ## 签收
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | pending | 可确认命名策略或顺延 Render 验证 |
-| AI agent | evidence_ready | 本机工具/connector 缺口已记录 |
+| 项目 owner | action_required | 需登录 Render 或提供 API key；不在聊天中粘贴长期 secret |
+| AI agent | evidence_ready | 本机工具/connector 缺口与浏览器登录状态已记录 |

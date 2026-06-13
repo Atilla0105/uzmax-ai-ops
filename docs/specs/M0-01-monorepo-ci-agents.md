@@ -42,6 +42,7 @@ infra
 - PR hygiene guard：`guard:pr-shape` 或等价脚本
 - 评测触发路径映射配置
 - `docs/adr/`、`docs/specs/`、`docs/runbooks/`
+- `docs/evidence/M0/infra/**`
 - PR 模板、spec 模板、ADR 模板、runbook 索引
 - CODEOWNERS、分支保护或等价 owner approval 机制
 

@@ -245,6 +245,25 @@ describe("dependency and forbidden-term guards", () => {
       outputIncludes("ui-tokens-no-business-imports")
     );
   });
+
+  it("blocks ops-assets importing engine or channels", () => {
+    const repo = tempRepo();
+    write(
+      repo,
+      "packages/ops-assets/src/index.ts",
+      "import '../../engine/src/index';\nexport const assets = true;\n"
+    );
+    write(repo, "packages/engine/src/index.ts", "export const engine = true;\n");
+
+    assert.throws(
+      () =>
+        execFileSync(depcruiseBin, ["packages", "--config", depcruiseConfig], {
+          cwd: repo,
+          encoding: "utf8"
+        }),
+      outputIncludes("ops-assets-no-engine-or-channel-imports")
+    );
+  });
 });
 
 function createGitFixture(options = {}) {

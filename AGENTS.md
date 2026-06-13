@@ -85,7 +85,7 @@
 - 修改优先级是：就地修改或扩展现有实现，必要时抽取/合并，再考虑新增文件。
 - 新增 source 文件前必须执行 `rg` 搜索，并在 PR Hygiene 表说明搜索结论和新增归属理由。
 - 外部 API、SDK、provider、connector、adapter 的行为必须有依据；新增适配器路径必须引用 ADR-B 或对应 spike/官方文档证据。
-- AI agent 可以提出 `large_change_exception`、`test_weakening_exception` 或外部依赖例外，但不能自批；例外必须在 PR Hygiene 表使用精确 token 声明，项目 owner 确认只能来自分支保护要求的 review 或等价审批记录。
+- AI agent 可以提出 `large_change_exception` 或外部依赖例外，也可以在 cleanup/refactor 测试删除候选中声明 `test_weakening_exception`，但不能自批；例外必须在 PR Hygiene 表使用精确 token 声明，项目 owner 确认只能来自分支保护要求的 review 或等价审批记录。
 - PR 描述必须自报触碰模块、路径分类、源码净增、测试变更、生成物/lockfile 变更、外部 API 依据和未完成项。
 
 ## 8. PR Hygiene Budgets
@@ -94,11 +94,11 @@
 - 路径分类必须区分 `source`、`test`、`generated`、`lock`、`config`、`docs`；硬性体积配额只作用于 `source`。
 - 默认源码预算：changed source files <= 12、net source LOC <= 600、new source files <= 5；spec 可声明更严预算。
 - M0-01 首个治理/脚手架 PR 可豁免默认源码体积预算和 `guard:pr-shape` 强制执行；豁免仅限 monorepo/CI/模板/空骨架，不得包含业务代码，且合入后必须启用 `guard:pr-shape`。
-- `test` LOC 不计入源码预算；测试文件删除、测试数量下降、新增 `.skip`/`.only`/`xit`/`xfail` 默认阻断。若测试随死码、下线功能或重构 source 同步删除，且 Spec 类型为 `cleanup` 或 `refactor`，并在 PR Hygiene 表映射被删 source，脚本可标记为 cleanup/refactor 候选；是否合理仍由 review 判定。其他情况必须有项目 owner 批准的测试例外。
+- `test` LOC 不计入源码预算；测试文件删除、测试数量下降、新增 `.skip`/`.only`/`xit`/`xfail` 默认阻断。若测试随死码、下线功能或重构 source 同步删除，且 Spec 类型为 `cleanup` 或 `refactor`，并在 PR Hygiene 表映射被删 source，脚本可标记为 cleanup/refactor 候选；是否合理仍由 review 判定。`test_weakening_exception` 只允许这类候选通过机器初筛；其他测试弱化没有机器例外通道，必须移除弱化或拆到满足条件的 cleanup/refactor spec。
 - `generated`、`lock`、migration SQL、schema 生成 DTO、快照只报数不计入源码预算；生成器、schema 和手写源代码本身仍按 `source` 计。
 - gross churn（新增行 + 删除行）必须在 PR 中报告，用于评审判断；默认不设硬卡，避免惩罚合理就地替换。
 - ESLint 负责复杂度和文件长度：默认 complexity <= 10，普通源文件 <= 400 行，React 组件文件 <= 250 行，Nest service/controller <= 300 行。
-- 分支保护或等价机制必须要求项目 owner review；超预算、测试弱化或外部依赖例外没有 owner approval 不得合并。
+- 分支保护或等价机制必须要求项目 owner review；超预算、测试弱化候选或外部依赖例外没有 owner approval 不得合并。owner approval 对测试弱化候选是必要条件，不替代 cleanup/refactor 与 source 映射的机器条件。
 
 ## 9. Spike Rules
 

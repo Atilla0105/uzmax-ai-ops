@@ -42,6 +42,13 @@ describe("pr-shape guard", () => {
     assert.throws(() => runPrShape(repo), /Spec ID/);
   });
 
+  it("blocks PRs with the template spec fields left blank", () => {
+    const repo = createGitFixture({ body: prBody({ specFile: "", specId: "" }) });
+    write(repo, "src/index.ts", "export const ok = true;\n");
+
+    assert.throws(() => runPrShape(repo), /Spec ID/);
+  });
+
   it("blocks new test weakening controls", () => {
     const repo = createGitFixture();
     const skippedCall = `it.${"skip"}('bad', () => {});`;
@@ -50,6 +57,39 @@ describe("pr-shape guard", () => {
       "src/example.test.ts",
       `import { it } from 'vitest';\n${skippedCall}\n`
     );
+
+    assert.throws(() => runPrShape(repo), /test weakening/);
+  });
+
+  it("allows cleanup test deletion candidates when mapped to deleted source", () => {
+    const repo = createGitFixture({
+      body: prBody({
+        exception: "test_weakening_exception",
+        testWeakeningSourceMap: "src/dead.ts"
+      }),
+      initialFiles: {
+        "src/dead.test.ts": "import { it } from 'node:test';\nit('old', () => {});\n",
+        "src/dead.ts": "export const dead = true;\n"
+      },
+      spec: specContent("cleanup")
+    });
+    remove(repo, "src/dead.test.ts");
+    remove(repo, "src/dead.ts");
+
+    assert.doesNotThrow(() => runPrShape(repo));
+  });
+
+  it("blocks test weakening exceptions without a deleted source mapping", () => {
+    const repo = createGitFixture({
+      body: prBody({ exception: "test_weakening_exception" }),
+      initialFiles: {
+        "src/dead.test.ts": "import { it } from 'node:test';\nit('old', () => {});\n",
+        "src/dead.ts": "export const dead = true;\n"
+      },
+      spec: specContent("cleanup")
+    });
+    remove(repo, "src/dead.test.ts");
+    remove(repo, "src/dead.ts");
 
     assert.throws(() => runPrShape(repo), /test weakening/);
   });
@@ -64,6 +104,11 @@ describe("pr-shape guard", () => {
   it("classifies generated artifacts outside the source budget", () => {
     assert.equal(classify("packages/db/migrations/001_init.sql"), "generated");
     assert.equal(classify("packages/db/src/generated/client.ts"), "generated");
+  });
+
+  it("classifies hand-written mjs scripts as source", () => {
+    assert.equal(classify("scripts/guards/pr-shape.mjs"), "source");
+    assert.equal(classify("dependency-cruiser.config.cjs"), "config");
   });
 
   it("detects added skip and only controls from a diff hunk", () => {
@@ -162,6 +207,44 @@ describe("dependency and forbidden-term guards", () => {
       outputIncludes("capabilities-kb-no-cross-imports")
     );
   });
+
+  it("blocks admin importing backend packages", () => {
+    const repo = tempRepo();
+    write(
+      repo,
+      "apps/admin/src/main.tsx",
+      "import '../../../packages/engine/src/index';\nexport const admin = true;\n"
+    );
+    write(repo, "packages/engine/src/index.ts", "export const engine = true;\n");
+
+    assert.throws(
+      () =>
+        execFileSync(depcruiseBin, ["apps", "packages", "--config", depcruiseConfig], {
+          cwd: repo,
+          encoding: "utf8"
+        }),
+      outputIncludes("admin-no-backend-imports")
+    );
+  });
+
+  it("blocks ui-tokens importing business packages", () => {
+    const repo = tempRepo();
+    write(
+      repo,
+      "packages/ui-tokens/src/index.ts",
+      "import '../../engine/src/index';\nexport const tokens = true;\n"
+    );
+    write(repo, "packages/engine/src/index.ts", "export const engine = true;\n");
+
+    assert.throws(
+      () =>
+        execFileSync(depcruiseBin, ["packages", "--config", depcruiseConfig], {
+          cwd: repo,
+          encoding: "utf8"
+        }),
+      outputIncludes("ui-tokens-no-business-imports")
+    );
+  });
 });
 
 function createGitFixture(options = {}) {
@@ -170,6 +253,9 @@ function createGitFixture(options = {}) {
   run("git", ["config", "user.email", "agent@example.com"], repo);
   run("git", ["config", "user.name", "Agent"], repo);
   write(repo, "docs/specs/REQ-01.md", options.spec ?? specContent());
+  for (const [file, contents] of Object.entries(options.initialFiles ?? {})) {
+    write(repo, file, contents);
+  }
   run("git", ["add", "."], repo);
   run("git", ["commit", "-m", "base"], repo);
   run("git", ["checkout", "-b", "feature"], repo);
@@ -209,6 +295,10 @@ function write(repo, file, contents) {
   writeFileSync(target, contents);
 }
 
+function remove(repo, file) {
+  rmSync(path.join(repo, file));
+}
+
 function run(command, args, cwd) {
   execFileSync(command, args, { cwd, encoding: "utf8", stdio: "pipe" });
 }
@@ -229,12 +319,12 @@ function outputIncludes(text) {
   };
 }
 
-function specContent() {
+function specContent(specType = "feature") {
   return `# REQ-01
 
 ## Spec 类型
 
-feature
+${specType}
 
 ## 触碰模块/文件
 
@@ -245,16 +335,19 @@ feature
 
 function prBody(options = {}) {
   const specId = options.specId ?? "REQ-01";
+  const specFile = options.specFile ?? "docs/specs/REQ-01.md";
+  const testWeakeningSourceMap = options.testWeakeningSourceMap ?? "none";
   return `## Spec
 
 - Spec ID: ${specId}
-- Spec file: docs/specs/REQ-01.md
+- Spec file: ${specFile}
 
 ## PR Hygiene
 
 | Field | Value |
 |---|---|
 | External API evidence | none |
+| Test weakening source map | ${testWeakeningSourceMap} |
 | Exception | ${options.exception ?? "none"} |
 `;
 }

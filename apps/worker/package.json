@@ -2,5 +2,9 @@
   "name": "@uzmax/worker",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "build": "node ../../node_modules/typescript/lib/tsc.js --noEmit -p ../../tsconfig.json",
+    "start": "node -e \"console.log('@uzmax/worker M0 deployment placeholder')\""
+  }
 }

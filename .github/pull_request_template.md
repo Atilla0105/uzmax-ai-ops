@@ -13,6 +13,7 @@
 | Net source LOC                     |                                                                 |
 | New source files                   |                                                                 |
 | Test changes                       |                                                                 |
+| Test weakening source map          | none                                                            |
 | Generated/lock/config/docs changes |                                                                 |
 | Gross churn                        |                                                                 |
 | External API evidence              | none / official docs / generated types / spike evidence / ADR-B |

@@ -30,6 +30,7 @@ infra
 - `knip.json`
 - `playwright.config.ts`
 - `vitest.config.ts`
+- `render.yaml`
 - `.github/**`
 - `apps/api/**`
 - `apps/admin/**`
@@ -47,6 +48,7 @@ infra
 ## 变更预算与路径分类
 
 - M0-01 首个治理/脚手架 PR 使用一次性 bootstrap 例外：source 预算和 `guard:pr-shape` 强制执行可豁免，但必须验证 guard 正/负例，并在合入后开启强制。
+- 本 PR 删除未使用的 Vitest 配置，测试入口统一为 Node `node --test`；`vitest.config.ts` 仍列入触碰范围以允许删除死配置。
 - path categories：source、test、generated、lock、config、docs。
 - 新增 source 文件前的 `rg` 搜索结论：当前仓库无 `apps/`、`packages/`、`scripts/` 实现资产，新增文件归属为 M0-01 空骨架与门禁脚本。
 - 外部 API/SDK/provider/connector/adapter 依据：无；本 spec 不新增外部业务适配器。

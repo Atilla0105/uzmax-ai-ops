@@ -90,7 +90,7 @@ export function classify(file) {
     return "generated";
   }
   if (
-    /(^\.github\/|\.config\.|config\.|\.json$|\.ya?ml$|\.cjs$|\.mjs$|tsconfig)/.test(
+    /(^\.github\/|(^|\/)[^/]*(?:config|rc)\.(?:js|cjs|mjs|ts|json)$|\.json$|\.ya?ml$|tsconfig)/.test(
       file
     )
   ) {
@@ -159,33 +159,38 @@ function readTouchPatterns(text, filePath) {
 
 async function readPrBody(args) {
   if (args["pr-body-file"]) {
-    return readFile(path.join(process.cwd(), args["pr-body-file"]), "utf8");
+    const body = await readFile(path.join(process.cwd(), args["pr-body-file"]), "utf8");
+    return { body, isPrContext: true };
   }
 
   const eventBody = await readGithubEventBody();
-  if (eventBody) return eventBody;
+  if (eventBody.isPrContext) return eventBody;
 
   return safeGhPrBody();
 }
 
 async function readGithubEventBody() {
-  if (!process.env.GITHUB_EVENT_PATH) return "";
+  if (!process.env.GITHUB_EVENT_PATH) return { body: "", isPrContext: false };
 
   try {
     const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
-    return event.pull_request?.body ?? "";
+    return {
+      body: event.pull_request?.body ?? "",
+      isPrContext: Boolean(event.pull_request)
+    };
   } catch {
-    return "";
+    return { body: "", isPrContext: false };
   }
 }
 
 function safeGhPrBody() {
   try {
-    return execFileSync("gh", ["pr", "view", "--json", "body", "--jq", ".body"], {
+    const body = execFileSync("gh", ["pr", "view", "--json", "body", "--jq", ".body"], {
       encoding: "utf8"
     }).trim();
+    return { body, isPrContext: true };
   } catch {
-    return "";
+    return { body: "", isPrContext: false };
   }
 }
 
@@ -193,6 +198,7 @@ export function parsePrBody(body) {
   return {
     exception: readBodyField(body, "Exception") || "none",
     externalEvidence: readBodyField(body, "External API evidence") || "none",
+    testWeakeningSourceMap: readBodyField(body, "Test weakening source map"),
     specFile: readBodyField(body, "Spec file"),
     specId: readBodyField(body, "Spec ID")
   };
@@ -208,9 +214,9 @@ function readBodyField(body, fieldName) {
   return (tableMatch?.[1] ?? listMatch?.[1] ?? colonMatch?.[1] ?? "").trim();
 }
 
-function validatePrMetadata(metadata, args) {
+function validatePrMetadata(metadata, args, isPrContext) {
   const hasPrContext = Boolean(
-    args["pr-body-file"] || metadata.specFile || metadata.specId
+    isPrContext || args["pr-body-file"] || metadata.specFile || metadata.specId
   );
   if (!hasPrContext && !args.spec) {
     return { shouldSkip: true, specPath: "" };
@@ -309,8 +315,13 @@ function hasExternalEvidence(metadata) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const metadata = parsePrBody(await readPrBody(args));
-  const { shouldSkip, specPath } = validatePrMetadata(metadata, args);
+  const prContext = await readPrBody(args);
+  const metadata = parsePrBody(prContext.body);
+  const { shouldSkip, specPath } = validatePrMetadata(
+    metadata,
+    args,
+    prContext.isPrContext
+  );
 
   if (shouldSkip) {
     console.log("guard:pr-shape: no PR context detected; skipping PR-only checks");
@@ -327,7 +338,7 @@ async function main() {
       (file) => `out-of-scope file: ${file}`
     ),
     ...sourceViolations(files, nameStatus, numstat, bootstrapException, metadata),
-    ...testViolations(args.base, nameStatus, metadata),
+    ...testViolations(args.base, nameStatus, metadata, spec.specType),
     ...adapterViolations(nameStatus, metadata)
   ];
 
@@ -361,12 +372,29 @@ function sourceViolations(files, nameStatus, numstat, bootstrapException, metada
   return sourceBudgetViolations(sourceStats(files, nameStatus, numstat));
 }
 
-function testViolations(base, nameStatus, metadata) {
-  if (metadata.exception === "test_weakening_exception") {
+function testViolations(base, nameStatus, metadata, specType) {
+  const violations = findTestWeakening(readDiff(base), nameStatus);
+  if (violations.length === 0) return [];
+
+  if (isTestWeakeningCandidate(metadata, specType, nameStatus)) {
     return [];
   }
-  return findTestWeakening(readDiff(base), nameStatus).map(
+  return violations.map(
     (violation) => `test weakening without exception: ${violation}`
+  );
+}
+
+function isTestWeakeningCandidate(metadata, specType, nameStatus) {
+  if (metadata.exception !== "test_weakening_exception") return false;
+  if (!["cleanup", "refactor"].includes(specType)) return false;
+
+  const deletedSourceFiles = nameStatus
+    .filter(({ status, file }) => status.startsWith("D") && classify(file) === "source")
+    .map(({ file }) => file);
+
+  return (
+    deletedSourceFiles.length > 0 &&
+    deletedSourceFiles.some((file) => metadata.testWeakeningSourceMap.includes(file))
   );
 }
 

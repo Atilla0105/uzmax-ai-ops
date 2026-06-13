@@ -61,6 +61,20 @@ module.exports = {
       severity: "error",
       from: { path: "^packages/memory" },
       to: { path: "^packages/channels" }
+    },
+    {
+      name: "ops-assets-no-engine-or-channel-imports",
+      severity: "error",
+      from: { path: "^packages/ops-assets" },
+      to: { path: "^packages/(engine|channels)" }
+    },
+    {
+      name: "ui-tokens-no-business-imports",
+      severity: "error",
+      from: { path: "^packages/ui-tokens" },
+      to: {
+        path: "^(apps|packages/(db|authz|channels|engine|capabilities|ops-assets|llm-gateway|memory|distill|evals))"
+      }
     }
   ],
   options: {

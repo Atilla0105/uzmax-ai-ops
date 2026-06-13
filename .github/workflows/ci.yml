@@ -31,6 +31,7 @@ jobs:
       - run: npm run guard:eval-triggers
       - run: npm run guard:pr-shape -- --base origin/main
       - run: npm run test
+      - run: npm run build
       - run: npm run size
       - run: npx playwright install --with-deps chromium
       - run: npm run playwright

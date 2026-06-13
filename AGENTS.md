@@ -58,6 +58,7 @@
 
 - 禁止在没有 spec 的情况下新增模块、页面或能力。
 - 禁止先写新实现再搜索已有实现；新增前必须 `rg` 检索。
+- 禁止在可扩展现有实现时新增平行实现；新增 source 文件必须说明没有合适归属。
 - 禁止跨 capability import。
 - 禁止让 LLM 做报价、SLA、成本、订单状态等数值判断。
 - 禁止在 `engine` 中写 Laylak、集运、乌兹别克等业务线词汇。
@@ -65,17 +66,41 @@
 - 禁止前端隐藏权限后后端仍可调用成功。
 - 禁止绕过评测 gate 发布 prompt、知识、模型路由或 AI 人设变更。
 - 禁止自动写入正式知识库；蒸馏候选必须经确认队列。
+- 禁止通过删除测试、降低断言、增加 `.skip`/`.only`/`xit`/`xfail`、扩大 mock 或快照膨胀来让 CI 通过。
+- 禁止编造外部 API、SDK 方法或平台能力；新增 provider/connector/adapter 必须引用官方文档、已生成类型、本地 spike 证据或 ADR-B。
+- 禁止把格式化、重排、批量改名等 churn 混入行为变更；除非 formatter 强制，否则格式化变更必须单独成 PR/spec。
 
 ## 6. Change Flow
 
 1. 先创建或确认 `docs/specs/REQ-xx.md` / `M*-xx.md`。
-2. spec 必须写清目标、项目 owner 确认点、AI agent 执行/复核责任、时间盒、触碰模块、通过条件、失败分支、不做什么。
+2. spec 必须写清目标、项目 owner 确认点、AI agent 执行/复核责任、时间盒、Spec 类型、触碰模块、变更预算、通过条件、失败分支、不做什么。
 3. 触碰模块有交集的 spec 禁止并行。
 4. `packages/db` schema 变更全局串行。
 5. 实现完成后必须先做 spec compliance review，再做 code quality review。
 6. 合并前必须通过 CI 和对应验收证据归档。
 
-## 7. Spike Rules
+## 7. Authoring Contract
+
+- 开工前必须重读本文件和目标 spec，确认触碰模块清单；未列入清单的模块默认不可改。
+- 修改优先级是：就地修改或扩展现有实现，必要时抽取/合并，再考虑新增文件。
+- 新增 source 文件前必须执行 `rg` 搜索，并在 PR Hygiene 表说明搜索结论和新增归属理由。
+- 外部 API、SDK、provider、connector、adapter 的行为必须有依据；新增适配器路径必须引用 ADR-B 或对应 spike/官方文档证据。
+- AI agent 可以提出 `large_change_exception`、`test_weakening_exception` 或外部依赖例外，但不能自批；例外必须在 PR Hygiene 表使用精确 token 声明，项目 owner 确认只能来自分支保护要求的 review 或等价审批记录。
+- PR 描述必须自报触碰模块、路径分类、源码净增、测试变更、生成物/lockfile 变更、外部 API 依据和未完成项。
+
+## 8. PR Hygiene Budgets
+
+- PR 预算基于 spec 的触碰模块清单；触碰模块必须是机器可读 glob/path 列表，PR 改动必须是该清单的子集，未声明模块默认不可改。
+- 路径分类必须区分 `source`、`test`、`generated`、`lock`、`config`、`docs`；硬性体积配额只作用于 `source`。
+- 默认源码预算：changed source files <= 12、net source LOC <= 600、new source files <= 5；spec 可声明更严预算。
+- M0-01 首个治理/脚手架 PR 可豁免默认源码体积预算和 `guard:pr-shape` 强制执行；豁免仅限 monorepo/CI/模板/空骨架，不得包含业务代码，且合入后必须启用 `guard:pr-shape`。
+- `test` LOC 不计入源码预算；测试文件删除、测试数量下降、新增 `.skip`/`.only`/`xit`/`xfail` 默认阻断。若测试随死码、下线功能或重构 source 同步删除，且 Spec 类型为 `cleanup` 或 `refactor`，并在 PR Hygiene 表映射被删 source，脚本可标记为 cleanup/refactor 候选；是否合理仍由 review 判定。其他情况必须有项目 owner 批准的测试例外。
+- `generated`、`lock`、migration SQL、schema 生成 DTO、快照只报数不计入源码预算；生成器、schema 和手写源代码本身仍按 `source` 计。
+- gross churn（新增行 + 删除行）必须在 PR 中报告，用于评审判断；默认不设硬卡，避免惩罚合理就地替换。
+- ESLint 负责复杂度和文件长度：默认 complexity <= 10，普通源文件 <= 400 行，React 组件文件 <= 250 行，Nest service/controller <= 300 行。
+- 分支保护或等价机制必须要求项目 owner review；超预算、测试弱化或外部依赖例外没有 owner approval 不得合并。
+
+## 9. Spike Rules
 
 - SPK-01 Telegram Business、SPK-02 订单 API、SPK-03 RLS x Prisma x 连接池、SPK-04 双鉴权链路都必须有 ADR。
 - LLM 数据处理策略必须在 M0 形成 `ADR-003-llm-data-processing.md`；未签收前不得让真实客户消息进入第三方 LLM。
@@ -83,18 +108,22 @@
 - 时间盒到期没有结论时按不可行分支执行。
 - 失败分支必须是关闭、降级、顺延、改路径或写 ADR；不得写“继续观察”。
 
-## 8. ADR Numbering
+## 10. ADR Numbering
 
 - 技术地基 ADR 使用数字序列：`ADR-001-*`、`ADR-002-*`、`ADR-003-*`。
 - 外部业务依赖使用 B 序列：`ADR-B01-*`、`ADR-B02-*`。
 - 后续若新增数据/合规专题仍优先使用数字序列，除非它是某个外部平台分支。
 
-## 9. Review Checklist
+## 11. Review Checklist
 
 - 是否引用了正确 spec。
 - 是否超出 spec 范围。
 - 是否重复造轮子。
 - 是否违反依赖边界。
 - 是否触碰红线、权限、RLS、评测 gate。
+- 是否优先就地修改，新增 source 文件是否有 `rg` 证据和归属理由。
+- PR Hygiene 表是否完整，改动是否在触碰模块和源码预算内。
+- 是否存在测试弱化、`.skip`/`.only`、无依据快照膨胀或 mock 扩大。
+- 新增外部 API/provider/connector/adapter 是否有官方文档、spike 证据或 ADR-B。
 - 是否有测试或验收证据。
 - 是否留下 ADR 或 runbook 需要的操作记录。

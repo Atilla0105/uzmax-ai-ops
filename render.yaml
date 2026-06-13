@@ -1,0 +1,47 @@
+services:
+  - type: web
+    runtime: node
+    name: uzmax-api
+    branch: main
+    region: oregon
+    plan: starter
+    autoDeployTrigger: "off"
+    buildCommand: npm ci && npm run build:api
+    startCommand: npm --workspace @uzmax/api run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  - type: worker
+    runtime: node
+    name: uzmax-worker
+    branch: main
+    region: oregon
+    plan: starter
+    autoDeployTrigger: "off"
+    buildCommand: npm ci && npm run build:worker
+    startCommand: npm --workspace @uzmax/worker run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  - type: cron
+    runtime: node
+    name: uzmax-cron
+    branch: main
+    region: oregon
+    plan: starter
+    autoDeployTrigger: "off"
+    schedule: "*/15 * * * *"
+    buildCommand: npm ci && npm run build:cron
+    startCommand: npm --workspace @uzmax/cron run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  - type: keyvalue
+    name: uzmax-redis
+    region: oregon
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: noeviction

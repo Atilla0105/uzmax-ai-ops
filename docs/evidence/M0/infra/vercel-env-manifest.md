@@ -1,7 +1,7 @@
 # Vercel Admin Environment Manifest
 
 > evidence_id: M0-infra-vercel  
-> status: project_created__deployment_pending  
+> status: project_created__admin_build_ready_deployment_pending
 > owner: 项目 owner 决策；AI agent 记录/验证  
 > timebox: 0.5 个工作日  
 > secret_policy: Vercel env vars 只存 Vercel/受控密钥管理，不进仓库
@@ -14,11 +14,11 @@
 | Vercel project | `uzmax-admin` |
 | Vercel project id | `prj_5XhdIOD2zxmDASwimiYCXZICC1F5` |
 | created_at | 2026-06-13T09:34:19Z |
-| preview 策略 | pending |
-| production 策略 | pending |
+| preview 策略 | pending owner decision |
+| production 策略 | pending owner decision |
 | 访问保护 | `ssoProtection: all_except_custom_domains`（Vercel 默认/当前返回值） |
-| API base URL env 命名 | `VITE_API_BASE_URL` 计划值，M0-01 后复核 |
-| 最小 Vite app 部署状态 | pending |
+| API base URL env 命名 | `VITE_API_BASE_URL` 计划值，业务 API 接入前复核 |
+| 最小 Vite app 部署状态 | build_ready，deployment_pending |
 
 ## Vercel 只读发现
 
@@ -35,8 +35,8 @@
 |---|---|---|
 | Vercel project | ready | `uzmax-admin` 已创建 |
 | preview/prod 策略 | waiting_project_owner | M1 前应明确 preview 访问保护 |
-| env 命名 | planned | 初始计划 `VITE_API_BASE_URL`；M0-01 后按实际 app 复核 |
-| 最小 app 部署 | waiting_project_owner | M0-01 后验证，不在 OCM-00A 强行通过 |
+| env 命名 | planned | 初始计划 `VITE_API_BASE_URL`；业务 API 接入前按实际 app 复核 |
+| 最小 app 部署 | build_ready__deployment_pending | `apps/admin` 已有 build/start 脚本；是否绑定 Vercel 部署由 owner 决策 |
 
 ## 判定引用
 
@@ -44,7 +44,7 @@
 
 | 项目 | 状态/记录 |
 |---|---|
-| Gate 0 判定输入 | project_ready__deployment_deferred |
+| Gate 0 判定输入 | project_ready__admin_build_ready__deployment_deferred |
 | 实际失败分支 | Vercel 不可用则改静态托管路径并写 ADR；后台不可无 preview 环境 |
 
 ## 签收

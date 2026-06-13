@@ -4,19 +4,19 @@
 
 ## OCM-00A 当前状态
 
-> status: gate0_minimum_ready__render_services_deferred_to_m0_01  
-> decision: Gate 0 最低基础设施已满足；GitHub、Supabase dev、Vercel、OpenAI key、Telegram 测试 bot、Sentry project 已建立或验证，Render dashboard 已登录但服务创建延后到 M0-01 代码骨架/Blueprint。  
-> local_precheck: 当前目录已初始化为 git repo 并推送 GitHub；仍未发现 `package.json`、CI 配置、Render 配置。
+> status: gate0_minimum_ready__m0_01_governance_in_progress
+> decision: Gate 0 最低基础设施已满足；GitHub、Supabase dev、Vercel、OpenAI key、Telegram 测试 bot、Sentry project 已建立或验证，Render dashboard 已登录，M0-01 已补 root package/CI/Render Blueprint 占位。
+> local_precheck: 当前目录已初始化为 git repo 并推送 GitHub；`package.json`、`.github/workflows/ci.yml`、PR 模板、workspace 骨架和 `render.yaml` 已由 M0-01 建立，真实 Render/Vercel 部署仍待 owner 确认。
 
 ## 2026-06-13 平台发现摘要
 
 | 域 | 发现 | 当前判定 |
 |---|---|---|
-| GitHub / CI | 私有 repo `Atilla0105/uzmax-ai-ops` 已创建并推送 `main` | repo 已就绪；CI/分支保护待 M0-01 |
+| GitHub / CI | 私有 repo `Atilla0105/uzmax-ai-ops` 已创建并推送 `main`，M0-01 已补 GitHub Actions、PR 模板与 active main ruleset | repo/CI/ruleset 已就绪；合并前等待当前 PR 最新 `checks` |
 | Supabase | `uzmax-dev` / `enyocaykcgcfcswycujg` 已创建，`ap-south-1`，`ACTIVE_HEALTHY`，public 表 0，security advisor 0 | dev 可用于 SPK-03/SPK-04 |
 | Vercel | 独立 project `uzmax-admin` 已创建，project id `prj_5XhdIOD2zxmDASwimiYCXZICC1F5` | 项目已就绪；待 app 骨架后绑定/部署 |
 | OpenAI Platform | `Uzmax` key 已创建到 Personal / Default project，并写入本地 `.env.local`；HTTP 200 验证通过 | key 可用于 dev；真实客户消息仍受 ADR-003 阻断 |
-| Render | dashboard 已登录 `muxuk's workspace`；命名策略 `uzmax-api/worker/cron/redis` | 服务创建等 M0-01 代码骨架与 `render.yaml` 后执行 |
+| Render | dashboard 已登录 `muxuk's workspace`；命名策略 `uzmax-api/worker/cron/redis`；root `render.yaml` 已有 Blueprint 占位 | 服务创建仍需 owner 在 Render 确认 |
 | Sentry | org `uzmax` 下已创建 project `uzmax-platform`，platform `Nest.js` | M0 可用；DSN 不进文档 |
 | Telegram | 测试 bot `uzmaxAdminBot` / id `8575860511` 已通过 `getMe` 验证；token 位于 `.env.local` | SPK-01 可用 |
 

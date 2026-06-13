@@ -1,0 +1,10 @@
+{
+  "name": "@uzmax/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../node_modules/vite/bin/vite.js build . --emptyOutDir",
+    "start": "node ../../node_modules/vite/bin/vite.js preview --host 0.0.0.0 --port ${PORT:-4173}"
+  }
+}

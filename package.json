@@ -1,0 +1,63 @@
+{
+  "name": "uzmax-ai-ops",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.9.0",
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "packages/capabilities/*"
+  ],
+  "scripts": {
+    "build": "npm run build:api && npm run build:worker && npm run build:cron && npm run build:admin",
+    "build:admin": "node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir",
+    "build:api": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json",
+    "build:cron": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json",
+    "build:worker": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json",
+    "check": "npm run format:check && npm run typecheck && npm run lint && npm run depcruise && npm run jscpd && npm run knip && npm run guard:forbidden-terms && npm run guard:eval-triggers && npm run guard:pr-shape -- --base origin/main && npm run test && npm run build && npm run size && npm run playwright",
+    "depcruise": "node node_modules/dependency-cruiser/bin/dependency-cruise.mjs apps packages --config dependency-cruiser.config.cjs",
+    "eval:minimal": "node --test scripts/tests/eval-gate.test.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "guard:eval-triggers": "node scripts/guards/eval-trigger-paths.mjs",
+    "guard:forbidden-terms": "node scripts/guards/forbidden-terms.mjs",
+    "guard:pr-shape": "node scripts/guards/pr-shape.mjs",
+    "jscpd": "node node_modules/jscpd/run-jscpd.js apps packages scripts --config jscpd.config.json --workers 1 --no-tips",
+    "knip": "node node_modules/knip/bin/knip.js --no-progress --duration --no-config-hints --no-tag-hints",
+    "lint": "find apps packages scripts -type f \\( -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.mjs\" -o -name \"*.cjs\" \\) -print | xargs node node_modules/eslint/bin/eslint.js eslint.config.mjs dependency-cruiser.config.cjs playwright.config.ts",
+    "playwright": "playwright test",
+    "size": "npm run build:admin && size-limit",
+    "test": "node --test scripts/tests/*.test.mjs",
+    "typecheck": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json"
+  },
+  "size-limit": [
+    {
+      "name": "admin design harness",
+      "path": "apps/admin/dist/assets/*.js",
+      "limit": "250 KB"
+    }
+  ],
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
+    "@size-limit/file": "^12.1.0",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "dependency-cruiser": "^17.4.3",
+    "eslint": "^10.5.0",
+    "jscpd": "^5.0.9",
+    "knip": "^6.16.1",
+    "prettier": "^3.8.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "size-limit": "^12.1.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.0",
+    "vite": "^8.0.16"
+  }
+}

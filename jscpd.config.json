@@ -1,0 +1,15 @@
+{
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/playwright-report/**",
+    "**/test-results/**",
+    "**/*.md",
+    "docs/**"
+  ],
+  "minLines": 8,
+  "minTokens": 80,
+  "reporters": ["console"],
+  "threshold": 0
+}

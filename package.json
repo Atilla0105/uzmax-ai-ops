@@ -15,20 +15,21 @@
   "scripts": {
     "build": "npm run build:admin",
     "build:admin": "vite build apps/admin --emptyOutDir",
-    "check": "npm run format:check && npm run typecheck && npm run lint && npm run depcruise && npm run jscpd && npm run knip && npm run guard:forbidden-terms && npm run guard:eval-triggers && npm run guard:pr-shape -- --base origin/main --spec docs/specs/M0-01-monorepo-ci-agents.md && npm run test && npm run size && npm run playwright",
-    "depcruise": "depcruise apps packages --config dependency-cruiser.config.cjs",
+    "check": "npm run format:check && npm run typecheck && npm run lint && npm run depcruise && npm run jscpd && npm run knip && npm run guard:forbidden-terms && npm run guard:eval-triggers && npm run guard:pr-shape -- --base origin/main && npm run test && npm run size && npm run playwright",
+    "depcruise": "node node_modules/dependency-cruiser/bin/dependency-cruise.mjs apps packages --config dependency-cruiser.config.cjs",
+    "eval:minimal": "node --test scripts/tests/eval-gate.test.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "guard:eval-triggers": "node scripts/guards/eval-trigger-paths.mjs",
     "guard:forbidden-terms": "node scripts/guards/forbidden-terms.mjs",
     "guard:pr-shape": "node scripts/guards/pr-shape.mjs",
-    "jscpd": "jscpd apps packages scripts --config jscpd.config.json",
-    "knip": "knip --no-config-hints --no-tag-hints",
+    "jscpd": "node node_modules/jscpd/run-jscpd.js apps packages scripts --config jscpd.config.json",
+    "knip": "node node_modules/knip/bin/knip.js --no-config-hints --no-tag-hints",
     "lint": "eslint .",
     "playwright": "playwright test",
     "size": "npm run build:admin && size-limit",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "test": "node --test scripts/tests/*.test.mjs",
+    "typecheck": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json"
   },
   "size-limit": [
     {

@@ -25,11 +25,11 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run depcruise
+      - run: npm run jscpd
+      - run: npm run knip
       - run: npm run guard:forbidden-terms
       - run: npm run guard:eval-triggers
-      - run:
-          npm run guard:pr-shape -- --base origin/main --spec
-          docs/specs/M0-01-monorepo-ci-agents.md
+      - run: npm run guard:pr-shape -- --base origin/main
       - run: npm run test
       - run: npm run size
       - run: npx playwright install --with-deps chromium

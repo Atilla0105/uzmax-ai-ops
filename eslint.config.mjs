@@ -30,6 +30,12 @@ export default tseslint.config(
     }
   },
   {
+    files: ["apps/api/**/*.service.ts", "apps/api/**/*.controller.ts"],
+    rules: {
+      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }]
+    }
+  },
+  {
     files: ["scripts/**/*.mjs", "*.config.*"],
     languageOptions: {
       globals: {

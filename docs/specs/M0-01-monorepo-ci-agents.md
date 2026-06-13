@@ -72,9 +72,9 @@ infra
 6. 建立 K-02 评测触发路径映射：`prompts/**`、`packages/llm-gateway/**/routes/**`、`packages/db/**/knowledge*`、`packages/db/**/ai_member*`、`packages/evals/**`、`configs/**/ai-persona/**`、`docs/specs/**ai**`。
 7. 建立 ADR/spec/runbook 模板，ADR 至少能承接 ADR-001/ADR-002/ADR-003，runbook 至少有 RLS 误配、部署回滚、CI 门禁失败的占位条目。
 8. 建立 PR 模板与检查脚本：PR 必须引用 spec 编号，Spec 类型必须存在，`触碰模块/文件` 必须作为唯一触碰模块真源且为机器可读 glob/path 列表，重复或交叉触碰时提示串行；PR Hygiene 表必须自报路径分类、源码预算、测试变更、generated/lock/config/docs 变更、gross churn、外部 API 依据和例外状态。
-9. 定义例外工件：PR Hygiene 表必须使用 `Exception: none|large_change_exception|test_weakening_exception|external_dependency_exception` 精确 token；脚本只判断 token 是否存在，项目 owner 批准由 CODEOWNERS/branch protection 或等价 review 机制执行。
+9. 定义例外工件：PR Hygiene 表必须使用 `Exception: none|large_change_exception|test_weakening_exception|external_dependency_exception` 精确 token；`large_change_exception` 与 `external_dependency_exception` 由 token 标记并交给 owner approval 机制兜底；`test_weakening_exception` 还必须满足 cleanup/refactor 候选条件。项目 owner 批准由 CODEOWNERS/branch protection 或等价 review 机制执行。
 10. 实现 `guard:pr-shape` 或等价脚本：按 `source`、`test`、`generated`、`lock`、`config`、`docs` 分类；只对 `source` 执行体积硬卡；测试 LOC 不计入源码预算；generated、lock、migration SQL、schema 生成 DTO、快照只报数；PR 改动必须是 spec 触碰模块清单的子集。
-11. 建立测试弱化门禁：新增 `.skip`、`.only`、`xit`、`xfail`，删除测试文件或测试数量下降时阻断；若 Spec 类型为 `cleanup` 或 `refactor`，测试随死码、下线功能或重构 source 同步删除，且 PR Hygiene 表映射被删 source，脚本可标记为 cleanup/refactor 候选；是否真实合理仍由 review 判定。其他例外必须在 PR 中声明并由项目 owner 批准。
+11. 建立测试弱化门禁：新增 `.skip`、`.only`、`xit`、`xfail`，删除测试文件或测试数量下降时阻断；若 Spec 类型为 `cleanup` 或 `refactor`，测试随死码、下线功能或重构 source 同步删除，且 PR Hygiene 表映射被删 source，脚本可标记为 cleanup/refactor 候选；是否真实合理仍由 review 判定。其他测试弱化没有机器例外通道，必须移除弱化或拆到满足条件的 cleanup/refactor spec。
 12. 建立外部适配器门禁：新增 provider/connector/adapter 路径时必须引用官方文档、已生成类型、本地 spike 证据或 ADR-B；机器脚本至少能阻断“新增适配器但无 ADR-B/spike/官方文档/生成类型依据”的 PR。
 13. 建立 ESLint 复杂度和文件长度规则：complexity <= 10；普通源文件 <= 400 行；React 组件文件 <= 250 行；Nest service/controller <= 300 行。该规则由 ESLint 执行，不塞进 `guard:pr-shape`。
 14. 建立 CODEOWNERS、GitHub branch protection 或等价机制，确保超预算、测试弱化和外部依赖例外不能由 AI agent 自批。
@@ -94,11 +94,11 @@ infra
 - Spec 类型使用机器可读枚举：`feature`、`fix`、`refactor`、`cleanup`、`spike`、`docs`、`infra`。
 - `触碰模块/文件` 是唯一触碰模块真源，使用机器可读 glob/path；`guard:pr-shape` 能用该集合判断 PR 改动是否越界。
 - 测试删除的 cleanup/refactor 候选条件可机器识别：Spec 类型为 `cleanup` 或 `refactor`、同 PR 有 source 删除、PR Hygiene 表映射被删 source；最终合理性由 review 判定。
-- 例外工件使用精确 token；脚本能区分无例外、超预算例外、测试弱化例外和外部依赖例外，且不把 AI 在正文写的“approved”当作 owner approval。
-- `guard:pr-shape` 或等价脚本能拦截：无 spec 编号、改动超出 spec 触碰模块、source 超预算且无 owner 例外、新增适配器但无依据、测试弱化且无 owner 例外。
+- 例外工件使用精确 token；脚本能区分无例外、超预算例外、cleanup/refactor 测试弱化候选和外部依赖例外，且不把 AI 在正文写的“approved”当作 owner approval。
+- `guard:pr-shape` 或等价脚本能拦截：无 spec 编号、改动超出 spec 触碰模块、source 超预算且无 owner 例外、新增适配器但无依据、测试弱化且不满足 cleanup/refactor 候选条件。
 - `guard:pr-shape` 的路径分类正确排除 generated、lock、migration SQL、schema 生成 DTO、快照和测试 LOC；这些变更只报数，不消耗 source 预算。
 - ESLint 能拦截复杂度和文件长度超限；formatter / `format:check` 能拦截未格式化变更。
-- CODEOWNERS、分支保护或等价机制已配置，能要求项目 owner review；AI agent 不能自批 `large_change_exception`、`test_weakening_exception` 或外部依赖例外。
+- CODEOWNERS、分支保护或等价机制已配置，能要求项目 owner review；AI agent 不能自批 `large_change_exception`、cleanup/refactor 测试弱化候选或外部依赖例外。
 - M0-01 首个治理/脚手架 PR 的一次性豁免已在 PR Hygiene 表声明，且该 PR 只包含 monorepo/CI/模板/空骨架，不包含业务代码；后续 PR 不沿用该豁免。
 - `AGENTS.md`、ADR 模板、spec 模板、runbook 索引存在，且与 v1.1 架构术语一致。
 - 部署链路至少能说明各进程的构建、启动、回滚和环境变量入口。

@@ -2,7 +2,7 @@
 
 > evidence_id: SPK-03-rls-prisma-pool
 > milestone: M0
-> status: blocked_pending_database_pooler_secret
+> status: accepted
 > created_at: 2026-06-14
 > updated_at: 2026-06-14
 > owner: 项目 owner 确认数据库 secret 与隔离风险；AI agent 执行 spike、验证和归档
@@ -11,9 +11,9 @@
 
 ## 当前结论
 
-SPK-03 尚未 accepted。真实 Supabase SQL/RLS 基线已建立并验证，但 Prisma 通过 pooler 的 2000 次并发压测还缺 database pooler secret，GitHub Actions 也缺 `UZMAX_RLS_DATABASE_URL`。
+SPK-03 已 accepted。真实 Supabase SQL/RLS 基线已建立；GitHub Actions 已通过 Supabase transaction pooler、Prisma batch `$transaction`、`SET LOCAL ROLE`、事务内 `set_config(..., true)` 注入上下文完成 2000 次并发交错请求，零串话。
 
-Gate 1 仍被 SPK-03 阻断。
+Gate 1 不再被 SPK-03 技术证据阻断；项目 owner 的最终风险确认仍通过 PR review / branch protection 承接。
 
 ## 环境
 
@@ -22,9 +22,10 @@ Gate 1 仍被 SPK-03 阻断。
 | Supabase project | `uzmax-dev` / `enyocaykcgcfcswycujg` |
 | Region | `ap-south-1` |
 | Postgres | 17.6 |
-| Pooler host tested | `aws-0-ap-south-1.pooler.supabase.com` |
-| Session pooler port | 5432 reachable |
-| Transaction pooler port | 6543 reachable |
+| Pooler host accepted | `aws-1-ap-south-1.pooler.supabase.com` |
+| Session pooler port | 5432 tested but not accepted for CI proof |
+| Transaction pooler port | 6543 accepted |
+| Prisma pool params in CI | `pgbouncer=true`, `sslmode=require`, `connection_limit=16`, `pool_timeout=60` |
 | Direct host | `db.enyocaykcgcfcswycujg.supabase.co` did not resolve from local environment |
 | Prisma version | 6.19.3 |
 
@@ -57,6 +58,10 @@ No customer, order, conversation, knowledge-base or production business schema w
 | Pooler custom role login | Prisma harness with `uzmax_spk03_ci.<project-ref>` session pooler username | failed; Supavisor returned `tenant/user ... not found` |
 | Pooler unqualified custom role login | Prisma harness with `uzmax_spk03_ci` session pooler username | failed; Supavisor returned `no tenant identifier provided` |
 | Privileged role password rotation | Supabase connector `alter role postgres with password ...` | failed; permission denied to alter privileged role |
+| Missing GitHub secret guard | GitHub Actions run `27495488912` before secret configuration | failed as expected; `UZMAX_RLS_DATABASE_URL is required` |
+| Wrong pooler host guard | GitHub Actions with `aws-0-ap-south-1.pooler.supabase.com` | failed as expected; Supavisor returned `tenant/user postgres.enyocaykcgcfcswycujg not found` |
+| Accepted transaction pooler harness | GitHub Actions run `27499077532`, job `81278472494` | passed; SPK-03 step `12:38:08Z` to `12:41:17Z`; `totalRequests = 2000`, `requestsPerTenant = 1000`, `concurrency = 16`, `crossTenantRows = 0` |
+| Full CI gate | GitHub Actions run `27499077532` | passed; format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, test, build, size and Playwright all succeeded |
 
 ## CI Hook
 
@@ -67,9 +72,9 @@ No customer, order, conversation, knowledge-base or production business schema w
 
 Expected secret:
 
-- `UZMAX_RLS_DATABASE_URL`: Supabase session pooler or approved direct connection URL. It must not be committed to the repository.
+- `UZMAX_RLS_DATABASE_URL`: Supabase transaction pooler URL for project `enyocaykcgcfcswycujg`, with password stored only in GitHub Actions secret. CI appends `connection_limit=16&pool_timeout=60`; the repository never stores the secret value.
 
-Until this secret exists, GitHub Actions should fail instead of silently skipping SPK-03.
+If this secret is missing or points to the wrong pooler host, GitHub Actions fails instead of silently skipping SPK-03.
 
 ## Official Reference Notes
 
@@ -77,22 +82,34 @@ Until this secret exists, GitHub Actions should fail instead of silently skippin
 - Supabase Connect to Postgres docs: transaction mode does not support prepared statements.
 - Supabase Prisma docs: Prisma should use the Supavisor session pooler string unless direct connection is available.
 
-## Remaining Blocker
+## Accepted Evidence Snapshot
 
-The project owner must provide or configure a Supabase database connection URL in GitHub Actions secret `UZMAX_RLS_DATABASE_URL`, or approve an equivalent platform operation that creates one.
-
-After that, rerun:
+Rerun command shape:
 
 ```bash
 npm run -w @uzmax/db prisma:generate
-UZMAX_RLS_SET_ROLE=uzmax_spk03_ci npm run -w @uzmax/db spike:rls-prisma-pool
+UZMAX_RLS_SET_ROLE=uzmax_spk03_ci \
+UZMAX_RLS_SPIKE_CONCURRENCY=16 \
+npm run -w @uzmax/db spike:rls-prisma-pool
 ```
 
-Acceptance requires at least 2000 interleaved tenant requests with zero cross-tenant rows, plus missing-context, wrong-context and transaction-cleanup negative cases passing in CI.
+Accepted GitHub Actions evidence:
+
+- Run: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27499077532`
+- Job: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27499077532/job/81278472494`
+- Head SHA: `ee399f99a591c34814c69fdfeada5494cf2ac215`
+- SPK-03 result: `status = passed`, `totalRequests = 2000`, `requestsPerTenant = 1000`, per-tenant counts `1000 / 1000`, `crossTenantRows = 0`, `concurrency = 16`, `checkedAt = 2026-06-14T12:41:17.453Z`.
+- Negative cases: missing context, wrong tenant context and transaction context cleanup are part of the same harness before the 2000-request run; CI would fail before printing `status = passed` if any negative case returned rows.
+
+## Remaining Risks
+
+- Evidence is from Supabase dev project only; staging/production must provide separate secrets and evidence before real customer data.
+- The accepted path depends on `SET LOCAL ROLE` to avoid privileged `postgres` bypassing RLS. Production repository helpers must enforce this; business code must not call Prisma Client directly.
+- Transaction pooler performance required explicit Prisma `connection_limit=16&pool_timeout=60` in CI. If pool size, region or provider settings change, rerun SPK-03 before treating the path as safe.
 
 ## Signoff
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | pending_database_secret | 需提供或配置 `UZMAX_RLS_DATABASE_URL` |
-| AI agent | evidence_partial | SQL/RLS baseline verified; Prisma harness and CI hook ready; CI proof pending secret |
+| 项目 owner | pending_pr_review | 已配置 GitHub Actions secret；最终隔离风险确认通过 PR review / branch protection |
+| AI agent | evidence_accepted | SQL/RLS baseline、Prisma harness、负例、2000 次并发零串话和完整 CI 已验证 |

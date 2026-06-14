@@ -52,12 +52,16 @@ function getConcurrency() {
 async function queryTenantItems(prisma, tenantId) {
   return prisma.$transaction(async (tx) => {
     await setLocalRole(tx);
-    await tx.$executeRaw`select set_config('app.org_id', ${ORG_ID}, true)`;
-    await tx.$executeRaw`select set_config('app.tenant_id', ${tenantId}, true)`;
 
     const rows = await tx.$queryRaw`
+      with app_context as (
+        select
+          set_config('app.org_id', ${ORG_ID}, true) as org_context,
+          set_config('app.tenant_id', ${tenantId}, true) as tenant_context
+      )
       select payload
-      from spk03.rls_items
+      from app_context
+      cross join spk03.rls_items
       order by payload asc
     `;
 
@@ -80,12 +84,16 @@ async function queryWithoutContext(prisma) {
 async function queryWithWrongContext(prisma) {
   return prisma.$transaction(async (tx) => {
     await setLocalRole(tx);
-    await tx.$executeRaw`select set_config('app.org_id', ${ORG_ID}, true)`;
-    await tx.$executeRaw`select set_config('app.tenant_id', ${TENANT_A_ID}, true)`;
 
     const rows = await tx.$queryRaw`
+      with app_context as (
+        select
+          set_config('app.org_id', ${ORG_ID}, true) as org_context,
+          set_config('app.tenant_id', ${TENANT_A_ID}, true) as tenant_context
+      )
       select payload
-      from spk03.rls_items
+      from app_context
+      cross join spk03.rls_items
       where tenant_id = ${TENANT_B_ID}::uuid
       order by payload asc
     `;

@@ -29,6 +29,8 @@
 | OCM-04 | M1 平台骨架准备 | AI agent 拆 spec；项目 owner 确认范围和开工授权 | 1-2 天 | SPK-03 与 SPK-04 均通过；ADR-001/ADR-002/ADR-003 已签收；M0 CI 和治理目录可用 | M1 scope 明确为 org/tenant/authz/schema、集团层/租户层壳、审计、配置版本、种子评测集；对应 `docs/specs/` 已拆分且一 spec 一 PR；历史真实咨询样本导出责任与截止时间明确；集团层/租户层壳、发布与验收控制台入口、审计/配置版本方案完成准备；无 M2/M3 业务能力提前混入 | M1 spec 过大则降级拆分；历史样本未确认则顺延 M1 智能能力相关工作并写 ADR；平台骨架依赖缺失则改路径；M2/M3 能力混入则关闭该范围；P1 残项必须有项目 owner 确认、修复日期和风险说明 | M1 readiness pack；M1 spec 清单；项目输入排期；平台骨架边界说明 | P0 |
 | Gate 1 | 允许进入 M1 业务骨架 | 项目 owner 最终判定；AI agent 逐项复判并更新证据 | 立即判定 | OCM-01 至 OCM-04 全部完成；ADR-001/ADR-002/ADR-003 和 CI 证据齐备 | 满足“Gate 1 判定条件”全部条目后，才允许实现 M1 业务骨架相关 PR；仍不得进入 M2 渠道、M3 AI 能力、M4 订单客户能力 | 任一 P0 未过则关闭 M1 业务骨架开工；可替代路径明确时改路径并写 ADR；输入延迟时顺延；非阻断残项只能降级为 P1/P2 并带项目 owner 确认、修复日期和风险说明 | Gate 1 Go/No-Go 记录；M1 开工授权 | P0 |
 
+OCM-02 的执行 spec 为 `docs/specs/SPK-03-rls-prisma-pool.md`。`M0-02` 保留给已合入的治理 cleanup 历史记录，不再作为 RLS spike 的活跃 spec 编号。
+
 ## 2. Gate 0 判定条件
 
 Gate 0 名称：**允许创建正式工程仓库/CI**。

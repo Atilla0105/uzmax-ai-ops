@@ -27,3 +27,4 @@
 - `触碰模块/文件` 是唯一触碰模块真源，必须是机器可读 glob/path 列表；自由文本说明只能写在备注里，`guard:pr-shape` 不读取。
 - 变更预算缺失时使用 `AGENTS.md` 的默认 PR Hygiene Budgets。
 - 文档触发检查只写 `none`、`updated` 或 `new doc required`；判断依据是 `docs/doc-gates.md`，不是人工长文说明。
+- 活跃 spike spec 使用 `SPK-xx` 作为文件名和引用 ID；历史 cleanup/infra spec 可以保留原合并时的 `M0-xx` 编号。

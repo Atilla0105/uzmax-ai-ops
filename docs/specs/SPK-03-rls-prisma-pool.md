@@ -1,4 +1,4 @@
-# M0-02 SPK-03 RLS x Prisma x 连接池 Spike
+# SPK-03 RLS x Prisma x 连接池 Spike
 
 ## 目标
 

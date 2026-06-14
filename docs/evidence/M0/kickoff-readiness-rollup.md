@@ -1,0 +1,77 @@
+# M0-06 Kickoff Readiness Rollup
+
+> evidence_id: M0-06-kickoff-readiness-rollup
+> milestone: M0
+> acceptance_items: K-03 / K-04 / J-05
+> status: ready_for_review
+> created_at: 2026-06-14
+> updated_at: 2026-06-14
+> owner: 项目 owner 确认整理口径和后续开工授权；AI agent 记录、验证和暴露风险
+> source_files: `docs/specs/M0-06-kickoff-readiness-cleanup.md`、`docs/evidence/M0/gates/Gate-0-decision.md`、`docs/evidence/M0/infra/git-ci-manifest.md`
+> sensitive_data_location: none
+> redaction_status: no sensitive data included
+
+## 当前结论
+
+当前仓库可以继续推进 M0 剩余真实环境 spike，但仍不得进入 M1 业务骨架或任何真实客户流量。
+
+已闭合的开工地基：
+
+- OCM-00 文档基线已 accepted。
+- Gate 0 已判定 Go，范围只放行 M0 治理/CI 骨架。
+- M0-01 monorepo / CI / AGENTS 治理骨架已通过 PR #1 合入。
+- M0-02 governance cleanup 已通过 PR #2 合入。
+- M0-05 doc entrypoints 与 `guard:doc-triggers` 已通过 PR #3、PR #4 合入。
+- 2026-06-14 本地 `main` 执行 `npm run check` 通过；GitHub push CI 在 commit `5a32796` 通过。
+
+仍阻断 Gate 1 的 M0 P0：
+
+- SPK-03：RLS x Prisma x 连接池真实 Supabase spike，输出 ADR-001，并将压测用例进入 CI 常驻。
+- SPK-04：双鉴权链路 spike，输出 ADR-002，并覆盖 HTTP、WebSocket、租户切换、Storage signed URL。
+- M0-04：ADR-003 LLM 数据处理从 `proposed` 变为 accepted；真实客户消息在此之前不得进入第三方 LLM。
+
+## Spec 身份整理
+
+历史 cleanup PR 保留 `docs/specs/M0-02-governance-cleanups.md`，因为 PR #2 已用该编号合入。
+
+活跃的 RLS spike 以验收矩阵和技术架构中的 `SPK-03` 为主身份，文件从 `docs/specs/M0-02-rls-prisma-pool-spike.md` 改为 `docs/specs/SPK-03-rls-prisma-pool.md`。后续实现 PR 应引用 `Spec ID: SPK-03` 和新文件路径。
+
+## Owner Review / Ruleset 现状
+
+当前 `main` ruleset 的真实状态：
+
+- 要求通过 PR 合入。
+- 要求 `checks` status check。
+- 禁止 non-fast-forward。
+- 禁止删除 `main`。
+- 要求 review thread resolution。
+- `required_approving_review_count` 为 0，未强制 CODEOWNERS review。
+
+单 owner 私有仓库下，强制 1 人 approving review 会造成当前 GitHub 身份无法自审的流程风险。因此本阶段的等价机制是：所有 PR 仍必须经过 PR + `checks`，最终 merge 由项目 owner 执行；若 PR 声明 `large_change_exception`、`test_weakening_exception` 或 `external_dependency_exception`，必须在 PR review、PR comment 或等价审批记录中留下项目 owner 明确批准，否则不得合并。
+
+多 agent 或多人账号稳定后，应另开 infra spec 评估是否把 ruleset 调整为强制 approving review / CODEOWNERS review。
+
+## 本地旧分支结论
+
+本地分支 `codex/uzmax-governance-drift-hardening` 不是当前 `main` 的已合并分支；它基于 `3228cc6`，落后当前 `main` 两个提交，包含一次 `pr-shape` 拆分尝试。
+
+本 PR 不合入该分支、不 cherry-pick、不删除该分支。若仍需要其中的治理脚本拆分，必须从当前 `main` 新建独立 cleanup/refactor spec 和 PR，重新验证 M0-05 之后的当前实现。
+
+## 下一步允许动作
+
+1. 合并本 PR 后，优先启动 SPK-03。
+2. SPK-03 完成并写入 ADR-001 后，再启动 SPK-04。
+3. ADR-003 可与不触碰 `packages/db` schema 的准备工作并行，但真实客户消息仍受 ADR-003 accepted 状态阻断。
+
+## Review Notes
+
+- 本 rollup 不替代 Gate 1 Go/No-Go。
+- 本 rollup 不批准 M1、M2、M3 或 M4 业务能力。
+- Render 服务创建、staging/prod 环境和 provider 数据处理策略仍按各自 manifest 与 spec 执行。
+
+## Signoff
+
+| 角色 | 状态 | 备注 |
+|---|---|---|
+| 项目 owner | pending_review | 待 M0-06 PR review / merge 记录确认 |
+| AI agent | ready_for_review | 已记录当前状态、未闭合 P0、ruleset 现状和旧分支结论 |

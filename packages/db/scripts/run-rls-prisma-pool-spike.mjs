@@ -4,9 +4,14 @@ const ORG_ID = "00000000-0000-4000-8000-000000000001";
 const TENANT_A_ID = "10000000-0000-4000-8000-000000000001";
 const TENANT_B_ID = "20000000-0000-4000-8000-000000000002";
 const REQUESTS_PER_TENANT = 1000;
-const DEFAULT_CONCURRENCY = 2;
+const DEFAULT_CONCURRENCY = 4;
 const CONCURRENCY_ENV = "UZMAX_RLS_SPIKE_CONCURRENCY";
+const PROGRESS_INTERVAL = 100;
 const ROLE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
+const TRANSACTION_OPTIONS = {
+  maxWait: 30_000,
+  timeout: 30_000
+};
 
 const expectedPayloads = {
   [TENANT_A_ID]: ["tenant-a-row-1", "tenant-a-row-2"],
@@ -57,7 +62,7 @@ async function queryTenantItems(prisma, tenantId) {
     `;
 
     return rows.map((row) => row.payload);
-  });
+  }, TRANSACTION_OPTIONS);
 }
 
 async function queryWithoutContext(prisma) {
@@ -69,7 +74,7 @@ async function queryWithoutContext(prisma) {
       from spk03.rls_items
       order by payload asc
     `;
-  });
+  }, TRANSACTION_OPTIONS);
 }
 
 async function queryWithWrongContext(prisma) {
@@ -86,7 +91,7 @@ async function queryWithWrongContext(prisma) {
     `;
 
     return rows;
-  });
+  }, TRANSACTION_OPTIONS);
 }
 
 async function setLocalRole(tx) {
@@ -123,6 +128,7 @@ async function runNegativeCases(prisma) {
 
 async function runBounded(tasks, concurrency, handler) {
   const results = new Array(tasks.length);
+  let completed = 0;
   let nextIndex = 0;
 
   const workers = Array.from(
@@ -132,6 +138,19 @@ async function runBounded(tasks, concurrency, handler) {
         const index = nextIndex;
         nextIndex += 1;
         results[index] = await handler(tasks[index], index);
+        completed += 1;
+
+        if (completed % PROGRESS_INTERVAL === 0 || completed === tasks.length) {
+          console.log(
+            JSON.stringify({
+              status: "progress",
+              completed,
+              totalRequests: tasks.length,
+              concurrency,
+              checkedAt: new Date().toISOString()
+            })
+          );
+        }
       }
     }
   );

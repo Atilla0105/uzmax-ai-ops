@@ -36,14 +36,14 @@ export default tseslint.config(
     }
   },
   {
-    files: ["scripts/**/*.mjs", "scripts/**/*.cjs"],
+    files: ["scripts/**/*.mjs", "scripts/**/*.cjs", "packages/**/*.mjs"],
     rules: {
       complexity: ["error", { max: 10 }],
       "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }]
     }
   },
   {
-    files: ["scripts/**/*.mjs", "scripts/**/*.cjs", "*.config.*"],
+    files: ["scripts/**/*.mjs", "scripts/**/*.cjs", "packages/**/*.mjs", "*.config.*"],
     languageOptions: {
       globals: {
         Buffer: "readonly",

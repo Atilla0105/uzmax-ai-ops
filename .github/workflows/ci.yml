@@ -54,6 +54,14 @@ jobs:
       - run: npm run guard:doc-triggers
       - if: github.event_name == 'pull_request'
         run: npm run guard:pr-shape -- --base "${{ steps.guard-base.outputs.base }}"
+      - run: npm run -w @uzmax/db prisma:generate
+      - name: SPK-03 RLS Prisma pool spike
+        env:
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=16&pool_timeout=60
+          UZMAX_RLS_SET_ROLE: uzmax_spk03_ci
+          UZMAX_RLS_SPIKE_CONCURRENCY: "16"
+        run: npm run -w @uzmax/db spike:rls-prisma-pool
       - run: npm run test
       - run: npm run build
       - run: npm run size

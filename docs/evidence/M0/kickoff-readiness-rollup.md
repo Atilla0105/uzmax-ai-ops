@@ -30,6 +30,8 @@ M0 技术地基与 OCM-04 readiness pack 已闭合；当前可以进入 Gate 1 h
 - SPK-04 双鉴权链路已通过 PR #10 合入；ADR-002 为 `accepted`，CI 常驻 spike 覆盖 HTTP、WebSocket、租户切换、撤权和 Storage signed URL。
 - ADR-003 dev-only 签收已通过 PR #11 合入；真实客户消息、截图、语音转写和客户档案仍不得进入第三方 LLM。
 - OCM-04 M1 readiness pack 已通过 PR #12 合入；M1 scope、M1 spec 清单、项目输入排期与平台骨架边界已归档。
+- M0-09 closeout 与 Gate 1 handoff 已通过 PR #13 合入；Gate 1 当前明确为 No-Go / owner inputs pending。
+- M0-10 local validation hygiene 只修正 Prisma CLI devDependency 的 workspace 归属，确保本地 `npm run check` 与 CI 的 Knip/Prisma 口径一致；不改变 Gate 1 判定。
 
 不再阻断 Gate 1 的 M0 P0：
 
@@ -88,5 +90,5 @@ M0 内不再有未闭合 P0。
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | accepted | M0 PR #1-#12 均已合入；Gate 1 当前 No-Go / owner inputs pending |
-| AI agent | accepted | 已记录 M0 closeout、Gate 1 handoff、ruleset 现状和旧分支结论 |
+| 项目 owner | accepted | M0 PR #1-#13 均已合入；Gate 1 当前 No-Go / owner inputs pending |
+| AI agent | accepted | 已记录 M0 closeout、Gate 1 handoff、local validation hygiene、ruleset 现状和旧分支结论 |

@@ -1,4 +1,4 @@
-# Gate 1 决策记录：允许进入 M1 业务骨架
+# Gate 1 决策记录：暂不允许进入 M1 业务骨架
 
 > evidence_id: Gate-1-decision
 > milestone: Gate 1

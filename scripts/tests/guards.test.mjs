@@ -9,6 +9,7 @@ import { classify, findTestWeakening, parsePrBody } from "../guards/pr-shape.mjs
 const repoRoot = process.cwd();
 const prShapeScript = path.join(repoRoot, "scripts/guards/pr-shape.mjs");
 const evalTriggerScript = path.join(repoRoot, "scripts/guards/eval-trigger-paths.mjs");
+const docTriggerScript = path.join(repoRoot, "scripts/guards/doc-trigger-paths.mjs");
 const forbiddenTermsScript = path.join(repoRoot, "scripts/guards/forbidden-terms.mjs");
 const depcruiseBin = path.join(repoRoot, "node_modules/.bin/depcruise");
 const depcruiseConfig = path.join(repoRoot, "dependency-cruiser.config.cjs");
@@ -170,6 +171,37 @@ describe("eval trigger guard", () => {
   });
 });
 
+describe("doc trigger guard", () => {
+  it("does not require eval docs for the empty eval package skeleton", () => {
+    const repo = tempRepo();
+    write(repo, "packages/evals/src/index.ts", "export const evals = true;\n");
+
+    assert.doesNotThrow(() => runDocTriggers(repo));
+  });
+
+  it("requires eval docs when eval fixtures exist", () => {
+    const repo = tempRepo();
+    write(repo, "packages/evals/fixtures/basic.json", "{}\n");
+
+    assert.throws(() => runDocTriggers(repo), /docs\/evals\/README\.md/);
+  });
+
+  it("allows eval fixtures when eval docs exist", () => {
+    const repo = tempRepo();
+    write(repo, "packages/evals/fixtures/basic.json", "{}\n");
+    write(repo, "docs/evals/README.md", "# Evals\n");
+
+    assert.doesNotThrow(() => runDocTriggers(repo));
+  });
+
+  it("requires contracts docs when a database schema appears", () => {
+    const repo = tempRepo();
+    write(repo, "packages/db/prisma/schema.prisma", "model User { id String @id }\n");
+
+    assert.throws(() => runDocTriggers(repo), /docs\/contracts\/README\.md/);
+  });
+});
+
 describe("dependency and forbidden-term guards", () => {
   it("blocks forbidden business terms in packages/engine", () => {
     const repo = tempRepo();
@@ -293,6 +325,14 @@ function runPrShape(repo) {
       stdio: "pipe"
     }
   );
+}
+
+function runDocTriggers(repo) {
+  return execFileSync(process.execPath, [docTriggerScript, "--root", repo], {
+    cwd: repo,
+    encoding: "utf8",
+    stdio: "pipe"
+  });
 }
 
 function commitFeature(repo) {

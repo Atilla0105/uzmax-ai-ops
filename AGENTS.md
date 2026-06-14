@@ -78,12 +78,14 @@
 4. `packages/db` schema 变更全局串行。
 5. 实现完成后必须先做 spec compliance review，再做 code quality review。
 6. 合并前必须通过 CI 和对应验收证据归档。
+7. 每个工作切片结束、切换阶段或新开任务前，必须检查 `git branch --no-merged main` 与 `gh pr list --state open`；非 `main` 分支必须处于 open PR、已合并、已删除或在 spec/evidence 中显式标记 superseded 的状态。
 
 ## 7. Authoring Contract
 
 - 开工前必须重读本文件和目标 spec，确认触碰模块清单；未列入清单的模块默认不可改。
 - 修改优先级是：就地修改或扩展现有实现，必要时抽取/合并，再考虑新增文件。
 - 新增 source 文件前必须执行 `rg` 搜索，并在 PR Hygiene 表说明搜索结论和新增归属理由。
+- 有价值但不进入当前 PR 的本地改动或分支，必须先转成后续 spec/PR、记录 superseded 原因，或在删除前写明“不采纳/需重做”的结论；不得留下隐藏的本地-only 待办分支。
 - 外部 API、SDK、provider、connector、adapter 的行为必须有依据；新增适配器路径必须引用 ADR-B 或对应 spike/官方文档证据。
 - AI agent 可以提出 `large_change_exception` 或外部依赖例外，也可以在 cleanup/refactor 测试删除候选中声明 `test_weakening_exception`，但不能自批；例外必须在 PR Hygiene 表使用精确 token 声明，项目 owner 确认只能来自分支保护要求的 review 或等价审批记录。
 - PR 描述必须自报触碰模块、路径分类、源码净增、测试变更、生成物/lockfile 变更、外部 API 依据和未完成项。
@@ -127,3 +129,4 @@
 - 新增外部 API/provider/connector/adapter 是否有官方文档、spike 证据或 ADR-B。
 - 是否有测试或验收证据。
 - 是否留下 ADR 或 runbook 需要的操作记录。
+- 是否清理或记录未合并分支，避免有价值工作停留在无 PR、无 spec、无 superseded 结论的本地状态。

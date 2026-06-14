@@ -1,7 +1,7 @@
 # LLM Provider Manifest
 
 > evidence_id: M0-infra-llm-provider
-> status: key_created__policy_evidence_collected__blocked_pending_owner_signoff
+> status: key_created__policy_evidence_collected__dev_only_accepted
 > owner: 项目 owner 决策真实客户数据、区域、留存与成本风险；AI agent 记录/验证
 > timebox: 0.5 个工作日
 > secret_policy: API key 只存受控密钥管理，不进仓库
@@ -22,16 +22,16 @@
 | API key | `Uzmax` 已创建；密钥未显示，已写入被 git 忽略的 `.env.local` |
 | 本地变量 | `OPENAI_API_KEY` |
 | 本地验证 | OpenAI `/v1/models` 返回 HTTP 200 |
-| 当前限制 | ADR-003 当前为 `proposed__blocked_for_real_customer_traffic`；真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM |
+| 当前限制 | ADR-003 当前为 `accepted_dev_only__customer_llm_blocked`；真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM |
 
 ## Gate 0 最低输入
 
 | 检查项 | 状态 | 记录 |
 |---|---|---|
-| primary provider | ready_for_dev_only | OpenAI key 已创建并本地验证；正式客户流量仍被 ADR-003 阻断 |
-| retention / zero-retention | evidence_collected__waiting_project_owner | 标准 abuse monitoring 最多 30 天；ZDR/MAM 未获批准证据；owner 未签收真实客户数据风险 |
-| 区域与日志策略 | evidence_collected__waiting_project_owner | Default project 区域未配置；OpenAI audit logs 是 admin/config metadata，不是客户 request/response trace |
-| 成本限额与 fallback | waiting_project_owner | 成本护栏未确认；fallback 保持 disabled |
+| primary provider | accepted_for_dev_only | OpenAI key 已创建并本地验证；正式客户流量仍被 ADR-003 dev-only 分支阻断 |
+| retention / zero-retention | evidence_collected__dev_only_selected | 标准 abuse monitoring 最多 30 天；ZDR/MAM 未获批准证据；owner 选择不发送真实客户内容 |
+| 区域与日志策略 | evidence_collected__dev_only_selected | Default project 区域未配置；OpenAI audit logs 是 admin/config metadata，不是客户 request/response trace；区域控制不阻断 M1 平台骨架 |
+| 成本限额与 fallback | dev_only_fallback_disabled | 成本护栏未确认；fallback 保持 disabled；不得用 fallback 放宽 dev-only 限制 |
 
 ## ADR-003 前置
 
@@ -53,12 +53,12 @@
 
 | 项目 | 状态/记录 |
 |---|---|
-| ADR-003 判定输入 | policy_evidence_collected__owner_signoff_pending |
-| 实际失败分支 | 数据处理策略、redaction、trace 和 owner signoff 完成前，真实客户消息不得进入第三方 LLM |
+| ADR-003 判定输入 | accepted_dev_only__customer_llm_blocked |
+| 实际失败分支 | 真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM；后续若要改为客户 LLM，必须另走 ADR 更新、redaction/trace 实装与 owner signoff |
 
 ## 签收
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | accepted_key_storage__data_policy_pending | 当前只确认 key 保存到 `.env.local`；未确认真实客户数据、区域、留存、成本或 fallback 风险 |
+| 项目 owner | accepted_dev_only_customer_llm_blocked | 已确认 key 保存到 `.env.local`；已选择 dev-only 分支，不接受当前阶段真实客户数据进入第三方 LLM |
 | AI agent | policy_evidence_ready | OpenAI key 创建、写入和 HTTP 200 验证已记录；官方政策证据已记录；未暴露 secret |

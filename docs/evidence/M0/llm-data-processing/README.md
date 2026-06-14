@@ -8,4 +8,6 @@
 
 ## 当前状态
 
-ADR-003 当前为 `proposed__blocked_for_real_customer_traffic`。在 provider 留存/区域/数据共享状态获项目 owner 签收，且 `packages/llm-gateway` 完成 redaction、trace 和 fallback 策略前，真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM。
+ADR-003 当前为 `accepted_dev_only__customer_llm_blocked`。项目 owner 在 2026-06-14 选择 `dev_only` 分支：OpenAI 仅允许用于合成数据、脱敏开发样本、公开知识和非客户明文任务；真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM。
+
+该签收允许继续 OCM-04 / M1 平台骨架准备，但不放行 M3 AI 能力生产使用、GA-0 真实客户 LLM 流量或任何客户明文进入第三方 provider。

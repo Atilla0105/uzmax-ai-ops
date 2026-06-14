@@ -57,7 +57,8 @@ jobs:
       - run: npm run -w @uzmax/db prisma:generate
       - name: SPK-03 RLS Prisma pool spike
         env:
-          UZMAX_RLS_DATABASE_URL: ${{ secrets.UZMAX_RLS_DATABASE_URL }}
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=16&pool_timeout=60
           UZMAX_RLS_SET_ROLE: uzmax_spk03_ci
           UZMAX_RLS_SPIKE_CONCURRENCY: "16"
         run: npm run -w @uzmax/db spike:rls-prisma-pool

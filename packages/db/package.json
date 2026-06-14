@@ -2,5 +2,15 @@
   "name": "@uzmax/db",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "spike:rls-prisma-pool": "node scripts/run-rls-prisma-pool-spike.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  }
 }

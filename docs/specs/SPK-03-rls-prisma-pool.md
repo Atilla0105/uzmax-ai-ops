@@ -12,15 +12,43 @@ Owner：AI agent 执行 spike、压测和 ADR 草案；项目 owner 确认隔离
 
 M0 内 2 个工作日。到期仍无可证明结论时，默认按保守不可行分支推进，不允许无限挂起。
 
+## Spec 类型
+
+spike
+
 ## 触碰模块/文件
 
-- `packages/db` 的 spike-only migration、Prisma schema 片段、RLS policy
-- `packages/db` 或 `apps/api` 的 spike 测试 harness
-- CI 中的 RLS 并发压测 job
+- `package-lock.json`
+- `package.json`
+- `eslint.config.mjs`
+- `packages/db/package.json`
+- `packages/db/prisma/**`
+- `packages/db/scripts/**`
+- `packages/db/spikes/**`
+- `.github/workflows/ci.yml`
 - `docs/adr/ADR-001-rls-prisma-pool.md`
-- `docs/evidence/M0/spikes/SPK-03-rls-prisma-pool/`
+- `docs/contracts/README.md`
+- `docs/evidence/M0/spikes/SPK-03-rls-prisma-pool/**`
 - `docs/runbooks/rls-misconfig.md`
-- 本 spec 文件
+- `docs/specs/SPK-03-rls-prisma-pool.md`
+
+说明/备注：
+
+本 spike 只允许创建 `spk03` schema、spike-only 表、受限测试 role、Prisma raw-query harness 与 CI job，不允许把客户、会话、订单、知识库等业务 schema 混入本 PR。
+
+## 变更预算与路径分类
+
+- path categories：source、generated、lock、config、docs。
+- source 预算：changed source files <= 3、net source LOC <= 260、new source files <= 2。
+- test/generated/lock/config/docs 预计变更：root lint command、ESLint package script coverage、Prisma schema、spike SQL、CI workflow、ADR-001、contracts entrypoint、evidence manifest、runbook、package lock。
+- 新增 source 文件前的 `rg` 搜索结论和归属理由：已检索 `spike:rls`、`PrismaClient`、`set_config`、`spk03`、`RLS`；当前 `packages/db` 只有空包入口，没有既有 Prisma/RLS harness 可扩展。本 PR 新增 `packages/db/scripts/run-rls-prisma-pool-spike.mjs` 作为本 spec 的唯一 spike harness。
+- 外部 API/SDK/provider/connector/adapter 依据：Supabase 官方连接池文档、Supabase connector 真实 SQL 证据、Prisma Client 生成类型。
+- 是否需要例外：无。
+
+## 文档触发检查
+
+- 结果：new doc required。
+- 判断依据：`packages/db/prisma/schema.prisma` 触发 `docs/doc-gates.md` 的 contracts gate；本 PR 新增极薄 `docs/contracts/README.md` 入口。环境变量仍由 M0 infra manifest 表达，不触发 `docs/environment.md`。
 
 ## 前置条件
 

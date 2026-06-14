@@ -13,7 +13,7 @@
 
 ## 当前结论
 
-当前仓库可以继续推进 M0 剩余真实环境 spike，但仍不得进入 M1 业务骨架或任何真实客户流量。
+M0 技术地基已闭合到可以启动 OCM-04 / M1 readiness pack review 的状态，但仍不得直接进入 M1 业务骨架实现或任何真实客户流量。
 
 已闭合的开工地基：
 
@@ -22,13 +22,25 @@
 - M0-01 monorepo / CI / AGENTS 治理骨架已通过 PR #1 合入。
 - M0-02 governance cleanup 已通过 PR #2 合入。
 - M0-05 doc entrypoints 与 `guard:doc-triggers` 已通过 PR #3、PR #4 合入。
-- 2026-06-14 本地 `main` 执行 `npm run check` 通过；GitHub push CI 在 commit `5a32796` 通过。
+- M0-06 kickoff readiness rollup 已通过 PR #5 合入。
+- M0-07 guard script hardening 已通过 PR #6 合入。
+- M0-08 CI workflow hygiene 已通过 PR #7 合入。
+- M0-04 初始 LLM 数据处理 ADR 证据已通过 PR #8 合入。
+- SPK-03 RLS x Prisma x 连接池已通过 PR #9 合入；ADR-001 为 `accepted`，CI 常驻 spike 证明 2000 次交错请求零串话。
+- SPK-04 双鉴权链路已通过 PR #10 合入；ADR-002 为 `accepted`，CI 常驻 spike 覆盖 HTTP、WebSocket、租户切换、撤权和 Storage signed URL。
+- ADR-003 dev-only 签收已通过 PR #11 合入；真实客户消息、截图、语音转写和客户档案仍不得进入第三方 LLM。
 
-仍阻断 Gate 1 的 M0 P0：
+不再阻断 Gate 1 的 M0 P0：
 
-- SPK-03：RLS x Prisma x 连接池真实 Supabase spike，输出 ADR-001，并将压测用例进入 CI 常驻。
-- SPK-04：双鉴权链路 spike，输出 ADR-002，并覆盖 HTTP、WebSocket、租户切换、Storage signed URL。
-- M0-04：ADR-003 LLM 数据处理从 `proposed` 变为 accepted；真实客户消息在此之前不得进入第三方 LLM。
+- SPK-03：已 accepted；证据在 `docs/evidence/M0/spikes/SPK-03-rls-prisma-pool/manifest.md`。
+- SPK-04：已 accepted；证据在 `docs/evidence/M0/spikes/SPK-04-dual-auth/manifest.md`。
+- M0-04 / ADR-003：已 accepted 为 `accepted_dev_only__customer_llm_blocked`；证据在 `docs/evidence/M0/llm-data-processing/`。
+
+仍阻断直接进入 M1 实现的 P0：
+
+- OCM-04：M1 readiness pack、M1 spec 清单、项目输入排期与平台骨架边界仍需项目 owner review / merge 确认。
+- Gate 1：OCM-04 合并后仍需按 `docs/preflight/00-opening-control-matrix.md` §3 做 Go/No-Go 复判。
+- 历史真实咨询样本脱敏导出责任、截止时间和失败分支必须在 M1 readiness pack 中明确；缺失时顺延 M1 eval seed 与 M2/M3 智能验收。
 
 ## Spec 身份整理
 
@@ -59,15 +71,16 @@
 
 ## 下一步允许动作
 
-1. 合并本 PR 后，优先启动 SPK-03。
-2. SPK-03 完成并写入 ADR-001 后，再启动 SPK-04。
-3. ADR-003 可与不触碰 `packages/db` schema 的准备工作并行，但真实客户消息仍受 ADR-003 accepted 状态阻断。
+1. 启动 OCM-04：新增 M1 readiness pack、M1 spec 清单、项目输入排期与平台骨架边界说明。
+2. OCM-04 合并后，按 Gate 1 条件做 Go/No-Go 复判。
+3. Gate 1 Go 后，才允许逐个创建 M1 实现 spec；任何 `packages/db` schema 变更仍全局串行。
+4. ADR-003 dev-only 分支保持生效：M1 平台骨架可继续，真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM。
 
 ## Review Notes
 
 - 本 rollup 不替代 Gate 1 Go/No-Go。
-- 本 rollup 不批准 M1、M2、M3 或 M4 业务能力。
-- Render 服务创建、staging/prod 环境和 provider 数据处理策略仍按各自 manifest 与 spec 执行。
+- 本 rollup 不批准 M1、M2、M3 或 M4 业务能力实现。
+- Render 服务创建、staging/prod 环境、preview/prod 访问保护和 provider 数据处理策略仍按各自 manifest 与后续 spec 执行。
 
 ## Signoff
 

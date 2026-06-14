@@ -4,12 +4,12 @@
 > date: 2026-06-14
 > spec: `docs/specs/M0-04-llm-data-processing-adr.md`
 > adr: `docs/adr/ADR-003-llm-data-processing.md`
-> status: policy_evidence_collected__blocked_pending_owner_signoff
+> status: policy_evidence_collected__dev_only_accepted
 > secret_policy: no secret, real customer data, or production payload included
 
 ## Scope
 
-This report records official OpenAI policy evidence for the current UZMAX primary provider candidate. It does not approve real customer traffic and does not replace project owner signoff.
+This report records official OpenAI policy evidence for the current UZMAX primary provider candidate. The project owner selected the `dev_only` branch on 2026-06-14, so this evidence allows synthetic/redacted development usage only and does not approve real customer traffic.
 
 ## Sources Checked
 
@@ -27,10 +27,10 @@ This report records official OpenAI policy evidence for the current UZMAX primar
 |---|---|---|
 | OpenAI key storage | accepted_key_storage | Existing manifest records key `Uzmax` saved to ignored `.env.local`; no secret is committed. |
 | OpenAI API for dev/test | allowed_for_dev_only | Key exists and `/v1/models` was previously validated; policy evidence is sufficient for synthetic and redacted development samples. |
-| Real customer text | blocked_pending_owner_signoff_and_redaction | Standard abuse monitoring may retain prompts/responses up to 30 days; no MAM/ZDR approval evidence exists. |
-| Real screenshots | blocked_pending_owner_signoff_and_image_redaction | Image/file inputs may be retained for manual review if CSAM classifiers flag them, even under MAM/ZDR. |
-| Real voice/transcripts | blocked_pending_owner_signoff_and_redaction | Speech pipeline must avoid raw voice/transcript persistence in LLM traces and must redact before LLM post-processing. |
-| Regional processing | blocked_if_owner_requires_region | Current Personal / Default project has no recorded data residency configuration. |
+| Real customer text | blocked_by_dev_only_decision | Standard abuse monitoring may retain prompts/responses up to 30 days; no MAM/ZDR approval evidence exists; owner chose not to send real customer content to third-party LLM for now. |
+| Real screenshots | blocked_by_dev_only_decision | Image/file inputs may be retained for manual review if CSAM classifiers flag them, even under MAM/ZDR; real screenshots remain blocked. |
+| Real voice/transcripts | blocked_by_dev_only_decision | Speech pipeline must avoid raw voice/transcript persistence in LLM traces; real voice/transcripts remain blocked. |
+| Regional processing | not_required_for_dev_only | Current Personal / Default project has no recorded data residency configuration; if owner later requires region control, production LLM remains blocked until a new ADR branch is accepted. |
 | Fallback provider | disabled | No fallback provider has equal-or-stronger retention, region, logging, redaction, or cost evidence. |
 
 ## Redaction And Trace Fixtures
@@ -66,9 +66,9 @@ Required implementation behavior:
 
 | Role | Status | Notes |
 |---|---|---|
-| Project owner | pending_data_policy_signoff | Must choose ZDR/MAM pursuit, standard retention acceptance with strong redaction, or no third-party customer LLM. |
+| Project owner | accepted_dev_only_customer_llm_blocked | Owner chose `dev_only`: continue M1 platform skeleton preparation, but do not send real customer messages, screenshots, voice transcripts or customer profiles to third-party LLM. |
 | AI agent | evidence_collected | Official OpenAI evidence and UZMAX ADR policy were recorded without secrets or customer data. |
-| Implementation | pending | `packages/llm-gateway` redaction, trace, provider status check, fallback policy and tests are not implemented in this docs PR. |
+| Implementation | pending_for_customer_llm | `packages/llm-gateway` redaction, trace, provider status check, fallback policy and tests are not implemented in this docs PR; dev-only synthetic/redacted usage may be planned later by separate spec. |
 
 ## Commands / Validation Results
 

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 
 const ORG_ID = "00000000-0000-4000-8000-000000000001";
 export const TENANT_A_ID = "10000000-0000-4000-8000-000000000001";
@@ -35,7 +36,10 @@ export function createPrisma() {
 
 export function createSupabaseClients() {
   const url = requireEnv("UZMAX_SUPABASE_URL");
-  const options = { auth: { autoRefreshToken: false, persistSession: false } };
+  const options = {
+    auth: { autoRefreshToken: false, persistSession: false },
+    realtime: { transport: WebSocket }
+  };
 
   return {
     admin: createClient(url, requireEnv("UZMAX_SUPABASE_SECRET_KEY"), options),

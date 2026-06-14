@@ -2,6 +2,7 @@
 
 - Spec ID:
 - Spec file:
+- Documentation triggers: none / updated / new doc required
 
 ## PR Hygiene
 
@@ -18,6 +19,8 @@
 | Gross churn                        |                                                                 |
 | External API evidence              | none / official docs / generated types / spike evidence / ADR-B |
 | Exception                          | none                                                            |
+
+Documentation triggers is a reminder only. Use `docs/doc-gates.md` and, after PR2, `guard:doc-triggers` as the authoritative source.
 
 ## Verification
 

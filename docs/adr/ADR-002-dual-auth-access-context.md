@@ -1,6 +1,6 @@
 # ADR-002 双鉴权链路与 AccessContext
 
-> status: proposed_pending_ci_secret
+> status: accepted
 > date: 2026-06-14
 > spec: M0-03 / SPK-04
 > evidence: `docs/evidence/M0/spikes/SPK-04-dual-auth/manifest.md`
@@ -41,11 +41,19 @@ SPK-03 已证明在 Supabase transaction pooler、Prisma batch `$transaction`、
 
 ## 风险与后续
 
-- CI 需要新增 GitHub Actions secrets：`UZMAX_SUPABASE_PUBLISHABLE_KEY` 与 `UZMAX_SUPABASE_SECRET_KEY`。缺失时 SPK-04 job fail-closed。
+- CI 依赖 GitHub Actions secrets：`UZMAX_SUPABASE_PUBLISHABLE_KEY` 与 `UZMAX_SUPABASE_SECRET_KEY`。这些值只能存在于 GitHub Actions secrets 或本地后端环境；缺失或失效时 SPK-04 job fail-closed。
 - 当前 harness 用“过期 claim 形态”的 JWT 覆盖后端过期拒绝分支；未通过修改 Supabase 项目 token lifetime 等方式等待真实 access token 自然过期。进入 staging 前应补一次低过期时间环境或等价真实过期 token 证据。
 - dev 证据不能替代 staging/prod；真实客户数据进入前必须按环境重跑 Auth/RLS/Storage 链路。
 - 后续正式 API guard 应从本 ADR 的链路落地到 NestJS guard/interceptor/repository helper，不允许业务代码裸用 Prisma Client 或直接由前端生成 signed URL。
 
 ## 结果
 
-Pending。SQL/RLS 基线已在 Supabase dev 建立并通过 security advisor；代码、CI hook、ADR 和 evidence 已准备。等待新增 GitHub secrets 后运行 CI，并把成功 run/job 写入 evidence manifest 后才能将本 ADR 状态改为 accepted。
+Accepted。SQL/RLS 基线已在 Supabase dev 建立并通过 security advisor；GitHub Actions 已使用真实 Supabase Auth、RLS、Storage signed URL 和撤权/重连 harness 完成 SPK-04 验证。
+
+Accepted GitHub Actions evidence:
+
+- Run: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360`
+- Job: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360/job/81285429692`
+- Head SHA: `425fecc8126126c4e1553f60f2a87678226a41dc`
+- SPK-04 result: `status = passed`, 12 / 12 cases passed, `checkedAt = 2026-06-14T14:23:20.321Z`.
+- Full CI gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, SPK-04, test, build, size and Playwright.

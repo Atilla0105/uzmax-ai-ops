@@ -2,7 +2,7 @@
 
 > evidence_id: SPK-04-dual-auth
 > milestone: M0
-> status: pending_ci_secret
+> status: accepted
 > created_at: 2026-06-14
 > updated_at: 2026-06-14
 > owner: 项目 owner 确认权限、数据和体验风险；AI agent 执行 spike、验证和归档
@@ -11,9 +11,9 @@
 
 ## 当前结论
 
-SPK-04 implementation is ready for CI execution but not yet accepted. Supabase dev project has the spike-only `spk04` schema, RLS policies, restricted role and 0 security advisor lints. Local repo gates pass, including Prisma generate, static guards, build, size and Playwright. Final acceptance is blocked only by adding the two Supabase API key secrets to GitHub Actions and capturing a passing CI run.
+SPK-04 is accepted. Supabase dev project has the spike-only `spk04` schema, RLS policies, restricted role and 0 security advisor lints. GitHub Actions run `27501621360` verified the full dual-auth chain against real Supabase Auth, RLS and Storage using CI secrets, and the complete repo gate passed.
 
-Gate 1 remains blocked until this evidence status is changed to `accepted`.
+Gate 1 is no longer blocked by SPK-04 technical evidence. Other Gate 1 owner decisions and readiness requirements remain outside this evidence.
 
 ## 环境
 
@@ -51,7 +51,7 @@ No customer, order, conversation, knowledge-base or production business schema w
 | Baseline typecheck | `npm run typecheck` | passed |
 | Baseline lint | `npm run lint` | passed |
 | Supabase project discovery | Supabase connector `_list_projects` | passed; `uzmax-dev` is ACTIVE_HEALTHY |
-| Existing secret inventory | `gh secret list --repo Atilla0105/uzmax-ai-ops` | passed; only `UZMAX_RLS_DATABASE_URL` currently exists |
+| Existing secret inventory | `gh secret list --repo Atilla0105/uzmax-ai-ops --app actions` | passed; `UZMAX_RLS_DATABASE_URL`, `UZMAX_SUPABASE_PUBLISHABLE_KEY` and `UZMAX_SUPABASE_SECRET_KEY` exist |
 | SQL/RLS setup | Supabase connector applying `packages/db/spikes/spk04-dual-auth.sql` | passed |
 | Role check | Supabase connector query `pg_roles` | passed; `uzmax_spk04_ci.rolbypassrls = false` |
 | RLS force check | Supabase connector query `pg_class` | passed; all 5 `spk04` tables have `relrowsecurity = true`, `relforcerowsecurity = true` |
@@ -76,6 +76,8 @@ No customer, order, conversation, knowledge-base or production business schema w
 | Whitespace check | `git diff --check` | passed |
 | Source budget | `git diff --numstat origin/main` | passed; source net LOC 580, changed source files 3, new source files 2 |
 | Local secret inventory | `printenv` name-only check | blocked locally; `UZMAX_RLS_DATABASE_URL`, `UZMAX_SUPABASE_PUBLISHABLE_KEY`, `UZMAX_SUPABASE_SECRET_KEY` are not set in this shell |
+| GitHub Actions SPK-04 | run `27501621360`, job `81285429692` | passed; SPK-04 `status = passed`, 12 / 12 cases passed |
+| GitHub Actions full gate | run `27501621360`, job `81285429692` | passed; format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, SPK-04, test, build, size and Playwright |
 
 ## CI Hook
 
@@ -122,15 +124,16 @@ The harness does not print tokens, signed URLs, API keys or passwords. It logs o
 - Supabase Storage docs note signed URLs use a Storage signing key separate from Auth JWT signing keys, so short expiry and backend auditing are required.
 - Supabase database security docs distinguish grants from RLS policies; both must be considered.
 
-## Pending Acceptance Evidence
+## Accepted Evidence Snapshot
 
-After GitHub secrets are added, rerun CI and update this section with:
+Accepted GitHub Actions evidence:
 
-- Accepted GitHub Actions run URL.
-- Job URL.
-- Head SHA.
-- SPK-04 JSON result `status = passed` and case list.
-- Confirmation that full CI gate passed.
+- Run: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360`
+- Job: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360/job/81285429692`
+- Head SHA: `425fecc8126126c4e1553f60f2a87678226a41dc`
+- SPK-04 result: `status = passed`, `checkedAt = 2026-06-14T14:23:20.321Z`.
+- SPK-04 cases: `http tenant A whoami + RLS`, `http tenant B whoami + RLS`, `RLS missing context denies by default`, `missing token`, `expired token shape`, `unauthorized tenant switch`, `token refresh rebuilds HTTP/WS context`, `storage signed URL allowed in tenant`, `storage cross-tenant denied`, `storage forged path denied`, `revoked membership denies HTTP`, `revoked membership requires WS reconnect`; all passed.
+- Full CI gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, SPK-04, test, build, size and Playwright.
 
 ## Remaining Risks
 
@@ -142,5 +145,5 @@ After GitHub secrets are added, rerun CI and update this section with:
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | pending_secret_and_pr_review | 需要新增两个 GitHub Actions secrets 后复核 CI 和权限/Storage 风险 |
-| AI agent | implementation_ready | SQL/RLS 基线、代码、CI hook、ADR 和 evidence 已准备；等待 CI 实跑 |
+| 项目 owner | pending_pr_review | 已配置 GitHub Actions secrets；最终权限/Storage 风险确认通过 PR review / branch protection |
+| AI agent | evidence_accepted | SQL/RLS 基线、代码、CI hook、ADR、SPK-04 harness 和完整 CI 已验证 |

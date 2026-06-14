@@ -3,13 +3,13 @@
 > evidence_id: M1-history-samples-manifest
 > milestone: M1
 > acceptance_items: G-06 / J-05
-> status: ready_for_review
+> status: accepted_schedule__sample_pending
 > created_at: 2026-06-14
 > updated_at: 2026-06-14
 > owner: 项目 owner 提供或确认历史真实咨询样本导出；AI agent 检查脱敏、配额、manifest 和后续 eval seed 归档
 > source_files: `docs/preflight/01-owner-inputs-checklist.md`、`UZMAX智能运营系统-技术架构-v1.1.md`、`docs/adr/ADR-003-llm-data-processing.md`
 > sensitive_data_location: controlled storage only; no raw sample in repository
-> redaction_status: raw customer data not present in repo; redacted sample batch pending
+> redaction_status: raw customer data not present in repo; redacted sample batch pending owner input
 
 ## 当前状态
 
@@ -83,5 +83,5 @@ M1 种子集不少于 60 条：
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | pending_pr_review | 待 OCM-04 PR review / merge 确认样本责任、截止时间和失败分支 |
-| AI agent | ready_for_review | 已记录 M1 seed 输入格式、脱敏规则、存储规则与失败分支 |
+| 项目 owner | accepted_schedule__sample_pending | PR #12 已确认样本责任、截止时间和失败分支；真实样本导出、受控存储和抽样脱敏检查仍待输入 |
+| AI agent | accepted_schedule__sample_pending | 已记录 M1 seed 输入格式、脱敏规则、存储规则与失败分支；未消费真实样本 |

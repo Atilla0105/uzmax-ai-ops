@@ -3,7 +3,7 @@
 > evidence_id: M0-06-kickoff-readiness-rollup
 > milestone: M0
 > acceptance_items: K-03 / K-04 / J-05
-> status: ready_for_review
+> status: accepted
 > created_at: 2026-06-14
 > updated_at: 2026-06-14
 > owner: 项目 owner 确认整理口径和后续开工授权；AI agent 记录、验证和暴露风险
@@ -13,7 +13,7 @@
 
 ## 当前结论
 
-M0 技术地基已闭合到可以启动 OCM-04 / M1 readiness pack review 的状态，但仍不得直接进入 M1 业务骨架实现或任何真实客户流量。
+M0 技术地基与 OCM-04 readiness pack 已闭合；当前可以进入 Gate 1 handoff 复判，但仍不得直接进入 M1 业务骨架实现或任何真实客户流量。
 
 已闭合的开工地基：
 
@@ -29,6 +29,7 @@ M0 技术地基已闭合到可以启动 OCM-04 / M1 readiness pack review 的状
 - SPK-03 RLS x Prisma x 连接池已通过 PR #9 合入；ADR-001 为 `accepted`，CI 常驻 spike 证明 2000 次交错请求零串话。
 - SPK-04 双鉴权链路已通过 PR #10 合入；ADR-002 为 `accepted`，CI 常驻 spike 覆盖 HTTP、WebSocket、租户切换、撤权和 Storage signed URL。
 - ADR-003 dev-only 签收已通过 PR #11 合入；真实客户消息、截图、语音转写和客户档案仍不得进入第三方 LLM。
+- OCM-04 M1 readiness pack 已通过 PR #12 合入；M1 scope、M1 spec 清单、项目输入排期与平台骨架边界已归档。
 
 不再阻断 Gate 1 的 M0 P0：
 
@@ -36,11 +37,12 @@ M0 技术地基已闭合到可以启动 OCM-04 / M1 readiness pack review 的状
 - SPK-04：已 accepted；证据在 `docs/evidence/M0/spikes/SPK-04-dual-auth/manifest.md`。
 - M0-04 / ADR-003：已 accepted 为 `accepted_dev_only__customer_llm_blocked`；证据在 `docs/evidence/M0/llm-data-processing/`。
 
+M0 内不再有未闭合 P0。
+
 仍阻断直接进入 M1 实现的 P0：
 
-- OCM-04：M1 readiness pack、M1 spec 清单、项目输入排期与平台骨架边界仍需项目 owner review / merge 确认。
-- Gate 1：OCM-04 合并后仍需按 `docs/preflight/00-opening-control-matrix.md` §3 做 Go/No-Go 复判。
-- 历史真实咨询样本脱敏导出责任、截止时间和失败分支必须在 M1 readiness pack 中明确；缺失时顺延 M1 eval seed 与 M2/M3 智能验收。
+- Gate 1：已按 `docs/preflight/00-opening-control-matrix.md` §3 记录 No-Go / owner inputs pending。
+- 历史真实咨询样本脱敏导出、受控存储位置和抽样脱敏检查仍待 owner 输入；缺失时顺延 M1 eval seed 与 M2/M3 智能验收。
 
 ## Spec 身份整理
 
@@ -71,10 +73,10 @@ M0 技术地基已闭合到可以启动 OCM-04 / M1 readiness pack review 的状
 
 ## 下一步允许动作
 
-1. 启动 OCM-04：新增 M1 readiness pack、M1 spec 清单、项目输入排期与平台骨架边界说明。
-2. OCM-04 合并后，按 Gate 1 条件做 Go/No-Go 复判。
+1. 继续收集 Gate 1 owner inputs：历史样本导出、受控存储位置和抽样脱敏检查许可。
+2. 输入闭合或明确顺延后，重新按 Gate 1 条件做 Go/No-Go 复判。
 3. Gate 1 Go 后，才允许逐个创建 M1 实现 spec；任何 `packages/db` schema 变更仍全局串行。
-4. ADR-003 dev-only 分支保持生效：M1 平台骨架可继续，真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM。
+4. ADR-003 dev-only 分支保持生效：M1 平台骨架可继续规划，真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM。
 
 ## Review Notes
 
@@ -86,5 +88,5 @@ M0 技术地基已闭合到可以启动 OCM-04 / M1 readiness pack review 的状
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | pending_review | 待 M0-06 PR review / merge 记录确认 |
-| AI agent | ready_for_review | 已记录当前状态、未闭合 P0、ruleset 现状和旧分支结论 |
+| 项目 owner | accepted | M0 PR #1-#12 均已合入；Gate 1 当前 No-Go / owner inputs pending |
+| AI agent | accepted | 已记录 M0 closeout、Gate 1 handoff、ruleset 现状和旧分支结论 |

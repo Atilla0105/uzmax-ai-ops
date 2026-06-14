@@ -4,6 +4,8 @@ const ORG_ID = "00000000-0000-4000-8000-000000000001";
 const TENANT_A_ID = "10000000-0000-4000-8000-000000000001";
 const TENANT_B_ID = "20000000-0000-4000-8000-000000000002";
 const REQUESTS_PER_TENANT = 1000;
+const DEFAULT_CONCURRENCY = 8;
+const CONCURRENCY_ENV = "UZMAX_RLS_SPIKE_CONCURRENCY";
 const ROLE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 
 const expectedPayloads = {
@@ -28,6 +30,18 @@ function createClient(url = requireEnv("UZMAX_RLS_DATABASE_URL")) {
     },
     log: ["error"]
   });
+}
+
+function getConcurrency() {
+  const rawValue = process.env[CONCURRENCY_ENV];
+  if (!rawValue) return DEFAULT_CONCURRENCY;
+
+  const value = Number.parseInt(rawValue, 10);
+  if (!Number.isSafeInteger(value) || value < 1 || String(value) !== rawValue) {
+    throw new Error(`${CONCURRENCY_ENV} must be a positive integer`);
+  }
+
+  return value;
 }
 
 async function queryTenantItems(prisma, tenantId) {
@@ -107,18 +121,55 @@ async function runNegativeCases(prisma) {
   await assertContextClears(prisma);
 }
 
-async function runConcurrentTenantChecks(prisma) {
-  const tasks = [];
+async function runBounded(tasks, concurrency, handler) {
+  const results = new Array(tasks.length);
+  let nextIndex = 0;
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, tasks.length) },
+    async () => {
+      while (nextIndex < tasks.length) {
+        const index = nextIndex;
+        nextIndex += 1;
+        results[index] = await handler(tasks[index], index);
+      }
+    }
+  );
+
+  await Promise.all(workers);
+  return results;
+}
+
+async function runConcurrentTenantChecks(prisma, concurrency) {
+  const tenantRequests = [];
 
   for (let index = 0; index < REQUESTS_PER_TENANT; index += 1) {
-    tasks.push(queryTenantItems(prisma, TENANT_A_ID));
-    tasks.push(queryTenantItems(prisma, TENANT_B_ID));
+    tenantRequests.push(TENANT_A_ID);
+    tenantRequests.push(TENANT_B_ID);
   }
 
-  const results = await Promise.all(tasks);
+  const results = await runBounded(
+    tenantRequests,
+    concurrency,
+    async (tenantId, index) => {
+      const payloads = await queryTenantItems(prisma, tenantId);
+      return { index, payloads, tenantId };
+    }
+  );
 
-  results.forEach((payloads, index) => {
-    const tenantId = index % 2 === 0 ? TENANT_A_ID : TENANT_B_ID;
+  const perTenant = {
+    [TENANT_A_ID]: 0,
+    [TENANT_B_ID]: 0
+  };
+  let crossTenantRows = 0;
+
+  results.forEach(({ index, payloads, tenantId }) => {
+    const unexpectedRows = payloads.filter(
+      (payload) => !expectedPayloads[tenantId].includes(payload)
+    );
+
+    crossTenantRows += unexpectedRows.length;
+    perTenant[tenantId] += 1;
     assertRows(
       `request ${index} tenant ${tenantId}`,
       payloads,
@@ -126,19 +177,24 @@ async function runConcurrentTenantChecks(prisma) {
     );
   });
 
-  return results.length;
+  return {
+    concurrency,
+    crossTenantRows,
+    perTenant,
+    totalRequests: results.length
+  };
 }
 
 async function main() {
   const prisma = createClient();
   try {
     await runNegativeCases(prisma);
-    const requestCount = await runConcurrentTenantChecks(prisma);
+    const checks = await runConcurrentTenantChecks(prisma, getConcurrency());
     console.log(
       JSON.stringify(
         {
           status: "passed",
-          requestCount,
+          ...checks,
           requestsPerTenant: REQUESTS_PER_TENANT,
           checkedAt: new Date().toISOString()
         },

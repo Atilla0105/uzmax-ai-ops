@@ -52,8 +52,8 @@ Accepted。SQL/RLS 基线已在 Supabase dev 建立并通过 security advisor；
 
 Accepted GitHub Actions evidence:
 
-- Run: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360`
-- Job: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360/job/81285429692`
-- Head SHA: `425fecc8126126c4e1553f60f2a87678226a41dc`
-- SPK-04 result: `status = passed`, 12 / 12 cases passed, `checkedAt = 2026-06-14T14:23:20.321Z`.
+- Run: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501825423`
+- Job: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501825423/job/81286057137`
+- Head SHA: `0105bfd938a04ce1866d12b8f8c8703710026e6a`
+- SPK-04 result: `status = passed`, 12 / 12 cases passed, `checkedAt = 2026-06-14T14:31:57.801Z`.
 - Full CI gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, SPK-04, test, build, size and Playwright.

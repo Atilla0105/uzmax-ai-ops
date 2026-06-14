@@ -11,7 +11,7 @@
 
 ## 当前结论
 
-SPK-04 is accepted. Supabase dev project has the spike-only `spk04` schema, RLS policies, restricted role and 0 security advisor lints. GitHub Actions run `27501621360` verified the full dual-auth chain against real Supabase Auth, RLS and Storage using CI secrets, and the complete repo gate passed.
+SPK-04 is accepted. Supabase dev project has the spike-only `spk04` schema, RLS policies, restricted role and 0 security advisor lints. GitHub Actions run `27501825423` verified the full dual-auth chain against real Supabase Auth, RLS and Storage using CI secrets, and the complete repo gate passed.
 
 Gate 1 is no longer blocked by SPK-04 technical evidence. Other Gate 1 owner decisions and readiness requirements remain outside this evidence.
 
@@ -76,8 +76,8 @@ No customer, order, conversation, knowledge-base or production business schema w
 | Whitespace check | `git diff --check` | passed |
 | Source budget | `git diff --numstat origin/main` | passed; source net LOC 580, changed source files 3, new source files 2 |
 | Local secret inventory | `printenv` name-only check | blocked locally; `UZMAX_RLS_DATABASE_URL`, `UZMAX_SUPABASE_PUBLISHABLE_KEY`, `UZMAX_SUPABASE_SECRET_KEY` are not set in this shell |
-| GitHub Actions SPK-04 | run `27501621360`, job `81285429692` | passed; SPK-04 `status = passed`, 12 / 12 cases passed |
-| GitHub Actions full gate | run `27501621360`, job `81285429692` | passed; format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, SPK-04, test, build, size and Playwright |
+| GitHub Actions SPK-04 | run `27501825423`, job `81286057137` | passed; SPK-04 `status = passed`, 12 / 12 cases passed |
+| GitHub Actions full gate | run `27501825423`, job `81286057137` | passed; format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, SPK-04, test, build, size and Playwright |
 
 ## CI Hook
 
@@ -128,10 +128,10 @@ The harness does not print tokens, signed URLs, API keys or passwords. It logs o
 
 Accepted GitHub Actions evidence:
 
-- Run: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360`
-- Job: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501621360/job/81285429692`
-- Head SHA: `425fecc8126126c4e1553f60f2a87678226a41dc`
-- SPK-04 result: `status = passed`, `checkedAt = 2026-06-14T14:23:20.321Z`.
+- Run: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501825423`
+- Job: `https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27501825423/job/81286057137`
+- Head SHA: `0105bfd938a04ce1866d12b8f8c8703710026e6a`
+- SPK-04 result: `status = passed`, `checkedAt = 2026-06-14T14:31:57.801Z`.
 - SPK-04 cases: `http tenant A whoami + RLS`, `http tenant B whoami + RLS`, `RLS missing context denies by default`, `missing token`, `expired token shape`, `unauthorized tenant switch`, `token refresh rebuilds HTTP/WS context`, `storage signed URL allowed in tenant`, `storage cross-tenant denied`, `storage forged path denied`, `revoked membership denies HTTP`, `revoked membership requires WS reconnect`; all passed.
 - Full CI gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden terms, eval/doc guards, PR shape, Prisma generate, SPK-03, SPK-04, test, build, size and Playwright.
 

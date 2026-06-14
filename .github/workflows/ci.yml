@@ -62,6 +62,15 @@ jobs:
           UZMAX_RLS_SET_ROLE: uzmax_spk03_ci
           UZMAX_RLS_SPIKE_CONCURRENCY: "16"
         run: npm run -w @uzmax/db spike:rls-prisma-pool
+      - name: SPK-04 dual-auth chain spike
+        env:
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=16&pool_timeout=60
+          UZMAX_RLS_SET_ROLE: uzmax_spk04_ci
+          UZMAX_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.UZMAX_SUPABASE_PUBLISHABLE_KEY }}
+          UZMAX_SUPABASE_SECRET_KEY: ${{ secrets.UZMAX_SUPABASE_SECRET_KEY }}
+          UZMAX_SUPABASE_URL: https://enyocaykcgcfcswycujg.supabase.co
+        run: npm run -w @uzmax/authz spike:dual-auth
       - run: npm run test
       - run: npm run build
       - run: npm run size

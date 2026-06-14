@@ -12,16 +12,47 @@ Owner：AI agent 执行 spike、测试和 ADR 草案；项目 owner 确认权限
 
 M0 内 1.5 个工作日。若任一链路无法被真实环境验证，到期按保守失败分支收口。
 
+## Spec 类型
+
+spike
+
 ## 触碰模块/文件
 
-- `packages/authz` 的 AccessContext、guard、权限读取 spike
-- `apps/api` 的 HTTP endpoint 与 WS gateway spike
-- `packages/db` 的 spike-only `tenant_member` / `permission_grant` 最小表
-- Supabase Auth 测试用户与 Supabase Storage 测试 bucket
+- `package-lock.json`
+- `package.json`
+- `packages/authz/package.json`
+- `packages/db/package.json`
+- `packages/authz/src/**`
+- `packages/authz/scripts/**`
+- `packages/db/spikes/**`
+- `.github/workflows/ci.yml`
 - `docs/adr/ADR-002-dual-auth-access-context.md`
-- `docs/evidence/M0/spikes/SPK-04-dual-auth/`
-- CI 中的鉴权集成测试 job
-- 本 spec 文件
+- `docs/evidence/M0/spikes/SPK-04-dual-auth/**`
+- `docs/specs/M0-03-dual-auth-spike.md`
+
+说明/备注：
+
+本 spike 只允许创建 `spk04` schema、spike-only 权限事实表、受限 RLS 测试 role、Auth/Storage 测试对象、AccessContext/guard harness 与 CI job。HTTP endpoint 与 WS gateway 不落正式 NestJS 模块，只在 harness 中模拟同一 guard 链路，避免在 M0 引入业务 API surface。
+
+## 变更预算与路径分类
+
+- path categories：source、generated、lock、config、docs。
+- source 预算：changed source files <= 3、net source LOC <= 600、new source files <= 2。
+- test/generated/lock/config/docs 预计变更：Supabase SDK/Prisma lockfile、root/workspace package config、spike SQL、CI workflow、ADR-002、evidence manifest、本 spec。
+- 新增 source 文件前的 `rg` 搜索结论和归属理由：已检索 `AccessContext`、`whoami`、`websocket`、`signed`、`supabase`、`auth`、`storage`、`spike:dual-auth`；当前 `packages/authz` 只有空包入口，`apps/api` 只有 M0 placeholder，没有既有 guard/HTTP/WS/Auth/Storage harness 可扩展。本 PR 在 `packages/authz/scripts/run-dual-auth-spike.mjs` 新增本 spec 唯一 spike harness，并在 `packages/authz/src/index.ts` 放置未来正式实现可复用的最小 AccessContext 契约。
+- 外部 API/SDK/provider/connector/adapter 依据：Supabase 官方 Auth、JWT、Storage signed URL、Storage access-control 与 RLS 文档；Supabase dev 项目真实 SQL/Storage/Auth 证据。
+- 是否需要例外：无。
+
+## 文档触发检查
+
+- 结果：new doc required。
+- 判断依据：本 PR 新增 ADR-002 与 SPK-04 evidence manifest；不新增正式业务 DTO/OpenAPI，不改变公开环境变量文档。CI secret 位置只记录 secret 名称，不记录值。
+
+## 外部依赖与密钥
+
+- GitHub Actions 需要现有 `UZMAX_RLS_DATABASE_URL`，以及新增 `UZMAX_SUPABASE_PUBLISHABLE_KEY` 与 `UZMAX_SUPABASE_SECRET_KEY`。
+- `UZMAX_SUPABASE_SECRET_KEY` / legacy service_role key 只能用于 CI 或本地后端 harness，不得进入前端、日志、evidence 或 PR 描述。
+- Supabase project URL 固定为 dev 项目 `https://enyocaykcgcfcswycujg.supabase.co`，不是 secret。
 
 ## 前置条件
 
@@ -64,5 +95,5 @@ M0 内 1.5 个工作日。若任一链路无法被真实环境验证，到期按
 
 - J-06：ADR-002 存在，SPK-04 链路测试进入 CI 常驻。
 - K-03：实现 PR 必须引用本 spec 编号。
-- K-04：触碰 `packages/authz`、`apps/api`、`packages/db`，不得与同模块 spec 并行。
+- K-04：触碰 `packages/authz` 与 `packages/db`，HTTP/WS 只在 harness 中模拟，不得与同模块 spec 并行。
 - A-01/A-02/B-01：本 spike 为后续登录、租户授权与 RLS 越权验收提供地基证据，但不交付业务权限 UI。

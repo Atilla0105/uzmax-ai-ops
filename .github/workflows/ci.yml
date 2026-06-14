@@ -59,6 +59,7 @@ jobs:
         env:
           UZMAX_RLS_DATABASE_URL: ${{ secrets.UZMAX_RLS_DATABASE_URL }}
           UZMAX_RLS_SET_ROLE: uzmax_spk03_ci
+          UZMAX_RLS_SPIKE_CONCURRENCY: "16"
         run: npm run -w @uzmax/db spike:rls-prisma-pool
       - run: npm run test
       - run: npm run build

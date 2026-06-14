@@ -8,10 +8,6 @@ const DEFAULT_CONCURRENCY = 4;
 const CONCURRENCY_ENV = "UZMAX_RLS_SPIKE_CONCURRENCY";
 const PROGRESS_INTERVAL = 100;
 const ROLE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
-const TRANSACTION_OPTIONS = {
-  maxWait: 30_000,
-  timeout: 30_000
-};
 
 const expectedPayloads = {
   [TENANT_A_ID]: ["tenant-a-row-1", "tenant-a-row-2"],
@@ -50,10 +46,9 @@ function getConcurrency() {
 }
 
 async function queryTenantItems(prisma, tenantId) {
-  return prisma.$transaction(async (tx) => {
-    await setLocalRole(tx);
-
-    const rows = await tx.$queryRaw`
+  const rows = await runTransaction(
+    prisma,
+    prisma.$queryRaw`
       with app_context as (
         select
           set_config('app.org_id', ${ORG_ID}, true) as org_context,
@@ -63,29 +58,27 @@ async function queryTenantItems(prisma, tenantId) {
       from app_context
       cross join spk03.rls_items
       order by payload asc
-    `;
+    `
+  );
 
-    return rows.map((row) => row.payload);
-  }, TRANSACTION_OPTIONS);
+  return rows.map((row) => row.payload);
 }
 
 async function queryWithoutContext(prisma) {
-  return prisma.$transaction(async (tx) => {
-    await setLocalRole(tx);
-
-    return tx.$queryRaw`
+  return runTransaction(
+    prisma,
+    prisma.$queryRaw`
       select payload
       from spk03.rls_items
       order by payload asc
-    `;
-  }, TRANSACTION_OPTIONS);
+    `
+  );
 }
 
 async function queryWithWrongContext(prisma) {
-  return prisma.$transaction(async (tx) => {
-    await setLocalRole(tx);
-
-    const rows = await tx.$queryRaw`
+  return runTransaction(
+    prisma,
+    prisma.$queryRaw`
       with app_context as (
         select
           set_config('app.org_id', ${ORG_ID}, true) as org_context,
@@ -96,20 +89,27 @@ async function queryWithWrongContext(prisma) {
       cross join spk03.rls_items
       where tenant_id = ${TENANT_B_ID}::uuid
       order by payload asc
-    `;
-
-    return rows;
-  }, TRANSACTION_OPTIONS);
+    `
+  );
 }
 
-async function setLocalRole(tx) {
+async function runTransaction(prisma, operation) {
+  const results = await prisma.$transaction([
+    ...createSetLocalRoleOperations(prisma),
+    operation
+  ]);
+
+  return results[results.length - 1];
+}
+
+function createSetLocalRoleOperations(prisma) {
   const role = process.env.UZMAX_RLS_SET_ROLE;
-  if (!role) return;
+  if (!role) return [];
   if (!ROLE_IDENTIFIER.test(role)) {
     throw new Error(`Unsafe UZMAX_RLS_SET_ROLE value: ${role}`);
   }
 
-  await tx.$executeRawUnsafe(`set local role "${role.replaceAll('"', '""')}"`);
+  return [prisma.$executeRawUnsafe(`set local role "${role.replaceAll('"', '""')}"`)];
 }
 
 async function assertContextClears(prisma) {

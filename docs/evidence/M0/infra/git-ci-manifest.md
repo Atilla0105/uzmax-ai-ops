@@ -37,7 +37,7 @@
 |---|---|---|
 | 当前目录是否为正式 git repo | ready | `.git/` 已创建，`main` 已推送到私有 GitHub repo |
 | 工程 package 配置 | ready | root `package.json` 已定义 workspaces、Node 版本与本地/CI 脚本 |
-| CI 配置 | ready | `.github/workflows/ci.yml` 已配置 format/type/lint/depcruise/jscpd/knip/guards/test/build/size/Playwright；PR #1-#4 与最新 main push CI 通过 |
+| CI 配置 | ready | `.github/workflows/ci.yml` 已配置 format/type/lint/depcruise/jscpd/knip/guards/test/build/size/Playwright；workflow 显式声明 `contents: read`，同一 PR 的旧 CI run 可被新 commit 取消，diff-based guards 按 PR base 或 push before SHA 解析 base；PR #1-#6 与最新 main push CI 通过 |
 | Gate 0 最低输入 | repo_ready__ci_ruleset_ready | repo、CI、PR template、main ruleset 已就绪 |
 
 ## Owner Review / Approval 现状

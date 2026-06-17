@@ -4,40 +4,30 @@ const ROLE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const UUID_TEXT =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export const platformTableNames = {
-  org: "org",
-  tenant: "tenant",
-  orgMember: "org_member",
-  tenantMember: "tenant_member",
-  permissionGrant: "permission_grant"
-} as const;
-
-export const governanceTableNames = {
-  auditLog: "audit_log",
-  configVersion: "config_version"
-} as const;
-
-export const auditEventTypes = {
-  accessContextDenied: "access_context.denied",
-  configVersionRollbackRequested: "config_version.rollback_requested",
-  configVersionSaved: "config_version.saved",
-  permissionGrantChanged: "permission_grant.changed",
-  tenantSwitchAllowed: "tenant_switch.allowed",
-  tenantSwitchDenied: "tenant_switch.denied"
-} as const;
-
-export const configVersionDomains = {
-  businessConfig: "business_config",
-  featureFlag: "feature_flag",
-  templateCopy: "template_copy"
-} as const;
-
-export const configVersionStatuses = {
-  active: "active",
-  archived: "archived",
-  draft: "draft",
-  rolledBack: "rolled_back"
-} as const;
+// prettier-ignore
+export const platformTableNames = values("org", "permission_grant", "org_member", "tenant", "tenant_member");
+export const governanceTableNames = values("audit_log", "config_version");
+// prettier-ignore
+export const channelConversationTableNames = values("channel_connection", "conversation", "message", "telegram_update_dedupe", "ticket", "ticket_event");
+// prettier-ignore
+export const auditEventTypes = { accessContextDenied: "access_context.denied", configVersionRollbackRequested: "config_version.rollback_requested", configVersionSaved: "config_version.saved", permissionGrantChanged: "permission_grant.changed", tenantSwitchAllowed: "tenant_switch.allowed", tenantSwitchDenied: "tenant_switch.denied" } as const;
+// prettier-ignore
+export const configVersionDomains = values("business_config", "feature_flag", "template_copy");
+// prettier-ignore
+export const configVersionStatuses = { active: "active", archived: "archived", draft: "draft", rolledBack: "rolled_back" } as const;
+// prettier-ignore
+export const channelConnectionStatuses = values("active", "archived", "degraded", "disabled");
+// prettier-ignore
+export const conversationStatuses = values("closed", "handoff", "open", "pending_handoff");
+export const messageDirections = values("inbound", "internal", "outbound");
+// prettier-ignore
+export const messageContentKinds = values("callback", "image", "system", "text", "unsupported", "voice");
+// prettier-ignore
+export const messageDeliveryStatuses = values("cancelled", "failed", "queued", "received", "sent");
+// prettier-ignore
+export const ticketStatuses = values("claimed", "closed", "escalated", "locked", "open", "reopened");
+// prettier-ignore
+export const ticketEventTypes = values("claimed", "closed", "created", "escalated", "locked", "note_added", "reopened", "status_changed");
 
 export const rlsContextKeys = {
   orgId: "app.org_id",
@@ -46,115 +36,92 @@ export const rlsContextKeys = {
 
 export const platformRuntimeRole = "uzmax_app_runtime";
 
+type ValueOf<T> = T[keyof T];
+type IdScoped = RlsTenantContext & { id: string };
+// prettier-ignore
+type OptionalVersionRefs = { afterVersionId?: string; beforeVersionId?: string };
+
 export type RlsTenantContext = { orgId: string; tenantId: string };
-
-export type RlsContextSetting = {
-  key: (typeof rlsContextKeys)[keyof typeof rlsContextKeys];
-  value: string;
-};
-
-export type RlsTransactionContext = {
-  roleSql: string;
-  settings: readonly RlsContextSetting[];
-};
-
-export type AuditEventType = (typeof auditEventTypes)[keyof typeof auditEventTypes];
-
-export type ConfigVersionDomain =
-  (typeof configVersionDomains)[keyof typeof configVersionDomains];
-
-export type ConfigVersionStatus =
-  (typeof configVersionStatuses)[keyof typeof configVersionStatuses];
-
-export type AuditLogContent = {
-  after: Record<string, unknown> | null;
-  before: Record<string, unknown> | null;
-};
-
-export type AuditLogContract = {
-  action: string;
-  actorUserId: string;
-  afterVersionId?: string;
-  beforeVersionId?: string;
-  content: AuditLogContent;
-  eventType: AuditEventType;
-  module: string;
-  objectId?: string;
-  objectType: string;
-  occurredAt: string;
-  orgId: string;
-  tenantId: string;
-  traceId?: string;
-};
-
-export type ConfigVersionContract = {
+// prettier-ignore
+export type RlsContextSetting = { key: (typeof rlsContextKeys)[keyof typeof rlsContextKeys]; value: string };
+// prettier-ignore
+export type RlsTransactionContext = { roleSql: string; settings: readonly RlsContextSetting[] };
+export type AuditEventType = ValueOf<typeof auditEventTypes>;
+export type ConfigVersionDomain = ValueOf<typeof configVersionDomains>;
+export type ConfigVersionStatus = ValueOf<typeof configVersionStatuses>;
+// prettier-ignore
+export type AuditLogContent = { after: Record<string, unknown> | null; before: Record<string, unknown> | null };
+export type AuditLogContract = RlsTenantContext &
+  OptionalVersionRefs &
+  Record<"action" | "actorUserId" | "module" | "objectType" | "occurredAt", string> & {
+    content: AuditLogContent;
+    eventType: AuditEventType;
+    objectId?: string;
+    traceId?: string;
+  };
+export type ConfigVersionContract = IdScoped & {
   activatedAt?: string;
-  createdAt: string;
-  createdByUserId: string;
   domain: ConfigVersionDomain;
-  id: string;
-  key: string;
-  orgId: string;
   payload: Record<string, unknown>;
   previousVersionId?: string;
   reason?: string;
   rollbackOfVersionId?: string;
   status: ConfigVersionStatus;
-  tenantId: string;
   version: number;
-};
-
-export type ConfigVersionAuditInput = {
-  action: "rollback_requested" | "save";
-  actorUserId: string;
+} & Record<"createdAt" | "createdByUserId" | "key", string>;
+export type ConfigVersionAuditInput = RlsTenantContext & {
   beforeVersionId?: string;
   configVersion: ConfigVersionContract;
   eventType:
     | typeof auditEventTypes.configVersionRollbackRequested
     | typeof auditEventTypes.configVersionSaved;
-  orgId: string;
-  tenantId: string;
   traceId?: string;
-};
-
+} & Record<"action" | "actorUserId", string>;
 export type ConfigVersionDraftInput = Omit<
   ConfigVersionContract,
   "createdAt" | "createdByUserId" | "id" | "orgId" | "tenantId"
-> & {
-  versionId: string;
-};
-
-export type PermissionGrantAuditInput = {
-  actorUserId: string;
-  after: Record<string, unknown>;
-  before: Record<string, unknown>;
-  orgId: string;
-  permission: string;
-  targetUserId: string;
-  tenantId: string;
-  traceId?: string;
-};
-
-export type TenantSwitchAuditInput = {
-  actorUserId: string;
-  membershipVersion?: number;
-  orgId: string;
-  reason?: string;
-  targetTenantId?: string;
-  tenantId: string;
+> & { versionId: string };
+// prettier-ignore
+export type PermissionGrantAuditInput = RlsTenantContext & { after: Record<string, unknown>; before: Record<string, unknown>; traceId?: string } & Record<"actorUserId" | "permission" | "targetUserId", string>;
+// prettier-ignore
+export type TenantSwitchAuditInput = RlsTenantContext & { membershipVersion?: number; reason?: string; targetTenantId?: string } & { actorUserId: string };
+export type ConversationContract = IdScoped &
+  Record<
+    "channelConnectionId" | "externalConversationRef" | "participantExternalRef",
+    string
+  > & {
+    status: ValueOf<typeof conversationStatuses>;
+    unreadCount: number;
+    lastMessageAt?: string;
+  };
+export type MessageContract = IdScoped &
+  Record<"channelConnectionId" | "conversationId" | "occurredAt", string> & {
+    content: Record<string, unknown>;
+    contentKind: ValueOf<typeof messageContentKinds>;
+    deliveryStatus: ValueOf<typeof messageDeliveryStatuses>;
+    direction: ValueOf<typeof messageDirections>;
+    externalMessageRef?: string;
+  };
+export type TicketContract = IdScoped & {
+  assignedUserId?: string;
+  closedAt?: string;
+  conversationId: string;
+  lockedByUserId?: string;
+  priority: number;
+  slaDueAt?: string;
+  status: ValueOf<typeof ticketStatuses>;
+  summary?: string;
 };
 
 export function assertSafeDatabaseRole(role: string): string {
   if (!ROLE_IDENTIFIER.test(role)) {
     throw new Error(`Unsafe database role identifier: ${role}`);
   }
-
   return role;
 }
 
 export function quoteDatabaseIdentifier(identifier: string): string {
-  const safeIdentifier = assertSafeDatabaseRole(identifier);
-  return `"${safeIdentifier.replaceAll('"', '""')}"`;
+  return `"${assertSafeDatabaseRole(identifier).replaceAll('"', '""')}"`;
 }
 
 export function createSetLocalRoleSql(role = platformRuntimeRole): string {
@@ -174,7 +141,6 @@ export function createRlsTransactionContext(
   if (!hasCompleteRlsTenantContext(context)) {
     throw new Error("RLS tenant context requires orgId and tenantId");
   }
-
   return {
     roleSql: createSetLocalRoleSql(role),
     settings: [
@@ -186,27 +152,16 @@ export function createRlsTransactionContext(
 
 export function createAuditLogContract(input: AuditLogContract): AuditLogContract {
   return {
+    ...scoped(input, "audit"),
     action: requireText(input.action, "audit action"),
     actorUserId: requireUuid(input.actorUserId, "audit actorUserId"),
-    ...(input.afterVersionId
-      ? { afterVersionId: requireUuid(input.afterVersionId, "afterVersionId") }
-      : {}),
-    ...(input.beforeVersionId
-      ? { beforeVersionId: requireUuid(input.beforeVersionId, "beforeVersionId") }
-      : {}),
+    ...optionalUuidFields(input, ["afterVersionId", "beforeVersionId"]),
     content: requireAuditContent(input.content),
-    eventType: requireAllowedValue<AuditEventType>(
-      input.eventType,
-      Object.values(auditEventTypes),
-      "audit eventType"
-    ),
+    eventType: requireEnumValue(input.eventType, auditEventTypes, "audit eventType"),
     module: requireText(input.module, "audit module"),
-    ...(input.objectId ? { objectId: requireText(input.objectId, "objectId") } : {}),
+    ...optionalTextFields(input, ["objectId", "traceId"]),
     objectType: requireText(input.objectType, "audit objectType"),
-    occurredAt: input.occurredAt || new Date().toISOString(),
-    orgId: requireUuid(input.orgId, "audit orgId"),
-    tenantId: requireUuid(input.tenantId, "audit tenantId"),
-    ...(input.traceId ? { traceId: requireText(input.traceId, "traceId") } : {})
+    occurredAt: input.occurredAt || new Date().toISOString()
   };
 }
 
@@ -214,37 +169,25 @@ export function createConfigVersionContract(
   input: ConfigVersionContract
 ): ConfigVersionContract {
   return {
-    ...(input.activatedAt ? { activatedAt: input.activatedAt } : {}),
+    ...scoped(input, "config"),
+    ...optionalTextFields(input, ["activatedAt", "reason"]),
+    ...optionalUuidFields(input, ["previousVersionId", "rollbackOfVersionId"]),
     createdAt: input.createdAt || new Date().toISOString(),
     createdByUserId: requireUuid(input.createdByUserId, "createdByUserId"),
-    domain: requireAllowedValue<ConfigVersionDomain>(
+    domain: requireEnumValue(
       input.domain,
-      Object.values(configVersionDomains),
+      configVersionDomains,
       "config version domain"
     ),
     id: requireUuid(input.id, "config version id"),
     key: requireText(input.key, "config key"),
-    orgId: requireUuid(input.orgId, "config orgId"),
     payload: requireRecord(input.payload, "config payload"),
-    ...(input.previousVersionId
-      ? { previousVersionId: requireUuid(input.previousVersionId, "previousVersionId") }
-      : {}),
-    ...(input.reason ? { reason: requireText(input.reason, "reason") } : {}),
-    ...(input.rollbackOfVersionId
-      ? {
-          rollbackOfVersionId: requireUuid(
-            input.rollbackOfVersionId,
-            "rollbackOfVersionId"
-          )
-        }
-      : {}),
-    status: requireAllowedValue<ConfigVersionStatus>(
+    status: requireEnumValue(
       input.status,
-      Object.values(configVersionStatuses),
+      configVersionStatuses,
       "config version status"
     ),
-    tenantId: requireUuid(input.tenantId, "config tenantId"),
-    version: requirePositiveInteger(input.version, "config version")
+    version: requireInteger(input.version, "config version", 1)
   };
 }
 
@@ -254,7 +197,7 @@ export function createConfigVersionAuditContract(
   return createAuditLogContract({
     action: input.action,
     actorUserId: input.actorUserId,
-    ...(input.beforeVersionId ? { beforeVersionId: input.beforeVersionId } : {}),
+    ...optionalUuidFields(input, ["beforeVersionId"]),
     afterVersionId: input.configVersion.id,
     content: {
       after: {
@@ -273,7 +216,7 @@ export function createConfigVersionAuditContract(
     occurredAt: new Date().toISOString(),
     orgId: input.orgId,
     tenantId: input.tenantId,
-    ...(input.traceId ? { traceId: input.traceId } : {})
+    ...optionalTextFields(input, ["traceId"])
   });
 }
 
@@ -302,7 +245,7 @@ export function createPermissionGrantAuditContract(
     occurredAt: new Date().toISOString(),
     orgId: input.orgId,
     tenantId: input.tenantId,
-    ...(input.traceId ? { traceId: input.traceId } : {})
+    ...optionalTextFields(input, ["traceId"])
   });
 }
 
@@ -340,41 +283,110 @@ export function createTenantSwitchAuditContract(
   });
 }
 
+export function createConversationContract(
+  input: ConversationContract
+): ConversationContract {
+  return {
+    ...scoped(input, "conversation"),
+    channelConnectionId: requireUuid(
+      input.channelConnectionId,
+      "conversation channelConnectionId"
+    ),
+    externalConversationRef: requireText(
+      input.externalConversationRef,
+      "externalConversationRef"
+    ),
+    id: requireUuid(input.id, "conversation id"),
+    ...optionalTextFields(input, ["lastMessageAt"]),
+    participantExternalRef: requireText(
+      input.participantExternalRef,
+      "participantExternalRef"
+    ),
+    status: requireEnumValue(input.status, conversationStatuses, "conversation status"),
+    unreadCount: requireInteger(input.unreadCount, "unreadCount", 0)
+  };
+}
+
+export function createMessageContract(input: MessageContract): MessageContract {
+  return {
+    ...scoped(input, "message"),
+    channelConnectionId: requireUuid(
+      input.channelConnectionId,
+      "message channelConnectionId"
+    ),
+    content: requireRecord(input.content, "message content"),
+    contentKind: requireEnumValue(
+      input.contentKind,
+      messageContentKinds,
+      "message contentKind"
+    ),
+    conversationId: requireUuid(input.conversationId, "message conversationId"),
+    deliveryStatus: requireEnumValue(
+      input.deliveryStatus,
+      messageDeliveryStatuses,
+      "message deliveryStatus"
+    ),
+    direction: requireEnumValue(
+      input.direction,
+      messageDirections,
+      "message direction"
+    ),
+    ...optionalTextFields(input, ["externalMessageRef"]),
+    id: requireUuid(input.id, "message id"),
+    occurredAt: requireText(input.occurredAt, "occurredAt")
+  };
+}
+
+export function createTicketContract(input: TicketContract): TicketContract {
+  return {
+    ...scoped(input, "ticket"),
+    ...optionalUuidFields(input, ["assignedUserId", "lockedByUserId"]),
+    ...optionalTextFields(input, ["closedAt", "slaDueAt", "summary"]),
+    conversationId: requireUuid(input.conversationId, "ticket conversationId"),
+    id: requireUuid(input.id, "ticket id"),
+    priority: requireInteger(input.priority, "ticket priority", 1, 5),
+    status: requireEnumValue(input.status, ticketStatuses, "ticket status")
+  };
+}
+
 function requireText(value: string | undefined, name: string): string {
   const trimmed = value?.trim();
-  if (!trimmed) {
-    throw new Error(`${name} is required`);
-  }
-
+  if (!trimmed) throw new Error(`${name} is required`);
   return trimmed;
 }
 
 function requireUuid(value: string | undefined, name: string): string {
   const text = requireText(value, name);
-  if (!UUID_TEXT.test(text)) {
-    throw new Error(`${name} must be a UUID`);
-  }
-
+  if (!UUID_TEXT.test(text)) throw new Error(`${name} must be a UUID`);
   return text;
 }
 
-function requireAllowedValue<T extends string>(
+function requireEnumValue<T extends string>(
   value: string,
-  allowed: readonly T[],
+  source: Record<string, T>,
   name: string
 ): T {
-  if (!allowed.includes(value as T)) {
+  if (!Object.values(source).includes(value as T))
     throw new Error(`${name} is invalid`);
-  }
-
   return value as T;
 }
 
-function requirePositiveInteger(value: number, name: string): number {
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`${name} must be a positive integer`);
-  }
+function scoped(input: RlsTenantContext, name: string): RlsTenantContext {
+  return {
+    orgId: requireUuid(input.orgId, `${name} orgId`),
+    tenantId: requireUuid(input.tenantId, `${name} tenantId`)
+  };
+}
 
+function requireInteger(
+  value: number,
+  name: string,
+  minimum: number,
+  maximum = Number.MAX_SAFE_INTEGER
+): number {
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    throw new Error(`${name} must be an integer from ${minimum} to ${maximum}`);
+  }
   return value;
 }
 
@@ -393,6 +405,42 @@ function requireRecord(
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error(`${name} must be an object`);
   }
-
   return value;
+}
+
+function values<const T extends readonly string[]>(
+  ...items: T
+): Readonly<Record<string, T[number]>> {
+  return Object.fromEntries(items.map((item) => [camelKey(item), item]));
+}
+
+function camelKey(value: string): string {
+  return value.replace(/[_.]([a-z])/g, (_match, letter: string) =>
+    letter.toUpperCase()
+  );
+}
+
+function optionalTextFields(
+  input: object,
+  keys: readonly string[]
+): Record<string, string> {
+  return optionalFields(input, keys, requireText);
+}
+
+function optionalUuidFields(
+  input: object,
+  keys: readonly string[]
+): Record<string, string> {
+  return optionalFields(input, keys, requireUuid);
+}
+
+function optionalFields(
+  input: object,
+  keys: readonly string[],
+  validate: (value: string | undefined, name: string) => string
+): Record<string, string> {
+  const source = input as Record<string, string | undefined>;
+  return Object.fromEntries(
+    keys.flatMap((key) => (source[key] ? [[key, validate(source[key], key)]] : []))
+  );
 }

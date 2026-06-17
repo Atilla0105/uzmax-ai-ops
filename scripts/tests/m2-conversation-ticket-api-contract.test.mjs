@@ -126,6 +126,16 @@ describe("M2-03 conversation handoff ticket API contract", () => {
       type: "escalate"
     });
     assert.equal(ticket.status, "escalated");
+    assert.throws(
+      () =>
+        handoff.module.applyTicketAction(ticket, {
+          actorUserId: USER_B,
+          now: NOW,
+          reason: "spoofed reopen should not bypass lock",
+          type: "reopen"
+        }),
+      /ticket is locked by another user/
+    );
 
     ticket = handoff.module.applyTicketAction(ticket, {
       actorUserId: USER_A,
@@ -146,6 +156,24 @@ describe("M2-03 conversation handoff ticket API contract", () => {
     });
     assert.equal(ticket.status, "reopened");
     assert.equal(ticket.closedAt, undefined);
+
+    assert.throws(
+      () =>
+        handoff.module.applyTicketAction(ticket, {
+          actorUserId: USER_A,
+          now: NOW,
+          type: "invalid-action"
+        }),
+      /ticket action type is invalid/
+    );
+    assert.throws(
+      () =>
+        handoff.module.applyTicketAction(ticket, {
+          actorUserId: USER_A,
+          now: NOW
+        }),
+      /ticket action type is invalid/
+    );
   });
 
   it("lists and updates conversations only inside the selected tenant context", async () => {
@@ -229,6 +257,22 @@ describe("M2-03 conversation handoff ticket API contract", () => {
           ticketId: handoffResult.ticket.id,
           type: "lock"
         }),
+      /ticket is locked by another user/
+    );
+
+    const controller = new api.module.ConversationTicketController(service);
+    await assert.rejects(
+      () =>
+        controller.applyTicketAction(
+          { accessContext: contextFor(USER_B, TENANT_A, ["ticket:write"]) },
+          handoffResult.ticket.id,
+          {
+            actorUserId: USER_A,
+            note: "spoofed lock owner should not be trusted",
+            now: NOW,
+            type: "note"
+          }
+        ),
       /ticket is locked by another user/
     );
 

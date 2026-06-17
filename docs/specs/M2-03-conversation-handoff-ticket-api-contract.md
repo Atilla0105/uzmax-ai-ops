@@ -74,7 +74,7 @@ updated
 - Conversation list/detail contract 只返回当前 `AccessContext.selectedTenantId` 可见数据；不信任请求体中的 tenant 覆盖。
 - Conversation filters/status values 对齐 M2-01 DB contract，覆盖 `open`、`pending_handoff`、`handoff`、`closed` 和 unread/unanswered/SLA risk filters。
 - Handoff/ticket create contract 包含 summary、suggested action 与 SLA policy/config placeholder 字段；SLA 不由 LLM 或代码做客户承诺，报价/订单状态不由 LLM 判断。
-- Ticket actions contract 覆盖 claim/lock/note/escalate/close/reopen；多人抢答时 lock ownership 冲突必须 fail closed。
+- Ticket actions contract 覆盖 claim/lock/note/escalate/close/reopen；多人抢答时 lock ownership 冲突必须 fail closed，包括 locked ticket 的 reopen；API 边界必须使用 `AccessContext.userId` 作为 action actor，不能信任 body `actorUserId`；未知或缺失 action `type` 必须 fail closed，不能落到 reopen。
 - 人工接管后 conversation 标记 `pending_handoff`/AI suspended；在途 AI message 只能标记 `withdrawn` 或 `pending_cancel`，不得进入发送状态。
 - 本 PR 不触碰 DB schema/migrations、admin、worker、engine、channels、lockfile、configs、generated files 或 raw payload/customer samples。
 

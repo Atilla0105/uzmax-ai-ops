@@ -113,43 +113,45 @@ export function createTicketState(input: TicketState): TicketState {
 }
 
 export function applyTicketAction(ticket: TicketState, action: TicketAction) {
-  if (action.type !== "reopen") assertLockOwner(ticket, action.actorUserId);
-
-  if (action.type === "claim") {
-    return nextTicket(ticket, action, {
-      assignedUserId: action.actorUserId,
-      status: "claimed"
-    });
+  switch (action.type) {
+    case "claim":
+      assertLockOwner(ticket, action.actorUserId);
+      return nextTicket(ticket, action, {
+        assignedUserId: action.actorUserId,
+        status: "claimed"
+      });
+    case "lock":
+      assertLockOwner(ticket, action.actorUserId);
+      return nextTicket(ticket, action, {
+        lockedByUserId: action.actorUserId,
+        status: "locked"
+      });
+    case "note":
+      assertLockOwner(ticket, action.actorUserId);
+      return nextTicket(ticket, action, {});
+    case "escalate":
+      assertLockOwner(ticket, action.actorUserId);
+      return nextTicket(ticket, action, { status: "escalated" });
+    case "close":
+      assertLockOwner(ticket, action.actorUserId);
+      return nextTicket(ticket, action, {
+        closeDestination: requireText(action.destination, "close destination"),
+        closeResult: requireText(action.result, "close result"),
+        closedAt: action.now ?? new Date().toISOString(),
+        lockedByUserId: undefined,
+        status: "closed"
+      });
+    case "reopen":
+      assertLockOwner(ticket, action.actorUserId);
+      return nextTicket(ticket, action, {
+        closeDestination: undefined,
+        closeResult: undefined,
+        closedAt: undefined,
+        status: "reopened"
+      });
+    default:
+      throw new Error("ticket action type is invalid");
   }
-
-  if (action.type === "lock") {
-    return nextTicket(ticket, action, {
-      lockedByUserId: action.actorUserId,
-      status: "locked"
-    });
-  }
-
-  if (action.type === "note") return nextTicket(ticket, action, {});
-  if (action.type === "escalate") {
-    return nextTicket(ticket, action, { status: "escalated" });
-  }
-
-  if (action.type === "close") {
-    return nextTicket(ticket, action, {
-      closeDestination: requireText(action.destination, "close destination"),
-      closeResult: requireText(action.result, "close result"),
-      closedAt: action.now ?? new Date().toISOString(),
-      lockedByUserId: undefined,
-      status: "closed"
-    });
-  }
-
-  return nextTicket(ticket, action, {
-    closeDestination: undefined,
-    closeResult: undefined,
-    closedAt: undefined,
-    status: "reopened"
-  });
 }
 
 function cancelInFlightAiMessages(

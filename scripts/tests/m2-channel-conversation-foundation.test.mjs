@@ -11,7 +11,7 @@ const migration = readOptional(
   "packages/db/migrations/0003_channel_conversation_ticket_foundation.sql"
 );
 const contracts = read("docs/contracts/README.md");
-const db = await importTypescriptModule("packages/db/src/index.ts");
+const db = await importDbSource();
 
 const ORG_UUID = "11111111-1111-4111-8111-111111111111";
 const TENANT_UUID = "22222222-2222-4222-8222-222222222222";
@@ -74,14 +74,20 @@ describe("M2-01 channel conversation DB foundation", () => {
       );
 
       for (const action of ["select", "insert", "update"]) {
-        const policy = policyFor(table, action);
-        assert.match(policy, /current_setting\('app\.org_id', true\)/);
-        assert.match(policy, /current_setting\('app\.tenant_id', true\)/);
-        assert.match(policy, /nullif\(current_setting\('app\.org_id', true\), ''\)/);
-        assert.match(policy, /nullif\(current_setting\('app\.tenant_id', true\), ''\)/);
+        assertPolicyGeneratedFor(table, action);
       }
     }
 
+    assert.match(migration, /tenant_scope_predicate text := \$predicate\$/);
+    assert.match(migration, /current_setting\('app\.org_id', true\)/);
+    assert.match(migration, /current_setting\('app\.tenant_id', true\)/);
+    assert.match(migration, /nullif\(current_setting\('app\.org_id', true\), ''\)/);
+    assert.match(migration, /nullif\(current_setting\('app\.tenant_id', true\), ''\)/);
+    assert.match(migration, /when 'insert' then format\('with check \(%s\)'/);
+    assert.match(
+      migration,
+      /when 'update' then format\(\s*'using \(%s\) with check \(%s\)'/
+    );
     assert.match(migration, /telegram_update_dedupe_identity_unique/);
     assert.match(migration, /conversation_external_ref_unique/);
     assert.match(migration, /ticket_event_payload_object/);
@@ -178,25 +184,24 @@ function readOptional(relativePath) {
   return existsSync(absolutePath) ? readFileSync(absolutePath, "utf8") : "";
 }
 
-function policyFor(table, action) {
-  const policyName = `channel_conversation_${table}_${action}_tenant_scope`;
-  const pattern = new RegExp(`create policy ${policyName}[\\s\\S]*?\\n  \\);`);
-  const match = migration.match(pattern);
-  assert.ok(match, `missing ${action} policy for ${table}`);
-  const expectedClause = action === "select" ? "using" : "with check";
-  assert.match(match[0], new RegExp(expectedClause.replace(" ", "\\s+")));
-  return match[0];
+function assertPolicyGeneratedFor(table, action) {
+  assert.match(migration, new RegExp(`'${table}'`));
+  assert.match(migration, new RegExp(`'${action}'`));
+  assert.match(
+    migration,
+    /'channel_conversation_%s_%s_tenant_scope'[\s\S]*table_name[\s\S]*action_name/
+  );
+  assert.match(migration, /'create policy %I on %I for %s to uzmax_app_runtime %s'/);
 }
 
-async function importTypescriptModule(relativePath) {
-  const source = read(relativePath);
-  const { outputText } = ts.transpileModule(source, {
+async function importDbSource() {
+  const outputText = ts.transpileModule(read("packages/db/src/index.ts"), {
     compilerOptions: {
       module: ts.ModuleKind.ES2022,
       target: ts.ScriptTarget.ES2023
     },
-    fileName: relativePath
-  });
+    fileName: "packages/db/src/index.ts"
+  }).outputText;
   const encoded = Buffer.from(outputText, "utf8").toString("base64");
   return import(`data:text/javascript;base64,${encoded}`);
 }

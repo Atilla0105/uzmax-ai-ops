@@ -33,7 +33,6 @@ export const rlsContextKeys = {
   orgId: "app.org_id",
   tenantId: "app.tenant_id"
 } as const;
-
 export const platformRuntimeRole = "uzmax_app_runtime";
 
 type ValueOf<T> = T[keyof T];
@@ -85,33 +84,12 @@ export type ConfigVersionDraftInput = Omit<
 export type PermissionGrantAuditInput = RlsTenantContext & { after: Record<string, unknown>; before: Record<string, unknown>; traceId?: string } & Record<"actorUserId" | "permission" | "targetUserId", string>;
 // prettier-ignore
 export type TenantSwitchAuditInput = RlsTenantContext & { membershipVersion?: number; reason?: string; targetTenantId?: string } & { actorUserId: string };
-export type ConversationContract = IdScoped &
-  Record<
-    "channelConnectionId" | "externalConversationRef" | "participantExternalRef",
-    string
-  > & {
-    status: ValueOf<typeof conversationStatuses>;
-    unreadCount: number;
-    lastMessageAt?: string;
-  };
-export type MessageContract = IdScoped &
-  Record<"channelConnectionId" | "conversationId" | "occurredAt", string> & {
-    content: Record<string, unknown>;
-    contentKind: ValueOf<typeof messageContentKinds>;
-    deliveryStatus: ValueOf<typeof messageDeliveryStatuses>;
-    direction: ValueOf<typeof messageDirections>;
-    externalMessageRef?: string;
-  };
-export type TicketContract = IdScoped & {
-  assignedUserId?: string;
-  closedAt?: string;
-  conversationId: string;
-  lockedByUserId?: string;
-  priority: number;
-  slaDueAt?: string;
-  status: ValueOf<typeof ticketStatuses>;
-  summary?: string;
-};
+// prettier-ignore
+export type ConversationContract = IdScoped & Record<"channelConnectionId" | "externalConversationRef" | "participantExternalRef", string> & { lastMessageAt?: string; status: ValueOf<typeof conversationStatuses>; unreadCount: number };
+// prettier-ignore
+export type MessageContract = IdScoped & Record<"channelConnectionId" | "conversationId" | "occurredAt", string> & { content: Record<string, unknown>; contentKind: ValueOf<typeof messageContentKinds>; deliveryStatus: ValueOf<typeof messageDeliveryStatuses>; direction: ValueOf<typeof messageDirections>; externalMessageRef?: string };
+// prettier-ignore
+export type TicketContract = IdScoped & { assignedUserId?: string; closedAt?: string; conversationId: string; lockedByUserId?: string; priority: number; slaDueAt?: string; status: ValueOf<typeof ticketStatuses>; summary?: string };
 
 export function assertSafeDatabaseRole(role: string): string {
   if (!ROLE_IDENTIFIER.test(role)) {
@@ -283,54 +261,30 @@ export function createTenantSwitchAuditContract(
   });
 }
 
-export function createConversationContract(
-  input: ConversationContract
-): ConversationContract {
+// prettier-ignore
+export function createConversationContract(input: ConversationContract): ConversationContract {
   return {
     ...scoped(input, "conversation"),
-    channelConnectionId: requireUuid(
-      input.channelConnectionId,
-      "conversation channelConnectionId"
-    ),
-    externalConversationRef: requireText(
-      input.externalConversationRef,
-      "externalConversationRef"
-    ),
+    channelConnectionId: requireUuid(input.channelConnectionId, "conversation channelConnectionId"),
+    externalConversationRef: requireText(input.externalConversationRef, "externalConversationRef"),
     id: requireUuid(input.id, "conversation id"),
     ...optionalTextFields(input, ["lastMessageAt"]),
-    participantExternalRef: requireText(
-      input.participantExternalRef,
-      "participantExternalRef"
-    ),
+    participantExternalRef: requireText(input.participantExternalRef, "participantExternalRef"),
     status: requireEnumValue(input.status, conversationStatuses, "conversation status"),
     unreadCount: requireInteger(input.unreadCount, "unreadCount", 0)
   };
 }
 
+// prettier-ignore
 export function createMessageContract(input: MessageContract): MessageContract {
   return {
     ...scoped(input, "message"),
-    channelConnectionId: requireUuid(
-      input.channelConnectionId,
-      "message channelConnectionId"
-    ),
+    channelConnectionId: requireUuid(input.channelConnectionId, "message channelConnectionId"),
     content: requireRecord(input.content, "message content"),
-    contentKind: requireEnumValue(
-      input.contentKind,
-      messageContentKinds,
-      "message contentKind"
-    ),
+    contentKind: requireEnumValue(input.contentKind, messageContentKinds, "message contentKind"),
     conversationId: requireUuid(input.conversationId, "message conversationId"),
-    deliveryStatus: requireEnumValue(
-      input.deliveryStatus,
-      messageDeliveryStatuses,
-      "message deliveryStatus"
-    ),
-    direction: requireEnumValue(
-      input.direction,
-      messageDirections,
-      "message direction"
-    ),
+    deliveryStatus: requireEnumValue(input.deliveryStatus, messageDeliveryStatuses, "message deliveryStatus"),
+    direction: requireEnumValue(input.direction, messageDirections, "message direction"),
     ...optionalTextFields(input, ["externalMessageRef"]),
     id: requireUuid(input.id, "message id"),
     occurredAt: requireText(input.occurredAt, "occurredAt")

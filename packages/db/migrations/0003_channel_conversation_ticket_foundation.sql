@@ -238,257 +238,54 @@ alter table message force row level security;
 alter table ticket force row level security;
 alter table ticket_event force row level security;
 
-drop policy if exists channel_conversation_channel_connection_select_tenant_scope on channel_connection;
-create policy channel_conversation_channel_connection_select_tenant_scope
-  on channel_connection
-  for select
-  to uzmax_app_runtime
-  using (
+do $$
+declare
+  action_name text;
+  policy_clause text;
+  policy_name text;
+  table_name text;
+  tenant_scope_predicate text := $predicate$
     org_id::text = current_setting('app.org_id', true)
     and tenant_id::text = current_setting('app.tenant_id', true)
     and nullif(current_setting('app.org_id', true), '') is not null
     and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
+  $predicate$;
+begin
+  foreach table_name in array array[
+    'channel_connection',
+    'telegram_update_dedupe',
+    'conversation',
+    'message',
+    'ticket',
+    'ticket_event'
+  ] loop
+    foreach action_name in array array['select', 'insert', 'update'] loop
+      policy_name := format(
+        'channel_conversation_%s_%s_tenant_scope',
+        table_name,
+        action_name
+      );
+      policy_clause := case action_name
+        when 'insert' then format('with check (%s)', tenant_scope_predicate)
+        when 'update' then format(
+          'using (%s) with check (%s)',
+          tenant_scope_predicate,
+          tenant_scope_predicate
+        )
+        else format('using (%s)', tenant_scope_predicate)
+      end;
 
-drop policy if exists channel_conversation_channel_connection_insert_tenant_scope on channel_connection;
-create policy channel_conversation_channel_connection_insert_tenant_scope
-  on channel_connection
-  for insert
-  to uzmax_app_runtime
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_channel_connection_update_tenant_scope on channel_connection;
-create policy channel_conversation_channel_connection_update_tenant_scope
-  on channel_connection
-  for update
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  )
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_telegram_update_dedupe_select_tenant_scope on telegram_update_dedupe;
-create policy channel_conversation_telegram_update_dedupe_select_tenant_scope
-  on telegram_update_dedupe
-  for select
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_telegram_update_dedupe_insert_tenant_scope on telegram_update_dedupe;
-create policy channel_conversation_telegram_update_dedupe_insert_tenant_scope
-  on telegram_update_dedupe
-  for insert
-  to uzmax_app_runtime
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_telegram_update_dedupe_update_tenant_scope on telegram_update_dedupe;
-create policy channel_conversation_telegram_update_dedupe_update_tenant_scope
-  on telegram_update_dedupe
-  for update
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  )
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_conversation_select_tenant_scope on conversation;
-create policy channel_conversation_conversation_select_tenant_scope
-  on conversation
-  for select
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_conversation_insert_tenant_scope on conversation;
-create policy channel_conversation_conversation_insert_tenant_scope
-  on conversation
-  for insert
-  to uzmax_app_runtime
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_conversation_update_tenant_scope on conversation;
-create policy channel_conversation_conversation_update_tenant_scope
-  on conversation
-  for update
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  )
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_message_select_tenant_scope on message;
-create policy channel_conversation_message_select_tenant_scope
-  on message
-  for select
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_message_insert_tenant_scope on message;
-create policy channel_conversation_message_insert_tenant_scope
-  on message
-  for insert
-  to uzmax_app_runtime
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_message_update_tenant_scope on message;
-create policy channel_conversation_message_update_tenant_scope
-  on message
-  for update
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  )
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_ticket_select_tenant_scope on ticket;
-create policy channel_conversation_ticket_select_tenant_scope
-  on ticket
-  for select
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_ticket_insert_tenant_scope on ticket;
-create policy channel_conversation_ticket_insert_tenant_scope
-  on ticket
-  for insert
-  to uzmax_app_runtime
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_ticket_update_tenant_scope on ticket;
-create policy channel_conversation_ticket_update_tenant_scope
-  on ticket
-  for update
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  )
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_ticket_event_select_tenant_scope on ticket_event;
-create policy channel_conversation_ticket_event_select_tenant_scope
-  on ticket_event
-  for select
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_ticket_event_insert_tenant_scope on ticket_event;
-create policy channel_conversation_ticket_event_insert_tenant_scope
-  on ticket_event
-  for insert
-  to uzmax_app_runtime
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
-
-drop policy if exists channel_conversation_ticket_event_update_tenant_scope on ticket_event;
-create policy channel_conversation_ticket_event_update_tenant_scope
-  on ticket_event
-  for update
-  to uzmax_app_runtime
-  using (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  )
-  with check (
-    org_id::text = current_setting('app.org_id', true)
-    and tenant_id::text = current_setting('app.tenant_id', true)
-    and nullif(current_setting('app.org_id', true), '') is not null
-    and nullif(current_setting('app.tenant_id', true), '') is not null
-  );
+      execute format('drop policy if exists %I on %I', policy_name, table_name);
+      execute format(
+        'create policy %I on %I for %s to uzmax_app_runtime %s',
+        policy_name,
+        table_name,
+        action_name,
+        policy_clause
+      );
+    end loop;
+  end loop;
+end $$;
 
 revoke all on table channel_connection from public;
 revoke all on table telegram_update_dedupe from public;

@@ -118,6 +118,19 @@ External API evidence is Telegram Bot API official docs only: https://core.teleg
 
 M2-02 provides C-01/C-02 foundation/partial evidence only. It does not close C-01/C-02 completely, does not close D/I items, does not implement DB-backed dedupe, worker consumers, conversation engine, outbound sending, admin UI, real Redis/BullMQ, production deployment, real customer traffic, LLM, or Business capability.
 
+## M2 Conversation Handoff Ticket API Contract
+
+`M2-03-conversation-handoff-ticket-api-contract` 引入最小 conversation / handoff / ticket API contract baseline：
+
+- `packages/capabilities/handoff/src/index.ts` 暴露纯 handoff/ticket helper：`createHumanHandoff`、`createTicketState`、`applyTicketAction`。
+- `createHumanHandoff` 将 conversation 标记为 `pending_handoff`，将 AI suspended，并把 in-flight AI messages 标记为 `withdrawn` 或 `pending_cancel`；本 contract 不发送消息。
+- Handoff ticket draft 包含 summary、suggested action 和 SLA contract field。SLA 只保存 `policyRef` / optional `dueAt` / `source: config_placeholder`，不由 LLM 或代码生成客户承诺。
+- Ticket actions baseline 覆盖 `claim`、`lock`、`note`、`escalate`、`close`、`reopen`，并在 lock 已归属他人时 fail closed，提供多人抢答最小防线。
+- `apps/api/src/conversation-ticket.ts` 暴露 in-memory repository/service/controller shell：conversation list/detail 按 `AccessContext.selectedTenantId` 和 `orgId` scope 过滤；filters/status values 对齐 M2-01 `open`、`pending_handoff`、`handoff`、`closed`。
+- Default `AppModule` 注册 `ConversationTicketController`、`ConversationTicketService` 和 `InMemoryConversationTicketRepository`，仅作为 local contract/runtime evidence；不声明真实 DB、WS、Redis/BullMQ、worker、admin UI 或 production readiness。
+
+M2-03 provides C-06/D-01/D-02/D-03 contract/partial evidence only. It does not fully close those items, does not close I-04, and does not implement admin UI, WebSocket/realtime, real DB repository, Prisma schema/migration, engine/worker consumer, LLM, prompt/model route, Telegram Business, outbound sending, production deployment, GA-0 or real customer traffic. External API evidence: none (no new external API/SDK/provider/connector/adapter).
+
 ## Verification
 
 本契约的本地验证入口：
@@ -126,6 +139,7 @@ M2-02 provides C-01/C-02 foundation/partial evidence only. It does not close C-0
 - `npm run typecheck`
 - `npm run lint`
 - `npm run test`
+- `node --test scripts/tests/m2-conversation-ticket-api-contract.test.mjs`
 - `node --test scripts/tests/m2-telegram-bot-ingress.test.mjs`
 - `node --test scripts/tests/m2-channel-conversation-foundation.test.mjs`
 - `node --test scripts/tests/m1-02-api-access-context.test.mjs`

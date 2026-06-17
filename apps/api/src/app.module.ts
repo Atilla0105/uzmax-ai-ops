@@ -8,6 +8,11 @@ import {
 } from "@nestjs/common";
 
 import * as api from "./access-context.ts";
+import {
+  ConversationTicketController,
+  ConversationTicketService,
+  InMemoryConversationTicketRepository
+} from "./conversation-ticket.ts";
 import type {
   DisabledTelegramBotIngressQueue as ContractDisabledTelegramBotIngressQueue,
   InMemoryTelegramBotIngressQueue,
@@ -73,13 +78,16 @@ class TelegramBotWebhookController {
   controllers: [
     api.ApiAccessContextController,
     api.ApiHealthController,
+    ConversationTicketController,
     TelegramBotWebhookController
   ],
   providers: [
     api.ApiAccessContextGuard,
     api.ApiAccessContextService,
+    ConversationTicketService,
     TelegramBotWebhookService,
     DisabledTelegramBotIngressQueue,
+    InMemoryConversationTicketRepository,
     { provide: api.API_AUDIT_SINK, useClass: api.InMemoryAuditSink },
     { provide: api.API_AUTHZ_REPOSITORY, useClass: api.DisabledAuthzRepository },
     {

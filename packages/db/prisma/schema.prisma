@@ -6,3 +6,100 @@ datasource db {
   provider = "postgresql"
   url      = env("UZMAX_RLS_DATABASE_URL")
 }
+
+enum PlatformRecordStatus {
+  ACTIVE   @map("active")
+  DISABLED @map("disabled")
+  ARCHIVED @map("archived")
+
+  @@map("platform_record_status")
+}
+
+enum PlatformMembershipStatus {
+  ACTIVE  @map("active")
+  REVOKED @map("revoked")
+
+  @@map("platform_membership_status")
+}
+
+model Org {
+  id               String               @id @default(uuid()) @db.Uuid
+  slug             String               @unique @db.Text
+  name             String               @db.Text
+  status           PlatformRecordStatus @default(ACTIVE)
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenants          Tenant[]
+  orgMembers       OrgMember[]
+  tenantMembers    TenantMember[]
+  permissionGrants PermissionGrant[]
+
+  @@map("org")
+}
+
+model Tenant {
+  id               String               @id @default(uuid()) @db.Uuid
+  orgId            String               @map("org_id") @db.Uuid
+  slug             String               @db.Text
+  name             String               @db.Text
+  status           PlatformRecordStatus @default(ACTIVE)
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org              Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenantMembers    TenantMember[]
+  permissionGrants PermissionGrant[]
+
+  @@unique([orgId, id])
+  @@unique([orgId, slug])
+  @@index([orgId])
+  @@map("tenant")
+}
+
+model OrgMember {
+  orgId        String                   @map("org_id") @db.Uuid
+  userId       String                   @map("user_id") @db.Uuid
+  role         String                   @db.Text
+  status       PlatformMembershipStatus @default(ACTIVE)
+  cacheVersion Int                      @default(1) @map("cache_version")
+  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org          Org                      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@id([orgId, userId])
+  @@index([userId, status])
+  @@map("org_member")
+}
+
+model TenantMember {
+  orgId            String                   @map("org_id") @db.Uuid
+  tenantId         String                   @map("tenant_id") @db.Uuid
+  userId           String                   @map("user_id") @db.Uuid
+  role             String                   @db.Text
+  status           PlatformMembershipStatus @default(ACTIVE)
+  cacheVersion     Int                      @default(1) @map("cache_version")
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org              Org                      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant           Tenant                   @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  permissionGrants PermissionGrant[]
+
+  @@id([orgId, tenantId, userId])
+  @@index([userId, status])
+  @@index([orgId, userId, status])
+  @@map("tenant_member")
+}
+
+model PermissionGrant {
+  orgId        String       @map("org_id") @db.Uuid
+  tenantId     String       @map("tenant_id") @db.Uuid
+  userId       String       @map("user_id") @db.Uuid
+  permission   String       @db.Text
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  org          Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  tenantMember TenantMember @relation(fields: [orgId, tenantId, userId], references: [orgId, tenantId, userId], onDelete: Cascade)
+
+  @@id([orgId, tenantId, userId, permission])
+  @@index([userId, tenantId])
+  @@map("permission_grant")
+}

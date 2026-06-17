@@ -60,7 +60,7 @@ M1 只覆盖平台骨架：
 
 | 输入 | 责任 | 当前状态 | 截止时间 | 失败分支 |
 |---|---|---|---|---|
-| 历史真实咨询样本脱敏导出 | 项目 owner 提供或确认不可提供；AI agent 检查 manifest 和脱敏摘要 | sample_ready__gate1_go | 2026-06-17 M1-06 Gate 1 复判完成；G-06 仍需 M1-05 runner 和正式入集校验 | M1-05 若发现脱敏不合格、类别不足或不足 60 条，顺延 M1 eval seed / M2-M3 智能验收；不得伪造样本 |
+| 历史真实咨询样本脱敏导出 | 项目 owner 提供或确认不可提供；AI agent 检查 manifest 和脱敏摘要 | seed_quota_pass__content_external | 2026-06-17 M1-06 Gate 1 复判完成；M1-05 runner 已完成当前 80 条聚合 seed quota 校验 | 后续正式入集若发现脱敏不合格、类别不足或不足 60 条，顺延 M2-M3 智能验收；不得伪造样本 |
 | Staging/prod Supabase 项目、连接池、Auth、Storage 策略 | 项目 owner 决策；AI agent 更新 infra manifest | pending_owner_input | Gate 1 前给出至少 staging/prod 路线或明确顺延 | 未定则 M1 可做 dev skeleton，但不得关闭生产 readiness |
 | Render service creation / Redis / rollback route | 项目 owner 决策；AI agent 更新 manifest/runbook | pending_owner_input | M1 结束前 | 未定则 J-01/J-02 不能关闭 |
 | Vercel preview/prod access protection | 项目 owner 决策；AI agent 更新 manifest | pending_owner_input | M1 结束前 | 未定则后台 preview readiness 不能关闭 |
@@ -75,7 +75,7 @@ M1 只覆盖平台骨架：
 | G1-4 SPK-04 / ADR-002 | accepted | PR #10 合入 |
 | G1-5 ADR-003 | accepted_dev_only__customer_llm_blocked | PR #11 合入；M1 平台骨架可继续，客户 LLM 仍阻断 |
 | G1-6 M1 readiness pack | accepted | PR #12 已合入；readiness pack、M1 spec 清单、项目输入排期与平台骨架边界已归档 |
-| G1-7 历史样本与种子评测责任 | sample_ready__gate1_go | PR #15 已记录 owner-local 真实导出和仓库外脱敏 seed review；M1-06 复核 80 条 seed review 配额和明显残留，允许 M1-05 后续正式入集 |
+| G1-7 历史样本与种子评测责任 | seed_quota_pass__content_external | PR #15 已记录 owner-local 真实导出和仓库外脱敏 seed review；M1-06 复核 80 条 seed review 配额和明显残留；M1-05 已建立 runner 并通过当前 seed quota |
 | G1-8 当前 P0 残项 | go__m1_platform_skeleton_only | Gate 1 decision 记录为 Go；只允许 M1 平台骨架，不允许 M2/M3/M4/GA-0 或客户 LLM |
 
 ## Review Notes

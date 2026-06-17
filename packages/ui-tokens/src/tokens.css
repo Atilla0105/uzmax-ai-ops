@@ -1,7 +1,22 @@
 :root {
   --uzmax-color-accent: #2f6f73;
   --uzmax-color-bg: #f4f7f6;
+  --uzmax-color-border: #d7dfdc;
+  --uzmax-color-danger: #b34228;
   --uzmax-color-ink: #182322;
   --uzmax-color-muted: #52615f;
+  --uzmax-color-sidebar: #1f2a33;
   --uzmax-color-surface: #ffffff;
+  --uzmax-color-surface-muted: #eaf0ee;
+  --uzmax-color-warn: #9c6b13;
+  --uzmax-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --uzmax-radius-sm: 6px;
+  --uzmax-shadow-focus: 0 0 0 3px rgb(47 111 115 / 18%);
+  --uzmax-sidebar-width: 64px;
+  --uzmax-space-1: 4px;
+  --uzmax-space-2: 8px;
+  --uzmax-space-3: 12px;
+  --uzmax-space-4: 16px;
+  --uzmax-space-5: 20px;
+  --uzmax-space-6: 24px;
 }

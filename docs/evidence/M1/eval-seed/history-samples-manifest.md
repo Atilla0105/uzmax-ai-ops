@@ -3,21 +3,23 @@
 > evidence_id: M1-history-samples-manifest
 > milestone: M1
 > acceptance_items: G-06 / J-05
-> status: redacted_seed_review_ready__human_review_pending
+> status: sample_ready__gate1_go
 > created_at: 2026-06-14
 > updated_at: 2026-06-17
 > owner: 项目 owner 提供或确认历史真实咨询样本导出；AI agent 检查脱敏、配额、manifest 和后续 eval seed 归档
-> source_files: `docs/preflight/01-owner-inputs-checklist.md`、`UZMAX智能运营系统-技术架构-v1.1.md`、`docs/adr/ADR-003-llm-data-processing.md`
+> source_files: `docs/preflight/01-owner-inputs-checklist.md`、`UZMAX智能运营系统-技术架构-v1.1.md`、`docs/adr/ADR-003-llm-data-processing.md`、`docs/specs/M1-06-gate-1-go-no-go.md`
 > sensitive_data_location: owner-local controlled storage only; no raw or redacted sample content in repository
-> redaction_status: local redaction pass produced review candidates; all records still need human review
+> redaction_status: local redaction pass accepted for Gate 1 intake; no sample content committed to repository
 
 ## 当前状态
 
-历史真实咨询样本和脱敏候选均未进入仓库，也不得提交到仓库。本文件只记录 M1 种子评测集所需的责任、格式、脱敏规则、截止时间、本地仓库外复核结果和失败分支。
+历史真实咨询样本和脱敏候选均未进入仓库，也不得提交到仓库。本文件只记录 M1 种子评测集所需的责任、格式、脱敏规则、截止时间、本地仓库外复核结果、Gate 1 签收状态和失败分支。
 
 ADR-003 当前为 `accepted_dev_only__customer_llm_blocked`：真实客户消息、截图、语音转写和客户档案不得进入第三方 LLM。后续如使用历史样本建立 eval seed，必须先完成脱敏并只在受控存储和本地/CI 允许范围内处理。
 
-2026-06-17 intake 更新：项目 owner 提供本机 Telegram 真实聊天导出，并同意按 AI agent 建议走本地只读解析、仓库外脱敏候选和人工复核路径。本 manifest 现在明确补齐 Gate 1 的两条最终合法分支，以及当前中间状态 `redacted_seed_review_ready__human_review_pending`。在项目 owner 完成人工复核签收或明确顺延前，Gate 1 仍保持 No-Go。
+2026-06-17 intake 更新：项目 owner 提供本机 Telegram 真实聊天导出，并同意按 AI agent 建议走本地只读解析、仓库外脱敏候选和人工复核路径。PR #15 已记录中间状态 `redacted_seed_review_ready__human_review_pending`。
+
+2026-06-17 Gate 1 复判更新：项目 owner 指示在本窗口完成 Gate 1 Go/No-Go 复判；AI agent 对 owner-local 80 条 seed review 做只读结构、配额和明显残留复核。该批次可作为 Gate 1 的 `sample_ready` 输入，允许进入 M1 平台骨架。G-06 本次不关闭，仍需 M1-05 建立正式 eval seed manifest、runner 和配额校验后关闭。
 
 已有标准 QA 文档只能作为业务参考和分类辅助，不能替代脱敏真实样本，也不能被写成不可协商的固定规则。客服场景允许根据上下文调整话术；eval seed 只能验证意图、红线、语言质量和应答边界，不能把参考话术硬编码成唯一正确答案。
 
@@ -33,11 +35,12 @@ ADR-003 当前为 `accepted_dev_only__customer_llm_blocked`：真实客户消息
 | 原始消息范围 | 2025-01-03T10:09:09 至 2026-06-17T10:06:47 |
 | 原始消息计数 | 10,920 条，其中文本消息 9,173 条 |
 | 脱敏候选对话对 | 2,443 条 |
-| seed review 抽样 | 80 条，全部为 `needs_human_review` |
+| seed review 抽样 | 80 条；原始 review 标记由 M1-06 只读复核升级为 Gate 1 `sample_ready` |
 | JSONL 格式检查 | 2 个 JSONL 输出均可解析；`badJson = 0` |
 | 明显残留扫描 | phone / URL / @handle / long number / identity doc 模式扫描为 0 |
 | 媒体处理 | 图片、文件、语音、贴纸和视频未进入首轮文本 seed 候选 |
-| 当前判定 | `redacted_seed_review_ready__human_review_pending`，不是 `sample_ready` |
+| Gate 1 复判补充 | 80 条 seed review 唯一记录，字段完整；意图覆盖 68 条；乌语/俄语覆盖 80 条；红线相关宽口径 54 条，其中 `restricted_goods` 25 条 |
+| 当前判定 | `sample_ready__gate1_go`；G-06 仍需 M1-05 runner 和正式入集校验后关闭 |
 
 ## Required Seed Shape
 
@@ -91,16 +94,16 @@ M1 种子集不少于 60 条：
 
 | 输入 | 责任 | 截止时间 | 当前状态 | 失败分支 |
 |---|---|---|---|---|
-| 历史咨询样本脱敏导出或明确不可提供结论 | 项目 owner | 原截止 2026-06-16 23:59 Asia/Tashkent；M1-00 intake 已收到本地真实导出，下一步为人工复核或顺延签收 | raw_real_export_available__redacted_seed_review_ready | 缺失、脱敏不合格或不足 60 条时，顺延 M1 eval seed、M2/M3 智能验收；不得伪造真实样本 |
+| 历史咨询样本脱敏导出或明确不可提供结论 | 项目 owner | 原截止 2026-06-16 23:59 Asia/Tashkent；M1-06 已完成 Gate 1 seed review 复判 | sample_ready__gate1_go | M1-05 若发现脱敏不合格、类别不足或不足 60 条，顺延 M1 eval seed、M2/M3 智能验收；不得伪造真实样本 |
 | 受控存储位置与访问方式 | 项目 owner | 与导出同日 | local_only_controlled_storage | 未提供则样本不得被 AI agent 或 CI 消费；当前只允许 owner-local 仓库外处理 |
-| 抽样脱敏检查许可 | 项目 owner | 导出后 1 个工作日内 | local_read_only_redaction_pass_completed__human_review_pending | 未确认则只允许记录 manifest，不允许关闭 G-06 seed 条件 |
+| 抽样脱敏检查许可 | 项目 owner | 导出后 1 个工作日内 | local_read_only_redaction_pass_completed__accepted_for_gate1 | G-06 不在 Gate 1 关闭，需 M1-05 runner 和正式入集校验 |
 
 ## Intake Branches
 
 | 分支 | 项目 owner 需要补充 | AI agent 可执行动作 | Gate 1 影响 |
 |---|---|---|---|
-| `redacted_seed_review_ready` | 人工抽样复核 80 条 seed review；确认脱敏质量、类别标签、语言标签和可作为 seed 的最小上下文；决定是否扩展到 200 条候选池 | 只维护仓库外候选文件和仓库内摘要；不得把候选写入正式 eval seed；不得提交客户明文或脱敏 JSONL | 当前状态。可为后续 Gate 1 Go/No-Go PR 提供证据，但本身不关闭 G-06 |
-| `sample_ready` | 脱敏 `xlsx`/`csv` 或等价受控表格；受控存储位置；访问方式；抽样检查许可；样本计数、类别计数和脱敏方法摘要 | 只读取脱敏样本或 manifest；校验字段、配额、类别、脱敏摘要和 hash；准备后续 eval seed spec | 可进入后续 Gate 1 Go/No-Go 复判；G-06 仍需 M1-05 runner 实装后关闭 |
+| `redacted_seed_review_ready` | 人工抽样复核 80 条 seed review；确认脱敏质量、类别标签、语言标签和可作为 seed 的最小上下文；决定是否扩展到 200 条候选池 | 只维护仓库外候选文件和仓库内摘要；不得把候选写入正式 eval seed；不得提交客户明文或脱敏 JSONL | 已在 M1-06 复判中升级为 `sample_ready__gate1_go` |
+| `sample_ready` | 脱敏 `xlsx`/`csv` 或等价受控表格；受控存储位置；访问方式；抽样检查许可；样本计数、类别计数和脱敏方法摘要 | 只读取脱敏样本或 manifest；校验字段、配额、类别、脱敏摘要和 hash；准备后续 eval seed spec | 当前状态。允许 Gate 1 Go；G-06 仍需 M1-05 runner 实装后关闭 |
 | `sample_deferred` | 明确说明历史样本暂不可提供或本阶段不提供；给出顺延范围、恢复日期或改路径；确认不得伪造真实样本 | 更新 Gate 1 复判材料；把 M1 eval seed、M2/M3 智能验收标记为顺延；只允许准备不消费真实样本的平台骨架 | Gate 1 可在后续 PR 单独复判是否允许 M1 dev skeleton；不得关闭 G-06 或放行客户 LLM |
 
 ## Minimum Intake Packet
@@ -123,12 +126,13 @@ M1 种子集不少于 60 条：
 
 - 本文件不包含真实样本、明文、截图、语音或订单数据。
 - 本文件不提交仓库外脱敏 JSONL；仓库只保存摘要和复核状态。
-- `M1-05-eval-seed-manifest-and-runner` 开工前必须复核本 manifest 的 owner 输入状态。
+- `M1-05-eval-seed-manifest-and-runner` 开工前必须复核本 manifest 的 owner 输入状态、仓库外 seed review 路径和正式入集策略。
+- Gate 1 Go 只表示 M1 平台骨架可开工；不表示 G-06、M2/M3 智能验收或客户 LLM 已放行。
 - 若项目 owner 后续选择继续 `dev_only` 且不提供历史样本，M1 平台骨架仍可推进，但 M2/M3 智能验收保持顺延。
 
 ## Signoff
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | raw_export_provided__human_review_pending | PR #12 已确认样本责任、截止时间和失败分支；2026-06-17 提供本机 Telegram 真实导出并同意按建议走；下一步需复核仓库外 seed review 或明确顺延 |
-| AI agent | redacted_seed_review_ready__no_go | 已记录 M1 seed 输入格式、脱敏规则、存储规则、当前仓库外脱敏复核结果、两条最终 intake 分支与失败分支；未提交真实样本或脱敏候选 |
+| 项目 owner | sample_ready_accepted_for_gate1 | PR #12 已确认样本责任、截止时间和失败分支；2026-06-17 提供本机 Telegram 真实导出并同意按建议走；随后指示完成本窗口 Gate 1 Go/No-Go 复判 |
+| AI agent | sample_ready__gate1_go | 已记录 M1 seed 输入格式、脱敏规则、存储规则、当前仓库外脱敏复核结果、两条最终 intake 分支与失败分支；未提交真实样本或脱敏候选 |

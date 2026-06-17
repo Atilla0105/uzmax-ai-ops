@@ -89,6 +89,17 @@ export function hasPermission(context: AccessContext, permission: string): boole
   return context.permissions.includes(permission);
 }
 
+export function assertPermission(
+  context: AccessContext,
+  permission: string
+): AccessContext {
+  if (!hasPermission(context, permission)) {
+    throw new AuthzError("tenant_access_denied", "permission is not granted");
+  }
+
+  return context;
+}
+
 export function assertTenantSelected(
   context: AccessContext,
   tenantId: string

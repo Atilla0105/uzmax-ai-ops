@@ -22,6 +22,16 @@ export type RlsTenantContext = {
   tenantId: string;
 };
 
+export type RlsContextSetting = {
+  key: (typeof rlsContextKeys)[keyof typeof rlsContextKeys];
+  value: string;
+};
+
+export type RlsTransactionContext = {
+  roleSql: string;
+  settings: readonly RlsContextSetting[];
+};
+
 export function assertSafeDatabaseRole(role: string): string {
   if (!ROLE_IDENTIFIER.test(role)) {
     throw new Error(`Unsafe database role identifier: ${role}`);
@@ -43,4 +53,21 @@ export function hasCompleteRlsTenantContext(
   context: Partial<RlsTenantContext>
 ): context is RlsTenantContext {
   return Boolean(context.orgId?.trim() && context.tenantId?.trim());
+}
+
+export function createRlsTransactionContext(
+  context: RlsTenantContext,
+  role = platformRuntimeRole
+): RlsTransactionContext {
+  if (!hasCompleteRlsTenantContext(context)) {
+    throw new Error("RLS tenant context requires orgId and tenantId");
+  }
+
+  return {
+    roleSql: createSetLocalRoleSql(role),
+    settings: [
+      { key: rlsContextKeys.orgId, value: context.orgId.trim() },
+      { key: rlsContextKeys.tenantId, value: context.tenantId.trim() }
+    ]
+  };
 }

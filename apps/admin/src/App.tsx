@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "@uzmax/ui-tokens/tokens.css";
 import "./styles.css";
+import { M2ConversationTicketShell } from "./M2ConversationTicketShell";
 
 const tenants = [
   {
@@ -61,7 +62,7 @@ export function App() {
     tenants.find((tenant) => tenant.id === selectedTenantId) ?? tenants[0];
 
   return (
-    <main className="admin-shell" data-testid="admin-shell">
+    <main className="admin-shell m2-admin-shell" data-testid="admin-shell">
       <aside className="rail" aria-label="Primary navigation">
         <div className="rail-mark">UZ</div>
         {navItems.map((item) => (
@@ -155,10 +156,7 @@ export function App() {
             </div>
             <div className="notice">
               <strong>Permission boundary</strong>
-              <span>
-                No customer messages, handles, phone numbers, orders, or transcripts are
-                rendered in M1-04.
-              </span>
+              <span>No real customer identifiers or message bodies are rendered.</span>
             </div>
             <div className="entry-grid">
               <Entry
@@ -182,6 +180,8 @@ export function App() {
               />
             </div>
           </section>
+
+          <M2ConversationTicketShell tenantName={selectedTenant.name} />
 
           <section className="panel release-panel" data-testid="release-readiness">
             <div className="section-heading">

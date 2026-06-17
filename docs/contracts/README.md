@@ -97,6 +97,27 @@ M2-01 does not close C-01/C-02/C-06/D-01/D-02/D-03/I-04. It only provides founda
 
 Business-specific schema remains deferred to SPK-01 / ADR-B01. This PR deliberately does not add `business_connection`, customer asset center, order/customer asset tables, Bot runtime, API/admin/worker/WS, LLM, prompts, distill, production traffic, or Business feasibility claims. No raw Telegram payloads or customer content belong in this contract or its evidence.
 
+## M2 Telegram Bot Ingress Contract
+
+`M2-02-telegram-bot-ingress-dedupe-queue` 引入最小 Telegram Bot ingress contract：
+
+- `packages/channels/src/index.ts` 暴露 `telegramBotAllowedUpdates` 与 `normalizeTelegramBotUpdate`，仅把 Telegram Bot `Update` 提取为 bounded internal ingress object。
+- 支持的入站类型为 text message、photo/image message、voice message 和 `callback_query`。
+- `business_message`、`business_connection`、其他 Business update 和未支持 update type 只进入 `unsupported` / `deferred` classification；SPK-01 / ADR-B01 前不得声明 Business 可行。
+- Normalized object 只保留 `providerUpdateId`、`updateKind`、conversation/participant/message external refs、`contentKind`、bounded text、callback data、file ids、`unsupportedReason` 和可选发生时间。
+- No raw Telegram payloads, customer samples, screenshots, voice transcripts, token values, phone numbers, addresses, payment data, or support personal accounts belong in this contract.
+
+`apps/api/src/telegram-bot.ts` 暴露最小 webhook core contract，`apps/api/src/app.module.ts` 注册默认 fail-closed shell：
+
+- `TelegramBotWebhookCore` 通过 `X-Telegram-Bot-Api-Secret-Token` 与 configured secret 比对；secret missing 或 mismatch 均 fail closed，且不 enqueue。
+- Webhook core 只在 queue port 返回 `accepted`、`deduped` 或 `unsupported` 时返回 2xx contract。
+- `TelegramBotIngressQueuePort` 是显式 handoff seam；`InMemoryTelegramBotIngressQueue` 只用于测试和 local contract evidence，按 `providerUpdateId` / Telegram `update_id` dedupe。
+- Default `AppModule` maps `POST /telegram/bot/webhook` to a disabled shell using `DisabledTelegramBotIngressQueue`，避免在没有 Redis/BullMQ worker consumer 时声称真实队列 ready。
+
+External API evidence is Telegram Bot API official docs only: https://core.telegram.org/bots/api. The contract relies on official facts that webhook delivery is HTTPS POST with JSON-serialized `Update`, unsuccessful non-2xx webhook responses are retried, `Update` includes types such as `message` and `callback_query`, `allowed_updates` can limit update types, `update_id` is suitable for dedupe, and `secret_token` is delivered in `X-Telegram-Bot-Api-Secret-Token`.
+
+M2-02 provides C-01/C-02 foundation/partial evidence only. It does not close C-01/C-02 completely, does not close D/I items, does not implement DB-backed dedupe, worker consumers, conversation engine, outbound sending, admin UI, real Redis/BullMQ, production deployment, real customer traffic, LLM, or Business capability.
+
 ## Verification
 
 本契约的本地验证入口：
@@ -105,6 +126,7 @@ Business-specific schema remains deferred to SPK-01 / ADR-B01. This PR deliberat
 - `npm run typecheck`
 - `npm run lint`
 - `npm run test`
+- `node --test scripts/tests/m2-telegram-bot-ingress.test.mjs`
 - `node --test scripts/tests/m2-channel-conversation-foundation.test.mjs`
 - `node --test scripts/tests/m1-02-api-access-context.test.mjs`
 - `node --test scripts/tests/m1-platform-foundation.test.mjs`

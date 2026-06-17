@@ -32,8 +32,24 @@ export async function importApiRuntime() {
   await writeModule(outDir, "apps/api/src/access-context.ts", "access-context.mjs", {
     "./access-context-core.ts": "./access-context-core.mjs"
   });
+  await writeModule(
+    outDir,
+    "apps/api/src/conversation-ticket.ts",
+    "conversation-ticket.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs",
+      "./access-context.ts": "./access-context.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "packages/capabilities/handoff/src/index.ts",
+    "handoff-index.mjs"
+  );
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
-    "./access-context.ts": "./access-context.mjs"
+    "./access-context.ts": "./access-context.mjs",
+    "./conversation-ticket.ts": "./conversation-ticket.mjs"
   });
   await writeModule(outDir, "apps/api/src/main.ts", "main.mjs", {
     "./app.module.ts": "./app.module.mjs"

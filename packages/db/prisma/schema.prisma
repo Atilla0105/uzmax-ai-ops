@@ -22,6 +22,23 @@ enum PlatformMembershipStatus {
   @@map("platform_membership_status")
 }
 
+enum ConfigVersionDomain {
+  BUSINESS_CONFIG @map("business_config")
+  FEATURE_FLAG    @map("feature_flag")
+  TEMPLATE_COPY   @map("template_copy")
+
+  @@map("config_version_domain")
+}
+
+enum ConfigVersionStatus {
+  DRAFT       @map("draft")
+  ACTIVE      @map("active")
+  ROLLED_BACK @map("rolled_back")
+  ARCHIVED    @map("archived")
+
+  @@map("config_version_status")
+}
+
 model Org {
   id               String               @id @default(uuid()) @db.Uuid
   slug             String               @unique @db.Text
@@ -29,6 +46,8 @@ model Org {
   status           PlatformRecordStatus @default(ACTIVE)
   createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs        AuditLog[]
+  configVersions   ConfigVersion[]
   tenants          Tenant[]
   orgMembers       OrgMember[]
   tenantMembers    TenantMember[]
@@ -45,6 +64,8 @@ model Tenant {
   status           PlatformRecordStatus @default(ACTIVE)
   createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs        AuditLog[]
+  configVersions   ConfigVersion[]
   org              Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   tenantMembers    TenantMember[]
   permissionGrants PermissionGrant[]
@@ -102,4 +123,63 @@ model PermissionGrant {
   @@id([orgId, tenantId, userId, permission])
   @@index([userId, tenantId])
   @@map("permission_grant")
+}
+
+model ConfigVersion {
+  id                  String              @id @default(uuid()) @db.Uuid
+  orgId               String              @map("org_id") @db.Uuid
+  tenantId            String              @map("tenant_id") @db.Uuid
+  domain              ConfigVersionDomain @map("config_domain")
+  key                 String              @map("config_key") @db.Text
+  version             Int
+  status              ConfigVersionStatus @default(DRAFT)
+  payload             Json
+  createdByUserId     String              @map("created_by_user_id") @db.Uuid
+  previousVersionId   String?             @map("previous_version_id") @db.Uuid
+  rollbackOfVersionId String?             @map("rollback_of_version_id") @db.Uuid
+  reason              String?             @db.Text
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  activatedAt         DateTime?           @map("activated_at") @db.Timestamptz(6)
+  org                 Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant              Tenant              @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  previousVersion     ConfigVersion?      @relation("ConfigVersionPrevious", fields: [previousVersionId, orgId, tenantId, domain, key], references: [id, orgId, tenantId, domain, key], onDelete: Restrict)
+  nextVersions        ConfigVersion[]     @relation("ConfigVersionPrevious")
+  rollbackOfVersion   ConfigVersion?      @relation("ConfigVersionRollback", fields: [rollbackOfVersionId, orgId, tenantId, domain, key], references: [id, orgId, tenantId, domain, key], onDelete: Restrict)
+  rollbackVersions    ConfigVersion[]     @relation("ConfigVersionRollback")
+  auditLogsBefore     AuditLog[]          @relation("AuditLogBeforeVersion")
+  auditLogsAfter      AuditLog[]          @relation("AuditLogAfterVersion")
+
+  @@unique([id, orgId, tenantId, domain, key])
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, domain, key, version])
+  @@index([orgId, tenantId, domain, key, status])
+  @@index([previousVersionId])
+  @@index([rollbackOfVersionId])
+  @@map("config_version")
+}
+
+model AuditLog {
+  id              String         @id @default(uuid()) @db.Uuid
+  orgId           String         @map("org_id") @db.Uuid
+  tenantId        String         @map("tenant_id") @db.Uuid
+  actorUserId     String         @map("actor_user_id") @db.Uuid
+  eventType       String         @map("event_type") @db.Text
+  module          String         @db.Text
+  action          String         @db.Text
+  objectType      String         @map("object_type") @db.Text
+  objectId        String?        @map("object_id") @db.Text
+  content         Json
+  beforeVersionId String?        @map("before_version_id") @db.Uuid
+  afterVersionId  String?        @map("after_version_id") @db.Uuid
+  traceId         String?        @map("trace_id") @db.Text
+  occurredAt      DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  org             Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant          Tenant         @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  beforeVersion   ConfigVersion? @relation("AuditLogBeforeVersion", fields: [beforeVersionId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+  afterVersion    ConfigVersion? @relation("AuditLogAfterVersion", fields: [afterVersionId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+
+  @@index([orgId, tenantId, occurredAt])
+  @@index([eventType, occurredAt])
+  @@index([objectType, objectId])
+  @@map("audit_log")
 }

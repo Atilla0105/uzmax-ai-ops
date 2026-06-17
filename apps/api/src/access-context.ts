@@ -25,7 +25,6 @@ import type {
 import {
   ApiAccessContextCore,
   ApiAccessError,
-  type ApiIdentity,
   type ApiRequest,
   type AuditSink,
   type IdentityVerifier,
@@ -45,7 +44,7 @@ function RequirePermission(permission: string) {
 
 @Injectable()
 class DisabledIdentityVerifier implements IdentityVerifier {
-  async verifyBearerToken(): Promise<ApiIdentity> {
+  async verifyBearerToken(): Promise<{ userId: string }> {
     throw new ApiAccessError(401, "identity verifier is not configured");
   }
 
@@ -58,7 +57,7 @@ class DisabledIdentityVerifier implements IdentityVerifier {
 class SupabaseIdentityVerifier implements IdentityVerifier {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async verifyBearerToken(token: string): Promise<ApiIdentity> {
+  async verifyBearerToken(token: string): Promise<{ userId: string }> {
     const { data, error } = await this.supabase.auth.getUser(token);
     if (error || !data.user?.id) {
       throw new ApiAccessError(401, "supabase token is invalid");

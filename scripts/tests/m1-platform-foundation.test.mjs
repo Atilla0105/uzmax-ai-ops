@@ -10,8 +10,16 @@ const schema = read("packages/db/prisma/schema.prisma");
 const migration = read(
   "packages/db/migrations/0001_platform_schema_authz_foundation.sql"
 );
+const governanceMigration = read(
+  "packages/db/migrations/0002_audit_config_version_foundation.sql"
+);
 const authz = await importTypescriptModule("packages/authz/src/index.ts");
 const db = await importTypescriptModule("packages/db/src/index.ts");
+const ORG_UUID = "11111111-1111-4111-8111-111111111111";
+const TENANT_UUID = "22222222-2222-4222-8222-222222222222";
+const USER_UUID = "33333333-3333-4333-8333-333333333333";
+const VERSION_ONE_UUID = "44444444-4444-4444-8444-444444444441";
+const VERSION_TWO_UUID = "44444444-4444-4444-8444-444444444442";
 
 describe("M1-01 platform schema and RLS contract", () => {
   it("defines only the platform foundation tables in Prisma schema", () => {
@@ -65,6 +73,107 @@ describe("M1-01 platform schema and RLS contract", () => {
     assert.equal(db.createSetLocalRoleSql(), 'set local role "uzmax_app_runtime"');
     assert.equal(db.hasCompleteRlsTenantContext({ orgId: " ", tenantId: "x" }), false);
     assert.throws(() => db.createSetLocalRoleSql("bad role"), /Unsafe/);
+  });
+});
+
+describe("M1-04 audit and config version foundation", () => {
+  it("defines governance schema without adding business capability tables", () => {
+    for (const model of ["AuditLog", "ConfigVersion"]) {
+      assert.match(schema, new RegExp(`model ${model} \\{`));
+    }
+
+    assert.match(schema, /enum ConfigVersionDomain/);
+    assert.match(schema, /enum ConfigVersionStatus/);
+    assert.match(schema, /@@map\("audit_log"\)/);
+    assert.match(schema, /@@map\("config_version"\)/);
+    assert.doesNotMatch(schema, /model (Customer|Conversation|Message|Order|KbEntry)/);
+  });
+
+  it("keeps governance RLS scoped to selected org and tenant", () => {
+    for (const table of ["audit_log", "config_version"]) {
+      assert.match(
+        governanceMigration,
+        new RegExp(`alter table ${table} force row level security`)
+      );
+      assert.match(
+        governanceMigration,
+        new RegExp(`grant select, insert on table ${table} to uzmax_app_runtime`)
+      );
+
+      for (const action of ["select", "insert"]) {
+        const policy = governancePolicyFor(table, action);
+        assert.match(policy, /current_setting\('app\.org_id', true\)/);
+        assert.match(policy, /current_setting\('app\.tenant_id', true\)/);
+        assert.match(policy, /nullif\(current_setting\('app\.org_id', true\), ''\)/);
+        assert.match(policy, /nullif\(current_setting\('app\.tenant_id', true\), ''\)/);
+      }
+    }
+
+    assert.match(governanceMigration, /audit_log_content_before_after/);
+    assert.match(governanceMigration, /config_version_previous_scope_fk/);
+    assert.match(governanceMigration, /config_version_rollback_scope_fk/);
+    assert.match(governanceMigration, /audit_log_before_version_scope_fk/);
+    assert.match(governanceMigration, /audit_log_after_version_scope_fk/);
+    assert.match(
+      governanceMigration,
+      /foreign key \(\s*previous_version_id,\s*org_id,\s*tenant_id,\s*config_domain,\s*config_key\s*\)/
+    );
+    assert.match(governanceMigration, /content \? 'before'/);
+    assert.match(governanceMigration, /content \? 'after'/);
+    assert.match(governanceMigration, /config_version_payload_object/);
+  });
+
+  it("exposes governance table names and pure contract builders", () => {
+    assert.equal(db.governanceTableNames.auditLog, "audit_log");
+    assert.equal(db.governanceTableNames.configVersion, "config_version");
+    assert.equal(db.auditEventTypes.permissionGrantChanged, "permission_grant.changed");
+    assert.equal(db.configVersionDomains.featureFlag, "feature_flag");
+
+    const configVersion = db.createConfigVersionContract({
+      createdAt: "2026-06-17T00:00:00.000Z",
+      createdByUserId: USER_UUID,
+      domain: "feature_flag",
+      id: VERSION_TWO_UUID,
+      key: "business-toggle",
+      orgId: ORG_UUID,
+      payload: { enabled: false },
+      previousVersionId: VERSION_ONE_UUID,
+      status: "draft",
+      tenantId: TENANT_UUID,
+      version: 2
+    });
+    assert.equal(configVersion.previousVersionId, VERSION_ONE_UUID);
+
+    const audit = db.createAuditLogContract({
+      action: "save",
+      actorUserId: USER_UUID,
+      afterVersionId: VERSION_TWO_UUID,
+      beforeVersionId: VERSION_ONE_UUID,
+      content: {
+        after: { versionId: VERSION_TWO_UUID },
+        before: { versionId: VERSION_ONE_UUID }
+      },
+      eventType: "config_version.saved",
+      module: "config",
+      objectId: VERSION_TWO_UUID,
+      objectType: "config_version",
+      occurredAt: "2026-06-17T00:00:00.000Z",
+      orgId: ORG_UUID,
+      tenantId: TENANT_UUID
+    });
+    assert.deepEqual(audit.content.before, { versionId: VERSION_ONE_UUID });
+    assert.throws(
+      () => db.createConfigVersionContract({ ...configVersion, id: "version-2" }),
+      /config version id must be a UUID/
+    );
+    assert.throws(
+      () =>
+        db.createAuditLogContract({
+          ...audit,
+          content: { after: { versionId: VERSION_TWO_UUID }, before: [] }
+        }),
+      /audit before must be an object/
+    );
   });
 });
 
@@ -166,6 +275,19 @@ function policyFor(table) {
   );
   const match = migration.match(pattern);
   assert.ok(match, `missing select policy for ${table}`);
+  return match[0];
+}
+
+function governancePolicyFor(table, action) {
+  const policyName =
+    table === "audit_log" ? "governance_audit_log" : `governance_${table}`;
+  const suffix = action === "select" ? "using" : "with check";
+  const pattern = new RegExp(
+    `create policy ${policyName}_${action}_context[\\s\\S]*?\\n  \\);`
+  );
+  const match = governanceMigration.match(pattern);
+  assert.ok(match, `missing ${action} policy for ${table}`);
+  assert.match(match[0], new RegExp(suffix.replace(" ", "\\s+")));
   return match[0];
 }
 

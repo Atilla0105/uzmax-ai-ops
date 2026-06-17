@@ -19,29 +19,40 @@ const { importApiRuntime } = await import(
   new URL("../../apps/api/scripts/runtime-compiler.mjs", import.meta.url)
 );
 const apiAdapterSource = read("apps/api/src/access-context.ts");
+const ORG_1 = "11111111-1111-4111-8111-111111111111";
+const TENANT_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const TENANT_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const TENANT_Z = "99999999-9999-4999-8999-999999999999";
+const USER_1 = "22222222-2222-4222-8222-222222222222";
+const USER_2 = "33333333-3333-4333-8333-333333333333";
+const VERSION_1 = "44444444-4444-4444-8444-444444444441";
+const VERSION_2 = "44444444-4444-4444-8444-444444444442";
+const VERSION_3 = "44444444-4444-4444-8444-444444444443";
+const VERSION_4 = "44444444-4444-4444-8444-444444444444";
+const VERSION_5 = "44444444-4444-4444-8444-444444444445";
 
 describe("M1-02 API access context shell", () => {
   it("fails closed on token, tenant, permission, and switch boundaries", async () => {
     const facts = {
       permissionGrants: [
-        grant("tenant-a", "tenant:read"),
-        grant("tenant-a", "tenant:switch")
+        grant(TENANT_A, "tenant:read"),
+        grant(TENANT_A, "tenant:switch")
       ],
       tenantMemberships: [
-        membership("tenant-a", "active", 7),
-        membership("tenant-b", "revoked", 2)
+        membership(TENANT_A, "active", 7),
+        membership(TENANT_B, "revoked", 2)
       ]
     };
     const auditSink = new apiCore.InMemoryAuditSink();
     const verifier = {
       async verifyBearerToken(token) {
-        if (token === "valid-token-with-ignored-claims") return { userId: "user-1" };
+        if (token === "valid-token-with-ignored-claims") return { userId: USER_1 };
         throw new apiCore.ApiAccessError(401, "invalid token");
       }
     };
     const repository = {
       async loadAccessContextFacts(request) {
-        assert.equal(request.userId, "user-1");
+        assert.equal(request.userId, USER_1);
         return facts;
       }
     };
@@ -51,33 +62,27 @@ describe("M1-02 API access context shell", () => {
     assert.equal(JSON.stringify(service.readiness()).includes("SUPABASE"), false);
     assert.equal(service.readiness().status, "ready");
 
-    const request = apiRequest("tenant-a");
+    const request = apiRequest(TENANT_A);
     const context = await service.loadContextForRequest(request);
-    assert.equal(context.selectedTenantId, "tenant-a");
+    assert.equal(context.selectedTenantId, TENANT_A);
     assert.equal(context.membershipVersion, 7);
     assert.deepEqual(context.permissions, ["tenant:read", "tenant:switch"]);
-    assert.equal(request.accessContext?.userId, "user-1");
+    assert.equal(request.accessContext?.userId, USER_1);
 
     await rejectsStatus(
-      () => service.loadContextForRequest(apiRequest("tenant-a", "")),
+      () => service.loadContextForRequest(apiRequest(TENANT_A, "")),
       401
     );
     await rejectsStatus(
-      () => service.loadContextForRequest(apiRequest("tenant-a", "bad-token")),
+      () => service.loadContextForRequest(apiRequest(TENANT_A, "bad-token")),
       401
     );
-    await rejectsStatus(
-      () => service.loadContextForRequest(apiRequest("tenant-b")),
-      403
-    );
-    await rejectsStatus(
-      () => service.loadContextForRequest(apiRequest("tenant-z")),
-      403
-    );
+    await rejectsStatus(() => service.loadContextForRequest(apiRequest(TENANT_B)), 403);
+    await rejectsStatus(() => service.loadContextForRequest(apiRequest(TENANT_Z)), 403);
     assert.equal(auditSink.events.at(-1)?.eventType, "access_context.denied");
 
-    facts.tenantMemberships = [membership("tenant-a", "active", 8)];
-    const refreshed = await service.loadContextForRequest(apiRequest("tenant-a"));
+    facts.tenantMemberships = [membership(TENANT_A, "active", 8)];
+    const refreshed = await service.loadContextForRequest(apiRequest(TENANT_A));
     assert.equal(refreshed.membershipVersion, 8);
 
     assert.throws(() => service.assertPermission(context, "admin:write"), {
@@ -85,26 +90,89 @@ describe("M1-02 API access context shell", () => {
       statusCode: 403
     });
 
-    const switched = await service.switchTenant(apiRequest("tenant-a"), "tenant-a");
-    assert.equal(switched.accessContext.selectedTenantId, "tenant-a");
-    assert.deepEqual(switched.rls.settings, [
-      { key: "app.org_id", value: "org-1" },
-      { key: "app.tenant_id", value: "tenant-a" }
-    ]);
-    assert.equal(auditSink.events.at(-1)?.eventType, "tenant_switch.allowed");
+    await exerciseTenantSwitchBoundaries(service, facts, context, auditSink);
+  });
 
-    facts.permissionGrants = [grant("tenant-a", "tenant:read")];
+  it("records M1-04 permission and config version audit contracts", async () => {
+    const auditSink = new apiCore.InMemoryAuditSink();
+    const verifier = {
+      async verifyBearerToken() {
+        return { userId: USER_1 };
+      }
+    };
+    const facts = {
+      permissionGrants: [
+        grant(TENANT_A, "config:rollback"),
+        grant(TENANT_A, "config:write"),
+        grant(TENANT_A, "permission:write")
+      ],
+      tenantMemberships: [membership(TENANT_A, "active", 9)]
+    };
+    const service = new apiCore.ApiAccessContextCore(
+      verifier,
+      {
+        async loadAccessContextFacts() {
+          return facts;
+        }
+      },
+      auditSink
+    );
+
+    const permissionAudit = await service.recordPermissionChange(apiRequest(TENANT_A), {
+      after: { granted: true },
+      before: { granted: false },
+      permission: "config:write",
+      targetUserId: USER_2,
+      traceId: "trace-permission"
+    });
+    assert.equal(permissionAudit.auditEvent.eventType, "permission_grant.changed");
+    assert.equal(permissionAudit.auditEvent.actorUserId, USER_1);
+    assert.deepEqual(permissionAudit.auditEvent.content, {
+      after: { granted: true },
+      before: { granted: false }
+    });
+
+    const saved = await service.recordConfigVersionSave(apiRequest(TENANT_A), {
+      domain: "feature_flag",
+      key: "business-toggle",
+      payload: { enabled: false },
+      previousVersionId: VERSION_1,
+      version: 2,
+      versionId: VERSION_2
+    });
+    assert.equal(saved.configVersion.status, "draft");
+    assert.equal(saved.auditEvent.eventType, "config_version.saved");
+    assert.equal(saved.auditEvent.beforeVersionId, VERSION_1);
+    assert.equal(saved.auditEvent.afterVersionId, VERSION_2);
+    assert.deepEqual(saved.auditEvent.content.before, { versionId: VERSION_1 });
+
+    const rollback = await service.recordConfigVersionRollback(apiRequest(TENANT_A), {
+      domain: "business_config",
+      key: "sla-policy",
+      payload: { restoredFrom: VERSION_3 },
+      reason: "operator rollback",
+      rollbackOfVersionId: VERSION_3,
+      version: 4,
+      versionId: VERSION_4
+    });
+    assert.equal(rollback.configVersion.status, "active");
+    assert.equal(rollback.auditEvent.eventType, "config_version.rollback_requested");
+    assert.equal(rollback.auditEvent.beforeVersionId, VERSION_3);
+    assert.equal(rollback.auditEvent.afterVersionId, VERSION_4);
+
+    facts.permissionGrants = [grant(TENANT_A, "config:write")];
     await rejectsStatus(
-      () => service.switchTenant(apiRequest("tenant-a"), "tenant-a"),
+      () =>
+        service.recordConfigVersionRollback(apiRequest(TENANT_A), {
+          domain: "business_config",
+          key: "sla-policy",
+          payload: { restoredFrom: VERSION_4 },
+          rollbackOfVersionId: VERSION_4,
+          version: 5,
+          versionId: VERSION_5
+        }),
       403
     );
-    assert.equal(auditSink.events.at(-1)?.eventType, "tenant_switch.denied");
-
-    const staleRequest = apiRequest("tenant-a");
-    staleRequest.accessContext = context;
-    await rejectsStatus(() => service.switchTenant(staleRequest, "tenant-b"), 403);
-    assert.equal("accessContext" in staleRequest, false);
-    assert.equal(auditSink.events.at(-1)?.eventType, "tenant_switch.denied");
   });
 
   it("boots the Nest HTTP shell and fails readiness closed by default", async () => {
@@ -129,7 +197,7 @@ describe("M1-02 API access context shell", () => {
       assert.doesNotMatch(readinessBody, /SUPABASE|postgres:\/\//i);
 
       const protectedRoute = await fetchApi(
-        `${baseUrl}/me/access-context?tenant_id=tenant-a`
+        `${baseUrl}/me/access-context?tenant_id=${TENANT_A}`
       );
       assert.equal(protectedRoute.status, 401);
     } finally {
@@ -209,21 +277,46 @@ function apiRequest(tenantId, token = "valid-token-with-ignored-claims") {
 function membership(tenantId, status, cacheVersion) {
   return {
     cacheVersion,
-    orgId: "org-1",
+    orgId: ORG_1,
     role: "member",
     status,
     tenantId,
-    userId: "user-1"
+    userId: USER_1
   };
 }
 
 function grant(tenantId, permission) {
   return {
-    orgId: "org-1",
+    orgId: ORG_1,
     permission,
     tenantId,
-    userId: "user-1"
+    userId: USER_1
   };
+}
+
+async function exerciseTenantSwitchBoundaries(service, facts, context, auditSink) {
+  const switched = await service.switchTenant(apiRequest(TENANT_A), TENANT_A);
+  assert.equal(switched.accessContext.selectedTenantId, TENANT_A);
+  assert.deepEqual(switched.rls.settings, [
+    { key: "app.org_id", value: ORG_1 },
+    { key: "app.tenant_id", value: TENANT_A }
+  ]);
+  assert.deepEqual(auditSink.events.at(-1)?.content?.after, {
+    membershipVersion: 8,
+    tenantId: TENANT_A
+  });
+
+  facts.permissionGrants = [grant(TENANT_A, "tenant:read")];
+  await rejectsStatus(() => service.switchTenant(apiRequest(TENANT_A), TENANT_A), 403);
+  assert.equal(auditSink.events.at(-1)?.module, "access");
+  assert.deepEqual(auditSink.events.at(-1)?.content?.after, null);
+
+  const staleRequest = apiRequest(TENANT_A);
+  staleRequest.accessContext = context;
+  await rejectsStatus(() => service.switchTenant(staleRequest, TENANT_B), 403);
+  assert.equal("accessContext" in staleRequest, false);
+  assert.equal(auditSink.events.at(-1)?.eventType, "tenant_switch.denied");
+  assert.deepEqual(auditSink.events.at(-1)?.content?.before?.targetTenantId, TENANT_B);
 }
 
 async function rejectsStatus(action, statusCode) {

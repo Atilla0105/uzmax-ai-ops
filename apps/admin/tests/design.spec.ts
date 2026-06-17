@@ -17,6 +17,9 @@ test("loads the M1 admin group and tenant shell", async ({ page }) => {
   await expect(page.getByTestId("tenant-health-entry")).toContainText(
     "Connector degraded"
   );
+  await expect(page.getByTestId("audit-config-entry")).toContainText(
+    "config save and rollback"
+  );
   await expect(page.getByTestId("release-readiness")).toContainText("Gate status");
   await expect(page.getByTestId("release-readiness")).toContainText("Owner:");
   await expect(page.getByTestId("release-readiness")).toContainText("Blocker:");

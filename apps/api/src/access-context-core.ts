@@ -6,13 +6,17 @@ import {
   resolveAccessContext
 } from "../../../packages/authz/src/index.ts";
 import {
+  auditEventTypes,
+  configVersionStatuses,
+  createConfigVersionAuditContract,
+  createPermissionGrantAuditContract,
   createRlsTransactionContext,
-  type RlsTransactionContext
+  createScopedConfigVersionContract,
+  createTenantSwitchAuditContract,
+  type AuditLogContract,
+  type ConfigVersionDraftInput,
+  type ConfigVersionAuditInput
 } from "../../../packages/db/src/index.ts";
-
-export type ApiIdentity = {
-  userId: string;
-};
 
 export type ApiRequest = {
   accessContext?: AccessContext;
@@ -21,25 +25,41 @@ export type ApiRequest = {
   query?: Record<string, string | string[] | undefined>;
 };
 
-export type ApiAuditEvent = {
-  actorUserId?: string;
-  eventType: "access_context.denied" | "tenant_switch.allowed" | "tenant_switch.denied";
-  membershipVersion?: number;
-  occurredAt: string;
-  orgId?: string;
-  reason?: string;
+export type ApiAuditEvent =
+  | AuditLogContract
+  | {
+      actorUserId?: string;
+      eventType: typeof auditEventTypes.accessContextDenied;
+      occurredAt: string;
+      reason?: string;
+      tenantId?: string;
+    };
+
+export type ApiPermissionChangeInput = {
+  after: Record<string, unknown>;
+  before: Record<string, unknown>;
+  permission: string;
+  targetUserId: string;
   tenantId?: string;
+  traceId?: string;
+};
+
+export type ApiConfigVersionSaveInput = ConfigVersionDraftInput & {
+  tenantId?: string;
+  traceId?: string;
+};
+
+export type ApiConfigVersionRollbackInput = ApiConfigVersionSaveInput & {
+  rollbackOfVersionId: string;
 };
 
 export type ComponentReadinessStatus = "configured" | "contract" | "not_configured";
 
 export type IdentityVerifier = {
-  verifyBearerToken(token: string): Promise<ApiIdentity>;
+  verifyBearerToken(token: string): Promise<{ userId: string }>;
 };
 
-export type AuditSink = {
-  record(event: ApiAuditEvent): Promise<void>;
-};
+export type AuditSink = { record(event: ApiAuditEvent): Promise<void> };
 
 export class InMemoryAuditSink implements AuditSink {
   readonly events: ApiAuditEvent[] = [];
@@ -102,25 +122,20 @@ export class ApiAccessContextCore {
     return accessContext;
   }
 
-  async switchTenant(
-    request: ApiRequest,
-    targetTenantId: string
-  ): Promise<{
-    accessContext: AccessContext;
-    rls: RlsTransactionContext;
-  }> {
+  async switchTenant(request: ApiRequest, targetTenantId: string) {
     delete request.accessContext;
     const token = readBearerToken(request.headers.authorization);
     const identity = await this.identityVerifier.verifyBearerToken(token);
+    let accessContext: AccessContext | undefined;
 
     try {
-      const accessContext = await resolveAccessContext(this.authzRepository, {
+      accessContext = await resolveAccessContext(this.authzRepository, {
         selectedTenantId: requireTenantId(targetTenantId),
         userId: identity.userId
       });
       assertPermission(accessContext, "tenant:switch");
       request.accessContext = accessContext;
-      await this.recordTenantSwitch("tenant_switch.allowed", accessContext);
+      await this.recordTenantSwitch(accessContext);
       return {
         accessContext,
         rls: createRlsTransactionContext({
@@ -129,15 +144,63 @@ export class ApiAccessContextCore {
         })
       };
     } catch (error) {
-      await this.auditSink.record({
-        actorUserId: identity.userId,
-        eventType: "tenant_switch.denied",
-        occurredAt: new Date().toISOString(),
-        reason: error instanceof Error ? error.message : "tenant switch denied",
-        tenantId: targetTenantId
-      });
+      await this.recordTenantSwitchDenied(
+        identity.userId,
+        request,
+        targetTenantId,
+        error,
+        accessContext
+      );
       throw mapAuthzError(error);
     }
+  }
+
+  async recordPermissionChange(
+    request: ApiRequest,
+    input: ApiPermissionChangeInput
+  ): Promise<{ accessContext: AccessContext; auditEvent: AuditLogContract }> {
+    const accessContext = await this.loadContextWithPermission(
+      request,
+      input.tenantId ?? readTenantId(request),
+      "permission:write"
+    );
+    const auditEvent = createPermissionGrantAuditContract({
+      after: input.after,
+      actorUserId: accessContext.userId,
+      before: input.before,
+      orgId: accessContext.orgId,
+      permission: input.permission,
+      targetUserId: input.targetUserId,
+      tenantId: accessContext.selectedTenantId,
+      ...(input.traceId ? { traceId: input.traceId } : {})
+    });
+    await this.auditSink.record(auditEvent);
+    return { accessContext, auditEvent };
+  }
+
+  async recordConfigVersionSave(request: ApiRequest, input: ApiConfigVersionSaveInput) {
+    return this.recordConfigVersion(
+      request,
+      input,
+      "config:write",
+      auditEventTypes.configVersionSaved,
+      "save",
+      input.previousVersionId
+    );
+  }
+
+  async recordConfigVersionRollback(
+    request: ApiRequest,
+    input: ApiConfigVersionRollbackInput
+  ) {
+    return this.recordConfigVersion(
+      request,
+      { ...input, status: configVersionStatuses.active },
+      "config:rollback",
+      auditEventTypes.configVersionRollbackRequested,
+      "rollback_requested",
+      input.rollbackOfVersionId
+    );
   }
 
   assertPermission(accessContext: AccessContext, permission: string): AccessContext {
@@ -148,8 +211,50 @@ export class ApiAccessContextCore {
     }
   }
 
+  private async loadContextWithPermission(
+    request: ApiRequest,
+    tenantId: string,
+    permission: string
+  ): Promise<AccessContext> {
+    const accessContext = await this.loadContextForRequest(request, tenantId);
+    return this.assertPermission(accessContext, permission);
+  }
+
+  private async recordConfigVersion(
+    request: ApiRequest,
+    input: ApiConfigVersionSaveInput | ApiConfigVersionRollbackInput,
+    permission: string,
+    eventType: ConfigVersionAuditInput["eventType"],
+    action: "rollback_requested" | "save",
+    beforeVersionId: string | undefined
+  ) {
+    const accessContext = await this.loadContextWithPermission(
+      request,
+      input.tenantId ?? readTenantId(request),
+      permission
+    );
+    const configVersion = createScopedConfigVersionContract({
+      ...input,
+      createdByUserId: accessContext.userId,
+      orgId: accessContext.orgId,
+      tenantId: accessContext.selectedTenantId
+    });
+    const auditEvent = createConfigVersionAuditContract({
+      action,
+      actorUserId: accessContext.userId,
+      beforeVersionId,
+      configVersion,
+      eventType,
+      orgId: accessContext.orgId,
+      tenantId: accessContext.selectedTenantId,
+      ...(input.traceId ? { traceId: input.traceId } : {})
+    });
+    await this.auditSink.record(auditEvent);
+    return { accessContext, auditEvent, configVersion };
+  }
+
   private async resolveContextOrDeny(
-    identity: ApiIdentity,
+    identity: { userId: string },
     selectedTenantId: string
   ): Promise<AccessContext> {
     try {
@@ -160,7 +265,7 @@ export class ApiAccessContextCore {
     } catch (error) {
       await this.auditSink.record({
         actorUserId: identity.userId,
-        eventType: "access_context.denied",
+        eventType: auditEventTypes.accessContextDenied,
         occurredAt: new Date().toISOString(),
         reason: error instanceof Error ? error.message : "access context denied",
         tenantId: selectedTenantId
@@ -169,18 +274,60 @@ export class ApiAccessContextCore {
     }
   }
 
-  private async recordTenantSwitch(
-    eventType: "tenant_switch.allowed",
-    accessContext: AccessContext
-  ): Promise<void> {
-    await this.auditSink.record({
-      actorUserId: accessContext.userId,
-      eventType,
-      membershipVersion: accessContext.membershipVersion,
-      occurredAt: new Date().toISOString(),
-      orgId: accessContext.orgId,
-      tenantId: accessContext.selectedTenantId
-    });
+  private async recordTenantSwitch(accessContext: AccessContext) {
+    await this.auditSink.record(
+      createTenantSwitchAuditContract({
+        actorUserId: accessContext.userId,
+        membershipVersion: accessContext.membershipVersion,
+        orgId: accessContext.orgId,
+        tenantId: accessContext.selectedTenantId
+      })
+    );
+  }
+
+  private async recordTenantSwitchDenied(
+    actorUserId: string,
+    request: ApiRequest,
+    targetTenantId: string,
+    error: unknown,
+    accessContext?: AccessContext
+  ) {
+    const auditContext =
+      accessContext ??
+      (await this.resolveTenantSwitchAuditContext(actorUserId, request));
+    if (!auditContext) {
+      await this.auditSink.record({
+        actorUserId,
+        eventType: auditEventTypes.accessContextDenied,
+        occurredAt: new Date().toISOString(),
+        reason: error instanceof Error ? error.message : "tenant switch denied",
+        tenantId: targetTenantId
+      });
+      return;
+    }
+    await this.auditSink.record(
+      createTenantSwitchAuditContract({
+        actorUserId,
+        orgId: auditContext.orgId,
+        reason: error instanceof Error ? error.message : "tenant switch denied",
+        targetTenantId,
+        tenantId: auditContext.selectedTenantId
+      })
+    );
+  }
+
+  private async resolveTenantSwitchAuditContext(
+    actorUserId: string,
+    request: ApiRequest
+  ) {
+    try {
+      return await resolveAccessContext(this.authzRepository, {
+        selectedTenantId: readTenantId(request),
+        userId: actorUserId
+      });
+    } catch {
+      return undefined;
+    }
   }
 }
 

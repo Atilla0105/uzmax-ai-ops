@@ -38,8 +38,8 @@ const releaseGates = [
   },
   {
     adr: "M1 specs",
-    blocker: "M1-04/M1-05 open",
-    evidence: "PR #17, #18",
+    blocker: "M1-05 open",
+    evidence: "M1-01 to M1-04 rolling evidence",
     gate: "M1",
     owner: "pending",
     state: "In progress"
@@ -157,7 +157,7 @@ export function App() {
               <strong>Permission boundary</strong>
               <span>
                 No customer messages, handles, phone numbers, orders, or transcripts are
-                rendered in M1-03.
+                rendered in M1-04.
               </span>
             </div>
             <div className="entry-grid">
@@ -172,8 +172,9 @@ export function App() {
                 testId="tenant-health-entry"
               />
               <Entry
-                title="Team and configuration"
-                value="read-only shell until M1-04"
+                title="Audit and config versions"
+                value="permission changes, tenant switches, config save and rollback"
+                testId="audit-config-entry"
               />
               <Entry
                 title="Permission denied state"

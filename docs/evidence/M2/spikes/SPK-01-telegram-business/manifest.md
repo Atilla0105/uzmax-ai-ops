@@ -77,15 +77,14 @@ These links are background only. They are not real-environment evidence for UZMA
 
 | Command | Result | Notes |
 |---|---|---|
-| `git status --short` | mixed_worktree | SPK-01 docs/ADR/evidence files changed; separate unstaged M2-03 worktree files also appeared (`apps/api/src/app.module.ts`, `apps/api/src/conversation-ticket.ts`, `packages/capabilities/handoff/src/index.ts`) and are not part of this PR |
-| `git branch --no-merged main` | pass | no output before commit, while conservative closure docs were still uncommitted |
-| `gh pr list --state open --limit 50 --json number,title,headRefName,baseRefName,isDraft,url` | pass | returned `[]` before opening this PR |
-| `npm run format:check` | blocked_by_unrelated_worktree_change | first run passed; later rerun failed on unstaged M2-03 worktree content outside SPK-01 and not staged for this PR |
-| `npx prettier --check docs/specs/SPK-01-telegram-business.md docs/adr/README.md docs/adr/ADR-B01-telegram-business.md docs/evidence/M2/README.md docs/evidence/M2/spikes/SPK-01-telegram-business/manifest.md` | pending | run after this validation note update |
+| `git status --short` | pass | root worktree clean before this manifest correction; final PR update contains only this docs evidence file |
+| `git branch --no-merged main` | pass | only `codex/spk-01-telegram-business-closure` is ahead of `main`, as expected for PR #28 |
+| `gh pr list --state open --limit 50 --json number,title,headRefName,baseRefName,isDraft,url` | pass | PR #28 is the draft SPK-01 closure PR for `codex/spk-01-telegram-business-closure` |
+| `git diff --name-only origin/main...HEAD` | pass | committed PR diff is docs-only: SPK-01 spec, ADR-B01, ADR README, M2 README and this manifest |
+| `npm run format:check` | pass | Prettier check passed on the clean root worktree |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok` |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/SPK-01-telegram-business.md --include-worktree` | blocked_by_unrelated_worktree_change | after unrelated M2-03 worktree files appeared, include-worktree correctly treats them as outside SPK-01 scope; final PR validation uses committed diff only |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/SPK-01-telegram-business.md` | pending_post_commit | rerun after commit so the required committed-diff command covers the final branch |
-| `npm run check` | not_run | not needed for docs-only ADR/evidence closure after targeted format/doc/pr-shape guards passed and no source/config/lockfile paths changed |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/SPK-01-telegram-business.md` | pass | 5 docs files, source changed files 0, net source LOC 0, new source files 0 |
+| `npm run check` | not_run | not run because this PR is docs-only ADR/evidence closure and the required targeted format/doc-trigger/pr-shape gates passed |
 
 ## Future Reopen Conditions
 

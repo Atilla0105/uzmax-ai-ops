@@ -81,6 +81,7 @@ Future I-04 closure must be a separate spec/PR and should include at least:
 | `npm run format:check` | pass | Prettier reported all matched files use Prettier code style. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M2-05-realtime-ws-evidence-if-needed.md --include-worktree` | pass | 3 changed files; categories docs 3; source changed files 0, net LOC 0, new files 0. |
+| `npm run guard:pr-shape -- --base origin/main` | pass | PR body metadata parsed the spec path and reported 3 docs files, source changed files 0, net LOC 0, new files 0. |
 | `git diff --check` | pass | No whitespace errors. |
 
 ## Spec Compliance Review

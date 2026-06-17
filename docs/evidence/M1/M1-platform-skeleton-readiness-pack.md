@@ -5,7 +5,7 @@
 > acceptance_items: A-01 / A-02 / B-01 / B-02 / B-03 / B-04 / B-05 / G-06 / J-05 / K-03 / K-04
 > status: accepted
 > created_at: 2026-06-14
-> updated_at: 2026-06-14
+> updated_at: 2026-06-17
 > owner: 项目 owner 确认 M1 范围、项目输入排期、后续 spec 队列和 Gate 1 开工授权；AI agent 复核 M0 证据、拆分 spec、暴露阻断项
 > source_files: `docs/specs/OCM-04-m1-readiness-pack.md`、`docs/preflight/00-opening-control-matrix.md`、`UZMAX智能运营系统-技术架构-v1.1.md`、`UZMAX智能运营系统-后台设计与前端架构-v1.1.md`、`UZMAX智能运营系统-1.0验收矩阵-v1.1.md`
 > sensitive_data_location: none
@@ -22,7 +22,7 @@ OCM-04 已通过 PR #12 合入并进入 `accepted`。M0 技术地基已达到启
 | SPK-04 双鉴权链路 | accepted | PR #10；`docs/adr/ADR-002-dual-auth-access-context.md`；`docs/evidence/M0/spikes/SPK-04-dual-auth/manifest.md` |
 | ADR-003 LLM 数据处理 | accepted_dev_only__customer_llm_blocked | PR #11；`docs/adr/ADR-003-llm-data-processing.md`；`docs/evidence/M0/llm-data-processing/README.md` |
 
-本 readiness pack 不直接放行 M1 业务骨架实现。PR #12 合并后，Gate 1 必须独立做 Go/No-Go 复判；只有 Gate 1 Go 后，后续 M1 实现 spec 才能逐个开 PR。
+本 readiness pack 不直接放行 M1 业务骨架实现。PR #12 合并后，Gate 1 已通过 M1-06 独立 Go/No-Go 复判；当前允许后续 M1 实现 spec 逐个开 PR，但仍不得夹带 M2/M3/M4、GA-0 或客户 LLM。
 
 ## M1 Scope
 
@@ -60,7 +60,7 @@ M1 只覆盖平台骨架：
 
 | 输入 | 责任 | 当前状态 | 截止时间 | 失败分支 |
 |---|---|---|---|---|
-| 历史真实咨询样本脱敏导出 | 项目 owner 提供或确认不可提供；AI agent 检查 manifest 和脱敏摘要 | pending_owner_input | 2026-06-16 23:59 Asia/Tashkent，或项目 owner 在 PR review 中改写 | 缺失、脱敏不合格或不足 60 条时，顺延 M1 eval seed / M2-M3 智能验收；不得伪造样本 |
+| 历史真实咨询样本脱敏导出 | 项目 owner 提供或确认不可提供；AI agent 检查 manifest 和脱敏摘要 | sample_ready__gate1_go | 2026-06-17 M1-06 Gate 1 复判完成；G-06 仍需 M1-05 runner 和正式入集校验 | M1-05 若发现脱敏不合格、类别不足或不足 60 条，顺延 M1 eval seed / M2-M3 智能验收；不得伪造样本 |
 | Staging/prod Supabase 项目、连接池、Auth、Storage 策略 | 项目 owner 决策；AI agent 更新 infra manifest | pending_owner_input | Gate 1 前给出至少 staging/prod 路线或明确顺延 | 未定则 M1 可做 dev skeleton，但不得关闭生产 readiness |
 | Render service creation / Redis / rollback route | 项目 owner 决策；AI agent 更新 manifest/runbook | pending_owner_input | M1 结束前 | 未定则 J-01/J-02 不能关闭 |
 | Vercel preview/prod access protection | 项目 owner 决策；AI agent 更新 manifest | pending_owner_input | M1 结束前 | 未定则后台 preview readiness 不能关闭 |
@@ -75,13 +75,13 @@ M1 只覆盖平台骨架：
 | G1-4 SPK-04 / ADR-002 | accepted | PR #10 合入 |
 | G1-5 ADR-003 | accepted_dev_only__customer_llm_blocked | PR #11 合入；M1 平台骨架可继续，客户 LLM 仍阻断 |
 | G1-6 M1 readiness pack | accepted | PR #12 已合入；readiness pack、M1 spec 清单、项目输入排期与平台骨架边界已归档 |
-| G1-7 历史样本与种子评测责任 | pending_owner_input | 责任、截止时间与失败分支已记录；样本导出、受控存储和抽样脱敏检查仍待 owner 输入 |
-| G1-8 当前 P0 残项 | no_go__owner_inputs_pending | Gate 1 decision 记录为 No-Go；不得进入 M1 实现 |
+| G1-7 历史样本与种子评测责任 | sample_ready__gate1_go | PR #15 已记录 owner-local 真实导出和仓库外脱敏 seed review；M1-06 复核 80 条 seed review 配额和明显残留，允许 M1-05 后续正式入集 |
+| G1-8 当前 P0 残项 | go__m1_platform_skeleton_only | Gate 1 decision 记录为 Go；只允许 M1 平台骨架，不允许 M2/M3/M4/GA-0 或客户 LLM |
 
 ## Review Notes
 
 - 本 readiness pack 不替代 Gate 1 Go/No-Go 记录。
-- OCM-04 已合并；允许继续收集 Gate 1 owner inputs 和准备 spec 文案；实现类 PR 必须等待 Gate 1 Go。
+- M1-06 合并后，允许按 M1 spec 队列进入平台骨架实现；每个实现类 PR 仍必须先有独立 spec。
 - ADR-003 当前仅允许合成数据、脱敏开发样本、公开知识和非客户明文任务；不得把客户明文送入第三方 LLM。
 - 历史样本原始文件不得提交到仓库，manifest 只能记录受控存储位置和脱敏摘要。
 
@@ -89,5 +89,5 @@ M1 只覆盖平台骨架：
 
 | 角色 | 状态 | 备注 |
 |---|---|---|
-| 项目 owner | accepted_via_pr12_merge | PR #12 已合入；若需改历史样本截止时间，应在后续 Gate 1 input PR 中明确 |
-| AI agent | accepted | 已按 OCM-04 拆分 M1 scope、spec 队列、项目输入排期和 Gate 1 剩余状态 |
+| 项目 owner | gate1_go_requested_after_pr15 | PR #12 已合入；PR #15 已合入；2026-06-17 指示完成 Gate 1 Go/No-Go 复判，M1 新阶段另开窗口 |
+| AI agent | accepted_gate1_go | 已按 OCM-04 拆分 M1 scope、spec 队列、项目输入排期；M1-06 已复判 Gate 1 Go，仍阻断 M2/M3/M4/GA-0 |

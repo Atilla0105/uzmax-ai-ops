@@ -75,6 +75,28 @@ M1-04 只关闭 schema/API/admin contract 地基：默认 API 仍使用 contract
 
 `access_context.denied` 是无法安全得到 org/tenant scope 时的 pre-audit 拒绝事件，不直接映射到正式 `audit_log`。`tenant_switch.denied` 在能够解析当前 audit context 时必须使用正式 `AuditLogContract`，包含 `module`、`action`、`object_type`、`content.before` / `content.after` 和当前 tenant scope。
 
+## M2 Channel Conversation Foundation
+
+`M2-01-channel-conversation-db-contracts-foundation` 引入 M2 渠道/对话/消息/工单 DB contracts foundation：
+
+- `packages/db/prisma/schema.prisma` 定义 `channel_connection`、`telegram_update_dedupe`、`conversation`、`message`、`ticket`、`ticket_event` 的 Prisma model mapping、enum/status values 和 tenant-scoped relations。
+- `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql` 定义同名 Postgres tables、enum、tenant FK、RLS select/insert/update policies 和 `uzmax_app_runtime` least-privilege grants。
+- `packages/db/src/index.ts` 暴露 `channelConversationTableNames`、channel/conversation/message/ticket status values，以及 `createConversationContract`、`createMessageContract`、`createTicketContract` 纯 builders/validators。
+
+M2-01 的正式 SQL 表名为 `conversation`、`message`、`ticket`、`ticket_event`；Prisma model 使用 `ChannelConversation`、`ChannelMessage`、`SupportTicket`、`SupportTicketEvent`，避免泛型 model 名与 M1 pre-M2 tests 的边界语义冲突。
+
+所有 M2-01 tenant-scoped table 都必须：
+
+- 带 `org_id` 与 `tenant_id`。
+- FK 到 `tenant(org_id, id)`；跨表引用同时带 scope。
+- `enable` + `force row level security`。
+- 在缺少 `app.org_id` 或 `app.tenant_id` 时 fail closed。
+- 只授予 runtime role `select`、`insert`、`update`；不得授予 delete。
+
+M2-01 does not close C-01/C-02/C-06/D-01/D-02/D-03/I-04. It only provides foundation for later Bot ingress, conversation/handoff/ticket API, admin shell, and realtime specs.
+
+Business-specific schema remains deferred to SPK-01 / ADR-B01. This PR deliberately does not add `business_connection`, customer asset center, order/customer asset tables, Bot runtime, API/admin/worker/WS, LLM, prompts, distill, production traffic, or Business feasibility claims. No raw Telegram payloads or customer content belong in this contract or its evidence.
+
 ## Verification
 
 本契约的本地验证入口：
@@ -83,6 +105,7 @@ M1-04 只关闭 schema/API/admin contract 地基：默认 API 仍使用 contract
 - `npm run typecheck`
 - `npm run lint`
 - `npm run test`
+- `node --test scripts/tests/m2-channel-conversation-foundation.test.mjs`
 - `node --test scripts/tests/m1-02-api-access-context.test.mjs`
 - `node --test scripts/tests/m1-platform-foundation.test.mjs`
 

@@ -39,36 +39,119 @@ enum ConfigVersionStatus {
   @@map("config_version_status")
 }
 
+enum ChannelConnectionStatus {
+  ACTIVE   @map("active")
+  DEGRADED @map("degraded")
+  DISABLED @map("disabled")
+  ARCHIVED @map("archived")
+
+  @@map("channel_connection_status")
+}
+
+enum ConversationStatus {
+  OPEN            @map("open")
+  PENDING_HANDOFF @map("pending_handoff")
+  HANDOFF         @map("handoff")
+  CLOSED          @map("closed")
+
+  @@map("conversation_status")
+}
+
+enum MessageDirection {
+  INBOUND  @map("inbound")
+  OUTBOUND @map("outbound")
+  INTERNAL @map("internal")
+
+  @@map("message_direction")
+}
+
+enum MessageContentKind {
+  TEXT        @map("text")
+  IMAGE       @map("image")
+  VOICE       @map("voice")
+  CALLBACK    @map("callback")
+  UNSUPPORTED @map("unsupported")
+  SYSTEM      @map("system")
+
+  @@map("message_content_kind")
+}
+
+enum MessageDeliveryStatus {
+  RECEIVED  @map("received")
+  QUEUED    @map("queued")
+  SENT      @map("sent")
+  FAILED    @map("failed")
+  CANCELLED @map("cancelled")
+
+  @@map("message_delivery_status")
+}
+
+enum TicketStatus {
+  OPEN      @map("open")
+  CLAIMED   @map("claimed")
+  LOCKED    @map("locked")
+  ESCALATED @map("escalated")
+  CLOSED    @map("closed")
+  REOPENED  @map("reopened")
+
+  @@map("ticket_status")
+}
+
+enum TicketEventType {
+  CREATED        @map("created")
+  CLAIMED        @map("claimed")
+  LOCKED         @map("locked")
+  NOTE_ADDED     @map("note_added")
+  ESCALATED      @map("escalated")
+  CLOSED         @map("closed")
+  REOPENED       @map("reopened")
+  STATUS_CHANGED @map("status_changed")
+
+  @@map("ticket_event_type")
+}
+
 model Org {
-  id               String               @id @default(uuid()) @db.Uuid
-  slug             String               @unique @db.Text
-  name             String               @db.Text
-  status           PlatformRecordStatus @default(ACTIVE)
-  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  auditLogs        AuditLog[]
-  configVersions   ConfigVersion[]
-  tenants          Tenant[]
-  orgMembers       OrgMember[]
-  tenantMembers    TenantMember[]
-  permissionGrants PermissionGrant[]
+  id                    String                   @id @default(uuid()) @db.Uuid
+  slug                  String                   @unique @db.Text
+  name                  String                   @db.Text
+  status                PlatformRecordStatus     @default(ACTIVE)
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs             AuditLog[]
+  configVersions        ConfigVersion[]
+  tenants               Tenant[]
+  orgMembers            OrgMember[]
+  tenantMembers         TenantMember[]
+  permissionGrants      PermissionGrant[]
+  channelConnections    ChannelConnection[]
+  telegramUpdateDedupes TelegramUpdateDedupe[]
+  conversations         ChannelConversation[]
+  conversationMessages  ChannelMessage[]
+  supportTickets        SupportTicket[]
+  supportTicketEvents   SupportTicketEvent[]
 
   @@map("org")
 }
 
 model Tenant {
-  id               String               @id @default(uuid()) @db.Uuid
-  orgId            String               @map("org_id") @db.Uuid
-  slug             String               @db.Text
-  name             String               @db.Text
-  status           PlatformRecordStatus @default(ACTIVE)
-  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  auditLogs        AuditLog[]
-  configVersions   ConfigVersion[]
-  org              Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  tenantMembers    TenantMember[]
-  permissionGrants PermissionGrant[]
+  id                    String                   @id @default(uuid()) @db.Uuid
+  orgId                 String                   @map("org_id") @db.Uuid
+  slug                  String                   @db.Text
+  name                  String                   @db.Text
+  status                PlatformRecordStatus     @default(ACTIVE)
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs             AuditLog[]
+  configVersions        ConfigVersion[]
+  org                   Org                      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenantMembers         TenantMember[]
+  permissionGrants      PermissionGrant[]
+  channelConnections    ChannelConnection[]
+  telegramUpdateDedupes TelegramUpdateDedupe[]
+  conversations         ChannelConversation[]
+  conversationMessages  ChannelMessage[]
+  supportTickets        SupportTicket[]
+  supportTicketEvents   SupportTicketEvent[]
 
   @@unique([orgId, id])
   @@unique([orgId, slug])
@@ -182,4 +265,138 @@ model AuditLog {
   @@index([eventType, occurredAt])
   @@index([objectType, objectId])
   @@map("audit_log")
+}
+
+model ChannelConnection {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  orgId                 String                   @map("org_id") @db.Uuid
+  tenantId              String                   @map("tenant_id") @db.Uuid
+  provider              String                   @db.Text
+  externalAccountRef    String                   @map("external_account_ref") @db.Text
+  displayName           String?                  @map("display_name") @db.Text
+  status                ChannelConnectionStatus  @default(ACTIVE)
+  capabilities          Json
+  metadata              Json
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org                   Org                      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant                Tenant                   @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  telegramUpdateDedupes TelegramUpdateDedupe[]
+  conversations         ChannelConversation[]
+  messages              ChannelMessage[]
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, provider, externalAccountRef])
+  @@index([orgId, tenantId, status])
+  @@map("channel_connection")
+}
+
+model TelegramUpdateDedupe {
+  id                  String            @id @default(uuid()) @db.Uuid
+  orgId               String            @map("org_id") @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  channelConnectionId String            @map("channel_connection_id") @db.Uuid
+  providerUpdateId    String            @map("provider_update_id") @db.Text
+  updateKind          String?           @map("update_kind") @db.Text
+  receivedAt          DateTime          @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt         DateTime?         @map("processed_at") @db.Timestamptz(6)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  org                 Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant              Tenant            @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  channelConnection   ChannelConnection @relation(fields: [channelConnectionId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+
+  @@unique([orgId, tenantId, channelConnectionId, providerUpdateId])
+  @@index([orgId, tenantId, receivedAt])
+  @@map("telegram_update_dedupe")
+}
+
+model ChannelConversation {
+  id                      String                @id @default(uuid()) @db.Uuid
+  orgId                   String                @map("org_id") @db.Uuid
+  tenantId                String                @map("tenant_id") @db.Uuid
+  channelConnectionId     String                @map("channel_connection_id") @db.Uuid
+  externalConversationRef String                @map("external_conversation_ref") @db.Text
+  participantExternalRef  String                @map("participant_external_ref") @db.Text
+  status                  ConversationStatus    @default(OPEN)
+  unreadCount             Int                   @default(0) @map("unread_count")
+  lastMessageAt           DateTime?             @map("last_message_at") @db.Timestamptz(6)
+  createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org                     Org                   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant                  Tenant                @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  channelConnection       ChannelConnection     @relation(fields: [channelConnectionId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+  messages                ChannelMessage[]
+  tickets                 SupportTicket[]
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, channelConnectionId, externalConversationRef])
+  @@index([orgId, tenantId, status, updatedAt])
+  @@map("conversation")
+}
+
+model ChannelMessage {
+  id                  String                @id @default(uuid()) @db.Uuid
+  orgId               String                @map("org_id") @db.Uuid
+  tenantId            String                @map("tenant_id") @db.Uuid
+  conversationId      String                @map("conversation_id") @db.Uuid
+  channelConnectionId String                @map("channel_connection_id") @db.Uuid
+  direction           MessageDirection
+  contentKind         MessageContentKind    @map("content_kind")
+  deliveryStatus      MessageDeliveryStatus @default(RECEIVED) @map("delivery_status")
+  externalMessageRef  String?               @map("external_message_ref") @db.Text
+  content             Json
+  occurredAt          DateTime              @map("occurred_at") @db.Timestamptz(6)
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  org                 Org                   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant              Tenant                @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  conversation        ChannelConversation   @relation(fields: [conversationId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+  channelConnection   ChannelConnection     @relation(fields: [channelConnectionId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, channelConnectionId, externalMessageRef])
+  @@index([orgId, tenantId, conversationId, occurredAt])
+  @@map("message")
+}
+
+model SupportTicket {
+  id             String               @id @default(uuid()) @db.Uuid
+  orgId          String               @map("org_id") @db.Uuid
+  tenantId       String               @map("tenant_id") @db.Uuid
+  conversationId String               @map("conversation_id") @db.Uuid
+  status         TicketStatus         @default(OPEN)
+  priority       Int                  @default(3)
+  assignedUserId String?              @map("assigned_user_id") @db.Uuid
+  lockedByUserId String?              @map("locked_by_user_id") @db.Uuid
+  summary        String?              @db.Text
+  slaDueAt       DateTime?            @map("sla_due_at") @db.Timestamptz(6)
+  closedAt       DateTime?            @map("closed_at") @db.Timestamptz(6)
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org            Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant         Tenant               @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  conversation   ChannelConversation  @relation(fields: [conversationId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+  events         SupportTicketEvent[]
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, status, updatedAt])
+  @@index([assignedUserId, status])
+  @@map("ticket")
+}
+
+model SupportTicketEvent {
+  id          String          @id @default(uuid()) @db.Uuid
+  orgId       String          @map("org_id") @db.Uuid
+  tenantId    String          @map("tenant_id") @db.Uuid
+  ticketId    String          @map("ticket_id") @db.Uuid
+  eventType   TicketEventType @map("event_type")
+  actorUserId String?         @map("actor_user_id") @db.Uuid
+  payload     Json
+  occurredAt  DateTime        @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  org         Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant      Tenant          @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  ticket      SupportTicket   @relation(fields: [ticketId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+
+  @@index([orgId, tenantId, ticketId, occurredAt])
+  @@map("ticket_event")
 }

@@ -52,6 +52,7 @@ jobs:
       - run:
           npm run guard:eval-triggers -- --base "${{ steps.guard-base.outputs.base }}"
       - run: npm run guard:doc-triggers
+      - run: npm run guard:workspace
       - if: github.event_name == 'pull_request'
         run: npm run guard:pr-shape -- --base "${{ steps.guard-base.outputs.base }}"
       - run: npm run -w @uzmax/db prisma:generate

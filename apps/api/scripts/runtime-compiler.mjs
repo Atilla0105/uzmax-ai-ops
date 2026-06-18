@@ -34,12 +34,66 @@ export async function importApiRuntime() {
   });
   await writeModule(
     outDir,
-    "apps/api/src/conversation-ticket.ts",
-    "conversation-ticket.mjs",
+    "apps/api/src/conversation-ticket.types.ts",
+    "conversation-ticket.types.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/conversation-ticket.errors.ts",
+    "conversation-ticket.errors.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/conversation-ticket.repository.ts",
+    "conversation-ticket.repository.mjs",
     {
       "../../../packages/authz/src/index.ts": "./authz-index.mjs",
       "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs",
-      "./access-context.ts": "./access-context.mjs"
+      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/conversation-ticket.service.ts",
+    "conversation-ticket.service.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs",
+      "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+      "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",
+      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/conversation-ticket.controller.ts",
+    "conversation-ticket.controller.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "./access-context.ts": "./access-context.mjs",
+      "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+      "./conversation-ticket.service.ts": "./conversation-ticket.service.mjs",
+      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/conversation-ticket.ts",
+    "conversation-ticket.mjs",
+    {
+      "./conversation-ticket.controller.ts": "./conversation-ticket.controller.mjs",
+      "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+      "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",
+      "./conversation-ticket.service.ts": "./conversation-ticket.service.mjs",
+      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
     }
   );
   await writeModule(

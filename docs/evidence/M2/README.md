@@ -8,4 +8,6 @@ SPK-01 Telegram Business 证据目录：`spikes/SPK-01-telegram-business/`。当
 
 M2 当前状态：`ready_to_start_specs`。该状态只允许后续 M2 spec/PR 排队开工；production、真实客户流量、customer LLM、GA-0、Business 自动回复和 Business 可行性仍未放行。SPK-01 当前分支不声明 Telegram Business 不可行或已实测可行，只记录因 owner inputs/evidence 缺失而关闭 Business 模块并启用 C-03b。
 
+M2-05 realtime evidence：`M2-05-realtime-ws-evidence-if-needed.md`。当前 decision 为 `documented_no_ws_branch_for_m2`：M2 不实现生产 WebSocket 或 polling runtime，I-04 在 M2 走 documented degraded/no-WS branch，1.0 production 关闭仍需后续真实 WS 或 polling integration spec 与自动化 latency/freshness/cache evidence。
+
 本目录不得提交真实客户明文、原始截图、语音、Telegram payloads、订单号、电话、地址、支付信息或客服个人账号。敏感原始文件只能放在受控存储中，并在 manifest 中记录脱敏方式、访问权限、保留期限和项目 owner 确认状态。

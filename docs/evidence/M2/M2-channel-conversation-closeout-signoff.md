@@ -3,27 +3,27 @@
 > evidence_id: M2-channel-conversation-closeout-signoff
 > milestone: M2
 > acceptance_items: C-01 / C-02 / C-03 / C-03b / C-04 / C-05 / C-05b / C-06 / D-01 / D-02 / D-03 / I-01 / I-04 / J-05 / K-03 / K-04
-> status: ready_for_owner_acceptance
+> status: owner_accepted_m2_milestone_evidence
 > created_at: 2026-06-18
 > updated_at: 2026-06-18
-> owner_ai_boundary: 项目 owner/coordinator asked to complete M2 closeout evidence; project owner final M2 acceptance/signoff is still pending. AI agent records repo/GitHub evidence, risk boundaries and follow-up blockers, but does not approve production, GA-0, real customer traffic, customer LLM, true accounts, cost, compliance or 1.0 release.
-> source_files: `AGENTS.md`, v1.1 root docs, `docs/doc-gates.md`, `docs/specs/M2-00-channel-conversation-readiness-pack.md` through `docs/specs/M2-10-workspace-guard.md`, `scripts/guards/workspace-isolation.mjs`, `docs/incidents/INC-2026-06-18-m2-worktree-contamination.md`, `docs/evidence/M2/**`, `docs/adr/ADR-B01-telegram-business.md`, PR #25-#33, main CI run #27692907741 / #27695801465 / #27698225017 / #27700327547 / #27702288629 / #27720287072 / #27737728410 / #27739818105 / #27745400807, PR check run #27738958992 / #27745068913, local `git`/`gh` verification on 2026-06-18.
+> owner_ai_boundary: 项目 owner accepted M2 milestone evidence in this Codex thread on 2026-06-18 with “OK，那m2基本上没有什么问题了，签收。” This acceptance is milestone-evidence-only. AI agent records repo/GitHub evidence, risk boundaries and follow-up blockers, but does not approve production, GA-0, real customer traffic, customer LLM, true accounts, Telegram Business feasibility, Business auto-reply, cost, compliance or 1.0 release.
+> source_files: `AGENTS.md`, v1.1 root docs, `docs/doc-gates.md`, `docs/specs/M2-00-channel-conversation-readiness-pack.md` through `docs/specs/M2-11-owner-acceptance-record.md`, `scripts/guards/workspace-isolation.mjs`, `docs/incidents/INC-2026-06-18-m2-worktree-contamination.md`, `docs/evidence/M2/**`, `docs/adr/ADR-B01-telegram-business.md`, PR #25-#36, main CI run #27692907741 / #27695801465 / #27698225017 / #27700327547 / #27702288629 / #27720287072 / #27737728410 / #27739818105 / #27745400807 / #27747975961 / #27775439978 / #27777583860, PR check run #27738958992 / #27745068913, local `git`/`gh` verification on 2026-06-18, project owner Codex thread acceptance input on 2026-06-18.
 > sensitive_data_location: none in repo
 > redaction_status: no raw Telegram payloads, customer plaintext, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, secrets or token values included
-> review_notes: M2 channel/conversation queue is closed for milestone evidence only. M2-07 resolved the concrete owner-review API HTTP status quality gap. M2-09 records and institutionalizes the M2 workspace contamination incident; M2-10 lands the minimum `guard:workspace` follow-up without changing M2 acceptance or release boundaries. Production, GA-0, real customer traffic, customer LLM, Business feasibility and 1.0 release remain blocked or future-gated.
-> signoff: ready_for_owner_acceptance; no explicit final project owner release signoff found for M2 in current repo/GitHub evidence
+> review_notes: M2 channel/conversation queue is owner accepted for milestone evidence only. M2-07 resolved the concrete owner-review API HTTP status quality gap. M2-09 records and institutionalizes the M2 workspace contamination incident; M2-10 lands the minimum `guard:workspace` follow-up without changing release boundaries. Production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply and 1.0 release remain blocked or future-gated.
+> signoff: owner_accepted_m2_milestone_evidence; project owner accepted M2 milestone evidence in Codex thread on 2026-06-18 with “OK，那m2基本上没有什么问题了，签收。”; not production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release signoff
 
 ## Current Decision
 
-M2 channel/conversation queue is closed for milestone evidence only.
+M2 channel/conversation queue is closed and project owner accepted the milestone evidence only.
 
-This closeout records that M2-00 through M2-07 and SPK-01/ADR-B01 have been merged or conservatively branched, and that their evidence is ready for project owner review. It is not a production release, not GA-0, not real customer traffic, not customer LLM, not Telegram Business feasibility, and not 1.0 release signoff.
+This closeout records that M2-00 through M2-10 and SPK-01/ADR-B01 have been merged, conservatively branched or documented as follow-up governance, and that project owner accepted the resulting M2 milestone evidence in this Codex thread on 2026-06-18 with “OK，那m2基本上没有什么问题了，签收。” It is not a production release, not GA-0, not real customer traffic, not customer LLM, not Telegram Business feasibility, not Business auto-reply, and not 1.0 release signoff.
 
-The current decision is `ready_for_owner_acceptance`, not `accepted`. The user/coordinator asked this worker to synchronize M2 closeout after the M2-07 owner-review follow-up, but there is no explicit final project owner M2 acceptance/signoff equivalent to the M1 owner signoff wording in current evidence.
+The current decision is `owner_accepted_m2_milestone_evidence`. This supersedes the previous `ready_for_owner_acceptance` state only for M2 milestone evidence acceptance; all production, GA-0, real traffic, customer LLM, Business and 1.0 release decisions remain future-gated.
 
 ## Current Main And PR Ledger
 
-`origin/main` was verified at `9bce892c71398ed7d6798b8ed92af648cb570749`, matching PR #33.
+`origin/main` was verified at `3dc2fe9da5136f1213dfefe2935ff4520ae89d91`, matching PR #36.
 
 | PR | Scope | Merge commit | Merged at | Main CI run | Conclusion |
 |---:|---|---|---|---|---|
@@ -36,6 +36,9 @@ The current decision is `ready_for_owner_acceptance`, not `accepted`. The user/c
 | [#31](https://github.com/Atilla0105/uzmax-ai-ops/pull/31) | M2-05 realtime no-WS branch | `8571e401e1d116ce90b6090a6a916ab6cc6bb133` | 2026-06-18T04:57:51Z | [27737728410](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27737728410) | success |
 | [#32](https://github.com/Atilla0105/uzmax-ai-ops/pull/32) | M2-06 channel conversation closeout | `7bcb7e1a6c8c10a2a521a321c558c7070ace7667` | 2026-06-18T05:55:21Z | [27739818105](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27739818105) | success; post-merge main CI created 2026-06-18T05:55:24Z, updated 2026-06-18T06:01:23Z; PR check [27738958992](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27738958992) success, completed 2026-06-18T05:38:51Z |
 | [#33](https://github.com/Atilla0105/uzmax-ai-ops/pull/33) | M2-07 conversation ticket API HTTP hardening | `9bce892c71398ed7d6798b8ed92af648cb570749` | 2026-06-18T08:00:45Z | [27745400807](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27745400807) | success; post-merge main CI created 2026-06-18T08:00:49Z, updated 2026-06-18T08:06:44Z; PR check [27745068913](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27745068913) success, completed 2026-06-18T08:00:25Z |
+| [#34](https://github.com/Atilla0105/uzmax-ai-ops/pull/34) | M2-08 closeout postreview evidence sync | `dc58e04fe705847d2de2123e78f57f1e511f1944` | 2026-06-18T08:49:32Z | [27747975961](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27747975961) | success; post-merge main CI created 2026-06-18T08:49:35Z, updated 2026-06-18T08:56:03Z |
+| [#35](https://github.com/Atilla0105/uzmax-ai-ops/pull/35) | M2-09 workspace incident governance | `a3f94c711e8a5fea8c62b26558884c7ea102f20f` | 2026-06-18T16:52:59Z | [27775439978](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27775439978) | success; post-merge main CI created 2026-06-18T16:53:02Z, updated 2026-06-18T17:02:50Z |
+| [#36](https://github.com/Atilla0105/uzmax-ai-ops/pull/36) | M2-10 workspace isolation guard | `3dc2fe9da5136f1213dfefe2935ff4520ae89d91` | 2026-06-18T17:30:32Z | [27777583860](https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/27777583860) | success; post-merge main CI created 2026-06-18T17:30:39Z, updated 2026-06-18T17:49:09Z |
 
 ## Owner-review Follow-up Sync
 
@@ -68,8 +71,8 @@ M2-07 did not change `claim` vs `lock` semantics. `claim` still assigns, and `lo
 | D-03 | contract_or_ui_partial_evidence_for_m2_scope | M2-03 claim/lock/note/escalate/close/reopen state machine; M2-04 local UI actions; M2-07 lock conflict 409 and actorUserId spoofing coverage | not fully closed; multi-account production E2E remains future work; claim vs lock semantics unchanged |
 | I-01 | local_ui_partial_evidence_not_full_1_0 | M2-04 local synthetic conversation/ticket desktop shell | not full 1.0; customer/order/knowledge/eval workflows remain future work |
 | I-04 | documented_no_ws_branch_for_m2_not_closed_for_1_0_production | M2-05 records `documented_no_ws_branch_for_m2` and M2-04 degraded/non-realtime UI | not closed for production; future real WS or polling integration required |
-| J-05 | closed_for_m2_governance | M2 evidence was recorded per slice and rolled up here before M6 | owner acceptance pending; not release signoff |
-| K-03 | closed_for_m2_governance | M2-00 through M2-07 use one spec / one PR; M2-08 is the current docs-only evidence sync spec for coordinator review | remains ongoing governance rule |
+| J-05 | owner_accepted_m2_milestone_evidence | M2 evidence was recorded per slice, rolled up before M6 and explicitly accepted by project owner on 2026-06-18 | milestone evidence accepted; not production or release signoff |
+| K-03 | closed_for_m2_governance | M2-00 through M2-10 use one spec / one PR; M2-11 is the current docs-only owner acceptance record | remains ongoing governance rule |
 | K-04 | closed_for_m2_governance | M2 queue/touch modules documented; DB schema was serial in M2-01 | remains ongoing governance rule |
 
 ## Follow-up Blockers
@@ -91,7 +94,7 @@ M2-07 did not change `claim` vs `lock` semantics. `claim` still assigns, and `lo
 |---|---|---|---|---|
 | `docs/incidents/INC-2026-06-18-m2-worktree-contamination.md` | `guarded`; M2-10 `guard:workspace` follow-up landed | M2-05 evidence records a root write boundary: an initial mistaken root write was removed and root returned clean before the isolated worktree diff. The full timeline/root cause cannot be proven from repo evidence alone because no incident log existed at the time. | M2-05 records root cleanup for that boundary; this closeout does not claim every transient workspace state from M2 was reconstructable. | `AGENTS.md` workspace isolation rule, spec README/template worktree/branch and incident fields, `docs/incidents/` templates, plus `scripts/guards/workspace-isolation.mjs` wired through `guard:workspace`, `npm run check` and CI. |
 
-This incident and the M2-10 guard follow-up do not change the M2 decision state. M2 remains `ready_for_owner_acceptance`, not `accepted`, production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility or 1.0 release signoff.
+This incident and the M2-10 guard follow-up did not themselves change the M2 decision state. M2 is now `owner_accepted_m2_milestone_evidence` only because the project owner accepted the milestone evidence on 2026-06-18. The incident and guard evidence still do not imply production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release signoff.
 
 ## Sensitive Data Boundary
 
@@ -109,12 +112,12 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 
 | Command | Result | Notes |
 |---|---|---|
-| `pwd` | pass | `/Users/atilla/Documents/uzmax-m2-08-closeout-postreview-sync` |
-| `git status --short --branch` | pass | `## codex/m2-08-closeout-postreview-sync...origin/main`; pre-edit clean; final status contains only intended M2-08 docs changes |
-| `git branch --show-current` | pass | `codex/m2-08-closeout-postreview-sync` |
-| `git fetch origin main --prune` | pass | refreshed `origin/main` before ledger verification |
-| `git rev-parse origin/main` | pass | `9bce892c71398ed7d6798b8ed92af648cb570749` |
-| `git rev-parse HEAD` | pass | `9bce892c71398ed7d6798b8ed92af648cb570749` before this docs diff |
+| `pwd` | pass | `/Users/atilla/Documents/uzmax-m2-11-owner-acceptance` |
+| `git status --short --branch` | pass | `## codex/m2-11-owner-acceptance...origin/main`; pre-edit clean; pre-commit status contains only intended M2-11 docs changes |
+| `git branch --show-current` | pass | `codex/m2-11-owner-acceptance` |
+| `git fetch origin` | pass | refreshed `origin` before creating the linked worktree |
+| `git rev-parse origin/main` | pass | `3dc2fe9da5136f1213dfefe2935ff4520ae89d91` |
+| `git rev-parse HEAD` | pass | `3dc2fe9da5136f1213dfefe2935ff4520ae89d91` before this docs diff |
 | `git branch --no-merged main` | pass | no output |
 | `gh pr list --state open --json number,title,headRefName,url,isDraft` | pass | returned `[]` at pre-edit audit |
 
@@ -138,17 +141,28 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M2-08-closeout-postreview-evidence-sync.md --include-worktree` | pass | 3 changed files; categories docs 3; source changed files 0, net LOC 0, new files 0. |
 | `git diff --check` | pass | No whitespace errors. |
 
+### Owner Acceptance Record Validation
+
+| Command | Result | Notes |
+|---|---|---|
+| `npm run format:check` | pass | Prettier reported all matched files use Prettier code style. |
+| `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
+| `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m2-11-owner-acceptance, linked worktree, dirty allowed)`. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M2-11-owner-acceptance-record.md --include-worktree` | pass | 3 changed files; categories docs 3; source changed files 0, net LOC 0, new files 0. |
+| `git diff --check` | pass | No whitespace errors. |
+| `git status --short --branch` | pass | Only intended M2-11 docs files changed before commit. |
+
 ## Spec Compliance Review
 
 | Check | Result | Evidence |
 |---|---|---|
-| One spec / one PR | pass | M2-06 historical closeout plus M2-08 current postreview evidence sync; this branch implements only M2-08. |
-| Touch list | pass | Intended M2-08 diff is limited to `docs/specs/M2-08-closeout-postreview-evidence-sync.md`, this closeout evidence and `docs/evidence/M2/README.md`. |
+| One spec / one PR | pass | M2-06 historical closeout, M2-08 postreview evidence sync and M2-11 current owner acceptance record each use a separate spec; this branch implements only M2-11. |
+| Touch list | pass | Intended M2-11 diff is limited to `docs/specs/M2-11-owner-acceptance-record.md`, this closeout evidence and `docs/evidence/M2/README.md`. |
 | Docs-only scope | pass | No source, test, generated, lock, config, dist or raw sample changes. |
 | M2-07 postreview sync | pass | PR #33 merge/CI facts recorded; concrete HTTP status quality gap marked resolved without changing production/customer-data boundaries. |
 | Business honesty | pass | ADR-B01 conservative closure only; no feasibility or auto-reply claim. |
 | Realtime honesty | pass | I-04 remains not closed for 1.0 production. |
-| Release honesty | pass | Status is `ready_for_owner_acceptance`, not accepted/production/GA-0 release signoff. |
+| Release honesty | pass | Status is `owner_accepted_m2_milestone_evidence`, not production/GA-0/real traffic/customer LLM/Business/release signoff. |
 | Sensitive data | pass | Aggregate evidence only; no raw/customer/personal/secret material. |
 | External API evidence | pass | None added; no new provider/connector/adapter. |
 | Exceptions | pass | none. |
@@ -157,17 +171,17 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 
 | Check | Result | Evidence |
 |---|---|---|
-| Release boundary wording | pass | No accepted, production, GA-0, real traffic, customer LLM, Business feasibility or 1.0 release overclaim; status remains `ready_for_owner_acceptance`. |
-| PR/CI distinction | pass | PR #32/#33 check runs are recorded separately from post-merge main CI runs with merge commits and main run IDs. |
+| Release boundary wording | pass | Owner acceptance is limited to M2 milestone evidence; no production, GA-0, real traffic, customer LLM, Business feasibility, Business auto-reply or 1.0 release overclaim. |
+| PR/CI distinction | pass | PR #32/#33 check runs are recorded separately from post-merge main CI runs; PR #34-#36 merge commits and main CI runs are recorded with current `origin/main` evidence. |
 | M2-07 scope wording | pass | Only HTTP error mapping and API file split are claimed; claim vs lock semantics and production DB/WS/worker/admin API/real traffic/customer-data boundaries remain future-gated. |
 | Sensitive data | pass | Aggregate repo/GitHub evidence only; no raw payloads, customer plaintext, screenshots, voice transcripts, order/phone/address/payment data, support personal accounts or secrets. |
-| Path categories | pass | M2-08 remains docs-only with no source, test, config, lockfile, generated, dist or raw sample changes. |
+| Path categories | pass | M2-11 remains docs-only with no source, test, config, lockfile, generated, dist or raw sample changes. |
 
 ## Signoff
 
 | Actor | Status | Notes |
 |---|---|---|
-| Project owner | pending_acceptance | No explicit final M2 owner acceptance/signoff found in current repo/GitHub evidence. |
-| AI agent | ready_for_owner_acceptance | M2 channel/conversation evidence queue has been rolled up for owner review with production and later-gate blockers preserved. |
+| Project owner | owner_accepted_m2_milestone_evidence | 2026-06-18 在 Codex 线程明确回复：“OK，那m2基本上没有什么问题了，签收。”该签收只接受 M2 milestone evidence，不放行 production、GA-0、真实客户流量、customer LLM、Telegram Business 可行性、Business auto-reply 或 1.0 release |
+| AI agent | recorded_owner_acceptance | 已从当前 `main`、M2 evidence、M2-11 spec 和 owner 明确签收输入归档 M2 milestone evidence acceptance；未放行 production、GA-0、真实客户流量、customer LLM、Telegram Business 可行性、Business auto-reply 或 1.0 release |
 
-Owner acceptance of this closeout would accept only M2 milestone evidence readiness. It would not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
+Owner acceptance of this closeout accepts only M2 milestone evidence. It does not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.

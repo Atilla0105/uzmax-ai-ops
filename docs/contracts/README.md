@@ -131,6 +131,23 @@ M2-02 provides C-01/C-02 foundation/partial evidence only. It does not close C-0
 
 M2-03 provides C-06/D-01/D-02/D-03 contract/partial evidence only. It does not fully close those items, does not close I-04, and does not implement admin UI, WebSocket/realtime, real DB repository, Prisma schema/migration, engine/worker consumer, LLM, prompt/model route, Telegram Business, outbound sending, production deployment, GA-0 or real customer traffic. External API evidence: none (no new external API/SDK/provider/connector/adapter).
 
+## M2-07 Conversation Ticket API HTTP Error Contract
+
+`M2-07-conversation-ticket-api-http-hardening` hardens the M2-03 API shell error boundary without changing public routes or production readiness:
+
+- `conversation not found` and `ticket not found` map to HTTP 404.
+- Ticket lock conflicts (`ticket is locked by another user`) map to HTTP 409.
+- Missing required fields, invalid conversation status, invalid ticket action type and invalid ticket priority map to HTTP 400.
+- Missing `AccessContext` follows the M1 access-context fail-closed style and maps to HTTP 403 at the conversation/ticket controller boundary. Missing or invalid identity remains the existing M1 guard responsibility and maps before the controller.
+- Permission/authz failures map to HTTP 403 and must not surface as generic 500 responses.
+- Unknown unexpected errors remain unexpected; the controller mapper does not convert arbitrary errors into business HTTP exceptions.
+
+M2-07 also splits the API-local implementation into `conversation-ticket.controller.ts`, `conversation-ticket.errors.ts`, `conversation-ticket.repository.ts`, `conversation-ticket.service.ts` and `conversation-ticket.types.ts`, with `conversation-ticket.ts` kept as the public barrel used by `AppModule`.
+
+Claim and lock semantics are unchanged: `claim` assigns the ticket; `lock` is the exclusive edit guard. Claim-exclusive behavior would require a separate owner product decision and spec.
+
+This contract still does not wire real DB persistence, WebSocket/realtime, worker/engine consumers, admin API clients, production traffic, Telegram Business, LLM/prompt/model route, outbound sending or `message.content` customer plaintext paths. ADR-003/customer-data restrictions remain active for future M3/production work.
+
 ## Verification
 
 本契约的本地验证入口：
@@ -140,6 +157,7 @@ M2-03 provides C-06/D-01/D-02/D-03 contract/partial evidence only. It does not f
 - `npm run lint`
 - `npm run test`
 - `node --test scripts/tests/m2-conversation-ticket-api-contract.test.mjs`
+- `node --test scripts/tests/m2-conversation-ticket-api-http-hardening.test.mjs`
 - `node --test scripts/tests/m2-telegram-bot-ingress.test.mjs`
 - `node --test scripts/tests/m2-channel-conversation-foundation.test.mjs`
 - `node --test scripts/tests/m1-02-api-access-context.test.mjs`

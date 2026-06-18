@@ -77,6 +77,22 @@ export type TicketAction =
     >)
   | { actorUserId: string; now?: string; reason: string; type: "reopen" };
 
+export type TicketDomainErrorCode =
+  | "invalid_action_type"
+  | "invalid_priority"
+  | "locked_by_another_user"
+  | "missing_required_field";
+
+export class TicketDomainError extends Error {
+  constructor(
+    readonly code: TicketDomainErrorCode,
+    message: string
+  ) {
+    super(message);
+    this.name = "TicketDomainError";
+  }
+}
+
 export function createHumanHandoff(input: HumanHandoffInput) {
   const occurredAt = input.now ?? new Date().toISOString();
   const inFlightAiMessages = cancelInFlightAiMessages(
@@ -150,7 +166,10 @@ export function applyTicketAction(ticket: TicketState, action: TicketAction) {
         status: "reopened"
       });
     default:
-      throw new Error("ticket action type is invalid");
+      throw new TicketDomainError(
+        "invalid_action_type",
+        "ticket action type is invalid"
+      );
   }
 }
 
@@ -215,19 +234,27 @@ function eventTypeForAction(action: TicketAction["type"]): TicketEvent["type"] {
 
 function assertLockOwner(ticket: TicketState, actorUserId: string): void {
   if (ticket.lockedByUserId && ticket.lockedByUserId !== actorUserId) {
-    throw new Error("ticket is locked by another user");
+    throw new TicketDomainError(
+      "locked_by_another_user",
+      "ticket is locked by another user"
+    );
   }
 }
 
 function requirePriority(priority: number): number {
   if (!Number.isInteger(priority) || priority < 1 || priority > 5) {
-    throw new Error("ticket priority must be an integer from 1 to 5");
+    throw new TicketDomainError(
+      "invalid_priority",
+      "ticket priority must be an integer from 1 to 5"
+    );
   }
   return priority;
 }
 
 function requireText(value: string | undefined, name: string): string {
   const trimmed = value?.trim();
-  if (!trimmed) throw new Error(`${name} is required`);
+  if (!trimmed) {
+    throw new TicketDomainError("missing_required_field", `${name} is required`);
+  }
   return trimmed;
 }

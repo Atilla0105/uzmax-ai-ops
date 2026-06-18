@@ -2,7 +2,7 @@
 
 > incident_id: INC-2026-06-18-m2-worktree-contamination
 > severity: high
-> status: institutionalized_in_docs
+> status: guarded
 > detected_at: 2026-06-18
 > milestone: M2
 > owner_ai_boundary: AI agent records repo evidence, cleanup state, unknowns and permanent controls; project owner decides final acceptance of M2 governance risk and any release or real-data risk.
@@ -13,6 +13,8 @@
 During M2, the project encountered root/worktree miswrite or workspace contamination risk. The direct repo evidence currently available is limited: `docs/evidence/M2/M2-05-realtime-ws-evidence-if-needed.md` records a root write boundary where an initial mistaken root write was removed and the root checkout returned clean before the isolated worktree diff.
 
 This incident record does not claim a complete timeline or a complete root cause. The absence of a prior incident log is itself a governance defect: the repo can prove the boundary record and cleanup statement, but it cannot reconstruct every step that led to the contamination concern.
+
+M2-10 adds the first lightweight machine guard for this incident class: local feature work must run from a linked git worktree, root/main coordination checkout must stay clean and not ahead of upstream, and CI explicitly skips/limits physical local worktree checks instead of pretending to verify a developer machine checkout.
 
 ## Impact
 
@@ -36,7 +38,8 @@ This incident record does not claim a complete timeline or a complete root cause
 ## Cleanup
 
 - Completed cleanup supported by repo evidence: M2-05 records that the mistaken root write was removed and root returned clean before the M2-05 worktree diff.
-- Current PR cleanup/control: this PR is docs-only in `/Users/atilla/Documents/uzmax-governance-incident-closure` on `codex/governance-incident-closure`; it does not edit the root checkout.
+- M2-09 cleanup/control: the docs-only incident governance PR ran in `/Users/atilla/Documents/uzmax-governance-incident-closure` on `codex/governance-incident-closure`; it did not edit the root checkout.
+- M2-10 guard control: the guard PR runs in `/Users/atilla/Documents/uzmax-workspace-guard` on `codex/workspace-guard`; it does not edit the root checkout.
 - Remaining unknowns: because no prior incident record existed, this file cannot prove that all transient workspace states across M2 were enumerated at the time. It records the known boundary and institutionalizes the control for future work.
 
 ## Permanent Controls
@@ -47,15 +50,22 @@ This incident record does not claim a complete timeline or a complete root cause
 - Coordinator dispatch must confirm physical worktree path exclusivity, branch exclusivity and spec touch-module exclusivity; schema, lockfile, shared config, CI/guard scripts, global generated artifacts and release/production gate changes are global serial points.
 - `docs/specs/README.md` and `SPEC-template.md` now require worktree/branch preconditions, concurrent dispatch evidence when applicable, incident triggers and milestone incident closeout.
 - `docs/incidents/` now provides a README and template for future incidents.
-- Guard enforcement is intentionally not implemented in this PR; it belongs to PR2 or a later guard spec.
+- `scripts/guards/workspace-isolation.mjs` implements the M2-10 minimum guard: non-`main` local work must run in a linked git worktree; local `main` must be clean and not ahead of upstream; CI prints an explicit skipped/limited physical worktree message and passes.
+- `package.json` exposes `guard:workspace` and runs it from `npm run check`.
+- `.github/workflows/ci.yml` runs `npm run guard:workspace`; CI is safe because the guard does not require a linked local worktree when `CI=true` or `GITHUB_ACTIONS=true`.
+- `scripts/tests/workspace-isolation.test.mjs` covers clean primary main pass, linked dirty feature worktree pass, primary feature checkout fail, dirty primary main fail, main ahead of upstream fail and CI-mode skipped/limited pass.
 
 ## Institutionalized Status
 
-`institutionalized_in_docs`: docs controls are institutionalized in this PR. Guard enforcement remains deferred to PR2 or a future guard spec.
+`guarded`: docs controls are institutionalized and the M2-10 workspace guard is now wired into local `check` and CI. This status does not claim complete historical root cause reconstruction, production readiness or owner acceptance.
 
 ## Evidence Links
 
 - Spec: `docs/specs/M2-09-workspace-incident-governance.md`.
+- Guard spec: `docs/specs/M2-10-workspace-guard.md`.
+- Guard script: `scripts/guards/workspace-isolation.mjs`.
+- Guard tests: `scripts/tests/workspace-isolation.test.mjs`.
+- Guard wiring: `package.json`, `.github/workflows/ci.yml`.
 - Incident template: `docs/incidents/INCIDENT-template.md`.
 - M2 direct boundary evidence: `docs/evidence/M2/M2-05-realtime-ws-evidence-if-needed.md`.
 - M2 closeout update: `docs/evidence/M2/M2-channel-conversation-closeout-signoff.md`.

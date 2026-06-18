@@ -7,10 +7,10 @@
 > created_at: 2026-06-18
 > updated_at: 2026-06-18
 > owner_ai_boundary: 项目 owner/coordinator asked to complete M2 closeout evidence; project owner final M2 acceptance/signoff is still pending. AI agent records repo/GitHub evidence, risk boundaries and follow-up blockers, but does not approve production, GA-0, real customer traffic, customer LLM, true accounts, cost, compliance or 1.0 release.
-> source_files: `AGENTS.md`, v1.1 root docs, `docs/doc-gates.md`, `docs/specs/M2-00-channel-conversation-readiness-pack.md` through `docs/specs/M2-08-closeout-postreview-evidence-sync.md`, `docs/evidence/M2/**`, `docs/adr/ADR-B01-telegram-business.md`, PR #25-#33, main CI run #27692907741 / #27695801465 / #27698225017 / #27700327547 / #27702288629 / #27720287072 / #27737728410 / #27739818105 / #27745400807, PR check run #27738958992 / #27745068913, local `git`/`gh` verification on 2026-06-18.
+> source_files: `AGENTS.md`, v1.1 root docs, `docs/doc-gates.md`, `docs/specs/M2-00-channel-conversation-readiness-pack.md` through `docs/specs/M2-09-workspace-incident-governance.md`, `docs/incidents/INC-2026-06-18-m2-worktree-contamination.md`, `docs/evidence/M2/**`, `docs/adr/ADR-B01-telegram-business.md`, PR #25-#33, main CI run #27692907741 / #27695801465 / #27698225017 / #27700327547 / #27702288629 / #27720287072 / #27737728410 / #27739818105 / #27745400807, PR check run #27738958992 / #27745068913, local `git`/`gh` verification on 2026-06-18.
 > sensitive_data_location: none in repo
 > redaction_status: no raw Telegram payloads, customer plaintext, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, secrets or token values included
-> review_notes: M2 channel/conversation queue is closed for milestone evidence only. M2-07 resolved the concrete owner-review API HTTP status quality gap; production, GA-0, real customer traffic, customer LLM, Business feasibility and 1.0 release remain blocked or future-gated.
+> review_notes: M2 channel/conversation queue is closed for milestone evidence only. M2-07 resolved the concrete owner-review API HTTP status quality gap. M2-09 records and institutionalizes the M2 workspace contamination incident as docs governance only; production, GA-0, real customer traffic, customer LLM, Business feasibility and 1.0 release remain blocked or future-gated.
 > signoff: ready_for_owner_acceptance; no explicit final project owner release signoff found for M2 in current repo/GitHub evidence
 
 ## Current Decision
@@ -84,6 +84,14 @@ M2-07 did not change `claim` vs `lock` semantics. `claim` still assigns, and `lo
 - No customer LLM or real customer messages in third-party LLM under current ADR-003 posture.
 - No GA-0 or real traffic; GA-0 still requires later M2/M3 closure, redline gates, runbooks, rollback, owner checklist and explicit decision.
 - M3 AI capability gates, M4 order/customer gates and M6 release hardening/full acceptance remain future work.
+
+## Milestone Incidents
+
+| Incident | Status | Repo evidence boundary | Cleanup state | Permanent control |
+|---|---|---|---|---|
+| `docs/incidents/INC-2026-06-18-m2-worktree-contamination.md` | `institutionalized_in_docs`; guard enforcement deferred to PR2/future spec | M2-05 evidence records a root write boundary: an initial mistaken root write was removed and root returned clean before the isolated worktree diff. The full timeline/root cause cannot be proven from repo evidence alone because no incident log existed at the time. | M2-05 records root cleanup for that boundary; this closeout does not claim every transient workspace state from M2 was reconstructable. | `AGENTS.md` workspace isolation rule, spec README/template worktree/branch and incident fields, and `docs/incidents/` templates. Guard enforcement is intentionally deferred to PR2/future spec. |
+
+This incident does not change the M2 decision state. M2 remains `ready_for_owner_acceptance`, not `accepted`, production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility or 1.0 release signoff.
 
 ## Sensitive Data Boundary
 

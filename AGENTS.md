@@ -80,6 +80,17 @@
 6. 合并前必须通过 CI 和对应验收证据归档。
 7. 每个工作切片结束、切换阶段或新开任务前，必须检查 `git branch --no-merged main` 与 `gh pr list --state open`；非 `main` 分支必须处于 open PR、已合并、已删除或在 spec/evidence 中显式标记 superseded 的状态。
 
+## 6A. Workspace Isolation / Orchestration Safety
+
+- 并发执行的基本单位是：一个 worker = 一个 git worktree = 一个 branch = 一个 spec。
+- 并发 worker 不得共享同一个物理 checkout、git index、当前分支、`node_modules`、build/dist/cache 目录或未提交工作区状态。
+- root/main checkout 只用于协调、审计、同步 `main`、合并后清理和只读核对；不得承载 worker 编辑。
+- coordinator 派发 worker 前必须确认物理 worktree 路径互斥、目标 branch 互斥、spec 触碰模块互斥；`packages/db` schema、lockfile、共享 config、CI/guard 脚本、全局生成物和 release/production 门禁改动必须全局串行。
+- worker 开工前必须记录 `pwd`、`git status --short --branch`、`git branch --show-current`，并确认其路径与分支匹配 spec 前置条件；路径或分支不匹配时必须停止并报告。
+- worker 若发现写入分配 worktree 外、错分支/main 直接提交、跨任务污染、secret/customer-data 边界擦边或 gate 绕过迹象，必须停止当前写入，报告影响范围，并进入 incident 记录或有 spec 的 cleanup 分支。
+- 过程事故达到 `docs/incidents/README.md` 的触发阈值时，必须新增 incident 记录并给出持久控制；不得只在聊天或 PR 评论中口头关闭。
+- 本节是编排安全规则，不新增多人签字流程；最终范围、发布、真实账号、真实客户数据、LLM key、成本和合规风险仍由项目 owner 决定。
+
 ## 7. Authoring Contract
 
 - 开工前必须重读本文件和目标 spec，确认触碰模块清单；未列入清单的模块默认不可改。

@@ -39,6 +39,16 @@ Not included:
 |---|---|---|
 | `UZMAX_RLS_DATABASE_URL=postgresql://user:pass@localhost:5432/db npm exec --workspace @uzmax/db -- prisma validate --schema prisma/schema.prisma` | passed | Prisma reported schema is valid. |
 
+## Code Quality Review Fixes
+
+The post-PR code quality review returned `Ready to merge? With fixes`. M3-01 follow-up fixes:
+
+- Quote builder validation now mirrors `quote_record_config_provenance_present`: `createQuoteRecordContract` rejects records without `configVersionId` or `configVersionRef`.
+- Focused tests now exercise both canonical `m3-ai-contracts.ts` behavior and the `index.ts` export surface for quote provenance.
+- Removed the no-op `llm_call_log_no_raw_prompt_completion check (true)` SQL constraint; focused tests now assert raw prompt/completion columns are absent from Prisma schema and migration.
+- Added `createdAt` / `created_at` to `eval_gate`.
+- `index.ts` remains a data-URL-safe compatibility bridge because existing M1/M2 tests import its transpiled source through `data:` URLs; the focused M3 test compares the index surface with the canonical module to detect drift.
+
 ## Validation
 
 | Command | Result | Notes |
@@ -50,7 +60,7 @@ Not included:
 | `npm run lint` | pass | ESLint passed, including max-lines after direct M3 export bridge in `index.ts`. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-01-ai-data-contracts, linked worktree, dirty allowed)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-01-ai-capability-data-contracts-foundation.md --include-worktree` | failed then fixed | First CI/local review rerun failed with `net source LOC 610 > 600`; after reducing M3 value-map source footprint, final rerun passed with changedFiles 10, categories docs 5/generated 1/source 3/test 1, source changedFiles 3, netLoc 560, newFiles 1. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-01-ai-capability-data-contracts-foundation.md --include-worktree` | failed then fixed | First CI/local review rerun failed with `net source LOC 610 > 600`; after reducing M3 value-map source footprint and code-review fixes, final rerun passed with changedFiles 10, categories docs 5/generated 1/source 3/test 1, source changedFiles 3, netLoc 577, newFiles 1. |
 | `npm run test` | pass | 70/70 tests passed after preserving legacy data-URL DB source tests. |
 | `npm run check` | pass | Full local gate passed, including format, typecheck, lint, depcruise, jscpd, knip, guards, tests, build, size and Playwright. |
 | `git diff --check` | pass | No whitespace errors. |
@@ -102,4 +112,4 @@ Future source material must stay in controlled storage. Repo evidence may only r
 - LLM call log intentionally has no raw prompt or raw completion columns.
 - Eval contracts intentionally support controlled refs/redacted payload shape only; no raw sample content in git.
 - No Business/customer asset/order connector/distill tables are introduced by this PR.
-- `packages/db/src/m3-ai-contracts.ts` contains the canonical M3 table/status/builder implementation; `packages/db/src/index.ts` keeps a compact data-URL-safe compatibility bridge and is 394 lines, within the ordinary source-file line budget. The source budget fix reduced final `guard:pr-shape` netLoc to 560.
+- `packages/db/src/m3-ai-contracts.ts` contains the canonical M3 table/status/builder implementation; `packages/db/src/index.ts` keeps a compact data-URL-safe compatibility bridge for existing data-URL tests, with focused coverage comparing the index surface to the canonical module.

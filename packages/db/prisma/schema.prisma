@@ -675,6 +675,7 @@ model EvalGate {
   categoryQuotas Json           @default("{}") @map("category_quotas")
   lastEvalRunId  String?        @map("last_eval_run_id") @db.Uuid
   passedAt       DateTime?      @map("passed_at") @db.Timestamptz(6)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
   org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
   tenant         Tenant         @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)

@@ -68,14 +68,28 @@ export function createQuoteRecordContract(input: M3Input): Record<string, unknow
   return {
     ...scope(input, "quote"),
     ...optionalInt(input, "totalMinorUnits", 0),
-    ...optionalText(input, ["configVersionRef", "currency", "validUntil"]),
-    ...optionalUuid(input, ["configVersionId", "conversationId"]),
+    ...optionalText(input, ["currency", "validUntil"]),
+    ...optionalUuid(input, ["conversationId"]),
+    ...quoteConfigProvenance(input),
     id: uuid(input.id, "quote id"),
     inputRef: record(input.inputRef, "quote inputRef"),
     result: record(input.result, "quote result"),
     source: oneOf(input.source, quoteSources, "quote source"),
     status: oneOf(input.status, quoteRecordStatuses, "quote status")
   };
+}
+
+function quoteConfigProvenance(input: M3Input): Record<string, string> {
+  const fields = {
+    ...optionalText(input, ["configVersionRef"]),
+    ...optionalUuid(input, ["configVersionId"])
+  };
+  if (!fields.configVersionId && !fields.configVersionRef) {
+    throw new Error(
+      "quote config provenance requires configVersionId or configVersionRef"
+    );
+  }
+  return fields;
 }
 
 export function createEvalCaseContract(input: M3Input): Record<string, unknown> {

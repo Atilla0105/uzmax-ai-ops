@@ -240,6 +240,7 @@ create table if not exists eval_gate (
   category_quotas jsonb not null default '{}'::jsonb,
   last_eval_run_id uuid,
   passed_at timestamptz,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint eval_gate_tenant_fk foreign key (org_id, tenant_id)
     references tenant(org_id, id) on delete cascade,
@@ -294,9 +295,6 @@ create table if not exists llm_call_log (
   ),
   constraint llm_call_log_cost_latency_non_negative
     check (cost_micros >= 0 and latency_ms >= 0),
-  constraint llm_call_log_no_raw_prompt_completion check (
-    true
-  ),
   constraint llm_call_log_redaction_metadata_object
     check (jsonb_typeof(redaction_metadata) = 'object'),
   constraint llm_call_log_fallback_summary_object

@@ -16,7 +16,8 @@ const contracts = read("docs/contracts/README.md");
 const evals = read("docs/evals/README.md");
 const m3Evidence = read("docs/evidence/M3/README.md");
 const dbIndex = read("packages/db/src/index.ts");
-const db = await importDbSource();
+const db = await importTypescriptSource("packages/db/src/m3-ai-contracts.ts");
+const dbIndexModule = await importTypescriptSource("packages/db/src/index.ts");
 
 const ORG_UUID = "11111111-1111-4111-8111-111111111111";
 const TENANT_UUID = "22222222-2222-4222-8222-222222222222";
@@ -113,13 +114,21 @@ describe("M3-01 AI capability data contracts foundation", () => {
     );
     assert.match(migration, /if action_name = 'insert' then/);
     assert.match(migration, /elsif action_name = 'update' then/);
-    assert.match(migration, /llm_call_log_no_raw_prompt_completion/);
     assert.match(migration, /quote_record_code_source_only/);
     assert.match(migration, /eval_run_category_quotas_object/);
+    assert.match(
+      schema,
+      /model EvalGate \{[\s\S]*createdAt\s+DateTime[\s\S]*@map\("created_at"\)/
+    );
+    assert.match(
+      migration,
+      /create table if not exists eval_gate \([\s\S]*created_at timestamptz not null default now\(\)/
+    );
+    assertNoRawPromptCompletionColumns();
   });
 
   it("exports M3 table names, statuses, categories, and pure builders", () => {
-    assert.match(dbIndex, /export const m3AiTableNames/);
+    assert.match(dbIndex, /m3-ai-contracts/);
     assert.deepEqual(db.m3AiTableNames, {
       evalCase: "eval_case",
       evalGate: "eval_gate",
@@ -131,6 +140,7 @@ describe("M3-01 AI capability data contracts foundation", () => {
       mediaAsset: "media_asset",
       quoteRecord: "quote_record"
     });
+    assert.deepEqual(dbIndexModule.m3AiTableNames, db.m3AiTableNames);
     assert.equal(db.evalCategories.redlineAttack, "redline_attack");
     assert.equal(db.evalGateStatuses.blocked, "blocked");
     assert.equal(db.llmTasks.kbAnswer, "kb_answer");
@@ -174,6 +184,7 @@ describe("M3-01 AI capability data contracts foundation", () => {
       tenantId: TENANT_UUID
     });
     assert.equal(quote.source, "code");
+    assert.equal(dbIndexModule.createQuoteRecordContract({ ...quote }).source, "code");
 
     const evalCase = db.createEvalCaseContract({
       caseRef: "controlled://eval/case-1",
@@ -243,6 +254,14 @@ describe("M3-01 AI capability data contracts foundation", () => {
     assert.throws(
       () => db.createQuoteRecordContract({ ...quote, source: "llm" }),
       /quote source is invalid/
+    );
+    assert.throws(
+      () => db.createQuoteRecordContract(withoutQuoteProvenance(quote)),
+      /quote config provenance requires configVersionId or configVersionRef/
+    );
+    assert.throws(
+      () => dbIndexModule.createQuoteRecordContract(withoutQuoteProvenance(quote)),
+      /quote config provenance requires configVersionId or configVersionRef/
     );
     assert.throws(
       () => db.createEvalRunContract({ ...evalRun, categoryQuotas: [] }),
@@ -322,14 +341,32 @@ function assertPolicyGeneratedForAllTables() {
   assert.match(migration, /'create policy %I on %I for %s to uzmax_app_runtime %s'/);
 }
 
-async function importDbSource() {
-  const source = read("packages/db/src/m3-ai-contracts.ts");
+function assertNoRawPromptCompletionColumns() {
+  const forbiddenSql =
+    /\b(?:raw_prompt|prompt_text|prompt_body|prompt_content|raw_completion|completion_text|completion_body|completion_content)\b/i;
+  const forbiddenPrisma =
+    /\b(?:rawPrompt|promptText|promptBody|promptContent|rawCompletion|completionText|completionBody|completionContent)\b/;
+
+  assert.doesNotMatch(schema, forbiddenPrisma);
+  assert.doesNotMatch(migration, forbiddenSql);
+  assert.doesNotMatch(migration, /llm_call_log_no_raw_prompt_completion/);
+}
+
+function withoutQuoteProvenance(quote) {
+  const copy = { ...quote };
+  delete copy.configVersionId;
+  delete copy.configVersionRef;
+  return copy;
+}
+
+async function importTypescriptSource(relativePath) {
+  const source = read(relativePath);
   const outputText = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.ES2022,
       target: ts.ScriptTarget.ES2023
     },
-    fileName: "packages/db/src/m3-ai-contracts.ts"
+    fileName: relativePath
   }).outputText;
   const encoded = Buffer.from(outputText, "utf8").toString("base64");
   return import(`data:text/javascript;base64,${encoded}`);

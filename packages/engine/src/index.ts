@@ -10,8 +10,15 @@ export const engineRedlineOutputStatuses = { passed: "passed", suppressed: "supp
 type ValueOf<T> = T[keyof T];
 type BreakerScope = ValueOf<typeof engineBreakerScopes>;
 
-// prettier-ignore
-type BreakerInput = { affectedCapabilityKeys?: string[]; affectedUserRefs?: string[]; capabilityKey?: string; controlledRefs?: string[]; eventKind: string; repeatedFailureCount?: number; userRef?: string };
+type BreakerInput = {
+  affectedCapabilityKeys?: string[];
+  affectedUserRefs?: string[];
+  capabilityKey?: string;
+  controlledRefs?: string[];
+  eventKind: string;
+  repeatedFailureCount?: number;
+  userRef?: string;
+};
 type RedlineOutputInput = {
   controlledRefs?: string[];
   output: string;
@@ -183,7 +190,11 @@ function breakerDecision(input: {
     input.scope === engineBreakerScopes.capability ||
     input.scope === engineBreakerScopes.userCapability;
   const shouldCreateTicket = input.scope !== engineBreakerScopes.user;
-  // prettier-ignore
+  const safeDegradation = {
+    aiMemberState: disablesGlobal ? "breaker_offline" : "scoped_limited",
+    preserveAuditRefsOnly: true,
+    suppressOutbound: true
+  };
   return {
     affectedCapabilityKeys: input.affectedCapabilityKeys,
     affectedUserRefs: input.affectedUserRefs,
@@ -192,13 +203,15 @@ function breakerDecision(input: {
     globalShutdown: disablesGlobal,
     handoff: { draftHold: true, required: true, ticketRequired: shouldCreateTicket },
     reasonCodes: input.reasonCodes,
-    safeDegradation: { aiMemberState: disablesGlobal ? "breaker_offline" : "scoped_limited", preserveAuditRefsOnly: true, suppressOutbound: true },
+    safeDegradation,
     scope: input.scope
   };
 }
 
-// prettier-ignore
-type SafetyActionParts = { breakerDecision: ReturnType<typeof safeBreakerDecision>; outputGuard: ReturnType<typeof safeOutputGuard> };
+type SafetyActionParts = {
+  breakerDecision: ReturnType<typeof safeBreakerDecision>;
+  outputGuard: ReturnType<typeof safeOutputGuard>;
+};
 
 function safetyAction(
   reasonCode: string,
@@ -299,14 +312,25 @@ function safeOutputGuard(value: unknown) {
 
 function degradationContract(reasonCode: string, refs: string[]) {
   const ticketRef = refs.find((ref) => ref.startsWith("ticket://"));
-  // prettier-ignore
-  return { draftHold: true, preserveAuditRefsOnly: true, reasonCode, required: true, suppressOutboundAnswer: true, ticketRef };
+  return {
+    draftHold: true,
+    preserveAuditRefsOnly: true,
+    reasonCode,
+    required: true,
+    suppressOutboundAnswer: true,
+    ticketRef
+  };
 }
 
 function handoffContract(reasonCode: string, refs: string[]) {
   const ticketRef = refs.find((ref) => ref.startsWith("ticket://"));
-  // prettier-ignore
-  return { draftHold: true, reasonCode, required: true, ticketRef, ticketRequired: true };
+  return {
+    draftHold: true,
+    reasonCode,
+    required: true,
+    ticketRef,
+    ticketRequired: true
+  };
 }
 
 function capabilityKeys(values: unknown, allowEmpty = false) {

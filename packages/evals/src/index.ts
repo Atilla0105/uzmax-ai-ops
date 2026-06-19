@@ -38,6 +38,9 @@ export type M3PublishChangeKind = keyof typeof m3RequiredCategoryQuotas;
 type M3EvalCaseInput = { caseRef: string; category: string; quotaWeight?: number; redactedPayload: Record<string, unknown>; status: string; version?: number };
 // prettier-ignore
 type M3EvalResultInput = { caseRef: string; category: string; outputRef?: string; redlineSummary?: Record<string, unknown>; status: string };
+type M3EvalCase = ReturnType<typeof createM3EvalCase>;
+type M3EvalResult = ReturnType<typeof createM3EvalResult>;
+type CategoryCounts = Record<M3EvalCategory, { passed: number; total: number }>;
 
 export type EvalSeedStoragePolicy = {
   controlledStorageRef: string;
@@ -111,9 +114,7 @@ export const m1Gate1SeedManifest: EvalSeedManifest = {
   uzRuRecords: 80
 };
 
-export function evaluateSeedManifest(
-  manifest: EvalSeedManifest
-): EvalSeedManifestEvaluation {
+export function evaluateSeedManifest(manifest: EvalSeedManifest) {
   const checks: EvalSeedQuotaCheck[] = [
     check("manifest_version", manifest.manifestVersion, evalSeedManifestVersion),
     check(
@@ -163,27 +164,34 @@ export function evaluateSeedManifest(
   };
 }
 
-// prettier-ignore
 export function createM3EvalCase(input: M3EvalCaseInput) {
-  return { caseRef: controlledRef(input.caseRef, "eval case ref"), category: enumValue(input.category, m3EvalCategories, "eval category"), quotaWeight: integer(input.quotaWeight ?? 1, "quotaWeight", 1), redactedPayload: safePayload(input.redactedPayload), status: enumValue(input.status, m3RecordStatuses, "eval case status"), version: integer(input.version ?? 1, "version", 1) };
+  return {
+    caseRef: controlledRef(input.caseRef, "eval case ref"),
+    category: enumValue(input.category, m3EvalCategories, "eval category"),
+    quotaWeight: integer(input.quotaWeight ?? 1, "quotaWeight", 1),
+    redactedPayload: safePayload(input.redactedPayload),
+    status: enumValue(input.status, m3RecordStatuses, "eval case status"),
+    version: integer(input.version ?? 1, "version", 1)
+  };
 }
 
-// prettier-ignore
-export function detectRedlineLeakage(fields: Record<string, unknown>): {
-  findings: { field: string; kind: string }[];
-  passed: boolean;
-} {
+export function detectRedlineLeakage(fields: Record<string, unknown>) {
   const findings = Object.entries(fields).flatMap(([field, value]) => {
     if (typeof value !== "string") return [];
     const items: { field: string; kind: string }[] = [];
-    if (/(internalConfig|internal[_ -]?config|private[_ -]?config)/i.test(value)) items.push({ field, kind: "internal_config" });
-    if (/(profit|margin|cost\s*(?:threshold|budget|guard)?|threshold\s*\d)/i.test(value)) items.push({ field, kind: "internal_economics" });
+    if (/(internalConfig|internal[_ -]?config|private[_ -]?config)/i.test(value)) {
+      items.push({ field, kind: "internal_config" });
+    }
+    if (
+      /(profit|margin|cost\s*(?:threshold|budget|guard)?|threshold\s*\d)/i.test(value)
+    ) {
+      items.push({ field, kind: "internal_economics" });
+    }
     return items;
   });
   return { findings, passed: findings.length === 0 };
 }
 
-// prettier-ignore
 export function evaluateM3EvalGate(input: {
   cases: M3EvalCaseInput[];
   gateKey: string;
@@ -193,25 +201,48 @@ export function evaluateM3EvalGate(input: {
   targetKind: string;
   targetRef: string;
 }) {
-  const targetKind = enumValue(input.targetKind, m3PublishChangeKinds, "publish target kind");
+  const targetKind = enumValue(
+    input.targetKind,
+    m3PublishChangeKinds,
+    "publish target kind"
+  );
   const gateKey = controlledRef(input.gateKey, "eval gate key");
   const targetRef = controlledRef(input.targetRef, "eval gate target ref");
   const cases = input.cases.map(createM3EvalCase);
   const results = input.results.map(createM3EvalResult);
   const backed = backedResults(results, activeCaseKeys(cases));
   const categoryCounts = countCategories(backed.results);
+  const requiredQuotas = m3RequiredCategoryQuotas[targetKind];
   const reasonCodes = [
     ...runStatusReasons(input.runStatus),
     ...resultBackingReasons(backed.hasUnbacked),
-    ...quotaReasons(m3RequiredCategoryQuotas[targetKind], categoryCounts),
-    ...redlineReasons(backed.results, m3RequiredCategoryQuotas[targetKind])
+    ...quotaReasons(requiredQuotas, categoryCounts),
+    ...redlineReasons(backed.results, requiredQuotas)
   ];
   const status = reasonCodes.length === 0 ? "passed" : "blocked";
   const controlledRefs = [...new Set(cases.map((evalCase) => evalCase.caseRef))];
-  return { categoryCounts, controlledRefs, evidenceSummary: { categoryCounts, gateKey, reasonCodes, targetKind, targetRef, totalCases: cases.length, totalResults: results.length }, reasonCodes, requiredQuotas: m3RequiredCategoryQuotas[targetKind], stale: input.stale === true, status, targetKind, targetRef };
+  const evidenceSummary = {
+    categoryCounts,
+    gateKey,
+    reasonCodes,
+    targetKind,
+    targetRef,
+    totalCases: cases.length,
+    totalResults: results.length
+  };
+  return {
+    categoryCounts,
+    controlledRefs,
+    evidenceSummary,
+    reasonCodes,
+    requiredQuotas,
+    stale: input.stale === true,
+    status,
+    targetKind,
+    targetRef
+  };
 }
 
-// prettier-ignore
 export function decideM3PublishGate(input: {
   changeKind: string;
   gateResult: ReturnType<typeof evaluateM3EvalGate>;
@@ -219,7 +250,10 @@ export function decideM3PublishGate(input: {
 }) {
   const targetKind = enumValue(input.changeKind, m3PublishChangeKinds, "change kind");
   const targetRef = controlledRef(input.targetRef, "publish target ref");
-  if (input.gateResult.targetKind !== targetKind || input.gateResult.targetRef !== targetRef) {
+  if (
+    input.gateResult.targetKind !== targetKind ||
+    input.gateResult.targetRef !== targetRef
+  ) {
     return refuse("eval_gate_target_mismatch", targetKind, targetRef);
   }
   if (input.gateResult.stale) return refuse("eval_gate_stale", targetKind, targetRef);
@@ -229,7 +263,12 @@ export function decideM3PublishGate(input: {
   if (!hasCompleteGateEvidence(input.gateResult)) {
     return refuse("eval_gate_evidence_incomplete", targetKind, targetRef);
   }
-  return { decision: "allow" as const, reasonCode: "eval_gate_passed", targetKind, targetRef };
+  return {
+    decision: "allow" as const,
+    reasonCode: "eval_gate_passed",
+    targetKind,
+    targetRef
+  };
 }
 
 function check(
@@ -237,15 +276,11 @@ function check(
   actual: EvalSeedQuotaCheck["actual"],
   expected: EvalSeedQuotaCheck["expected"],
   pass = actual === expected
-): EvalSeedQuotaCheck {
+) {
   return { actual, expected, name, pass };
 }
 
-function checkAtLeast(
-  name: EvalSeedQuotaCheckName,
-  actual: number,
-  expected: number
-): EvalSeedQuotaCheck {
+function checkAtLeast(name: EvalSeedQuotaCheckName, actual: number, expected: number) {
   return { actual, expected, name, pass: actual >= expected };
 }
 
@@ -258,14 +293,27 @@ const controlledRefPattern =
 // prettier-ignore
 const safePayloadKeys = new Set(["checkedRef", "manifestRef", "outputRef", "passed", "redactionRef", "shape", "storageRef"]);
 
-// prettier-ignore
 function createM3EvalResult(input: M3EvalResultInput) {
-  return { caseRef: controlledRef(input.caseRef, "eval result case ref"), category: enumValue(input.category, m3EvalCategories, "eval result category"), outputRef: input.outputRef ? controlledRef(input.outputRef, "eval result output ref") : undefined, redlineSummary: input.redlineSummary ? safePayload(input.redlineSummary) : undefined, status: enumValue(input.status, m3EvalResultStatuses, "eval result status") };
+  return {
+    caseRef: controlledRef(input.caseRef, "eval result case ref"),
+    category: enumValue(input.category, m3EvalCategories, "eval result category"),
+    outputRef: input.outputRef
+      ? controlledRef(input.outputRef, "eval result output ref")
+      : undefined,
+    redlineSummary: input.redlineSummary
+      ? safePayload(input.redlineSummary)
+      : undefined,
+    status: enumValue(input.status, m3EvalResultStatuses, "eval result status")
+  };
 }
 
-// prettier-ignore
-function countCategories(results: ReturnType<typeof createM3EvalResult>[]) {
-  const counts = Object.fromEntries(Object.values(m3EvalCategories).map((category) => [category, { passed: 0, total: 0 }])) as Record<M3EvalCategory, { passed: number; total: number }>;
+function countCategories(results: M3EvalResult[]) {
+  const counts = Object.fromEntries(
+    Object.values(m3EvalCategories).map((category) => [
+      category,
+      { passed: 0, total: 0 }
+    ])
+  ) as CategoryCounts;
   for (const result of results) {
     counts[result.category].total += 1;
     if (result.status === "passed") counts[result.category].passed += 1;
@@ -273,14 +321,18 @@ function countCategories(results: ReturnType<typeof createM3EvalResult>[]) {
   return counts;
 }
 
-// prettier-ignore
-function activeCaseKeys(cases: ReturnType<typeof createM3EvalCase>[]): Set<string> {
-  return new Set(cases.filter((evalCase) => evalCase.status === "active").map((evalCase) => `${evalCase.caseRef}\0${evalCase.category}`));
+function activeCaseKeys(cases: M3EvalCase[]): Set<string> {
+  return new Set(
+    cases
+      .filter((evalCase) => evalCase.status === "active")
+      .map((evalCase) => `${evalCase.caseRef}\0${evalCase.category}`)
+  );
 }
 
-// prettier-ignore
-function backedResults(results: ReturnType<typeof createM3EvalResult>[], caseKeys: Set<string>) {
-  const backed = results.filter((result) => caseKeys.has(`${result.caseRef}\0${result.category}`));
+function backedResults(results: M3EvalResult[], caseKeys: Set<string>) {
+  const backed = results.filter((result) =>
+    caseKeys.has(`${result.caseRef}\0${result.category}`)
+  );
   return { hasUnbacked: backed.length !== results.length, results: backed };
 }
 
@@ -305,25 +357,30 @@ function quotaReasons(
     .map(([category]) => `quota_missing:${category}`);
 }
 
-// prettier-ignore
-function redlineReasons(
-  results: ReturnType<typeof createM3EvalResult>[],
-  quotas: Record<string, number>
-): string[] {
-  const requiredRedlines = ["redline_attack", "redline_false_positive"].filter((category) => category in quotas);
+function redlineReasons(results: M3EvalResult[], quotas: Record<string, number>) {
+  const requiredRedlines = ["redline_attack", "redline_false_positive"].filter(
+    (category) => category in quotas
+  );
   return requiredRedlines.flatMap((category) => {
     const categoryResults = results.filter((result) => result.category === category);
-    if (categoryResults.some((result) => result.redlineSummary?.passed === false)) return [`redline_failed:${category}`];
-    return categoryResults.some((result) => result.redlineSummary?.passed === true) ? [] : [`redline_missing:${category}`];
+    if (categoryResults.some((result) => result.redlineSummary?.passed === false)) {
+      return [`redline_failed:${category}`];
+    }
+    return categoryResults.some((result) => result.redlineSummary?.passed === true)
+      ? []
+      : [`redline_missing:${category}`];
   });
 }
 
-// prettier-ignore
 function safePayload(value: Record<string, unknown>): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("eval payload must be an object");
   }
-  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [safePayloadKey(key), safePayloadValue(key, entry)]));
+  return Object.fromEntries(Object.entries(value).map(safePayloadEntry));
+}
+
+function safePayloadEntry([key, entry]: [string, unknown]) {
+  return [safePayloadKey(key), safePayloadValue(key, entry)];
 }
 
 function safePayloadKey(key: string): string {
@@ -362,16 +419,14 @@ function enumValue<T extends string>(
   return value as T;
 }
 
-function integer(value: unknown, name: string, minimum: number): number {
+function integer(value: unknown, name: string, minimum: number) {
   if (!Number.isInteger(value) || (value as number) < minimum) {
     throw new Error(`${name} must be an integer from ${minimum}`);
   }
   return value as number;
 }
 
-function hasCompleteGateEvidence(
-  input: ReturnType<typeof evaluateM3EvalGate>
-): boolean {
+function hasCompleteGateEvidence(input: ReturnType<typeof evaluateM3EvalGate>) {
   return Boolean(
     input.controlledRefs.length &&
     Object.keys(input.requiredQuotas).length &&
@@ -379,10 +434,6 @@ function hasCompleteGateEvidence(
   );
 }
 
-function refuse(
-  reasonCode: string,
-  targetKind: M3PublishChangeKind,
-  targetRef: string
-) {
-  return { decision: "refuse" as const, reasonCode, targetKind, targetRef };
+function refuse(reasonCode: string, kind: M3PublishChangeKind, targetRef: string) {
+  return { decision: "refuse" as const, reasonCode, targetKind: kind, targetRef };
 }

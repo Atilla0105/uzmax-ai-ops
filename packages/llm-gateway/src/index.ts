@@ -35,8 +35,11 @@ export type MockProviderResult = Partial<Record<MetricKey, number>> &
     status: "failed" | "succeeded" | "timeout";
   };
 
-// prettier-ignore
-type AttemptSummary = { providerId: string; reason?: string; status: LlmGatewayCallStatus };
+type AttemptSummary = {
+  providerId: string;
+  reason?: string;
+  status: LlmGatewayCallStatus;
+};
 type AttemptResult = { reason?: string; result: MockProviderResult };
 const allowedMetadataKey =
   /^(completionHash|contextRef|manifestRef|policy|promptHash|redactedSegments|redactionRef|status|storageRef|truncatedSegments|truncationRef)$/;
@@ -58,7 +61,6 @@ export type LlmProviderPort = {
 const customerVisibleTasks = new Set<LlmGatewayTask>(["draft_reply", "kb_answer"]);
 type TaskSafetyProfile = ReturnType<typeof safetyProfile>;
 export const taskSafetyProfiles = Object.fromEntries(
-  // prettier-ignore
   Object.values(llmGatewayTasks).map((task) => [
     task,
     safetyProfile(customerVisibleTasks.has(task))
@@ -105,8 +107,15 @@ export function createLlmRouteConfig(input: RouteConfigInput): LlmRouteConfig {
     timeoutMs: positiveInt(input.timeoutMs, "timeoutMs"),
     totalTokenBudget: positiveInt(input.totalTokenBudget, "totalTokenBudget")
   };
-  // prettier-ignore
-  if (route.totalTokenBudget < Math.max(route.inputTokenBudget, route.outputTokenBudget)) throw new Error("totalTokenBudget must be at least inputTokenBudget and outputTokenBudget");
+  const largestSingleDirectionBudget = Math.max(
+    route.inputTokenBudget,
+    route.outputTokenBudget
+  );
+  if (route.totalTokenBudget < largestSingleDirectionBudget) {
+    throw new Error(
+      "totalTokenBudget must be at least inputTokenBudget and outputTokenBudget"
+    );
+  }
   return route;
 }
 
@@ -132,8 +141,10 @@ export async function invokeLlmRoute(input: {
 }) {
   validateInvocationBoundary(input.route.task, input.input);
   const providers = providersById(input.providers);
-  // prettier-ignore
-  const providerOrder = [input.route.primaryProviderRef, ...input.route.fallbackProviderRefs];
+  const providerOrder = [
+    input.route.primaryProviderRef,
+    ...input.route.fallbackProviderRefs
+  ];
   const attempts: AttemptSummary[] = [];
   const attemptAccountingDrafts: ReturnType<typeof createAccountingDraft>[] = [];
   let firstFailureReason: string | undefined;
@@ -233,7 +244,6 @@ function providersById(providers: LlmProviderPort[]) {
   const providerIds = providers.map((provider) => provider.providerId);
   if (new Set(providerIds).size !== providerIds.length)
     throw new Error("providers must not contain duplicate providerId");
-  // prettier-ignore
   return new Map(providers.map((provider) => [provider.providerId, provider]));
 }
 async function invokeProvider(
@@ -245,8 +255,12 @@ async function invokeProvider(
     .then(() => provider.invoke(request))
     .then((result) => ({ result }))
     .catch(() => ({ reason: "failure", result: { status: "failed" as const } }));
-  // prettier-ignore
-  const timeout = new Promise<AttemptResult>((resolve) => { timer = setTimeout(() => resolve({ reason: "timeout", result: { status: "timeout" } }), request.route.timeoutMs); });
+  const timeout = new Promise<AttemptResult>((resolve) => {
+    timer = setTimeout(
+      () => resolve({ reason: "timeout", result: { status: "timeout" } }),
+      request.route.timeoutMs
+    );
+  });
   try {
     return await Promise.race([invoke, timeout]);
   } finally {
@@ -259,8 +273,12 @@ function classifyFailure(result: MockProviderResult, route: LlmRouteConfig) {
   if (result.status === "timeout" || (result.latencyMs ?? 0) > route.timeoutMs) {
     return "timeout";
   }
-  // prettier-ignore
-  if (!hasValidTelemetry(result) || [result.completionHash, result.promptHash].some((value) => value !== undefined && !safeMetadataValuePatterns.hash.test(value))) return "accounting_invalid";
+  const hasInvalidHash = [result.completionHash, result.promptHash].some(
+    (value) => value !== undefined && !safeMetadataValuePatterns.hash.test(value)
+  );
+  if (!hasValidTelemetry(result) || hasInvalidHash) {
+    return "accounting_invalid";
+  }
   return budgetFailure(result, route);
 }
 
@@ -349,8 +367,13 @@ function uniqueStrings(values: unknown, name: string, allowEmpty = false): strin
 }
 
 function hasValidTelemetry(result: MockProviderResult): boolean {
-  // prettier-ignore
-  return ["costMicros", "inputTokenCount", "latencyMs", "outputTokenCount"].every((key) => nonNegativeInt(result[key as keyof MockProviderResult]));
+  const metricKeys: MetricKey[] = [
+    "costMicros",
+    "inputTokenCount",
+    "latencyMs",
+    "outputTokenCount"
+  ];
+  return metricKeys.every((key) => nonNegativeInt(result[key]));
 }
 
 function metadataRecord(value: unknown): Record<string, unknown> | undefined {
@@ -385,8 +408,17 @@ function safeMetadataValue(key: string, value: unknown): string | number {
 }
 
 function safeMetadataString(key: string, text: string): boolean {
-  // prettier-ignore
-  return key.endsWith("Hash") ? safeMetadataValuePatterns.hash.test(text) : key.endsWith("Ref") ? safeMetadataValuePatterns.ref.test(text) : (key === "policy" || key === "status") && safeMetadataValuePatterns.id.test(text) && !safeMetadataValuePatterns.unsafe.test(text);
+  if (key.endsWith("Hash")) {
+    return safeMetadataValuePatterns.hash.test(text);
+  }
+  if (key.endsWith("Ref")) {
+    return safeMetadataValuePatterns.ref.test(text);
+  }
+  const safeStatusOrPolicy =
+    (key === "policy" || key === "status") &&
+    safeMetadataValuePatterns.id.test(text) &&
+    !safeMetadataValuePatterns.unsafe.test(text);
+  return safeStatusOrPolicy;
 }
 
 function nonNegativeInt(value: unknown): boolean {

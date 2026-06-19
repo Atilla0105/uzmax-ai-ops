@@ -134,17 +134,24 @@ export function createPricingQuote(input: PricingQuoteInput): PricingQuote {
   );
   if (!service) throw new Error("pricing service is unknown");
 
-  const weightKg = Math.ceil(parameters.billableWeightGrams / 1000);
+  const weightKg = nonNegativeInteger(
+    Math.ceil(parameters.billableWeightGrams / 1000),
+    "billableWeightKg"
+  );
   const lineItems: QuoteLineItem[] = [
     {
-      amountMinorUnits: service.baseMinorUnits,
+      amountMinorUnits: nonNegativeInteger(service.baseMinorUnits, "base line amount"),
       code: "base",
       ...(lane.rateRefs?.base
         ? { ref: controlledRef(lane.rateRefs.base, "base rate ref") }
         : {})
     },
     {
-      amountMinorUnits: service.perKgMinorUnits * weightKg,
+      amountMinorUnits: safeMultiply(
+        service.perKgMinorUnits,
+        weightKg,
+        "weight line amount"
+      ),
       code: "weight",
       quantity: weightKg,
       ...(lane.rateRefs?.weight
@@ -152,14 +159,23 @@ export function createPricingQuote(input: PricingQuoteInput): PricingQuote {
         : {})
     }
   ];
-  const subtotal = lineItems.reduce((sum, item) => sum + item.amountMinorUnits, 0);
-  const minimumAdjustment = Math.max(0, service.minTotalMinorUnits - subtotal);
+  const subtotal = lineItems.reduce(
+    (sum, item) => safeAdd(sum, item.amountMinorUnits, "quote subtotal"),
+    0
+  );
+  const minimumAdjustment =
+    service.minTotalMinorUnits > subtotal
+      ? safeSubtract(service.minTotalMinorUnits, subtotal, "minimum adjustment")
+      : 0;
   if (minimumAdjustment > 0) {
-    lineItems.push({ amountMinorUnits: minimumAdjustment, code: "minimum" });
+    lineItems.push({
+      amountMinorUnits: nonNegativeInteger(minimumAdjustment, "minimum line amount"),
+      code: "minimum"
+    });
   }
 
   const totalMinorUnits = lineItems.reduce(
-    (sum, item) => sum + item.amountMinorUnits,
+    (sum, item) => safeAdd(sum, item.amountMinorUnits, "quote total"),
     0
   );
   const validUntil = addSeconds(input.now, config.quoteTtlSeconds);
@@ -198,7 +214,7 @@ export function createQuoteRecordDraft(input: QuoteRecordDraftInput): QuoteRecor
     inputRef: input.quote.inputRef,
     orgId: uuid(input.orgId, "quote orgId"),
     result: input.quote.result,
-    source: pricingQuoteSources.code,
+    source: oneOf(input.quote.source, pricingQuoteSources, "quote source"),
     status: "created" as const,
     tenantId: uuid(input.tenantId, "quote tenantId"),
     totalMinorUnits: nonNegativeInteger(input.quote.totalMinorUnits, "totalMinorUnits"),
@@ -337,6 +353,18 @@ function nonNegativeInteger(value: unknown, label: string): number {
     throw new Error(`${label} must be a non-negative integer`);
   }
   return value as number;
+}
+
+function safeAdd(left: number, right: number, label: string): number {
+  return nonNegativeInteger(left + right, label);
+}
+
+function safeMultiply(left: number, right: number, label: string): number {
+  return nonNegativeInteger(left * right, label);
+}
+
+function safeSubtract(left: number, right: number, label: string): number {
+  return nonNegativeInteger(left - right, label);
 }
 
 function oneOf<T extends string>(

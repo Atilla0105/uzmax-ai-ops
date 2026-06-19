@@ -119,6 +119,25 @@ describe("M3-05 pricing capability and quote record contract", () => {
     assert.deepEqual(contract.inputRef, quote.inputRef);
   });
 
+  it("rejects quote_record drafts when the quote source is not code", () => {
+    const quote = pricing.createPricingQuote({
+      config: syntheticConfig(),
+      now: "2026-06-19T10:00:00.000Z",
+      parameters: validParameters()
+    });
+
+    assert.throws(
+      () =>
+        pricing.createQuoteRecordDraft({
+          orgId: ORG_UUID,
+          quote: { ...quote, source: "llm" },
+          quoteId: QUOTE_UUID,
+          tenantId: TENANT_UUID
+        }),
+      /quote source is invalid/
+    );
+  });
+
   it("fails closed when LLM supplies price math or tries to become quote source", () => {
     for (const forbidden of [
       { totalMinorUnits: 1200 },
@@ -199,6 +218,32 @@ describe("M3-05 pricing capability and quote record contract", () => {
           parameters: validParameters()
         }),
       /pricing service must not include internal pricing fields/
+    );
+  });
+
+  it("fails closed when computed money overflows safe integer bounds", () => {
+    assert.throws(
+      () =>
+        pricing.createPricingQuote({
+          config: syntheticConfig({ perKgMinorUnits: Number.MAX_SAFE_INTEGER }),
+          parameters: {
+            ...validParameters(),
+            billableWeightGrams: 2000
+          }
+        }),
+      /weight line amount must be a non-negative integer/
+    );
+
+    assert.throws(
+      () =>
+        pricing.createPricingQuote({
+          config: syntheticConfig({
+            baseMinorUnits: Number.MAX_SAFE_INTEGER,
+            perKgMinorUnits: 1
+          }),
+          parameters: validParameters()
+        }),
+      /quote subtotal must be a non-negative integer/
     );
   });
 

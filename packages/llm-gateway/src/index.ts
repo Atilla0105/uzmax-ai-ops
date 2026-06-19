@@ -1,65 +1,48 @@
 export const packageName = "@uzmax/llm-gateway";
 
-export const llmGatewayTasks = {
-  distillDaily: "distill_daily",
-  draftReply: "draft_reply",
-  evalJudge: "eval_judge",
-  intentClassify: "intent_classify",
-  journeyImport: "journey_import",
-  kbAnswer: "kb_answer",
-  profileUpdate: "profile_update",
-  speechPostprocess: "speech_postprocess",
-  summarize: "summarize",
-  visionDiag: "vision_diag"
-} as const;
-
-export const llmGatewayCallStatuses = {
-  failed: "failed",
-  fallback: "fallback",
-  succeeded: "succeeded"
-} as const;
-
-export const llmGatewayEvalGateStatuses = {
-  blocked: "blocked",
-  failed: "failed",
-  passed: "passed",
-  pending: "pending"
-} as const;
+// prettier-ignore
+export const llmGatewayTasks = { distillDaily: "distill_daily", draftReply: "draft_reply", evalJudge: "eval_judge", intentClassify: "intent_classify", journeyImport: "journey_import", kbAnswer: "kb_answer", profileUpdate: "profile_update", speechPostprocess: "speech_postprocess", summarize: "summarize", visionDiag: "vision_diag" } as const;
+// prettier-ignore
+export const llmGatewayCallStatuses = { failed: "failed", fallback: "fallback", succeeded: "succeeded" } as const;
+// prettier-ignore
+export const llmGatewayEvalGateStatuses = { blocked: "blocked", failed: "failed", passed: "passed", pending: "pending" } as const;
 
 type ValueOf<T> = T[keyof T];
 export type LlmGatewayTask = ValueOf<typeof llmGatewayTasks>;
 export type LlmGatewayCallStatus = ValueOf<typeof llmGatewayCallStatuses>;
-export type LlmGatewayEvalGateStatus = ValueOf<typeof llmGatewayEvalGateStatuses>;
 
-export type RouteConfigInput = {
-  costMicrosBudget: number;
-  evalGate: { gateRef: string; lastStatus: string };
-  fallbackProviderRefs: string[];
-  inputTokenBudget: number;
-  outputTokenBudget: number;
-  primaryProviderRef: string;
-  providerRefs: string[];
-  routeRef: string;
-  routeVersion: string;
-  task: string;
-  timeoutMs: number;
-  totalTokenBudget: number;
-};
+type BudgetKeys =
+  | "costMicrosBudget"
+  | "inputTokenBudget"
+  | "outputTokenBudget"
+  | "timeoutMs"
+  | "totalTokenBudget";
+type RouteRefKeys = "primaryProviderRef" | "routeRef" | "routeVersion" | "task";
+export type RouteConfigInput = Record<BudgetKeys, number> &
+  Record<RouteRefKeys, string> & {
+    evalGate: { gateRef: string; lastStatus: string };
+    fallbackProviderRefs: string[];
+    providerRefs: string[];
+  };
 
 export type LlmRouteConfig = Omit<RouteConfigInput, "evalGate" | "task"> & {
-  evalGate: { gateRef: string; lastStatus: LlmGatewayEvalGateStatus };
+  evalGate: { gateRef: string; lastStatus: ValueOf<typeof llmGatewayEvalGateStatuses> };
   task: LlmGatewayTask;
 };
 
-export type MockProviderResult = {
-  completionHash?: string;
-  costMicros?: number;
-  inputTokenCount?: number;
-  latencyMs?: number;
-  outputTokenCount?: number;
-  promptHash?: string;
-  status: "failed" | "succeeded" | "timeout";
-};
+type MetricKey = "costMicros" | "inputTokenCount" | "latencyMs" | "outputTokenCount";
+export type MockProviderResult = Partial<Record<MetricKey, number>> &
+  Partial<Record<"completionHash" | "promptHash", string>> & {
+    status: "failed" | "succeeded" | "timeout";
+  };
+
+// prettier-ignore
+type AttemptSummary = { providerId: string; reason?: string; status: LlmGatewayCallStatus };
+type AttemptResult = { reason?: string; result: MockProviderResult };
+const allowedMetadataKey =
+  /^(completionHash|contextRef|manifestRef|policy|promptHash|redactedSegments|redactionRef|status|storageRef|truncatedSegments|truncationRef)$/;
+const forbiddenMetadataKey =
+  /(body|content|cost|customer|key|margin|profit|raw|secret|text|threshold|token)/i;
 
 export type LlmProviderPort = {
   invoke: (request: {
@@ -71,34 +54,7 @@ export type LlmProviderPort = {
   providerId: string;
 };
 
-export type AccountingDraft = {
-  completionHash?: string;
-  costMicros: number;
-  fallbackSummary?: Record<string, unknown>;
-  inputTokenCount: number;
-  latencyMs: number;
-  modelId: string;
-  outputTokenCount: number;
-  promptHash?: string;
-  providerId: string;
-  redactionMetadata?: Record<string, unknown>;
-  routeRef: string;
-  routeVersion: string;
-  status: LlmGatewayCallStatus;
-  task: LlmGatewayTask;
-  totalTokenCount: number;
-  traceId: string;
-  truncationMetadata?: Record<string, unknown>;
-};
-
-export type LlmInvocationResult = {
-  accountingDraft: AccountingDraft;
-  attemptAccountingDrafts: AccountingDraft[];
-  attempts: { providerId: string; reason?: string; status: LlmGatewayCallStatus }[];
-  providerId: string;
-  status: LlmGatewayCallStatus;
-};
-
+const customerVisibleTasks = new Set<LlmGatewayTask>(["draft_reply", "kb_answer"]);
 export const taskSafetyProfiles: Record<
   LlmGatewayTask,
   {
@@ -106,30 +62,27 @@ export const taskSafetyProfiles: Record<
     disallowInternalConfigFields: boolean;
     requiresRedactionMetadata: boolean;
   }
-> = {
-  distill_daily: safetyProfile(false),
-  draft_reply: safetyProfile(true),
-  eval_judge: safetyProfile(false),
-  intent_classify: safetyProfile(false),
-  journey_import: safetyProfile(false),
-  kb_answer: safetyProfile(true),
-  profile_update: safetyProfile(false),
-  speech_postprocess: safetyProfile(false),
-  summarize: safetyProfile(false),
-  vision_diag: safetyProfile(false)
-};
+> = Object.fromEntries(
+  Object.values(llmGatewayTasks).map((task) => [
+    task,
+    safetyProfile(customerVisibleTasks.has(task))
+  ])
+) as Record<LlmGatewayTask, ReturnType<typeof safetyProfile>>;
 
 export function createLlmRouteConfig(input: RouteConfigInput): LlmRouteConfig {
-  const providerRefs = nonEmptyStrings(input.providerRefs, "providerRefs");
+  const providerRefs = uniqueStrings(input.providerRefs, "providerRefs");
   if (!providerRefs.includes(input.primaryProviderRef)) {
     throw new Error("primaryProviderRef must reference a known provider");
   }
-  const fallbackProviderRefs = nonEmptyStrings(
+  const fallbackProviderRefs = uniqueStrings(
     input.fallbackProviderRefs,
     "fallbackProviderRefs",
     true
   );
   for (const providerRef of fallbackProviderRefs) {
+    if (providerRef === input.primaryProviderRef) {
+      throw new Error("fallbackProviderRefs must not include primaryProviderRef");
+    }
     if (!providerRefs.includes(providerRef)) {
       throw new Error("fallbackProviderRefs must reference known providers");
     }
@@ -185,25 +138,29 @@ export async function invokeLlmRoute(input: {
   providers: LlmProviderPort[];
   route: LlmRouteConfig;
   traceId: string;
-}): Promise<LlmInvocationResult> {
+}) {
   validateInvocationBoundary(input.route.task, input.input);
-  const providers = providerMap(input.providers);
+  const providers = new Map(
+    input.providers.map((provider) => [provider.providerId, provider])
+  );
   const providerOrder = [
     input.route.primaryProviderRef,
     ...input.route.fallbackProviderRefs
   ];
-  const attempts: LlmInvocationResult["attempts"] = [];
-  const attemptAccountingDrafts: AccountingDraft[] = [];
+  const attempts: AttemptSummary[] = [];
+  const attemptAccountingDrafts: ReturnType<typeof createAccountingDraft>[] = [];
   let firstFailureReason: string | undefined;
 
   for (const providerId of providerOrder) {
-    const provider = requireProvider(providers, providerId);
-    const result = await provider.invoke({
+    const provider = providers.get(providerId);
+    if (!provider) throw new Error(`provider ${providerId} is not registered`);
+    const attempt = await invokeProvider(provider, {
       input: input.input,
       route: input.route,
       traceId: input.traceId
     });
-    const failureReason = classifyFailure(result, input.route);
+    const result = attempt.result;
+    const failureReason = attempt.reason ?? classifyFailure(result, input.route);
     if (!failureReason) {
       const status = attempts.length ? "fallback" : "succeeded";
       const accountingDraft = createAccountingDraft({
@@ -261,7 +218,7 @@ function createAccountingDraft(input: {
   route: LlmRouteConfig;
   status: LlmGatewayCallStatus;
   traceId: string;
-}): AccountingDraft {
+}) {
   const inputTokenCount = input.result.inputTokenCount ?? 0;
   const outputTokenCount = input.result.outputTokenCount ?? 0;
   return removeUndefined({
@@ -274,15 +231,37 @@ function createAccountingDraft(input: {
     outputTokenCount,
     promptHash: input.result.promptHash,
     providerId: input.provider.providerId,
-    redactionMetadata: optionalRecord(input.input.redactionMetadata),
+    redactionMetadata: metadataRecord(input.input.redactionMetadata),
     routeRef: input.route.routeRef,
     routeVersion: input.route.routeVersion,
     status: input.status,
     task: input.route.task,
     totalTokenCount: inputTokenCount + outputTokenCount,
     traceId: input.traceId,
-    truncationMetadata: optionalRecord(input.input.truncationMetadata)
+    truncationMetadata: metadataRecord(input.input.truncationMetadata)
   });
+}
+
+async function invokeProvider(
+  provider: LlmProviderPort,
+  request: Parameters<LlmProviderPort["invoke"]>[0]
+): Promise<AttemptResult> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const invoke = provider
+    .invoke(request)
+    .then((result) => ({ result }))
+    .catch(() => ({ reason: "failure", result: { status: "failed" as const } }));
+  const timeout = new Promise<AttemptResult>((resolve) => {
+    timer = setTimeout(
+      () => resolve({ reason: "timeout", result: { status: "timeout" } }),
+      request.route.timeoutMs
+    );
+  });
+  try {
+    return await Promise.race([invoke, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 function classifyFailure(result: MockProviderResult, route: LlmRouteConfig) {
@@ -290,6 +269,7 @@ function classifyFailure(result: MockProviderResult, route: LlmRouteConfig) {
   if (result.status === "timeout" || (result.latencyMs ?? 0) > route.timeoutMs) {
     return "timeout";
   }
+  if (!hasValidTelemetry(result)) return "accounting_invalid";
   return budgetFailure(result, route);
 }
 
@@ -316,28 +296,18 @@ function validateInvocationBoundary(
   if (profile.disallowInternalConfigFields && "internalConfig" in input) {
     throw new Error("customer-facing tasks must not receive internalConfig");
   }
-  if (profile.requiresRedactionMetadata && !optionalRecord(input.redactionMetadata)) {
+  const redactionMetadata = metadataRecord(input.redactionMetadata);
+  metadataRecord(input.truncationMetadata);
+  if (profile.requiresRedactionMetadata && !redactionMetadata) {
     throw new Error("redactionMetadata is required");
   }
 }
 
-function fallbackSummary(reason: string, attempts: LlmInvocationResult["attempts"]) {
+function fallbackSummary(reason: string, attempts: AttemptSummary[]) {
   return {
     attemptedProviders: attempts.map((attempt) => attempt.providerId),
     reason
   };
-}
-
-function providerMap(providers: LlmProviderPort[]): Map<string, LlmProviderPort> {
-  const refs = new Map<string, LlmProviderPort>();
-  for (const provider of providers) refs.set(provider.providerId, provider);
-  return refs;
-}
-
-function requireProvider(providers: Map<string, LlmProviderPort>, providerId: string) {
-  const provider = providers.get(providerId);
-  if (!provider) throw new Error(`provider ${providerId} is not registered`);
-  return provider;
 }
 
 function safetyProfile(customerVisible: boolean) {
@@ -380,10 +350,47 @@ function nonEmptyStrings(values: unknown, name: string, allowEmpty = false): str
   return values.map((value) => nonEmptyString(value, name));
 }
 
-function optionalRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
+function uniqueStrings(values: unknown, name: string, allowEmpty = false): string[] {
+  const items = nonEmptyStrings(values, name, allowEmpty);
+  if (new Set(items).size !== items.length)
+    throw new Error(`${name} must not contain duplicates`);
+  return items;
+}
+
+function hasValidTelemetry(result: MockProviderResult): boolean {
+  return ["costMicros", "inputTokenCount", "latencyMs", "outputTokenCount"].every(
+    (key) => nonNegativeInt(result[key as keyof MockProviderResult])
+  );
+}
+
+function metadataRecord(value: unknown): Record<string, unknown> | undefined {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("metadata must be an object");
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [
+      safeMetadataKey(key),
+      safeMetadataValue(entry)
+    ])
+  );
+}
+
+function safeMetadataKey(key: string): string {
+  if (!allowedMetadataKey.test(key) || forbiddenMetadataKey.test(key))
+    throw new Error("metadata key is not allowed");
+  return key;
+}
+
+function safeMetadataValue(value: unknown): string | number | boolean {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "boolean" || nonNegativeInt(value))
+    return value as number | boolean;
+  throw new Error("metadata value is invalid");
+}
+
+function nonNegativeInt(value: unknown): boolean {
+  return Number.isInteger(value) && (value as number) >= 0;
 }
 
 function removeUndefined<T extends Record<string, unknown>>(value: T): T {

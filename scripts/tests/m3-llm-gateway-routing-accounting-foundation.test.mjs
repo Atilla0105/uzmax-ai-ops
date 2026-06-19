@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-
+import { setTimeout as delay } from "node:timers/promises";
 import ts from "typescript";
 
 const repoRoot = process.cwd();
@@ -41,92 +41,67 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
   });
 
   it("validates route config providers, budgets, task, and eval gate metadata", () => {
-    const route = gateway.createLlmRouteConfig({
-      costMicrosBudget: 900,
-      evalGate: {
-        gateRef: "eval-gate:m3-02-route",
-        lastStatus: "pending"
-      },
-      fallbackProviderRefs: ["mock:fallback"],
-      inputTokenBudget: 100,
-      outputTokenBudget: 80,
-      primaryProviderRef: "mock:primary",
-      providerRefs: ["mock:primary", "mock:fallback"],
-      routeRef: "route:kb-answer",
-      routeVersion: "v1",
-      task: "kb_answer",
-      timeoutMs: 250,
-      totalTokenBudget: 160
-    });
+    const route = baseRoute();
 
     assert.equal(route.task, "kb_answer");
     assert.equal(route.evalGate.lastStatus, "pending");
-    assert.throws(
-      () =>
-        gateway.createLlmRouteConfig({
-          ...route,
-          primaryProviderRef: "mock:missing",
-          providerRefs: ["mock:fallback"]
-        }),
-      /primaryProviderRef must reference a known provider/
-    );
-    assert.throws(
-      () => gateway.createLlmRouteConfig({ ...route, task: "unknown_task" }),
-      /task is invalid/
-    );
-    assert.throws(
-      () => gateway.createLlmRouteConfig({ ...route, timeoutMs: 0 }),
-      /timeoutMs must be a positive integer/
-    );
-    assert.throws(
-      () =>
-        gateway.createLlmRouteConfig({
-          ...route,
-          outputTokenBudget: 100,
-          totalTokenBudget: 50
-        }),
-      /totalTokenBudget must be at least inputTokenBudget and outputTokenBudget/
-    );
-    assert.throws(
-      () =>
-        gateway.createLlmRouteConfig({
-          ...route,
-          evalGate: { gateRef: "eval-gate:m3-02-route", lastStatus: "released" }
-        }),
-      /eval gate status is invalid/
-    );
+    const invalidRoutes = [
+      [
+        { primaryProviderRef: "mock:missing", providerRefs: ["mock:fallback"] },
+        /primaryProviderRef must reference a known provider/
+      ],
+      [{ task: "unknown_task" }, /task is invalid/],
+      [{ timeoutMs: 0 }, /timeoutMs must be a positive integer/],
+      [
+        { outputTokenBudget: 100, totalTokenBudget: 50 },
+        /totalTokenBudget must be at least inputTokenBudget and outputTokenBudget/
+      ],
+      [
+        { evalGate: { gateRef: "eval-gate:m3-02-route", lastStatus: "released" } },
+        /eval gate status is invalid/
+      ],
+      [
+        { providerRefs: ["mock:primary", "mock:primary"] },
+        /providerRefs must not contain duplicates/
+      ],
+      [
+        { fallbackProviderRefs: ["mock:fallback", "mock:fallback"] },
+        /fallbackProviderRefs must not contain duplicates/
+      ],
+      [
+        { fallbackProviderRefs: ["mock:primary"] },
+        /fallbackProviderRefs must not include primaryProviderRef/
+      ]
+    ];
+    for (const [patch, pattern] of invalidRoutes) {
+      assert.throws(
+        () => gateway.createLlmRouteConfig({ ...route, ...patch }),
+        pattern
+      );
+    }
   });
 
   it("tries primary then fallback on failure, timeout, and budget failure", async () => {
     const fallbackCases = [
       {
         mode: "failure",
-        provider: gateway.createMockLlmProvider({
-          modelId: "mock-model-primary",
-          providerId: "mock:primary",
-          result: { failureCode: "deterministic_failure", status: "failed" }
+        provider: mockProvider("mock:primary", {
+          failureCode: "deterministic_failure",
+          status: "failed"
         })
       },
       {
         mode: "timeout",
-        provider: gateway.createMockLlmProvider({
-          modelId: "mock-model-primary",
-          providerId: "mock:primary",
-          result: { latencyMs: 251, status: "timeout" }
-        })
+        provider: mockProvider("mock:primary", { latencyMs: 251, status: "timeout" })
       },
       {
         mode: "budget",
-        provider: gateway.createMockLlmProvider({
-          modelId: "mock-model-primary",
-          providerId: "mock:primary",
-          result: {
-            costMicros: 901,
-            inputTokenCount: 10,
-            latencyMs: 25,
-            outputTokenCount: 20,
-            status: "succeeded"
-          }
+        provider: mockProvider("mock:primary", {
+          costMicros: 901,
+          inputTokenCount: 10,
+          latencyMs: 25,
+          outputTokenCount: 20,
+          status: "succeeded"
         })
       }
     ];
@@ -138,16 +113,12 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
         },
         providers: [
           provider,
-          gateway.createMockLlmProvider({
-            modelId: "mock-model-fallback",
-            providerId: "mock:fallback",
-            result: {
-              costMicros: 300,
-              inputTokenCount: 40,
-              latencyMs: 35,
-              outputTokenCount: 50,
-              status: "succeeded"
-            }
+          mockProvider("mock:fallback", {
+            costMicros: 300,
+            inputTokenCount: 40,
+            latencyMs: 35,
+            outputTokenCount: 50,
+            status: "succeeded"
           })
         ],
         route: baseRoute(),
@@ -157,7 +128,7 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
       assert.equal(result.providerId, "mock:fallback");
       assert.equal(result.accountingDraft.status, "fallback");
       assert.equal(result.accountingDraft.task, "kb_answer");
-      assert.equal(result.accountingDraft.modelId, "mock-model-fallback");
+      assert.equal(result.accountingDraft.modelId, "mock:fallback:model");
       assert.equal(result.accountingDraft.routeRef, "route:kb-answer");
       assert.equal(result.accountingDraft.routeVersion, "v1");
       assert.equal(result.accountingDraft.inputTokenCount, 40);
@@ -180,15 +151,15 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
         redactionMetadata: { policy: "m3-02-redacted", truncatedSegments: 0 }
       },
       providers: [
-        gateway.createMockLlmProvider({
-          modelId: "mock-model-primary",
-          providerId: "mock:primary",
-          result: { failureCode: "primary_down", latencyMs: 20, status: "failed" }
+        mockProvider("mock:primary", {
+          failureCode: "primary_down",
+          latencyMs: 20,
+          status: "failed"
         }),
-        gateway.createMockLlmProvider({
-          modelId: "mock-model-fallback",
-          providerId: "mock:fallback",
-          result: { failureCode: "fallback_down", latencyMs: 30, status: "failed" }
+        mockProvider("mock:fallback", {
+          failureCode: "fallback_down",
+          latencyMs: 30,
+          status: "failed"
         })
       ],
       route: baseRoute(),
@@ -202,6 +173,53 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
     assert.equal(result.accountingDraft.totalTokenCount, 0);
     assert.equal(result.accountingDraft.fallbackSummary.attemptedProviders.length, 2);
     assertNoRawPromptOrCompletion(result.accountingDraft);
+  });
+
+  it("falls back on wall-clock timeout and thrown provider errors", async () => {
+    for (const [mode, provider] of [
+      ["wall_clock_timeout", delayedProvider("mock:primary", 30)],
+      ["never_resolved_timeout", hangingProvider("mock:primary")],
+      ["provider_exception", throwingProvider("mock:primary")]
+    ]) {
+      const result = await gateway.invokeLlmRoute({
+        input: safeInput(),
+        providers: [provider, successProvider("mock:fallback", { latencyMs: 1 })],
+        route: baseRoute({ timeoutMs: 5 }),
+        traceId: `trace-${mode}`
+      });
+
+      assert.equal(result.accountingDraft.status, "fallback");
+      assert.equal(result.providerId, "mock:fallback");
+      assert.equal(result.attempts[0].providerId, "mock:primary");
+      assert.match(result.attempts[0].reason, /timeout|failure/);
+      assertNoRawPromptOrCompletion(result.attemptAccountingDrafts[0]);
+    }
+  });
+
+  it("fails closed on missing or invalid success telemetry before budget checks", async () => {
+    // prettier-ignore
+    const invalidMetrics = [
+      ["missing_input", { costMicros: 1, latencyMs: 1, outputTokenCount: 1 }],
+      ["negative_output", { costMicros: 1, inputTokenCount: 1, latencyMs: 1, outputTokenCount: -1 }],
+      ["nan_cost", { costMicros: Number.NaN, inputTokenCount: 1, latencyMs: 1, outputTokenCount: 1 }],
+      ["fractional_latency", { costMicros: 1, inputTokenCount: 1, latencyMs: 1.25, outputTokenCount: 1 }]
+    ];
+
+    for (const [mode, metrics] of invalidMetrics) {
+      const result = await gateway.invokeLlmRoute({
+        input: safeInput(),
+        providers: [
+          mockProvider("mock:primary", { ...metrics, status: "succeeded" }),
+          successProvider("mock:fallback")
+        ],
+        route: baseRoute(),
+        traceId: `trace-${mode}`
+      });
+
+      assert.equal(result.accountingDraft.status, "fallback");
+      assert.equal(result.attempts[0].reason, "accounting_invalid");
+      assert.equal(result.attemptAccountingDrafts[0].costMicros, 0);
+    }
   });
 
   it("enforces customer-visible redaction boundary and rejects internal config fields", async () => {
@@ -228,7 +246,11 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
 
     const safe = await gateway.invokeLlmRoute({
       input: {
-        redactionMetadata: { policy: "m3-02-redacted", truncatedSegments: 2 },
+        redactionMetadata: {
+          policy: "m3-02-redacted",
+          promptHash: "sha256:redacted",
+          truncatedSegments: 2
+        },
         safeRef: "controlled://context/ref"
       },
       providers: [successProvider("mock:primary")],
@@ -238,8 +260,34 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
     assert.equal(safe.accountingDraft.status, "succeeded");
     assert.deepEqual(safe.accountingDraft.redactionMetadata, {
       policy: "m3-02-redacted",
+      promptHash: "sha256:redacted",
       truncatedSegments: 2
     });
+    await assert.rejects(
+      () =>
+        gateway.invokeLlmRoute({
+          input: {
+            redactionMetadata: { rawPrompt: "do not copy", status: "redacted" }
+          },
+          providers: [successProvider("mock:primary")],
+          route: baseRoute({ fallbackProviderRefs: [] }),
+          traceId: "trace-unsafe-redaction"
+        }),
+      /metadata key is not allowed/
+    );
+    await assert.rejects(
+      () =>
+        gateway.invokeLlmRoute({
+          input: {
+            redactionMetadata: { status: "redacted" },
+            truncationMetadata: { secretToken: "hidden" }
+          },
+          providers: [successProvider("mock:primary")],
+          route: baseRoute({ fallbackProviderRefs: [] }),
+          traceId: "trace-unsafe-truncation"
+        }),
+      /metadata key is not allowed/
+    );
   });
 
   it("documents the gateway foundation without overclaiming eval or production release", () => {
@@ -271,18 +319,66 @@ function baseRoute(overrides = {}) {
   });
 }
 
-function successProvider(providerId) {
+function successProvider(providerId, resultOverrides = {}) {
+  return mockProvider(providerId, {
+    costMicros: 250,
+    inputTokenCount: 20,
+    latencyMs: 20,
+    outputTokenCount: 30,
+    status: "succeeded",
+    ...resultOverrides
+  });
+}
+
+function mockProvider(providerId, result) {
   return gateway.createMockLlmProvider({
     modelId: `${providerId}:model`,
     providerId,
-    result: {
-      costMicros: 250,
-      inputTokenCount: 20,
-      latencyMs: 20,
-      outputTokenCount: 30,
-      status: "succeeded"
-    }
+    result
   });
+}
+
+function delayedProvider(providerId, delayMs) {
+  return {
+    async invoke() {
+      await delay(delayMs);
+      return {
+        costMicros: 1,
+        inputTokenCount: 1,
+        latencyMs: delayMs,
+        outputTokenCount: 1,
+        status: "succeeded"
+      };
+    },
+    modelId: `${providerId}:model`,
+    providerId
+  };
+}
+
+function hangingProvider(providerId) {
+  return {
+    async invoke() {
+      return new Promise(() => {});
+    },
+    modelId: `${providerId}:model`,
+    providerId
+  };
+}
+
+function throwingProvider(providerId) {
+  return {
+    async invoke() {
+      throw new Error("raw provider stack should not be copied");
+    },
+    modelId: `${providerId}:model`,
+    providerId
+  };
+}
+
+function safeInput() {
+  return {
+    redactionMetadata: { policy: "m3-02-redacted", truncatedSegments: 0 }
+  };
 }
 
 function assertNoRawPromptOrCompletion(value) {

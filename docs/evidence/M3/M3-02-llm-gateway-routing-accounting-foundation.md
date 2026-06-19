@@ -21,6 +21,7 @@ Included:
 - Invocation flow that tries primary then fallback on deterministic failure, timeout or budget failure.
 - Accounting drafts compatible with the M3-01 `llm_call_log` allowed metadata shape.
 - Customer-facing/draft task boundary requiring redaction metadata and rejecting internal config fields.
+- Code-quality follow-up hardening for wall-clock timeout races, provider exceptions, fail-closed telemetry validation, narrow metadata allowlist and duplicate provider-ref rejection.
 
 Not included:
 
@@ -58,21 +59,31 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Eval gate semantics | pass | Route eval gate ref/status is metadata only; M3-03 remains future. |
 | LLM numeric decisions | pass | Cost/token/timeout budgets are code-side guard checks; no LLM price/SLA/order/cost decision path exists. |
 
+## Code Quality Review Fixes
+
+The post-PR code quality review returned `Ready to merge? With fixes`. M3-02 follow-up fixes:
+
+- Provider calls now race against `route.timeoutMs`; wall-clock timeouts create failed attempt accounting drafts and continue to fallback.
+- Provider thrown errors are caught and converted to safe `failure` attempts without copying raw error payloads.
+- Successful provider results must include finite non-negative integer `inputTokenCount`, `outputTokenCount`, `costMicros` and `latencyMs`; invalid or missing telemetry is `accounting_invalid` and falls back.
+- `redactionMetadata` and `truncationMetadata` are validated through a narrow allowlist and primitive/count-like values; raw prompt/completion/customer content, internal cost/margin/profit/threshold and secret/key/token-style metadata keys fail closed.
+- Route config rejects duplicate `providerRefs`, duplicate fallbacks and fallback equal to primary.
+
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
-| `node --test scripts/tests/m3-llm-gateway-routing-accounting-foundation.test.mjs` | pass | 6/6 focused tests passed after GREEN and after the jscpd helper cleanup. |
+| `node --test scripts/tests/m3-llm-gateway-routing-accounting-foundation.test.mjs` | pass | 8/8 focused tests passed after code-quality review fixes. |
 | `npm run format:check` | pass | Initial run found formatting issues in the new source/test files; after targeted Prettier write, rerun passed. |
 | `npm run typecheck` | pass | TypeScript strict check passed. |
 | `npm run lint` | pass | ESLint passed. |
 | `npm run guard:eval-triggers -- --base origin/main` | pass | `eval-trigger-paths: no eval-triggering paths changed`. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-02-llm-gateway-routing-accounting, linked worktree, dirty allowed)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-02-llm-gateway-routing-accounting-foundation.md --include-worktree` | pass | 7 changed files; categories docs 5/source 1/test 1; source changedFiles 1, netLoc 392, newFiles 0. Direct `git diff --numstat origin/main -- packages/llm-gateway/src/index.ts` reports 392 added source lines, under the spec budget of 400. |
-| `npm run test` | pass | 76/76 tests passed. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-02-llm-gateway-routing-accounting-foundation.md --include-worktree` | pass | 7 changed files; categories docs 5/source 1/test 1; source changedFiles 1, netLoc 392, newFiles 0. Direct `git diff --numstat origin/main -- packages/llm-gateway/src/index.ts` reports 399 added source lines, under the spec budget of 400. |
+| `npm run test` | pass | 78/78 tests passed. |
 | `git diff --check` | pass | No whitespace errors. |
-| `npm run check` | failed then fixed, final pass | First run stopped at `jscpd` because the new focused test duplicated the M3-01 TypeScript source import helper shape. The helper was rewritten without changing assertions or production behavior. Final rerun passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 76/76 tests, build, size and Playwright 6/6. |
+| `npm run check` | failed then fixed, final pass | First run stopped at `jscpd` because the new focused test duplicated the M3-01 TypeScript source import helper shape. The helper was rewritten without changing assertions or production behavior. Final rerun passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 78/78 tests, build, size and Playwright 6/6. |
 
 ## PR Hygiene Summary
 
@@ -82,7 +93,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Path categories | docs 5, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | 392 added lines by direct `git diff --numstat`; under budget 400. `guard:pr-shape` reports netLoc 392. |
+| Net source LOC | `guard:pr-shape` reports netLoc 392; direct `git diff --numstat` reports 399 added source lines, both under budget 400. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |
 | Test weakening | none; no `.skip` / `.only` / `xit` / `xfail` added |

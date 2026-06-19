@@ -57,14 +57,23 @@ Not included:
 | Safe degradation/handoff | pass | Combined action returns suppress outbound answer, handoff/ticket/draft hold and controlled audit refs only. |
 | Foundation-only boundary | pass | Docs/evidence mark F-05/F-06/G-05/L-02 as foundation/support only, not closed. |
 
+## PR #46 Review Blocker Closure
+
+| Blocker | Closure |
+|---|---|
+| Unknown `eventKind` fail-open | `evaluateBreakerRadius` now validates `eventKind` against the known breaker event set before scope decisions. Unknown values throw `eventKind is invalid` without echoing raw event text. |
+| Redline output raw/control leakage | `guardRedlineOutput` now uses a strict input allowlist, rejects extra raw/internal fields, detects raw prompt/completion/system prompt/model route/public URL/control leakage, and suppressed results do not include unsafe output text. |
+| Forged runtime object trust | `decideEngineSafetyAction` now revalidates breaker scope, output status, controlled refs, disabled capability keys and reason codes before building `auditRefs`; invalid objects throw or fail closed without preserving unsafe refs. |
+| Regression coverage | Focused tests now cover unknown event kind rejection, raw field rejection, raw/system/model-route/public-URL suppression with no echo, forged object rejection, unsafe ref rejection and the legal false-positive synthetic number path. |
+
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
-| `node --test scripts/tests/m3-breaker-radius-redline-output-guard.test.mjs` | pass | 9/9 focused M3-08 tests passed. |
+| `node --test scripts/tests/m3-breaker-radius-redline-output-guard.test.mjs` | pass | 13/13 focused M3-08 tests passed after review-blocker fixes. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors. |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-08-breaker-radius-and-redline-output-guard.md --include-worktree` | pass | Reports 6 changed files: docs 4, source 1, test 1; source changedFiles 1, newFiles 0. |
-| `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 128/128 Node tests, build, size and Playwright 6/6. |
+| `npm run check` | pass | Full local gate passed after review-blocker fixes: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 132/132 Node tests, build, size and Playwright 6/6. |
 | final worker/root status | pending | To record after validation and commit. |
 
 ## PR Hygiene Summary
@@ -75,7 +84,7 @@ Not included:
 | Path categories | docs 4, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | pending guard output |
+| Net source LOC | `guard:pr-shape` reports netLoc 327 after review-blocker fixes. |
 | rg search conclusion | No new source file. Searched breaker/redline output/output policy/safe degradation/handoff/engineSafety/safety across packages/docs/scripts/tests; engine was placeholder and is the correct pure orchestration contract home. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |

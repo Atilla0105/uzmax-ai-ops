@@ -41,8 +41,8 @@ type RedlineOutputInput = {
 };
 
 type SafetyActionInput = {
-  breakerDecision: ReturnType<typeof evaluateBreakerRadius>;
-  outputGuard: ReturnType<typeof guardRedlineOutput>;
+  breakerDecision: unknown;
+  outputGuard: unknown;
 };
 
 const breakerEventKinds = {
@@ -66,19 +66,27 @@ const unsafeOutputPatterns = [
   { kind: "internal_config", pattern: /\binternal\s+config(?:uration)?\b/i },
   { kind: "internal_config", pattern: /\bprivate\s+config(?:uration)?\b/i },
   { kind: "internal_economics", pattern: /\b(?:costs?|profit|margin)s?\b/i },
+  { kind: "model_route", pattern: /\bmodel\s+route\b/i },
   { kind: "private_route", pattern: /\bprivate\s+route\b/i },
   { kind: "private_budget", pattern: /\b(?:private\s+)?budget\s+guard\b/i },
   { kind: "private_guard", pattern: /\bguard\s+value\b/i },
+  { kind: "public_url", pattern: /\b(?:https?:\/\/|www\.)\S+/i },
+  { kind: "raw_completion", pattern: /\braw\s+completion\b/i },
+  { kind: "raw_prompt", pattern: /\braw\s+prompt\b/i },
+  { kind: "system_prompt", pattern: /\bsystem\s+prompt\b/i },
   { kind: "threshold", pattern: /\bthresholds?\b/i }
 ] as const;
 
+const breakerEventKindValues = new Set<string>(Object.values(breakerEventKinds));
 const controlledRefPattern =
   /^(controlled|manifest|redaction|storage|ticket):\/\/[a-z0-9][a-z0-9:/._-]{0,120}$/i;
 const safeCapabilityKeyPattern = /^[a-z][a-z0-9_-]{1,48}$/i;
+const safeReasonCodePattern = /^[a-z][a-z0-9_:-]{0,96}$/i;
+const outputInputKeys = new Set(["controlledRefs", "output", "outputRef"]);
 
 export function evaluateBreakerRadius(input: BreakerInput) {
   const refs = controlledRefs(input.controlledRefs);
-  const eventKind = nonEmpty(input.eventKind, "eventKind");
+  const eventKind = breakerEventKind(input.eventKind);
   const affectedUserRefs = controlledRefs(input.affectedUserRefs, true);
   const affectedCapabilityKeys = capabilityKeys(input.affectedCapabilityKeys, true);
   const capabilityKey = input.capabilityKey
@@ -129,12 +137,11 @@ export function evaluateBreakerRadius(input: BreakerInput) {
 }
 
 export function guardRedlineOutput(input: RedlineOutputInput) {
-  const outputRef = controlledRef(input.outputRef, "outputRef");
-  const controlledRefsValue = controlledRefs(input.controlledRefs);
-  const output = nonEmpty(input.output, "output");
-  const findings = unsafeOutputPatterns
-    .filter(({ pattern }) => pattern.test(output))
-    .map(({ kind }) => ({ kind, outputRef }));
+  const safeInput = allowedObject(input, outputInputKeys, "redline output input");
+  const outputRef = controlledRef(safeInput.outputRef, "outputRef");
+  const controlledRefsValue = controlledRefs(safeInput.controlledRefs);
+  const output = nonEmpty(safeInput.output, "output");
+  const findings = outputFindings(output, outputRef);
 
   if (findings.length) {
     return {
@@ -163,40 +170,37 @@ export function guardRedlineOutput(input: RedlineOutputInput) {
 }
 
 export function decideEngineSafetyAction(input: SafetyActionInput) {
-  if (input.outputGuard.status === engineRedlineOutputStatuses.suppressed) {
+  const breakerDecision = safeBreakerDecision(input.breakerDecision);
+  const outputGuard = safeOutputGuard(input.outputGuard);
+  const safeInput = { breakerDecision, outputGuard };
+  if (outputGuard.status === engineRedlineOutputStatuses.suppressed) {
     return safetyAction(
       "redline_output_suppressed",
       engineSafetyDecisionStatuses.suppress,
-      {
-        breakerDecision: input.breakerDecision,
-        outputGuard: input.outputGuard
-      }
+      safeInput
     );
   }
-  if (input.breakerDecision.scope === engineBreakerScopes.global) {
+  if (breakerDecision.scope === engineBreakerScopes.global) {
     return safetyAction("global_breaker_active", engineSafetyDecisionStatuses.degrade, {
-      breakerDecision: input.breakerDecision,
-      outputGuard: input.outputGuard
+      breakerDecision,
+      outputGuard
     });
   }
-  if (input.breakerDecision.scope !== engineBreakerScopes.user) {
+  if (breakerDecision.scope !== engineBreakerScopes.user) {
     return safetyAction("scoped_breaker_active", engineSafetyDecisionStatuses.handoff, {
-      breakerDecision: input.breakerDecision,
-      outputGuard: input.outputGuard
+      breakerDecision,
+      outputGuard
     });
   }
-  if (input.breakerDecision.reasonCodes.includes("single_user_only")) {
+  if (breakerDecision.reasonCodes.includes("single_user_only")) {
     return safetyAction(
       "single_user_breaker_active",
       engineSafetyDecisionStatuses.handoff,
-      {
-        breakerDecision: input.breakerDecision,
-        outputGuard: input.outputGuard
-      }
+      safeInput
     );
   }
   return {
-    auditRefs: input.outputGuard.controlledRefs,
+    auditRefs: outputGuard.controlledRefs,
     degradation: { required: false },
     disabledCapabilityKeys: [],
     handoff: { required: false },
@@ -242,7 +246,10 @@ function breakerDecision(input: {
 function safetyAction(
   reasonCode: string,
   status: SafetyStatus,
-  input: SafetyActionInput
+  input: {
+    breakerDecision: ReturnType<typeof safeBreakerDecision>;
+    outputGuard: ReturnType<typeof safeOutputGuard>;
+  }
 ) {
   const refs = [
     ...input.breakerDecision.controlledRefs,
@@ -256,6 +263,57 @@ function safetyAction(
     reasonCode,
     status,
     suppressOutbound: true
+  };
+}
+
+function outputFindings(output: string, outputRef: string) {
+  return unsafeOutputPatterns
+    .filter(({ pattern }) => pattern.test(output))
+    .map(({ kind }) => ({ kind, outputRef }));
+}
+
+function safeBreakerDecision(value: unknown) {
+  const record = objectRecord(value, "breakerDecision");
+  const scope = enumValue(record.scope, engineBreakerScopes, "breaker scope");
+  const globalShutdown = record.globalShutdown === true;
+  if (globalShutdown !== (scope === engineBreakerScopes.global)) {
+    throw new Error("breakerDecision is invalid");
+  }
+  return {
+    affectedCapabilityKeys: capabilityKeys(record.affectedCapabilityKeys, true),
+    affectedUserRefs: controlledRefs(record.affectedUserRefs, true),
+    controlledRefs: controlledRefs(record.controlledRefs),
+    disabledCapabilityKeys: capabilityKeys(record.disabledCapabilityKeys, true),
+    globalShutdown,
+    reasonCodes: reasonCodes(record.reasonCodes),
+    scope
+  };
+}
+
+function safeOutputGuard(value: unknown) {
+  const record = objectRecord(value, "outputGuard");
+  const status = enumValue(record.status, engineRedlineOutputStatuses, "output status");
+  const controlledRefsValue = controlledRefs(record.controlledRefs);
+  const reasonCodesValue = reasonCodes(record.reasonCodes);
+  if (status === engineRedlineOutputStatuses.suppressed) {
+    if ("output" in record) throw new Error("outputGuard is invalid");
+    return {
+      controlledRefs: controlledRefsValue,
+      reasonCodes: reasonCodesValue,
+      status
+    };
+  }
+  const outputRef = controlledRef(record.outputRef, "outputRef");
+  const output = nonEmpty(record.output, "output");
+  if (outputFindings(output, outputRef).length) {
+    throw new Error("outputGuard is unsafe");
+  }
+  return {
+    controlledRefs: controlledRefsValue,
+    output,
+    outputRef,
+    reasonCodes: [],
+    status
   };
 }
 
@@ -294,6 +352,47 @@ function capabilityKeyValue(value: unknown) {
     throw new Error("capabilityKey is invalid");
   }
   return text;
+}
+
+function breakerEventKind(value: unknown) {
+  const text = nonEmpty(value, "eventKind");
+  if (!breakerEventKindValues.has(text)) throw new Error("eventKind is invalid");
+  return text;
+}
+
+function enumValue<T extends string>(
+  value: unknown,
+  values: Record<string, T>,
+  name: string
+): T {
+  const text = nonEmpty(value, name);
+  if (!Object.values(values).includes(text as T)) throw new Error(`${name} is invalid`);
+  return text as T;
+}
+
+function reasonCodes(values: unknown) {
+  if (values === undefined) return [];
+  if (!Array.isArray(values)) throw new Error("reasonCodes must be an array");
+  return values.map((value) => {
+    const text = nonEmpty(value, "reasonCode");
+    if (!safeReasonCodePattern.test(text)) throw new Error("reasonCode is invalid");
+    return text;
+  });
+}
+
+function allowedObject(value: unknown, keys: Set<string>, name: string) {
+  const record = objectRecord(value, name);
+  for (const key of Object.keys(record)) {
+    if (!keys.has(key)) throw new Error(`${name} key is not allowed`);
+  }
+  return record;
+}
+
+function objectRecord(value: unknown, name: string) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${name} must be an object`);
+  }
+  return value as Record<string, unknown>;
 }
 
 function controlledRefs(values: unknown, allowEmpty = true) {

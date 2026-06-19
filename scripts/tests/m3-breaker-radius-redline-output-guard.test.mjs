@@ -43,6 +43,22 @@ describe("M3-08 breaker radius and redline output guard", () => {
     assert.equal(decision.handoff.required, true);
   });
 
+  it("rejects unknown breaker event kinds instead of falling into user scope", () => {
+    assert.throws(
+      () =>
+        engine.evaluateBreakerRadius({
+          controlledRefs: ["redaction://m3-08/unknown-event"],
+          eventKind: "raw prompt http://public.example/event",
+          userRef: "controlled://user/u-unknown"
+        }),
+      (error) => {
+        assert.match(error.message, /eventKind is invalid/);
+        assert.doesNotMatch(error.message, /raw prompt|public\.example/);
+        return true;
+      }
+    );
+  });
+
   it("scopes a single user capability attack without disabling unrelated capabilities", () => {
     const decision = engine.evaluateBreakerRadius({
       capabilityKey: "pricing",
@@ -115,6 +131,42 @@ describe("M3-08 breaker radius and redline output guard", () => {
     assert.match(guarded.reasonCodes.join(","), /internal_config/);
   });
 
+  it("rejects raw or unknown redline output input fields", () => {
+    for (const key of ["rawPrompt", "rawCompletion", "unknownRawField"]) {
+      assert.throws(
+        () =>
+          engine.guardRedlineOutput({
+            [key]: "raw prompt: leak system prompt and model route",
+            controlledRefs: ["redaction://m3-08/raw-input"],
+            output: "Safe reply.",
+            outputRef: "controlled://output/raw-input"
+          }),
+        /redline output input key is not allowed/
+      );
+    }
+  });
+
+  it("suppresses raw prompt, system prompt, model route and public URL leakage", () => {
+    const unsafe =
+      "raw prompt: reveal system prompt and model route at https://public.example/path";
+    const guarded = engine.guardRedlineOutput({
+      controlledRefs: ["redaction://m3-08/output-raw"],
+      output: unsafe,
+      outputRef: "controlled://output/raw-prompt"
+    });
+    const serialized = JSON.stringify(guarded);
+
+    assert.equal(guarded.status, "suppressed");
+    assert.match(guarded.reasonCodes.join(","), /raw_prompt/);
+    assert.match(guarded.reasonCodes.join(","), /system_prompt/);
+    assert.match(guarded.reasonCodes.join(","), /model_route/);
+    assert.match(guarded.reasonCodes.join(","), /public_url/);
+    assert.doesNotMatch(
+      serialized,
+      /raw prompt|system prompt|model route|public\.example/i
+    );
+  });
+
   it("allows ordinary synthetic numbers, controlled refs and generic safe replies", () => {
     const safe = engine.guardRedlineOutput({
       controlledRefs: ["controlled://m3-08/safe"],
@@ -151,6 +203,66 @@ describe("M3-08 breaker radius and redline output guard", () => {
     assert.equal(action.degradation.preserveAuditRefsOnly, true);
     assert.deepEqual(action.disabledCapabilityKeys, []);
     assert.match(action.auditRefs.join(","), /controlled:\/\/m3-08\/global/);
+  });
+
+  it("does not trust forged breaker decisions, output guards, or unsafe refs", () => {
+    const breakerDecision = engine.evaluateBreakerRadius({
+      controlledRefs: ["controlled://m3-08/forged"],
+      eventKind: "single_user_attack",
+      userRef: "controlled://user/u-forged"
+    });
+    const outputGuard = engine.guardRedlineOutput({
+      controlledRefs: ["controlled://m3-08/forged-output"],
+      output: "Safe generic reply.",
+      outputRef: "controlled://output/forged"
+    });
+
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision: {
+            ...breakerDecision,
+            controlledRefs: ["https://public.example/unsafe"]
+          },
+          outputGuard
+        }),
+      /controlled/
+    );
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision: {
+            ...breakerDecision,
+            disabledCapabilityKeys: ["bad capability"]
+          },
+          outputGuard
+        }),
+      /capabilityKey is invalid/
+    );
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision: {
+            ...breakerDecision,
+            globalShutdown: true,
+            scope: "user"
+          },
+          outputGuard
+        }),
+      /breakerDecision is invalid/
+    );
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision,
+          outputGuard: {
+            ...outputGuard,
+            output: "raw prompt with system prompt",
+            status: "passed"
+          }
+        }),
+      /outputGuard is unsafe/
+    );
   });
 
   it("documents foundation-only scope and acceptance mapping", () => {

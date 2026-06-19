@@ -45,7 +45,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 |---|---|---|---|
 | Dependency setup | `npm ci` | pass | Linked worktree had no `node_modules`; dependencies installed without lockfile changes. npm reported existing audit advisories. |
 | RED | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | failed as expected | 6/6 tests failed because M3-03 eval runner exports/behavior were missing from `packages/evals`. |
-| GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 6/6 focused tests passed after implementing pure eval gate/redline runner exports. |
+| GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | Initial focused implementation passed; current focused suite is 7/7 after the review fix. |
 | Review-fix RED | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | failed as expected | New missing-redline-summary test failed because gates with absent `redlineSummary` still passed. |
 | Review-fix GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 7/7 focused tests passed after requiring required redline categories to include passed redline summaries. |
 
@@ -72,10 +72,10 @@ No open PR conflict or unmerged branch conflict was found at start.
 | `npm run lint` | pass | ESLint passed. |
 | `npm run guard:eval-triggers -- --base origin/main` | pass | Post-commit rerun detected `packages/evals/src/index.ts` and ran the minimal eval job successfully. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-03-eval-gate-redline-runner, linked worktree, dirty allowed)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-03-eval-gate-redline-runner.md --include-worktree` | pass | Post-commit rerun reports 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, netLoc 236, newFiles 0. |
-| `npm run test` | pass | 84/84 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
-| `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 84/84 tests, build, size and Playwright 6/6. |
+| `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-03-eval-gate-redline-runner, linked worktree, clean)`. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-03-eval-gate-redline-runner.md --include-worktree` | pass | Post-commit rerun reports 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, netLoc 235, newFiles 0. |
+| `npm run test` | pass | 85/85 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
+| `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 85/85 tests, build, size and Playwright 6/6. |
 | `git diff --check` | pass | No whitespace errors. |
 
 ## PR Hygiene Summary

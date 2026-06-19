@@ -5,75 +5,25 @@ type Scope = { orgId: string; tenantId: string };
 type M3Input = Scope & { id: string } & Record<string, unknown>;
 export type M3AiContractInput = M3Input;
 
-export const m3AiTableNames = {
-  evalCase: "eval_case",
-  evalGate: "eval_gate",
-  evalResult: "eval_result",
-  evalRun: "eval_run",
-  kbEntry: "kb_entry",
-  kbStage: "kb_stage",
-  llmCallLog: "llm_call_log",
-  mediaAsset: "media_asset",
-  quoteRecord: "quote_record"
-} as const;
-export const m3RecordStatuses = {
-  active: "active",
-  archived: "archived",
-  draft: "draft"
-} as const;
-export const quoteRecordStatuses = {
-  created: "created",
-  expired: "expired",
-  voided: "voided"
-} as const;
+// prettier-ignore
+export const m3AiTableNames = { evalCase: "eval_case", evalGate: "eval_gate", evalResult: "eval_result", evalRun: "eval_run", kbEntry: "kb_entry", kbStage: "kb_stage", llmCallLog: "llm_call_log", mediaAsset: "media_asset", quoteRecord: "quote_record" } as const;
+// prettier-ignore
+export const m3RecordStatuses = { active: "active", archived: "archived", draft: "draft" } as const;
+// prettier-ignore
+export const quoteRecordStatuses = { created: "created", expired: "expired", voided: "voided" } as const;
 export const quoteSources = { code: "code" } as const;
-export const evalCategories = {
-  businessDraft: "business_draft",
-  degradation: "degradation",
-  intent: "intent",
-  language: "language",
-  quote: "quote",
-  redlineAttack: "redline_attack",
-  redlineFalsePositive: "redline_false_positive",
-  speech: "speech",
-  tutorial: "tutorial",
-  vision: "vision"
-} as const;
-export const evalRunStatuses = {
-  blocked: "blocked",
-  failed: "failed",
-  passed: "passed",
-  queued: "queued",
-  running: "running"
-} as const;
-export const evalResultStatuses = {
-  failed: "failed",
-  passed: "passed",
-  skipped: "skipped"
-} as const;
-export const evalGateStatuses = {
-  blocked: "blocked",
-  failed: "failed",
-  passed: "passed",
-  pending: "pending"
-} as const;
-export const llmTasks = {
-  distillDaily: "distill_daily",
-  draftReply: "draft_reply",
-  evalJudge: "eval_judge",
-  intentClassify: "intent_classify",
-  journeyImport: "journey_import",
-  kbAnswer: "kb_answer",
-  profileUpdate: "profile_update",
-  speechPostprocess: "speech_postprocess",
-  summarize: "summarize",
-  visionDiag: "vision_diag"
-} as const;
-export const llmCallStatuses = {
-  failed: "failed",
-  fallback: "fallback",
-  succeeded: "succeeded"
-} as const;
+// prettier-ignore
+export const evalCategories = { businessDraft: "business_draft", degradation: "degradation", intent: "intent", language: "language", quote: "quote", redlineAttack: "redline_attack", redlineFalsePositive: "redline_false_positive", speech: "speech", tutorial: "tutorial", vision: "vision" } as const;
+// prettier-ignore
+export const evalRunStatuses = { blocked: "blocked", failed: "failed", passed: "passed", queued: "queued", running: "running" } as const;
+// prettier-ignore
+export const evalResultStatuses = { failed: "failed", passed: "passed", skipped: "skipped" } as const;
+// prettier-ignore
+export const evalGateStatuses = { blocked: "blocked", failed: "failed", passed: "passed", pending: "pending" } as const;
+// prettier-ignore
+export const llmTasks = { distillDaily: "distill_daily", draftReply: "draft_reply", evalJudge: "eval_judge", intentClassify: "intent_classify", journeyImport: "journey_import", kbAnswer: "kb_answer", profileUpdate: "profile_update", speechPostprocess: "speech_postprocess", summarize: "summarize", visionDiag: "vision_diag" } as const;
+// prettier-ignore
+export const llmCallStatuses = { failed: "failed", fallback: "fallback", succeeded: "succeeded" } as const;
 
 export function createKbEntryContract(input: M3Input): Record<string, unknown> {
   return {

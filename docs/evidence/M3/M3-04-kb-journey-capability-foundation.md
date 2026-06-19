@@ -75,7 +75,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | `npm run lint` | failed then fixed, final pass | First run found an unused type alias in KB source; after removal, rerun passed. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-04-kb-journey-capability-foundation, linked worktree, dirty allowed)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-04-kb-journey-capability-foundation.md --include-worktree` | pass | 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, source netLoc 362, newFiles 0. Source file length is 370 lines, under the 400-line budget. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-04-kb-journey-capability-foundation.md --include-worktree` | pass | 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, source netLoc 369, newFiles 0. Source file length is 370 lines, under the 400-line budget. |
 | `npm run test` | pass | 95/95 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
 | `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 95/95 tests, build, size and Playwright 6/6. |
 | `git diff --check` | pass | No whitespace errors in tracked diff before staging. |
@@ -89,7 +89,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Path categories | docs 4, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | Guard reported source netLoc 362, under budget 400. Source file length is 370 lines, under ordinary source file budget. |
+| Net source LOC | Guard reported source netLoc 369, under budget 400. Source file length is 370 lines, under ordinary source file budget. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |
 | Test weakening | none; no `.skip` / `.only` / `xit` / `xfail` added |
@@ -100,7 +100,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 |---|---|---|
 | One spec / one PR | pass | This branch implements only M3-04. |
 | Touch list | pass | Diff is limited to this spec, KB source, focused test, contracts README, M3 evidence README and this evidence file. |
-| Source budget | pass | One existing source file changed; no new source files; guard source netLoc 362 and file length 370 lines are under budget. |
+| Source budget | pass | One existing source file changed; no new source files; guard source netLoc 369 and file length 370 lines are under budget. |
 | Scope honesty | pass | Pure KB journey foundation only; no production, GA-0, real traffic, customer LLM, knowledge publish, DB persistence, admin UI or engine integration. |
 | Owner-input blockers | pass | F-01/H-01 remain foundation-only; owner material pack remains required for full tutorial closeout. |
 | Sensitive data | pass | Synthetic controlled test fixtures only; no raw tutorial/customer/sample/secret content. |

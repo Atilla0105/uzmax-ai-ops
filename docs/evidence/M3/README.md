@@ -10,9 +10,9 @@ M2 prior state: `owner_accepted_m2_milestone_evidence` only. Project owner accep
 
 M3 owner-input blockers from the v1.1 root docs:
 
-- phase-one tutorial material pack is required before M3/tutorial closeout;
-- screenshot diagnostic samples >=20 are required before F-02 closeout;
-- Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04.
+- phase-one tutorial material pack is required before M3/tutorial closeout; expected evidence destinations are `docs/evidence/M3/tutorial/tutorial-materials-manifest.md` and `docs/evidence/M3/tutorial/journey-import-report.md`;
+- screenshot diagnostic samples >=20 are required before F-02 closeout; expected evidence destinations are `docs/evidence/M3/vision/screenshot-cases-manifest.md` and `docs/evidence/M3/vision/eval-run-report.md`;
+- Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04; expected evidence destination is `docs/evidence/M3/language-blind-review/blind-review-report.md`.
 
 No current repo evidence in this M3 readiness pack provides those owner inputs. M3 closeout remains blocked until they are provided in controlled form or explicitly branched by the project owner.
 

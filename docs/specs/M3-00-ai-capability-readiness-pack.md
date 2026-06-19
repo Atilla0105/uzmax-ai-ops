@@ -56,9 +56,9 @@ docs
 - M2 current state is `owner_accepted_m2_milestone_evidence` only. That state does not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
 - ADR-003 customer-data boundary remains active: no real customer messages, screenshots, voice transcripts or customer profiles may enter third-party LLM paths without future owner/governance signoff.
 - Owner-input blockers from v1.1 docs must be treated as M3 closeout blockers unless evidence appears in repo or owner explicitly branches them:
-  - phase-one tutorial material pack is required before M3/tutorial closeout;
-  - screenshot diagnostic samples >=20 are required before F-02 closeout;
-  - Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04.
+  - phase-one tutorial material pack is required before M3/tutorial closeout; expected repo evidence destinations are `docs/evidence/M3/tutorial/tutorial-materials-manifest.md` and `docs/evidence/M3/tutorial/journey-import-report.md`;
+  - screenshot diagnostic samples >=20 are required before F-02 closeout; expected repo evidence destinations are `docs/evidence/M3/vision/screenshot-cases-manifest.md` and `docs/evidence/M3/vision/eval-run-report.md`;
+  - Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04; expected repo evidence destination is `docs/evidence/M3/language-blind-review/blind-review-report.md`.
 - 并发派发证据：single worker, single linked worktree, single branch, single docs spec; touch modules are exactly the three files above; no `packages/db` schema, lockfile, shared config, CI/guard script, generated artifact or release/production gate edits.
 - 事故触发器：若发现跨任务污染、写到分配 worktree 外、错分支或 main 直接提交、secret/customer-data 边界擦边、gate 绕过、同一过程失败在一个里程碑内重复出现，停止并创建或引用 `docs/incidents/` 记录。
 
@@ -67,7 +67,7 @@ docs
 1. 新增本 M3-00 docs-only spec，限定 touch list、budget、owner-input blockers、queue、parallelism、failure branches、not-doing 和 acceptance mapping。
 2. 新增 `docs/evidence/M3/README.md`，声明 M3 evidence boundary、current readiness pack、owner-input blockers 和 sensitive-data rules。
 3. 新增 `docs/evidence/M3/M3-ai-capability-readiness-pack.md`，记录 current-state facts、M2 milestone-only acceptance, M3 queue, owner-input blockers, sensitive-data boundary, validation and review evidence。
-4. 不创建 `M3-01` 到 `M3-09` future implementation spec files；只记录 ordered future queue。
+4. 不创建 `M3-01` 到 `M3-10` future implementation spec files；只记录 ordered future queue。
 5. 运行 required validation，复核 diff 只含 allowlist 文件。
 
 ## M3 Future Spec Queue
@@ -81,8 +81,9 @@ docs
 | 5 | `M3-05-pricing-capability-and-quote-record-contract` | Code-only pricing calculation contract, LLM parameter extraction boundary, quote record evidence, no LLM math | `packages/capabilities/pricing/**`, quote contracts, tests/evidence | Must not import other capability packages; pricing math/source of truth is code and quote records, not LLM output |
 | 6 | `M3-06-vision-screenshot-diagnostics-foundation` | Screenshot diagnosis contract, uncertainty-to-handoff, sample manifest and safe storage references | `packages/capabilities/vision/**`, eval/sample manifests, controlled storage ref docs | Blocked from F-02 closeout until >=20 owner screenshot samples exist; raw screenshots never committed |
 | 7 | `M3-07-speech-transcription-contract` | Speech transcription/postprocess contract for Uzbek Latin/Cyrillic/Russian, confidence/source refs; no unsupported provider claims | `packages/capabilities/speech/**`, `packages/llm-gateway/**` postprocess ports as scoped | No provider capability claims without official docs/spike/local evidence/ADR; raw voice/transcripts never committed |
-| 8 | `M3-08-admin-knowledge-eval-shell-if-needed` | Admin shell for knowledge/resource and eval gate evidence, pure API/client boundary and tokens | `apps/admin/**`, `packages/ui-tokens/**`, API client/contracts as scoped | Admin cannot import backend packages; only open if needed for H-01/I-01/G-03 evidence and after stable API/contracts |
-| 9 | `M3-09-ai-capability-closeout-signoff` | M3 closeout/signoff after queue completion and owner inputs/blind review/evidence are resolved or explicitly branched | `docs/evidence/M3/**`, closeout spec if needed | Must verify queue, validation, owner inputs, sensitive-data boundary and release non-approval before closeout |
+| 8 | `M3-08-breaker-radius-and-redline-output-guard` | User-level, capability-level and global breaker radius evidence, redline output guard behavior and safe degradation semantics | `packages/engine/**`, `packages/llm-gateway/**`, `packages/capabilities/**` ports/tests/evidence as scoped | Shared guard behavior; serial with eval gate, route and output-policy changes unless future touch lists prove disjoint |
+| 9 | `M3-09-admin-knowledge-eval-shell-if-needed` | Admin shell for knowledge/resource and eval gate evidence, pure API/client boundary and tokens | `apps/admin/**`, `packages/ui-tokens/**`, API client/contracts as scoped | Admin cannot import backend packages; only open if needed for H-01/I-01/G-03 evidence and after stable API/contracts |
+| 10 | `M3-10-ai-capability-closeout-signoff` | M3 closeout/signoff after queue completion and owner inputs/blind review/evidence are resolved or explicitly branched | `docs/evidence/M3/**`, closeout spec if needed | Must verify queue, validation, owner inputs, sensitive-data boundary and release non-approval before closeout |
 
 ## 并行规则
 
@@ -90,7 +91,7 @@ docs
 - Eval gate and LLM route changes are shared/global and should be serial unless future touch lists prove disjoint; prompt/knowledge/model route/persona publish refusal semantics must not be bypassed.
 - Capability packages must not import each other. `packages/capabilities/kb`, `vision`, `speech`, `pricing` and later capability slices can only be composed by `engine` or explicit ports.
 - `admin` only calls API/WS/contracts; it must not import backend packages, DB clients or capability code.
-- Owner inputs block closeout: tutorial pack, >=20 screenshot samples and Uzbek Latin/Cyrillic/Russian blind review must be provided, repo-evidenced or explicitly branched before `M3-09` can close M3.
+- Owner inputs block closeout: tutorial pack, >=20 screenshot samples and Uzbek Latin/Cyrillic/Russian blind review must be provided, repo-evidenced or explicitly branched before `M3-10` can close M3.
 - No worker may submit raw sample content to git. Future sample specs can record manifests, redaction method, storage refs, access scope, retention and owner confirmation only.
 
 ## 通过条件
@@ -114,7 +115,7 @@ docs
 ## 不做什么
 
 - 不实现 runtime/source code, DB schema, migrations, generated DTOs, OpenAPI, providers, adapters, prompt/model routes, eval runner, admin UI, API/worker/engine integration, tests or fixtures。
-- 不创建 `M3-01` through `M3-09` implementation spec files; this pack only records the ordered queue。
+- 不创建 `M3-01` through `M3-10` implementation spec files; this pack only records the ordered queue。
 - 不声明 production-ready, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release or 1.0 release approval。
 - 不提交 raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts or secrets。
 - 不让 LLM 做报价、SLA、成本、订单状态等数值判断；报价由 code + `quote_record` 证据闭合。
@@ -124,20 +125,20 @@ docs
 
 | Item | M3-00 status | Future closure path |
 |---|---|---|
-| F-01 | queued_not_closed | M3-04 KB/tutorial stage localization and stage-card-only answer contract; full tutorial closeout blocked until owner phase-one tutorial material pack exists |
-| F-02 | queued_owner_input_blocked | M3-06 screenshot diagnostics contract and manifest; closeout blocked until >=20 owner screenshot samples exist |
+| F-01 | queued_not_closed | M3-04 KB/tutorial stage localization and stage-card-only answer contract; full tutorial closeout blocked until owner phase-one tutorial material pack exists and is recorded at `docs/evidence/M3/tutorial/tutorial-materials-manifest.md` plus `docs/evidence/M3/tutorial/journey-import-report.md` |
+| F-02 | queued_owner_input_blocked | M3-06 screenshot diagnostics contract and manifest; closeout blocked until >=20 owner screenshot samples exist and are recorded at `docs/evidence/M3/vision/screenshot-cases-manifest.md` plus `docs/evidence/M3/vision/eval-run-report.md` |
 | F-03 | queued_not_closed | M3-07 speech transcription/postprocess contract for Uzbek Latin/Cyrillic/Russian |
 | F-04 | queued_not_closed | M3-05 pricing capability and quote record contract; no LLM math |
 | F-05 | queued_not_closed | M3-02/M3-03 redline and context boundary evidence; no internal threshold/cost/profit leakage |
-| F-06 | queued_not_closed | M3 queue must include breaker radius evidence before closeout; not closed by M3-00 |
+| F-06 | queued_not_closed | M3-08 covers user-level, capability-level and global breaker radius evidence plus redline output guard behavior; not closed by M3-00 |
 | G-01 | queued_not_closed | M3-02 route/fallback/failure contract with mock provider only |
 | G-02 | queued_not_closed | M3-01/M3-02 LLM call log/accounting contracts |
 | G-03 | queued_not_closed | M3-03 eval gate publish-refusal semantics |
-| G-04 | queued_owner_input_blocked | Blind review required inside M3; closeout blocked until Uzbek Latin/Cyrillic/Russian blind review is provided or explicitly branched |
-| G-05 | queued_not_closed | M3-03 redline false-positive tracking and future admin evidence if needed |
+| G-04 | queued_owner_input_blocked | Blind review required inside M3; closeout blocked until Uzbek Latin/Cyrillic/Russian blind review is recorded at `docs/evidence/M3/language-blind-review/blind-review-report.md` or explicitly branched |
+| G-05 | queued_not_closed | M3-03 redline false-positive tracking, M3-08 output guard evidence and future admin evidence if needed |
 | G-06 | partial_seed_foundation_future_full_set | M1 seed runner/manifest exists, but full 1.0 set >=200 and category quotas remain future; M3 must not close quota-dependent gates prematurely |
-| H-01 | queued_not_closed | M3-01/M3-04 and optionally M3-08 cover knowledge/resource foundation; no knowledge publish claimed |
-| I-01 | partial_future_scope_only | M3-08 may cover knowledge/resource and eval gate core-screen evidence if opened; full desktop core item remains broader 1.0 |
+| H-01 | queued_not_closed | M3-01/M3-04 and optionally M3-09 cover knowledge/resource foundation; no knowledge publish claimed |
+| I-01 | partial_future_scope_only | M3-09 may cover knowledge/resource and eval gate core-screen evidence if opened; full desktop core item remains broader 1.0 |
 | J-05 | opened_for_m3 | M3 evidence directory and readiness pack created so M3 evidence is not deferred to M6; no release signoff |
 | K-03 | active | One spec / one PR; this PR implements only M3-00 |
 | K-04 | active | M3 queue and parallelism rules recorded, with DB/schema serial and touch-module conflict rules |

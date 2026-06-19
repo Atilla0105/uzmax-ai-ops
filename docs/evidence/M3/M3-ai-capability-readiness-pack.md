@@ -7,7 +7,7 @@
 > created_at: 2026-06-19
 > updated_at: 2026-06-19
 > owner_ai_boundary: Project owner decides tutorial materials, screenshot samples, language blind review, real customer data, customer LLM, provider keys/routes, knowledge publish, AI persona release, GA-0, cost, compliance and 1.0 release. AI agent records current repo evidence, queue, blockers, validation and sensitive-data boundary only.
-> source_files: `AGENTS.md`, four v1.1 root docs, `docs/specs/README.md`, `docs/doc-gates.md`, `docs/evidence/M2/README.md`, `docs/evidence/M2/M2-channel-conversation-closeout-signoff.md`, `docs/specs/M2-00-channel-conversation-readiness-pack.md`, `docs/evidence/M2/M2-channel-conversation-readiness-pack.md`, local `git`/`gh` verification on 2026-06-19.
+> source_files: `AGENTS.md`, four v1.1 root docs, `docs/specs/README.md`, `docs/doc-gates.md`, `docs/preflight/01-owner-inputs-checklist.md`, `docs/evidence/M2/README.md`, `docs/evidence/M2/M2-channel-conversation-closeout-signoff.md`, `docs/specs/M2-00-channel-conversation-readiness-pack.md`, `docs/evidence/M2/M2-channel-conversation-readiness-pack.md`, local `git`/`gh` verification on 2026-06-19.
 > sensitive_data_location: none in repository
 > redaction_status: no raw Telegram payloads, customer plaintext, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, secrets or token values included
 > review_notes: M3 opens only future spec-governed AI capability work. Owner tutorial pack, screenshot samples and Uzbek/Russian blind review block M3 closeout. Production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release and 1.0 release remain blocked or future-gated.
@@ -53,11 +53,11 @@ This is not a production, GA-0, real-traffic, customer-LLM, prompt/model route r
 
 The v1.1 docs make the following inputs M3 critical path. This readiness pack found no current repo evidence that they are already provided.
 
-| Blocker | Source requirement | Blocking effect | Current M3-00 status |
-|---|---|---|---|
-| Phase-one tutorial material pack | Technical architecture owner critical path: phase-one tutorial complete material pack before M3 | Tutorial ability has no content to run; F-01/tutorial closeout cannot complete | `blocked_until_owner_pack_or_explicit_branch` |
-| Screenshot diagnostic samples >=20 | Technical architecture owner critical path and eval quota: screenshot diagnostics need >=20 samples | F-02 cannot close; screenshot diagnostic eval cannot prove low-confidence handoff | `blocked_until_owner_samples_or_explicit_branch` |
-| Uzbek Latin/Cyrillic/Russian blind review | Technical architecture owner critical path and G-04 matrix item | G-04 cannot close; strong-model routing/optimization stays locked/frozen | `blocked_until_owner_blind_review_or_explicit_branch` |
+| Blocker | Source requirement | Blocking effect | Expected repo evidence destination | Current M3-00 status |
+|---|---|---|---|---|
+| Phase-one tutorial material pack | Technical architecture owner critical path: phase-one tutorial complete material pack before M3 | Tutorial ability has no content to run; F-01/tutorial closeout cannot complete | `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md` | `blocked_until_owner_pack_or_explicit_branch` |
+| Screenshot diagnostic samples >=20 | Technical architecture owner critical path and eval quota: screenshot diagnostics need >=20 samples | F-02 cannot close; screenshot diagnostic eval cannot prove low-confidence handoff | `docs/evidence/M3/vision/screenshot-cases-manifest.md`; `docs/evidence/M3/vision/eval-run-report.md` | `blocked_until_owner_samples_or_explicit_branch` |
+| Uzbek Latin/Cyrillic/Russian blind review | Technical architecture owner critical path and G-04 matrix item | G-04 cannot close; strong-model routing/optimization stays locked/frozen | `docs/evidence/M3/language-blind-review/blind-review-report.md` | `blocked_until_owner_blind_review_or_explicit_branch` |
 
 These blockers do not prevent opening foundational specs. They do block M3 closeout and any claim that F-01/F-02/G-04 are closed.
 
@@ -72,8 +72,9 @@ These blockers do not prevent opening foundational specs. They do block M3 close
 | 5 | `M3-05-pricing-capability-and-quote-record-contract` | Code-only pricing calculation contract, LLM parameter extraction boundary and quote record evidence | F-04 evidence; no LLM math |
 | 6 | `M3-06-vision-screenshot-diagnostics-foundation` | Screenshot diagnosis contract, uncertainty-to-handoff and sample manifest | F-02 foundation; closeout remains blocked until >=20 owner screenshot samples exist |
 | 7 | `M3-07-speech-transcription-contract` | Speech transcription/postprocess contract for Uzbek Latin/Cyrillic/Russian with confidence/source refs | F-03 evidence without unsupported provider claims |
-| 8 | `M3-08-admin-knowledge-eval-shell-if-needed` | Admin shell for knowledge/resource and eval gate evidence, pure API/client boundary and tokens | H-01/I-01/G-03 partial core-screen evidence if needed |
-| 9 | `M3-09-ai-capability-closeout-signoff` | M3 closeout after queue completion and owner inputs/blind review/evidence are resolved | Owner-input blockers resolved or explicitly branched; release boundaries preserved |
+| 8 | `M3-08-breaker-radius-and-redline-output-guard` | User-level, capability-level and global breaker radius evidence plus redline output guard behavior | F-06 evidence; safe degradation/output-policy behavior without production release |
+| 9 | `M3-09-admin-knowledge-eval-shell-if-needed` | Admin shell for knowledge/resource and eval gate evidence, pure API/client boundary and tokens | H-01/I-01/G-03 partial core-screen evidence if needed |
+| 10 | `M3-10-ai-capability-closeout-signoff` | M3 closeout after queue completion and owner inputs/blind review/evidence are resolved | Owner-input blockers resolved or explicitly branched; release boundaries preserved |
 
 ## Parallelism Rules
 
@@ -81,27 +82,27 @@ These blockers do not prevent opening foundational specs. They do block M3 close
 - Eval gate and LLM route changes are shared/global. They should be serial unless future touch lists prove disjoint and no route/gate/publish semantics overlap.
 - Capability packages must not import each other; `kb`, `vision`, `speech`, `pricing` and later capabilities can only be composed by `engine` or explicit ports.
 - Admin cannot import backend packages. Admin evidence must use API/WS/contracts and UI tokens/primitives/patterns.
-- Owner inputs block closeout. Foundational specs may proceed, but M3-09 cannot close until tutorial pack, screenshot samples and blind review are provided, repo-evidenced or explicitly branched.
+- Owner inputs block closeout. Foundational specs may proceed, but M3-10 cannot close until tutorial pack, screenshot samples and blind review are provided, repo-evidenced or explicitly branched.
 - Sensitive materials must stay outside git; manifests and controlled storage refs only.
 
 ## Acceptance Mapping
 
 | Item | M3-00 status | Future closure path |
 |---|---|---|
-| F-01 | queued_not_closed | M3-04; closeout blocked until owner phase-one tutorial material pack exists |
-| F-02 | queued_owner_input_blocked | M3-06; closeout blocked until >=20 owner screenshot samples exist |
+| F-01 | queued_not_closed | M3-04; closeout blocked until owner phase-one tutorial material pack is recorded at `docs/evidence/M3/tutorial/tutorial-materials-manifest.md` and `docs/evidence/M3/tutorial/journey-import-report.md` |
+| F-02 | queued_owner_input_blocked | M3-06; closeout blocked until >=20 owner screenshot samples and eval result are recorded at `docs/evidence/M3/vision/screenshot-cases-manifest.md` and `docs/evidence/M3/vision/eval-run-report.md` |
 | F-03 | queued_not_closed | M3-07 speech transcription/postprocess |
 | F-04 | queued_not_closed | M3-05 pricing and quote record contract; no LLM math |
 | F-05 | queued_not_closed | M3-02/M3-03 redline/context boundary |
-| F-06 | queued_not_closed | M3 queue must include breaker radius evidence before closeout |
+| F-06 | queued_not_closed | M3-08 breaker radius and redline output guard evidence before closeout |
 | G-01 | queued_not_closed | M3-02 task route/fallback foundation |
 | G-02 | queued_not_closed | M3-01/M3-02 LLM accounting/log contracts |
 | G-03 | queued_not_closed | M3-03 publish refusal semantics |
-| G-04 | queued_owner_input_blocked | Uzbek Latin/Cyrillic/Russian blind review required inside M3 |
-| G-05 | queued_not_closed | M3-03 redline false-positive evidence and optional admin shell |
+| G-04 | queued_owner_input_blocked | Uzbek Latin/Cyrillic/Russian blind review required inside M3 and recorded at `docs/evidence/M3/language-blind-review/blind-review-report.md` |
+| G-05 | queued_not_closed | M3-03 redline false-positive evidence, M3-08 output guard behavior and optional admin shell |
 | G-06 | partial_seed_foundation_future_full_set | M1 seed runner/manifest exists; full 1.0 target >=200 and category quotas remain future |
-| H-01 | queued_not_closed | M3-01/M3-04 and optional M3-08 knowledge/resource foundation |
-| I-01 | partial_future_scope_only | M3-08 may provide knowledge/resource/eval core-screen evidence; full desktop core remains broader 1.0 |
+| H-01 | queued_not_closed | M3-01/M3-04 and optional M3-09 knowledge/resource foundation |
+| I-01 | partial_future_scope_only | M3-09 may provide knowledge/resource/eval core-screen evidence; full desktop core remains broader 1.0 |
 | J-05 | opened_for_m3 | M3 evidence directory/readiness pack created; no release signoff |
 | K-03 | active | M3-00 is one spec / one PR |
 | K-04 | active | M3 queue and parallelism rules recorded |
@@ -130,6 +131,8 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 | `git diff --check` | pass | No whitespace errors. |
 | `git status --short --branch` | pass | Only intended M3 docs files present before commit. |
 | `npm run check` | pass | Full check passed: format, typecheck, lint, depcruise, jscpd, knip, guards, 65/65 tests, build, size and Playwright 6/6. |
+| PR #38 body metadata update | pass | PR body now includes parseable `Spec ID`, `Spec file`, `Exception` and `External API evidence` fields required by `guard:pr-shape`. |
+| review-fix validation rerun | pass | After adding F-06 breaker queue coverage and owner-input evidence destinations, reran required checks and full `npm run check`; all passed. |
 
 ## Spec Compliance Review
 
@@ -150,7 +153,7 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 | Check | Result | Evidence |
 |---|---|---|
 | Boundary wording | pass | Readiness opens only future specs and keeps M3 closeout owner-input blocked. |
-| Queue order | pass | DB/contracts first; LLM gateway/eval gate before capability closeout; closeout last. |
+| Queue order | pass | DB/contracts first; LLM gateway/eval gate before capabilities; F-06 breaker/output guard queued before optional admin shell and closeout; closeout last. |
 | Parallelism wording | pass | Schema serial, shared LLM/eval serial by default, capability no cross-import, admin API-only. |
 | Acceptance wording | pass | F/G/H/I/J/K items are queued/partial/opened only; no closure overclaim. |
 | Sensitive data wording | pass | Raw samples/screenshots/voice/customer data/secrets barred from git. |

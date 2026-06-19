@@ -70,3 +70,17 @@ M3-01 keeps G-03/G-05/G-06 as `foundation_queued_not_closed`. Full quota closure
 This hook is metadata only. It does not implement the M3-03 eval runner, redline judge, production publish refusal path, admin eval center, provider calls, prompt/model/persona release, production gate or GA-0.
 
 Gateway accounting drafts may include eval summary refs in later integrations, but raw prompt, raw completion, raw sample content and customer plaintext remain barred from git and from M3-02 contract evidence.
+
+## M3 Eval Gate Redline Runner Foundation
+
+`M3-03-eval-gate-redline-runner` adds pure `packages/evals` exports for eval gate/redline foundation:
+
+- M3 eval category/status constants mirror the M3-01 persisted vocabulary.
+- `createM3EvalCase` accepts manifest/ref/redacted payload shapes only and rejects raw prompt/completion/customer text style fields.
+- `evaluateM3EvalGate` fails closed when required foundation quotas are missing for `redline_attack`, `redline_false_positive`, `language` or the target-specific category for prompt/knowledge/model route/persona changes.
+- `detectRedlineLeakage` flags internal threshold/cost/profit/margin/config leakage in prompt/context/output-shaped strings while allowing normal redacted false-positive business numbers when the case is marked passed.
+- `decideM3PublishGate` returns pure allow/refuse semantics. prompt, knowledge, model route and persona publish changes are refused unless the matching gate result is passed, not stale, and has required quota/redline evidence.
+
+This is foundation only. It does not implement production publish APIs, admin eval center, provider calls, persistence, real eval fixtures, raw samples, prompt/model/persona release, knowledge publish, M3-08 breaker radius/output guard, GA-0, customer LLM or real customer traffic.
+
+M3-03 keeps G-06 as `partial_foundation_not_closed`: the runner enforces quotas against supplied synthetic/redacted case refs, but the full 1.0 >=200 eval target and owner-input blind review remain future closure paths.

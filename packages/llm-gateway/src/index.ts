@@ -1,5 +1,4 @@
 export const packageName = "@uzmax/llm-gateway";
-
 // prettier-ignore
 export const llmGatewayTasks = { distillDaily: "distill_daily", draftReply: "draft_reply", evalJudge: "eval_judge", intentClassify: "intent_classify", journeyImport: "journey_import", kbAnswer: "kb_answer", profileUpdate: "profile_update", speechPostprocess: "speech_postprocess", summarize: "summarize", visionDiag: "vision_diag" } as const;
 // prettier-ignore
@@ -42,7 +41,9 @@ type AttemptResult = { reason?: string; result: MockProviderResult };
 const allowedMetadataKey =
   /^(completionHash|contextRef|manifestRef|policy|promptHash|redactedSegments|redactionRef|status|storageRef|truncatedSegments|truncationRef)$/;
 const forbiddenMetadataKey =
-  /(body|content|cost|customer|key|margin|profit|raw|secret|text|threshold|token)/i;
+  /(body|content|cost|customer|key|margin|profit|raw|secret|threshold|token)/i;
+// prettier-ignore
+const safeMetadataValuePatterns = { hash: /^sha256:[a-z0-9_-]{4,64}$/i, id: /^[a-z][a-z0-9_-]{1,40}$/i, ref: /^(controlled|manifest|redaction|storage|truncation):\/\/[a-z0-9][a-z0-9:/._-]{0,96}$/i, unsafe: /(address|body|completion|content|customer|order|phone|prompt|raw|secret|text|token)/i };
 
 export type LlmProviderPort = {
   invoke: (request: {
@@ -55,19 +56,14 @@ export type LlmProviderPort = {
 };
 
 const customerVisibleTasks = new Set<LlmGatewayTask>(["draft_reply", "kb_answer"]);
-export const taskSafetyProfiles: Record<
-  LlmGatewayTask,
-  {
-    customerVisible: boolean;
-    disallowInternalConfigFields: boolean;
-    requiresRedactionMetadata: boolean;
-  }
-> = Object.fromEntries(
+type TaskSafetyProfile = ReturnType<typeof safetyProfile>;
+export const taskSafetyProfiles = Object.fromEntries(
+  // prettier-ignore
   Object.values(llmGatewayTasks).map((task) => [
     task,
     safetyProfile(customerVisibleTasks.has(task))
   ])
-) as Record<LlmGatewayTask, ReturnType<typeof safetyProfile>>;
+) as Record<LlmGatewayTask, TaskSafetyProfile>;
 
 export function createLlmRouteConfig(input: RouteConfigInput): LlmRouteConfig {
   const providerRefs = uniqueStrings(input.providerRefs, "providerRefs");
@@ -109,13 +105,8 @@ export function createLlmRouteConfig(input: RouteConfigInput): LlmRouteConfig {
     timeoutMs: positiveInt(input.timeoutMs, "timeoutMs"),
     totalTokenBudget: positiveInt(input.totalTokenBudget, "totalTokenBudget")
   };
-  if (
-    route.totalTokenBudget < Math.max(route.inputTokenBudget, route.outputTokenBudget)
-  ) {
-    throw new Error(
-      "totalTokenBudget must be at least inputTokenBudget and outputTokenBudget"
-    );
-  }
+  // prettier-ignore
+  if (route.totalTokenBudget < Math.max(route.inputTokenBudget, route.outputTokenBudget)) throw new Error("totalTokenBudget must be at least inputTokenBudget and outputTokenBudget");
   return route;
 }
 
@@ -140,13 +131,9 @@ export async function invokeLlmRoute(input: {
   traceId: string;
 }) {
   validateInvocationBoundary(input.route.task, input.input);
-  const providers = new Map(
-    input.providers.map((provider) => [provider.providerId, provider])
-  );
-  const providerOrder = [
-    input.route.primaryProviderRef,
-    ...input.route.fallbackProviderRefs
-  ];
+  const providers = providersById(input.providers);
+  // prettier-ignore
+  const providerOrder = [input.route.primaryProviderRef, ...input.route.fallbackProviderRefs];
   const attempts: AttemptSummary[] = [];
   const attemptAccountingDrafts: ReturnType<typeof createAccountingDraft>[] = [];
   let firstFailureReason: string | undefined;
@@ -242,21 +229,24 @@ function createAccountingDraft(input: {
   });
 }
 
+function providersById(providers: LlmProviderPort[]) {
+  const providerIds = providers.map((provider) => provider.providerId);
+  if (new Set(providerIds).size !== providerIds.length)
+    throw new Error("providers must not contain duplicate providerId");
+  // prettier-ignore
+  return new Map(providers.map((provider) => [provider.providerId, provider]));
+}
 async function invokeProvider(
   provider: LlmProviderPort,
   request: Parameters<LlmProviderPort["invoke"]>[0]
 ): Promise<AttemptResult> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const invoke = provider
-    .invoke(request)
+  const invoke = Promise.resolve()
+    .then(() => provider.invoke(request))
     .then((result) => ({ result }))
     .catch(() => ({ reason: "failure", result: { status: "failed" as const } }));
-  const timeout = new Promise<AttemptResult>((resolve) => {
-    timer = setTimeout(
-      () => resolve({ reason: "timeout", result: { status: "timeout" } }),
-      request.route.timeoutMs
-    );
-  });
+  // prettier-ignore
+  const timeout = new Promise<AttemptResult>((resolve) => { timer = setTimeout(() => resolve({ reason: "timeout", result: { status: "timeout" } }), request.route.timeoutMs); });
   try {
     return await Promise.race([invoke, timeout]);
   } finally {
@@ -371,7 +361,7 @@ function metadataRecord(value: unknown): Record<string, unknown> | undefined {
   return Object.fromEntries(
     Object.entries(value).map(([key, entry]) => [
       safeMetadataKey(key),
-      safeMetadataValue(entry)
+      safeMetadataValue(key, entry)
     ])
   );
 }
@@ -382,11 +372,21 @@ function safeMetadataKey(key: string): string {
   return key;
 }
 
-function safeMetadataValue(value: unknown): string | number | boolean {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (typeof value === "boolean" || nonNegativeInt(value))
-    return value as number | boolean;
+function safeMetadataValue(key: string, value: unknown): string | number {
+  if (key.endsWith("Segments")) {
+    if (nonNegativeInt(value)) return value as number;
+    throw new Error("metadata value is invalid");
+  }
+  if (typeof value !== "string") throw new Error("metadata value is invalid");
+  const text = value.trim();
+  if (!text || text.length > 120) throw new Error("metadata value is invalid");
+  if (safeMetadataString(key, text)) return text;
   throw new Error("metadata value is invalid");
+}
+
+function safeMetadataString(key: string, text: string): boolean {
+  // prettier-ignore
+  return key.endsWith("Hash") ? safeMetadataValuePatterns.hash.test(text) : key.endsWith("Ref") ? safeMetadataValuePatterns.ref.test(text) : (key === "policy" || key === "status") && safeMetadataValuePatterns.id.test(text) && !safeMetadataValuePatterns.unsafe.test(text);
 }
 
 function nonNegativeInt(value: unknown): boolean {

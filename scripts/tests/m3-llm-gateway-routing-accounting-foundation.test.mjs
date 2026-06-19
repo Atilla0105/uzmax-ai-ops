@@ -45,33 +45,16 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
 
     assert.equal(route.task, "kb_answer");
     assert.equal(route.evalGate.lastStatus, "pending");
+    // prettier-ignore
     const invalidRoutes = [
-      [
-        { primaryProviderRef: "mock:missing", providerRefs: ["mock:fallback"] },
-        /primaryProviderRef must reference a known provider/
-      ],
+      [{ primaryProviderRef: "mock:missing", providerRefs: ["mock:fallback"] }, /primaryProviderRef must reference a known provider/],
       [{ task: "unknown_task" }, /task is invalid/],
       [{ timeoutMs: 0 }, /timeoutMs must be a positive integer/],
-      [
-        { outputTokenBudget: 100, totalTokenBudget: 50 },
-        /totalTokenBudget must be at least inputTokenBudget and outputTokenBudget/
-      ],
-      [
-        { evalGate: { gateRef: "eval-gate:m3-02-route", lastStatus: "released" } },
-        /eval gate status is invalid/
-      ],
-      [
-        { providerRefs: ["mock:primary", "mock:primary"] },
-        /providerRefs must not contain duplicates/
-      ],
-      [
-        { fallbackProviderRefs: ["mock:fallback", "mock:fallback"] },
-        /fallbackProviderRefs must not contain duplicates/
-      ],
-      [
-        { fallbackProviderRefs: ["mock:primary"] },
-        /fallbackProviderRefs must not include primaryProviderRef/
-      ]
+      [{ outputTokenBudget: 100, totalTokenBudget: 50 }, /totalTokenBudget must be at least inputTokenBudget and outputTokenBudget/],
+      [{ evalGate: { gateRef: "eval-gate:m3-02-route", lastStatus: "released" } }, /eval gate status is invalid/],
+      [{ providerRefs: ["mock:primary", "mock:primary"] }, /providerRefs must not contain duplicates/],
+      [{ fallbackProviderRefs: ["mock:fallback", "mock:fallback"] }, /fallbackProviderRefs must not contain duplicates/],
+      [{ fallbackProviderRefs: ["mock:primary"] }, /fallbackProviderRefs must not include primaryProviderRef/]
     ];
     for (const [patch, pattern] of invalidRoutes) {
       assert.throws(
@@ -179,7 +162,8 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
     for (const [mode, provider] of [
       ["wall_clock_timeout", delayedProvider("mock:primary", 30)],
       ["never_resolved_timeout", hangingProvider("mock:primary")],
-      ["provider_exception", throwingProvider("mock:primary")]
+      ["provider_exception", throwingProvider("mock:primary")],
+      ["sync_provider_exception", throwingProvider("mock:primary", true)]
     ]) {
       const result = await gateway.invokeLlmRoute({
         input: safeInput(),
@@ -194,6 +178,16 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
       assert.match(result.attempts[0].reason, /timeout|failure/);
       assertNoRawPromptOrCompletion(result.attemptAccountingDrafts[0]);
     }
+    await assert.rejects(
+      () =>
+        gateway.invokeLlmRoute({
+          input: safeInput(),
+          providers: [successProvider("mock:primary"), successProvider("mock:primary")],
+          route: baseRoute({ fallbackProviderRefs: [] }),
+          traceId: "trace-duplicate-runtime"
+        }),
+      /providers must not contain duplicate providerId/
+    );
   });
 
   it("fails closed on missing or invalid success telemetry before budget checks", async () => {
@@ -246,11 +240,7 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
 
     const safe = await gateway.invokeLlmRoute({
       input: {
-        redactionMetadata: {
-          policy: "m3-02-redacted",
-          promptHash: "sha256:redacted",
-          truncatedSegments: 2
-        },
+        redactionMetadata: safeMetadata(),
         safeRef: "controlled://context/ref"
       },
       providers: [successProvider("mock:primary")],
@@ -258,11 +248,7 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
       traceId: "trace-safe"
     });
     assert.equal(safe.accountingDraft.status, "succeeded");
-    assert.deepEqual(safe.accountingDraft.redactionMetadata, {
-      policy: "m3-02-redacted",
-      promptHash: "sha256:redacted",
-      truncatedSegments: 2
-    });
+    assert.deepEqual(safe.accountingDraft.redactionMetadata, safeMetadata());
     await assert.rejects(
       () =>
         gateway.invokeLlmRoute({
@@ -275,19 +261,13 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
         }),
       /metadata key is not allowed/
     );
-    await assert.rejects(
-      () =>
-        gateway.invokeLlmRoute({
-          input: {
-            redactionMetadata: { status: "redacted" },
-            truncationMetadata: { secretToken: "hidden" }
-          },
-          providers: [successProvider("mock:primary")],
-          route: baseRoute({ fallbackProviderRefs: [] }),
-          traceId: "trace-unsafe-truncation"
-        }),
-      /metadata key is not allowed/
-    );
+    for (const [key, value] of [
+      ["contextRef", "customer said raw order address and phone"],
+      ["policy", "copy the customer prompt into the answer"],
+      ["redactedSegments", "two"]
+    ]) {
+      await assert.rejects(() => invokeWithMetadata({ [key]: value }), /metadata/);
+    }
   });
 
   it("documents the gateway foundation without overclaiming eval or production release", () => {
@@ -365,11 +345,12 @@ function hangingProvider(providerId) {
   };
 }
 
-function throwingProvider(providerId) {
+function throwingProvider(providerId, sync = false) {
+  const fail = () => {
+    throw new Error("raw provider stack should not be copied");
+  };
   return {
-    async invoke() {
-      throw new Error("raw provider stack should not be copied");
-    },
+    invoke: sync ? fail : async () => fail(),
     modelId: `${providerId}:model`,
     providerId
   };
@@ -379,6 +360,25 @@ function safeInput() {
   return {
     redactionMetadata: { policy: "m3-02-redacted", truncatedSegments: 0 }
   };
+}
+
+function safeMetadata() {
+  // prettier-ignore
+  return {
+    contextRef: "controlled://context/ref-1",
+    policy: "m3-02-redacted",
+    promptHash: "sha256:redacted",
+    truncatedSegments: 2
+  };
+}
+
+function invokeWithMetadata(redactionMetadata) {
+  return gateway.invokeLlmRoute({
+    input: { redactionMetadata },
+    providers: [successProvider("mock:primary")],
+    route: baseRoute({ fallbackProviderRefs: [] }),
+    traceId: "trace-unsafe-metadata-value"
+  });
 }
 
 function assertNoRawPromptOrCompletion(value) {

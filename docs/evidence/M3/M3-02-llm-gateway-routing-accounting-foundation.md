@@ -21,7 +21,7 @@ Included:
 - Invocation flow that tries primary then fallback on deterministic failure, timeout or budget failure.
 - Accounting drafts compatible with the M3-01 `llm_call_log` allowed metadata shape.
 - Customer-facing/draft task boundary requiring redaction metadata and rejecting internal config fields.
-- Code-quality follow-up hardening for wall-clock timeout races, provider exceptions, fail-closed telemetry validation, narrow metadata allowlist and duplicate provider-ref rejection.
+- Code-quality follow-up hardening for wall-clock timeout races, async/sync provider exceptions, fail-closed telemetry validation, key-specific metadata value validation and duplicate provider-ref rejection.
 
 Not included:
 
@@ -64,10 +64,10 @@ No open PR conflict or unmerged branch conflict was found at start.
 The post-PR code quality review returned `Ready to merge? With fixes`. M3-02 follow-up fixes:
 
 - Provider calls now race against `route.timeoutMs`; wall-clock timeouts create failed attempt accounting drafts and continue to fallback.
-- Provider thrown errors are caught and converted to safe `failure` attempts without copying raw error payloads.
+- Provider thrown errors, including synchronous throws before a promise is returned, are caught and converted to safe `failure` attempts without copying raw error payloads.
 - Successful provider results must include finite non-negative integer `inputTokenCount`, `outputTokenCount`, `costMicros` and `latencyMs`; invalid or missing telemetry is `accounting_invalid` and falls back.
-- `redactionMetadata` and `truncationMetadata` are validated through a narrow allowlist and primitive/count-like values; raw prompt/completion/customer content, internal cost/margin/profit/threshold and secret/key/token-style metadata keys fail closed.
-- Route config rejects duplicate `providerRefs`, duplicate fallbacks and fallback equal to primary.
+- `redactionMetadata` and `truncationMetadata` are validated through a narrow key allowlist plus key-specific value rules for hashes, controlled refs, short ids and counts; raw/free-text prompt/customer-like values fail closed even under allowed keys.
+- Route config rejects duplicate `providerRefs`, duplicate fallbacks and fallback equal to primary; runtime provider arrays also reject duplicate `providerId` before routing.
 
 ## Validation
 

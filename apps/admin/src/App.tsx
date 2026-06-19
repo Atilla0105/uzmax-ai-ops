@@ -2,6 +2,7 @@ import { useState } from "react";
 import "@uzmax/ui-tokens/tokens.css";
 import "./styles.css";
 import { M2ConversationTicketShell } from "./M2ConversationTicketShell";
+import { M3KnowledgeEvalShell } from "./M3KnowledgeEvalShell";
 
 const tenants = [
   {
@@ -182,6 +183,8 @@ export function App() {
           </section>
 
           <M2ConversationTicketShell tenantName={selectedTenant.name} />
+
+          <M3KnowledgeEvalShell tenantName={selectedTenant.name} />
 
           <section className="panel release-panel" data-testid="release-readiness">
             <div className="section-heading">

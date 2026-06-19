@@ -69,7 +69,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | `npm run guard:eval-triggers -- --base origin/main` | pass | `eval-trigger-paths: no eval-triggering paths changed`. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-02-llm-gateway-routing-accounting, linked worktree, dirty allowed)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-02-llm-gateway-routing-accounting-foundation.md --include-worktree` | pass | 7 changed files; categories docs 5/source 1/test 1; source changedFiles 1, netLoc 0 by guard classification, newFiles 0. Direct `git diff --numstat origin/main -- packages/llm-gateway/src/index.ts` reports 392 added source lines, under the spec budget of 400. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-02-llm-gateway-routing-accounting-foundation.md --include-worktree` | pass | 7 changed files; categories docs 5/source 1/test 1; source changedFiles 1, netLoc 392, newFiles 0. Direct `git diff --numstat origin/main -- packages/llm-gateway/src/index.ts` reports 392 added source lines, under the spec budget of 400. |
 | `npm run test` | pass | 76/76 tests passed. |
 | `git diff --check` | pass | No whitespace errors. |
 | `npm run check` | failed then fixed, final pass | First run stopped at `jscpd` because the new focused test duplicated the M3-01 TypeScript source import helper shape. The helper was rewritten without changing assertions or production behavior. Final rerun passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 76/76 tests, build, size and Playwright 6/6. |
@@ -82,7 +82,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Path categories | docs 5, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | 392 added lines by direct `git diff --numstat`; under budget 400. `guard:pr-shape` reports netLoc 0. |
+| Net source LOC | 392 added lines by direct `git diff --numstat`; under budget 400. `guard:pr-shape` reports netLoc 392. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |
 | Test weakening | none; no `.skip` / `.only` / `xit` / `xfail` added |

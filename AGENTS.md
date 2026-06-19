@@ -87,6 +87,7 @@
 - root/main checkout 只用于协调、审计、同步 `main`、合并后清理和只读核对；不得承载 worker 编辑。
 - coordinator 派发 worker 前必须确认物理 worktree 路径互斥、目标 branch 互斥、spec 触碰模块互斥；`packages/db` schema、lockfile、共享 config、CI/guard 脚本、全局生成物和 release/production 门禁改动必须全局串行。
 - worker 开工前必须记录 `pwd`、`git status --short --branch`、`git branch --show-current`，并确认其路径与分支匹配 spec 前置条件；路径或分支不匹配时必须停止并报告。
+- M3 owner signoff 前，且 before opening M4 or any real customer/order-data work，必须运行 worker write-boundary preflight：运行时/harness 负责预防写入越界，repo 内 guard 只负责检测与取证；若工具无法被 jail，worker 必须使用绝对 assigned path，并提交 assigned worktree 与 root/main clean 证据。
 - worker 若发现写入分配 worktree 外、错分支/main 直接提交、跨任务污染、secret/customer-data 边界擦边或 gate 绕过迹象，必须停止当前写入，报告影响范围，并进入 incident 记录或有 spec 的 cleanup 分支。
 - 过程事故达到 `docs/incidents/README.md` 的触发阈值时，必须新增 incident 记录并给出持久控制；不得只在聊天或 PR 评论中口头关闭。
 - 本节是编排安全规则，不新增多人签字流程；最终范围、发布、真实账号、真实客户数据、LLM key、成本和合规风险仍由项目 owner 决定。

@@ -2,8 +2,8 @@
 
 > incident_id: INC-2026-06-19-m3-09-root-main-worktree-pollution
 > milestone: M3
-> status: pending_merge
-> institutionalized_status: pending_merge
+> status: institutionalized_in_docs
+> institutionalized_status: institutionalized_in_docs
 > detected_at: 2026-06-19
 > spec: `docs/specs/M3-09-admin-knowledge-eval-shell-if-needed.md`
 > evidence: `docs/evidence/M3/M3-09-admin-knowledge-eval-shell-if-needed.md`
@@ -87,14 +87,18 @@ Potential follow-up control:
 
 ## Institutionalized 状态
 
-`pending_merge`
+`institutionalized_in_docs`
 
-This incident is institutionalized for M3-09 when this file, the M3-09 spec touch list and M3-09 evidence/PR Hygiene land in the M3-09 PR. A broader guard or runbook is not implemented in this PR because it would exceed the M3-09 touch list; closeout must decide whether to open a follow-up spec.
+This incident is institutionalized for M3-09 because PR #47 merged this file, the M3-09 spec touch list and M3-09 evidence/PR Hygiene into `main` on 2026-06-19.
+
+M3-10 records the broader follow-up decision: because M3-09 repeated the M3-07 path-agnostic edit failure class, a future governance/guard/runbook spec is recommended before another broad parallel milestone if the project owner wants stronger machine prevention. Existing M2 `guard:workspace` plus incident docs are enough to detect dirty root/main state and require stop/report behavior, but they do not technically bind edit-tool targets to the assigned worktree. M3-10 does not implement that guard because it is docs-only and outside its allowed touch list.
 
 ## 证据链接
 
 - Spec: `docs/specs/M3-09-admin-knowledge-eval-shell-if-needed.md`
 - Evidence: `docs/evidence/M3/M3-09-admin-knowledge-eval-shell-if-needed.md`
+- Merged PR: https://github.com/Atilla0105/uzmax-ai-ops/pull/47
+- M3-10 no-go rollup: `docs/evidence/M3/M3-ai-capability-closeout-signoff.md`
 - Sealed tracked patch: `/tmp/uzmax-m3-09-root-pollution.t5hQeY/tracked.patch`
 - Sealed untracked archive: `/tmp/uzmax-m3-09-root-pollution.t5hQeY/untracked.tgz`
 

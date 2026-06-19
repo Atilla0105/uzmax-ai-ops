@@ -3,25 +3,29 @@
 > evidence_id: M3-ai-capability-readiness-pack
 > milestone: M3
 > acceptance_items: F-01 / F-02 / F-03 / F-04 / F-05 / F-06 / G-01 / G-02 / G-03 / G-04 / G-05 / G-06 / H-01 / I-01 / J-05 / K-03 / K-04
-> status: ready_to_start_specs__owner_inputs_block_closeout
+> status: foundation_queue_complete__owner_inputs_block_closeout
 > created_at: 2026-06-19
 > updated_at: 2026-06-19
 > owner_ai_boundary: Project owner decides tutorial materials, screenshot samples, language blind review, real customer data, customer LLM, provider keys/routes, knowledge publish, AI persona release, GA-0, cost, compliance and 1.0 release. AI agent records current repo evidence, queue, blockers, validation and sensitive-data boundary only.
 > source_files: `AGENTS.md`, four v1.1 root docs, `docs/specs/README.md`, `docs/doc-gates.md`, `docs/preflight/01-owner-inputs-checklist.md`, `docs/evidence/M2/README.md`, `docs/evidence/M2/M2-channel-conversation-closeout-signoff.md`, `docs/specs/M2-00-channel-conversation-readiness-pack.md`, `docs/evidence/M2/M2-channel-conversation-readiness-pack.md`, local `git`/`gh` verification on 2026-06-19.
 > sensitive_data_location: none in repository
 > redaction_status: no raw Telegram payloads, customer plaintext, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, secrets or token values included
-> review_notes: M3 opens only future spec-governed AI capability work. Owner tutorial pack, screenshot samples and Uzbek/Russian blind review block M3 closeout. Production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release and 1.0 release remain blocked or future-gated.
-> signoff: pending project owner review of PR; merging M3-00 accepts only `ready_to_start_specs__owner_inputs_block_closeout`, not production readiness
+> review_notes: M3-01 through M3-09 foundation queue is now complete and merged. Owner tutorial pack, screenshot samples and Uzbek/Russian blind review still block M3 closeout. Production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release and 1.0 release remain blocked or future-gated.
+> signoff: no_go__foundation_queue_complete__owner_inputs_block_closeout; not M3 owner accepted; not production readiness
 
 ## Current Decision
 
-M2 channel/conversation milestone evidence is owner accepted, and the current `main` baseline is healthy enough to open an M3 readiness/spec-queue PR.
+M2 channel/conversation milestone evidence was owner accepted before M3 opened, and M3-00 used that baseline to open the M3 readiness/spec-queue PR. After M3-10, M3 foundation queue evidence is complete, but closeout remains no-go.
 
-M3 current status is `ready_to_start_specs__owner_inputs_block_closeout`: future M3 specs may be opened in order, one spec per PR, under the touch-module and schema-serial rules. M3 closeout remains blocked until the owner-input blockers are provided, repo-evidenced or explicitly branched.
+M3 current status after the M3-10 no-go rollup is `foundation_queue_complete__owner_inputs_block_closeout`: M3-01 through M3-09 foundation PRs are complete and merged, but M3 closeout remains blocked until the owner-input blockers are provided, repo-evidenced or covered by a project-owner branch decision.
 
 This is not a production, GA-0, real-traffic, customer-LLM, prompt/model route release, knowledge publish, AI persona release or 1.0 release approval.
 
-## Current Main Audit
+## Current M3-10 Closeout Pointer
+
+Current M3-10 closeout/no-go evidence now lives in `docs/evidence/M3/M3-ai-capability-closeout-signoff.md`. The sections below this pointer are retained as a historical M3-00 readiness snapshot unless a row explicitly says it is a current M3-10 cross-reference.
+
+## Historical M3-00 Readiness Snapshot - Main Audit
 
 | Fact | Status | Evidence |
 |---|---|---|
@@ -32,16 +36,16 @@ This is not a production, GA-0, real-traffic, customer-LLM, prompt/model route r
 | open PR audit | none | `gh pr list --state open --json number,title,headRefName,baseRefName,isDraft,url` returned `[]` |
 | unmerged branch audit | none | `git branch --no-merged main` produced no branch output |
 | M2 state | owner accepted milestone evidence only | `docs/evidence/M2/M2-channel-conversation-closeout-signoff.md` status `owner_accepted_m2_milestone_evidence` |
-| current M3 state | ready_to_start_specs__owner_inputs_block_closeout | M3-00 only opens future spec-governed M3 work and records owner-input blockers |
-| production readiness | blocked | production/GA-0/real traffic/customer LLM/prompt or model route release/knowledge publish/AI persona release/1.0 release remain future-gated |
+| M3-10 cross-reference | foundation_queue_complete__owner_inputs_block_closeout | Current closeout/no-go state is recorded in `docs/evidence/M3/M3-ai-capability-closeout-signoff.md`; owner-input blockers remain unresolved |
+| M3-10 release cross-reference | blocked | production/GA-0/real traffic/customer LLM/prompt or model route release/knowledge publish/AI persona release/1.0 release remain future-gated |
 
-## M3 Allowed Scope
+## Historical M3-00 Readiness Snapshot - Allowed Scope
 
 - Future spec-governed foundation work for AI capability contracts, LLM gateway routing/accounting, eval gate/redline runner, knowledge/tutorial journey behavior, pricing contract, screenshot diagnostic contract, speech transcription contract and optional admin knowledge/eval shell.
 - Milestone evidence and closeout records tied to F/G/H/I/J/K acceptance items.
 - Controlled manifests/storage references for owner-provided samples, never raw content in git.
 
-## Not Opened
+## Historical M3-00 Readiness Snapshot - Not Opened
 
 - Production deployment readiness, GA-0, real customer traffic or 1.0 release.
 - Customer messages, screenshots, voice transcripts or customer profiles entering third-party LLMs.
@@ -49,19 +53,21 @@ This is not a production, GA-0, real-traffic, customer-LLM, prompt/model route r
 - Runtime/source implementation, DB schema, eval fixtures, generated contracts, providers, adapters, admin UI or worker/API/engine integration.
 - Business release, Business auto-reply, order/customer asset M4 work, distill auto-write or production knowledge auto-write.
 
-## Owner-input Blockers
+## Owner-input Blockers Still Active After M3-10
 
-The v1.1 docs make the following inputs M3 critical path. This readiness pack found no current repo evidence that they are already provided.
+The v1.1 docs make the following inputs M3 critical path. M3-10 found no current repo evidence that they are already provided.
 
-| Blocker | Source requirement | Blocking effect | Expected repo evidence destination | Current M3-00 status |
+| Blocker | Source requirement | Blocking effect | Expected repo evidence destination | Current M3-10 status |
 |---|---|---|---|---|
-| Phase-one tutorial material pack | Technical architecture owner critical path: phase-one tutorial complete material pack before M3 | Tutorial ability has no content to run; F-01/tutorial closeout cannot complete | `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md` | `blocked_until_owner_pack_or_explicit_branch` |
-| Screenshot diagnostic samples >=20 | Technical architecture owner critical path and eval quota: screenshot diagnostics need >=20 samples | F-02 cannot close; screenshot diagnostic eval cannot prove low-confidence handoff | `docs/evidence/M3/vision/screenshot-cases-manifest.md`; `docs/evidence/M3/vision/eval-run-report.md` | `blocked_until_owner_samples_or_explicit_branch` |
-| Uzbek Latin/Cyrillic/Russian blind review | Technical architecture owner critical path and G-04 matrix item | G-04 cannot close; strong-model routing/optimization stays locked/frozen | `docs/evidence/M3/language-blind-review/blind-review-report.md` | `blocked_until_owner_blind_review_or_explicit_branch` |
+| Phase-one tutorial material pack | Technical architecture owner critical path: phase-one tutorial complete material pack before M3 | Tutorial ability has no content to run; F-01/tutorial closeout cannot complete | `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md` | `blocked_until_owner_input_or_owner_branch_decision` |
+| Screenshot diagnostic samples >=20 | Technical architecture owner critical path and eval quota: screenshot diagnostics need >=20 samples | F-02 cannot close; screenshot diagnostic eval cannot prove low-confidence handoff | `docs/evidence/M3/vision/screenshot-cases-manifest.md`; `docs/evidence/M3/vision/eval-run-report.md` | `blocked_until_owner_input_or_owner_branch_decision` |
+| Uzbek Latin/Cyrillic/Russian blind review | Technical architecture owner critical path and G-04 matrix item | G-04 cannot close; strong-model routing/optimization stays locked/frozen | `docs/evidence/M3/language-blind-review/blind-review-report.md` | `blocked_until_owner_input_or_owner_branch_decision` |
 
 These blockers do not prevent opening foundational specs. They do block M3 closeout and any claim that F-01/F-02/G-04 are closed.
 
-## M3 Queue
+## Historical M3-00 Readiness Snapshot - Planned M3 Queue
+
+This queue was the M3-00 plan. M3-01 through M3-09 are now complete and merged; the current queue-completion ledger is in `docs/evidence/M3/M3-ai-capability-closeout-signoff.md`.
 
 | Order | Future spec / PR | Purpose | Exit condition |
 |---:|---|---|---|
@@ -74,18 +80,20 @@ These blockers do not prevent opening foundational specs. They do block M3 close
 | 7 | `M3-07-speech-transcription-contract` | Speech transcription/postprocess contract for Uzbek Latin/Cyrillic/Russian with confidence/source refs | F-03 evidence without unsupported provider claims |
 | 8 | `M3-08-breaker-radius-and-redline-output-guard` | User-level, capability-level and global breaker radius evidence plus redline output guard behavior | F-06 evidence; safe degradation/output-policy behavior without production release |
 | 9 | `M3-09-admin-knowledge-eval-shell-if-needed` | Admin shell for knowledge/resource and eval gate evidence, pure API/client boundary and tokens | H-01/I-01/G-03 partial core-screen evidence if needed |
-| 10 | `M3-10-ai-capability-closeout-signoff` | M3 closeout after queue completion and owner inputs/blind review/evidence are resolved | Owner-input blockers resolved or explicitly branched; release boundaries preserved |
+| 10 | `M3-10-ai-capability-closeout-signoff` | M3 closeout after queue completion and owner inputs/blind review/evidence are resolved | Owner-input blockers resolved or covered by a project-owner branch decision; release boundaries preserved |
 
-## Parallelism Rules
+## Historical M3-00 Readiness Snapshot - Parallelism Rules
 
 - M3-01 DB/schema/contracts foundation is first and serial. Any schema/migration/Prisma model/generated DTO/contracts change is a global serial point.
 - Eval gate and LLM route changes are shared/global. They should be serial unless future touch lists prove disjoint and no route/gate/publish semantics overlap.
 - Capability packages must not import each other; `kb`, `vision`, `speech`, `pricing` and later capabilities can only be composed by `engine` or explicit ports.
 - Admin cannot import backend packages. Admin evidence must use API/WS/contracts and UI tokens/primitives/patterns.
-- Owner inputs block closeout. Foundational specs may proceed, but M3-10 cannot close until tutorial pack, screenshot samples and blind review are provided, repo-evidenced or explicitly branched.
+- Owner inputs block closeout. Foundational specs may proceed, but M3-10 cannot close until tutorial pack, screenshot samples and blind review are provided, repo-evidenced or covered by a project-owner branch decision.
 - Sensitive materials must stay outside git; manifests and controlled storage refs only.
 
-## Acceptance Mapping
+## Historical M3-00 Readiness Snapshot - Initial Acceptance Mapping
+
+This table records the initial M3-00 queue/partial status before the foundation PRs merged. Current M3-10 acceptance status is recorded in `docs/evidence/M3/M3-ai-capability-closeout-signoff.md`.
 
 | Item | M3-00 status | Future closure path |
 |---|---|---|
@@ -119,7 +127,7 @@ This readiness pack contains aggregate repo/GitHub evidence only. The repository
 
 Future sensitive source material, if any, must stay in controlled storage. Repo evidence may only record manifest identifiers, redaction method, storage refs, access scope, retention period and project owner confirmation status.
 
-## Validation
+## Historical M3-00 Readiness Snapshot - Validation
 
 | Command | Result | Notes |
 |---|---|---|
@@ -134,7 +142,7 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 | PR #38 body metadata update | pass | PR body now includes parseable `Spec ID`, `Spec file`, `Exception` and `External API evidence` fields required by `guard:pr-shape`. |
 | review-fix validation rerun | pass | After adding F-06 breaker queue coverage and owner-input evidence destinations, reran required checks and full `npm run check`; all passed. |
 
-## Spec Compliance Review
+## Historical M3-00 Readiness Snapshot - Spec Compliance Review
 
 | Check | Result | Evidence |
 |---|---|---|
@@ -148,7 +156,7 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 | External API evidence | pass | None added; no new provider/connector/adapter. |
 | Exceptions | pass | none. |
 
-## Docs Quality Review
+## Historical M3-00 Readiness Snapshot - Docs Quality Review
 
 | Check | Result | Evidence |
 |---|---|---|
@@ -158,10 +166,12 @@ Future sensitive source material, if any, must stay in controlled storage. Repo 
 | Acceptance wording | pass | F/G/H/I/J/K items are queued/partial/opened only; no closure overclaim. |
 | Sensitive data wording | pass | Raw samples/screenshots/voice/customer data/secrets barred from git. |
 
-## Signoff Boundary
+## Historical M3-00 Readiness Snapshot - Signoff Boundary
 
-Project owner merge/signoff of M3-00 means:
+Project owner merge/signoff of M3-00 meant:
 
 - accepted: M3 may start future spec-governed AI capability PRs in queue order.
-- still blocked: M3 closeout until owner tutorial pack, screenshot samples and blind review are provided, repo-evidenced or explicitly branched.
+- still blocked: M3 closeout until owner tutorial pack, screenshot samples and blind review are provided, repo-evidenced or covered by a project-owner branch decision.
 - not accepted: production readiness, real customer traffic, customer LLM, GA-0, prompt/model route release, knowledge publish, AI persona release, Business release, unsupported provider claims or 1.0 release.
+
+Current M3-10 signoff/no-go boundary is recorded in `docs/evidence/M3/M3-ai-capability-closeout-signoff.md`.

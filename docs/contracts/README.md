@@ -253,11 +253,29 @@ Boundary:
 - No raw screenshots, OCR text, customer plaintext, Telegram payloads, voice transcripts, order IDs, phone/address/payment data, raw prompt/completion or secrets belong in this contract or evidence.
 - F-02 remains foundation-only and not closed: full screenshot diagnostics acceptance still requires >=20 owner screenshot samples, real eval evidence and future integration/release approval.
 
+## M3 Speech Transcription Contract
+
+`M3-07-speech-transcription-contract` 引入 `packages/capabilities/speech/src/index.ts` 的纯 package contract：
+
+- `createSpeechTranscriptionInput` accepts only controlled speech source refs: `audioStorageRef` must use `storage://`, `manifestRef` must use `manifest://`, and `redactionRef` must use `redaction://`.
+- Supported controlled synthetic language/script targets are Uzbek Latin (`uz-Latn`), Uzbek Cyrillic (`uz-Cyrl`) and Russian (`ru`).
+- `evaluateSpeechTranscription` validates strict controlled transcription/postprocess candidates with confidence, required signals, bounded synthetic transcript text, language/script match and source/result/evidence refs.
+- High-confidence controlled candidates return status `transcript_ready` with language, script, bounded transcript text, confidence and refs.
+- Low confidence, missing required signals, ambiguous/uncertain candidates, unsupported language, language/script mismatch, unsafe input or unsupported provider claims fail closed to `handoff_required`, `uncertain`, `unsupported_language` or input rejection; the contract must not generate a confident transcript.
+- `createSpeechSampleManifest` records controlled metadata and language coverage only; it does not store raw audio or transcript content and does not close F-03.
+
+Boundary:
+
+- This is a pure capability foundation only; it does not persist to DB, import `packages/db`, call `packages/llm-gateway`, import `packages/evals`, send outbound messages, integrate with engine/API/admin/worker or release production speech.
+- No real ASR, provider SDK, LLM key, env var, raw voice/audio/transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, raw prompt/completion or secrets belong in this contract or evidence.
+- F-03 remains foundation-only and not closed: full speech acceptance still requires real/integration voice sample evidence, owner sample handling, provider/spike decision if any, and future flow validation.
+
 ## Verification
 
 本契约的本地验证入口：
 
 - `node --test scripts/tests/m3-vision-screenshot-diagnostics-foundation.test.mjs`
+- `node --test scripts/tests/m3-speech-transcription-contract.test.mjs`
 - `node --test scripts/tests/m3-pricing-capability-and-quote-record-contract.test.mjs`
 - `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs`
 - `node --test scripts/tests/m3-ai-capability-data-contracts-foundation.test.mjs`

@@ -204,10 +204,27 @@ Boundary:
 - Customer-facing/draft tasks such as `kb_answer` and `draft_reply` require redaction metadata and reject internal config fields。
 - Eval gate status is metadata only; production publish refusal remains M3-03。
 
+## M3 KB Journey Capability Foundation
+
+`M3-04-kb-journey-capability-foundation` 引入 `packages/capabilities/kb/src/index.ts` 的纯 package contract：
+
+- `createKbJourney` normalizes synthetic/controlled journey and stage records, validates controlled journey/stage/material refs and keeps only bounded stage card fields.
+- `answerKbJourneyStage` localizes a selected tutorial stage by stage key, title, localized title, aliases or trigger phrases.
+- Successful selected output is stage-card-only: status `stage_card`, selected stage ref/key/title/sequence, concise answer, bounded steps, bounded material refs, next action and controlled refs. It does not return the full journey or all stage cards.
+- Unknown stage input returns `clarification_required` with bounded stage options and no hallucinated answer.
+- Ambiguous stage input returns `handoff_required` with bounded candidate refs and no generated answer.
+
+Boundary:
+
+- This is a pure capability foundation only; it does not persist to DB, import `packages/db`, call `packages/llm-gateway`, send outbound messages, publish knowledge or import another capability package.
+- No raw owner tutorial pack, raw customer text, raw prompts, screenshots, voice transcripts or real sample content belongs in this contract or its evidence.
+- F-01/H-01 remain foundation-only and not closed: full tutorial closeout still requires the owner material pack and future import/eval/admin evidence.
+
 ## Verification
 
 本契约的本地验证入口：
 
+- `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs`
 - `node --test scripts/tests/m3-ai-capability-data-contracts-foundation.test.mjs`
 - `UZMAX_RLS_DATABASE_URL=postgresql://user:pass@localhost:5432/db npm exec --workspace @uzmax/db -- prisma validate --schema prisma/schema.prisma`
 - `npm run typecheck`

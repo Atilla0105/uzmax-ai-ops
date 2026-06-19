@@ -4,6 +4,8 @@ M3 evidence covers AI capabilities, LLM gateway, eval gate and the minimum knowl
 
 Current readiness pack: `M3-ai-capability-readiness-pack.md`.
 
+Current closeout/no-go record: `M3-ai-capability-closeout-signoff.md`.
+
 Current DB/contracts foundation: `M3-01-ai-capability-data-contracts-foundation.md`.
 
 Current LLM gateway routing/accounting foundation: `M3-02-llm-gateway-routing-accounting-foundation.md`.
@@ -22,7 +24,7 @@ Current breaker radius and redline output guard foundation: `M3-08-breaker-radiu
 
 Current admin knowledge/eval shell foundation: `M3-09-admin-knowledge-eval-shell-if-needed.md`.
 
-M3 current status: `ready_to_start_specs__owner_inputs_block_closeout`. This means future M3 specs may start in queue order under one spec / one PR and touch-module governance. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release or 1.0 release approval.
+M3 current status: `foundation_queue_complete__owner_inputs_block_closeout`. This means M3-01 through M3-09 foundation PRs are complete and merged, but M3 closeout remains no-go until owner-input blockers are provided in controlled form or the project owner explicitly decides the branch path. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release or 1.0 release approval.
 
 M2 prior state: `owner_accepted_m2_milestone_evidence` only. Project owner accepted M2 milestone evidence, but M2 evidence explicitly did not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
 
@@ -52,6 +54,8 @@ M3-08 records a pure `packages/engine` foundation for user-level, user+capabilit
 
 M3-09 records a pure `apps/admin` synthetic/local shell for facts, journeys, stages, materials and eval gate failed/blocked semantics. It uses no backend import, DB persistence, real API client, eval runner integration, provider call, real fixture, knowledge publish, production gate runtime or real customer traffic. G-03/H-01/I-01 are partial/foundation evidence only and not closed; production publish integration, full desktop core, owner tutorial material pack, screenshot sample evidence, language blind review and M3 closeout remain active blockers.
 
-M3-09 also records incident `docs/incidents/INC-2026-06-19-m3-09-root-main-worktree-pollution.md`: a relative edit operation wrote M3-09 files into root/main before commit. The polluted diff was sealed, root/main was cleaned and rechecked, changes were restored only into the assigned worktree, and M3-09 now requires absolute-path or `git -C` edits plus root/worktree dual status checks after migrations, large edits and formatter/generated writes. This incident is `pending_merge`; broader guard/runbook follow-up remains a closeout decision.
+M3-07 records incident `docs/incidents/INC-2026-06-19-m3-07-root-main-worktree-pollution.md`: a relative edit operation wrote M3-07 files into root/main before commit. The polluted diff was sealed, root/main was cleaned and rechecked, changes were restored only into the assigned worktree, and M3-07 required absolute-path edits plus root/worktree dual status checks for the rest of that slice. After PR #45 merged, this incident is `institutionalized_in_docs`.
+
+M3-09 also records incident `docs/incidents/INC-2026-06-19-m3-09-root-main-worktree-pollution.md`: a relative edit operation wrote M3-09 files into root/main before commit. The polluted diff was sealed, root/main was cleaned and rechecked, changes were restored only into the assigned worktree, and M3-09 required absolute-path or `git -C` edits plus root/worktree dual status checks after migrations, large edits and formatter/generated writes. After PR #47 merged, this incident is `institutionalized_in_docs`. Because this was a repeat-class workspace-isolation failure, M3-10 recommends a future governance/guard/runbook spec for stronger path-bound edit enforcement before another broad parallel milestone if the project owner wants machine prevention beyond the existing M2 workspace guard and incident docs.
 
 M3 evidence must not include raw sample content in git. Do not commit raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts or secrets. Future sensitive source material must stay in controlled storage; repo evidence may only record manifests, redaction method, storage refs, access scope, retention period and project owner confirmation status.

@@ -2,7 +2,7 @@
 
 ## Status
 
-pending_merge
+institutionalized_in_docs
 
 ## What Happened
 
@@ -66,14 +66,16 @@ Worker follow-up in the assigned worktree:
 
 ## Institutionalized State
 
-pending_merge
+institutionalized_in_docs
 
-The control is documented in this incident and the M3-07 spec/PR Hygiene. It will become institutionalized for this slice when the PR merges. A broader guard or runbook hardening remains optional future governance work if similar path-resolution incidents repeat.
+The control is documented in this incident and the M3-07 spec/PR Hygiene. PR #45 merged on 2026-06-19, so the per-slice controls are now institutionalized in repo docs. A broader guard or runbook hardening remains optional future governance work, and M3-10 records that this class repeated in M3-09.
 
 ## Evidence Links
 
 - Spec: `docs/specs/M3-07-speech-transcription-contract.md`
 - Evidence: `docs/evidence/M3/M3-07-speech-transcription-contract.md`
+- Merged PR: https://github.com/Atilla0105/uzmax-ai-ops/pull/45
+- M3-10 no-go rollup: `docs/evidence/M3/M3-ai-capability-closeout-signoff.md`
 - Cleanup artifacts: `/tmp/uzmax-m3-07-root-pollution.hMNkNw/tracked.patch`, `/tmp/uzmax-m3-07-root-pollution.hMNkNw/untracked.tgz`
 - Detection command evidence recorded in PR final report: focused test missing file, `find`, worker/root status checks
 

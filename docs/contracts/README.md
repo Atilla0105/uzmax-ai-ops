@@ -220,10 +220,27 @@ Boundary:
 - No raw owner tutorial pack, raw customer text, raw prompts, screenshots, voice transcripts or real sample content belongs in this contract or its evidence.
 - F-01/H-01 remain foundation-only and not closed: full tutorial closeout still requires the owner material pack and future import/eval/admin evidence.
 
+## M3 Pricing Capability And Quote Record Contract
+
+`M3-05-pricing-capability-and-quote-record-contract` 引入 `packages/capabilities/pricing/src/index.ts` 的纯 package contract：
+
+- `createPricingQuote` accepts structured pricing parameters from controlled sources, including LLM parameter candidates, but rejects any supplied price math such as total/final/LLM price fields or `source: "llm"`.
+- Quote totals are calculated only by deterministic code using integer minor units and versioned config provenance (`configVersionId` or `configVersionRef`).
+- `createQuoteRecordDraft` converts the code-created quote into an M3-01 compatible `quote_record draft` with `source: "code"`, `status: "created"`, `inputRef`, `result`, `currency`, `totalMinorUnits`, `validUntil` and config provenance.
+- Unknown lane/service, missing currency, missing config provenance, negative/decimal/NaN money values and unsafe integer money values fail closed.
+- Internal cost/profit/margin/threshold fields are rejected from pricing config/result surfaces; customer-facing quote output may carry controlled refs but must not expose internal pricing parameters.
+
+Boundary:
+
+- This is a pure capability foundation only; it does not persist to DB, import `packages/db`, call `packages/llm-gateway`, send outbound messages, integrate with engine/API/admin/worker or release production pricing.
+- No real provider, SDK, pricing API, order connector, customer asset integration, raw samples, customer plaintext, order IDs, screenshots, voice transcripts, raw prompt/completion or secrets belong in this contract or evidence.
+- F-04 remains foundation-only and not closed for production: DB persistence, E2E customer asset quote history, engine orchestration and release approval remain future specs.
+
 ## Verification
 
 本契约的本地验证入口：
 
+- `node --test scripts/tests/m3-pricing-capability-and-quote-record-contract.test.mjs`
 - `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs`
 - `node --test scripts/tests/m3-ai-capability-data-contracts-foundation.test.mjs`
 - `UZMAX_RLS_DATABASE_URL=postgresql://user:pass@localhost:5432/db npm exec --workspace @uzmax/db -- prisma validate --schema prisma/schema.prisma`

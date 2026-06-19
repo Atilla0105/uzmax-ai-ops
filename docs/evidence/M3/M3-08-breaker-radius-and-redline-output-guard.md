@@ -43,7 +43,7 @@ Not included:
 | Step | Command | Result | Summary |
 |---|---|---|---|
 | RED | pre-implementation inspection | not_run | M3-08 focused test/spec/evidence files were absent and engine exported only `packageName`, so the new test would have failed on missing exports/docs before implementation. |
-| GREEN | `node --test scripts/tests/m3-breaker-radius-redline-output-guard.test.mjs` | pass | 9/9 focused tests passed after pure engine implementation and docs/evidence updates. |
+| GREEN | `node --test scripts/tests/m3-breaker-radius-redline-output-guard.test.mjs` | pass | 13/13 focused tests passed after pure engine implementation, review-blocker fixes and regression coverage. |
 
 ## Boundary Review
 
@@ -64,6 +64,9 @@ Not included:
 | Unknown `eventKind` fail-open | `evaluateBreakerRadius` now validates `eventKind` against the known breaker event set before scope decisions. Unknown values throw `eventKind is invalid` without echoing raw event text. |
 | Redline output raw/control leakage | `guardRedlineOutput` now uses a strict input allowlist, rejects extra raw/internal fields, detects raw prompt/completion/system prompt/model route/public URL/control leakage, and suppressed results do not include unsafe output text. |
 | Forged runtime object trust | `decideEngineSafetyAction` now revalidates breaker scope, output status, controlled refs, disabled capability keys and reason codes before building `auditRefs`; invalid objects throw or fail closed without preserving unsafe refs. |
+| Derived breaker fields | `safeBreakerDecision` now enforces scope-derived disabled capability keys and known breaker reason vocabulary, so user-scope forged disabled keys, capability-scope missing disabled keys and arbitrary safe-format reason codes are rejected. |
+| Output guard object allowlist | `safeOutputGuard` now applies status-aware key allowlists before action building, so forged raw/internal/unknown fields such as `rawPrompt` are rejected even when the visible output is safe. |
+| Source budget governance | Engine source was compacted without relaxing the spec budget; `guard:pr-shape --include-worktree` reports source net LOC `400`, within the `<=400` budget. |
 | Regression coverage | Focused tests now cover unknown event kind rejection, raw field rejection, raw/system/model-route/public-URL suppression with no echo, forged object rejection, unsafe ref rejection and the legal false-positive synthetic number path. |
 
 ## Validation
@@ -72,7 +75,7 @@ Not included:
 |---|---|---|
 | `node --test scripts/tests/m3-breaker-radius-redline-output-guard.test.mjs` | pass | 13/13 focused M3-08 tests passed after review-blocker fixes. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-08-breaker-radius-and-redline-output-guard.md --include-worktree` | pass | Reports 6 changed files: docs 4, source 1, test 1; source changedFiles 1, newFiles 0. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-08-breaker-radius-and-redline-output-guard.md --include-worktree` | pass | Reports 6 changed files: docs 4, source 1, test 1; source changedFiles 1, netLoc 400, newFiles 0. |
 | `npm run check` | pass | Full local gate passed after review-blocker fixes: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 132/132 Node tests, build, size and Playwright 6/6. |
 | final worker/root status | pending | To record after validation and commit. |
 
@@ -84,7 +87,7 @@ Not included:
 | Path categories | docs 4, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | `guard:pr-shape` reports netLoc 327 after review-blocker fixes. |
+| Net source LOC | `guard:pr-shape` reports netLoc 400 after review-blocker fixes, within the spec budget `<=400`. |
 | rg search conclusion | No new source file. Searched breaker/redline output/output policy/safe degradation/handoff/engineSafety/safety across packages/docs/scripts/tests; engine was placeholder and is the correct pure orchestration contract home. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |

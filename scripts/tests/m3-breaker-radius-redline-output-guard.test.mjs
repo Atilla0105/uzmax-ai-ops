@@ -216,6 +216,12 @@ describe("M3-08 breaker radius and redline output guard", () => {
       output: "Safe generic reply.",
       outputRef: "controlled://output/forged"
     });
+    const capabilityBreaker = engine.evaluateBreakerRadius({
+      capabilityKey: "pricing",
+      controlledRefs: ["controlled://m3-08/capability-forged"],
+      eventKind: "capability_repeated_failure",
+      repeatedFailureCount: 3
+    });
 
     assert.throws(
       () =>
@@ -227,6 +233,39 @@ describe("M3-08 breaker radius and redline output guard", () => {
           outputGuard
         }),
       /controlled/
+    );
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision: {
+            ...breakerDecision,
+            disabledCapabilityKeys: ["pricing"]
+          },
+          outputGuard
+        }),
+      /breakerDecision is invalid/
+    );
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision: {
+            ...capabilityBreaker,
+            disabledCapabilityKeys: []
+          },
+          outputGuard
+        }),
+      /breakerDecision is invalid/
+    );
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision: {
+            ...breakerDecision,
+            reasonCodes: [...breakerDecision.reasonCodes, "custom_reason"]
+          },
+          outputGuard
+        }),
+      /reasonCode is invalid/
     );
     assert.throws(
       () =>
@@ -262,6 +301,17 @@ describe("M3-08 breaker radius and redline output guard", () => {
           }
         }),
       /outputGuard is unsafe/
+    );
+    assert.throws(
+      () =>
+        engine.decideEngineSafetyAction({
+          breakerDecision,
+          outputGuard: {
+            ...outputGuard,
+            rawPrompt: "system prompt and model route"
+          }
+        }),
+      /outputGuard key is not allowed/
     );
   });
 

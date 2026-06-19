@@ -52,19 +52,19 @@ describe("M3-03 eval gate redline runner", () => {
   it("fails closed when required quotas or target categories are missing", () => {
     const missingLanguage = evals.evaluateM3EvalGate({
       cases: casesFor(["redline_attack", "redline_false_positive", "intent"]),
-      gateKey: "gate:prompt:v1",
+      gateKey: "controlled://gate/prompt/v1",
       results: resultsFor(["redline_attack", "redline_false_positive", "intent"]),
       runStatus: "passed",
       targetKind: "prompt",
-      targetRef: "prompt:v1"
+      targetRef: "controlled://target/prompt/v1"
     });
     const missingKnowledgeTarget = evals.evaluateM3EvalGate({
       cases: casesFor(["redline_attack", "redline_false_positive", "language"]),
-      gateKey: "gate:knowledge:v1",
+      gateKey: "controlled://gate/knowledge/v1",
       results: resultsFor(["redline_attack", "redline_false_positive", "language"]),
       runStatus: "passed",
       targetKind: "knowledge",
-      targetRef: "kb:v1"
+      targetRef: "controlled://target/kb/v1"
     });
 
     assert.equal(missingLanguage.status, "blocked");
@@ -73,6 +73,52 @@ describe("M3-03 eval gate redline runner", () => {
     assert.match(
       missingKnowledgeTarget.reasonCodes.join(","),
       /quota_missing:tutorial/
+    );
+  });
+
+  it("blocks quotas and publish when results are not backed by active matching cases", () => {
+    const unrelatedResults = evals.evaluateM3EvalGate({
+      cases: [baseCase("unrelated", "language")],
+      gateKey: "controlled://gate/prompt/unbacked",
+      results: resultsFor(categoriesForTarget("prompt")),
+      runStatus: "passed",
+      targetKind: "prompt",
+      targetRef: "controlled://target/prompt/unbacked"
+    });
+    const mismatchedCategory = evals.evaluateM3EvalGate({
+      cases: casesFor(categoriesForTarget("prompt")),
+      gateKey: "controlled://gate/prompt/mismatched",
+      results: [
+        {
+          ...resultsFor(["redline_attack"])[0],
+          caseRef: "manifest://m3-03/language"
+        },
+        ...resultsFor(["redline_false_positive", "language", "intent"])
+      ],
+      runStatus: "passed",
+      targetKind: "prompt",
+      targetRef: "controlled://target/prompt/mismatched"
+    });
+
+    assert.equal(unrelatedResults.status, "blocked");
+    assert.match(unrelatedResults.reasonCodes.join(","), /result_unbacked/);
+    assert.match(
+      unrelatedResults.reasonCodes.join(","),
+      /quota_missing:redline_attack/
+    );
+    assert.equal(
+      evals.decideM3PublishGate({
+        changeKind: "prompt",
+        gateResult: unrelatedResults,
+        targetRef: "controlled://target/prompt/unbacked"
+      }).reasonCode,
+      "eval_gate_blocked"
+    );
+    assert.equal(mismatchedCategory.status, "blocked");
+    assert.match(mismatchedCategory.reasonCodes.join(","), /result_unbacked/);
+    assert.match(
+      mismatchedCategory.reasonCodes.join(","),
+      /quota_missing:redline_attack/
     );
   });
 
@@ -98,19 +144,22 @@ describe("M3-03 eval gate redline runner", () => {
   });
 
   it("refuses publish unless a matching gate passed required quotas and redline checks", () => {
-    const passed = passingGate({ targetKind: "model_route", targetRef: "route:kb:v1" });
+    const passed = passingGate({
+      targetKind: "model_route",
+      targetRef: "controlled://target/route/kb/v1"
+    });
 
     assert.deepEqual(
       evals.decideM3PublishGate({
         changeKind: "model_route",
         gateResult: passed,
-        targetRef: "route:kb:v1"
+        targetRef: "controlled://target/route/kb/v1"
       }),
       {
         decision: "allow",
         reasonCode: "eval_gate_passed",
         targetKind: "model_route",
-        targetRef: "route:kb:v1"
+        targetRef: "controlled://target/route/kb/v1"
       }
     );
     for (const [status, reasonCode] of [
@@ -120,8 +169,13 @@ describe("M3-03 eval gate redline runner", () => {
     ]) {
       const decision = evals.decideM3PublishGate({
         changeKind: "prompt",
-        gateResult: { ...passed, status, targetKind: "prompt", targetRef: "prompt:v1" },
-        targetRef: "prompt:v1"
+        gateResult: {
+          ...passed,
+          status,
+          targetKind: "prompt",
+          targetRef: "controlled://target/prompt/v1"
+        },
+        targetRef: "controlled://target/prompt/v1"
       });
       assert.equal(decision.decision, "refuse");
       assert.equal(decision.reasonCode, reasonCode);
@@ -133,17 +187,21 @@ describe("M3-03 eval gate redline runner", () => {
           ...passed,
           stale: true,
           targetKind: "knowledge",
-          targetRef: "kb:v1"
+          targetRef: "controlled://target/kb/v1"
         },
-        targetRef: "kb:v1"
+        targetRef: "controlled://target/kb/v1"
       }).reasonCode,
       "eval_gate_stale"
     );
     assert.equal(
       evals.decideM3PublishGate({
         changeKind: "persona",
-        gateResult: { ...passed, targetKind: "prompt", targetRef: "persona:v1" },
-        targetRef: "persona:v1"
+        gateResult: {
+          ...passed,
+          targetKind: "prompt",
+          targetRef: "controlled://target/persona/v1"
+        },
+        targetRef: "controlled://target/persona/v1"
       }).reasonCode,
       "eval_gate_target_mismatch"
     );
@@ -157,7 +215,7 @@ describe("M3-03 eval gate redline runner", () => {
         "language",
         "intent"
       ]),
-      gateKey: "gate:prompt:v2",
+      gateKey: "controlled://gate/prompt/v2",
       results: resultsFor(
         ["redline_attack", "redline_false_positive", "language", "intent"],
         {
@@ -166,7 +224,7 @@ describe("M3-03 eval gate redline runner", () => {
       ),
       runStatus: "passed",
       targetKind: "prompt",
-      targetRef: "prompt:v2"
+      targetRef: "controlled://target/prompt/v2"
     });
     const failedRedlineSummary = evals.evaluateM3EvalGate({
       cases: casesFor([
@@ -175,7 +233,7 @@ describe("M3-03 eval gate redline runner", () => {
         "language",
         "intent"
       ]),
-      gateKey: "gate:prompt:v3",
+      gateKey: "controlled://gate/prompt/v3",
       results: resultsFor(
         ["redline_attack", "redline_false_positive", "language", "intent"],
         {
@@ -184,7 +242,7 @@ describe("M3-03 eval gate redline runner", () => {
       ),
       runStatus: "passed",
       targetKind: "prompt",
-      targetRef: "prompt:v3"
+      targetRef: "controlled://target/prompt/v3"
     });
 
     assert.equal(missingRedlineSummaries.status, "blocked");
@@ -198,7 +256,7 @@ describe("M3-03 eval gate redline runner", () => {
       evals.decideM3PublishGate({
         changeKind: "prompt",
         gateResult: missingRedlineSummaries,
-        targetRef: "prompt:v2"
+        targetRef: "controlled://target/prompt/v2"
       }).reasonCode,
       "eval_gate_blocked"
     );
@@ -207,6 +265,48 @@ describe("M3-03 eval gate redline runner", () => {
       failedRedlineSummary.reasonCodes.join(","),
       /redline_failed:redline_attack/
     );
+  });
+
+  it("validates summary refs and rejects boolean ref payload fields", () => {
+    assert.throws(
+      () =>
+        passingGate({
+          gateKey: "raw gate key",
+          targetRef: "controlled://target/persona/safe"
+        }),
+      /eval gate key must be a controlled ref/
+    );
+    assert.throws(
+      () =>
+        passingGate({
+          gateKey: "controlled://gate/persona/safe",
+          targetRef: "raw target ref"
+        }),
+      /eval gate target ref must be a controlled ref/
+    );
+    assert.throws(
+      () =>
+        evals.evaluateM3EvalGate({
+          cases: casesFor(categoriesForTarget("prompt")),
+          gateKey: "controlled://gate/prompt/bad-ref-field",
+          results: resultsFor(categoriesForTarget("prompt"), {
+            redlineSummaryOverrides: { checkedRef: true }
+          }),
+          runStatus: "passed",
+          targetKind: "prompt",
+          targetRef: "controlled://target/prompt/bad-ref-field"
+        }),
+      /eval payload ref must be a controlled ref/
+    );
+
+    const passed = passingGate({
+      gateKey: "controlled://gate/persona/safe",
+      targetRef: "controlled://target/persona/safe"
+    });
+
+    assert.equal(passed.status, "passed");
+    assert.equal(passed.evidenceSummary.gateKey, "controlled://gate/persona/safe");
+    assert.equal(passed.evidenceSummary.targetRef, "controlled://target/persona/safe");
   });
 
   it("returns safe summaries and controlled refs without raw samples", () => {
@@ -230,11 +330,11 @@ function passingGate(overrides = {}) {
   const categories = categoriesForTarget(targetKind);
   return evals.evaluateM3EvalGate({
     cases: casesFor(categories),
-    gateKey: "gate:persona:v1",
+    gateKey: "controlled://gate/persona/v1",
     results: resultsFor(categories),
     runStatus: "passed",
     targetKind: "persona",
-    targetRef: "persona:v1",
+    targetRef: "controlled://target/persona/v1",
     ...overrides
   });
 }
@@ -272,6 +372,7 @@ function redlineSummaryFor(category, options) {
   return {
     redlineSummary: {
       checkedRef: `redaction://m3-03/${category}`,
+      ...options.redlineSummaryOverrides,
       passed: !options.failedRedlineSummaryFor?.includes(category)
     }
   };

@@ -45,9 +45,11 @@ No open PR conflict or unmerged branch conflict was found at start.
 |---|---|---|---|
 | Dependency setup | `npm ci` | pass | Linked worktree had no `node_modules`; dependencies installed without lockfile changes. npm reported existing audit advisories. |
 | RED | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | failed as expected | 6/6 tests failed because M3-03 eval runner exports/behavior were missing from `packages/evals`. |
-| GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | Initial focused implementation passed; current focused suite is 7/7 after the review fix. |
+| GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | Initial focused implementation passed; current focused suite is 9/9 after review fixes. |
 | Review-fix RED | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | failed as expected | New missing-redline-summary test failed because gates with absent `redlineSummary` still passed. |
 | Review-fix GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 7/7 focused tests passed after requiring required redline categories to include passed redline summaries. |
+| Code-quality RED | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | failed as expected | 2 new tests failed: unbacked result/category evidence still passed, and raw `gateKey`/`targetRef` were not rejected. |
+| Code-quality GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 9/9 focused tests passed after counting only active case-backed results and enforcing controlled refs for summaries and ref payload fields. |
 
 ## Boundary Review
 
@@ -55,17 +57,18 @@ No open PR conflict or unmerged branch conflict was found at start.
 |---|---|---|
 | No DB runtime import | pass | `packages/evals/src/index.ts` mirrors M3-01 literals and does not import `packages/db`. |
 | No raw eval payload | pass | `createM3EvalCase` rejects raw prompt/completion/customer-text style keys and accepts controlled refs only. |
-| Quota fail-closed | pass | Missing `redline_attack`, `redline_false_positive`, `language` or target-specific category returns `blocked`. |
+| Quota fail-closed | pass | Missing `redline_attack`, `redline_false_positive`, `language`, target-specific category, or active case-backed result coverage returns `blocked`. |
+| Result/case backing | pass | Results only count toward quota/redline evidence when their `caseRef` and category match a validated active case; unbacked evidence returns `result_unbacked` plus safe quota/redline reasons. |
 | Redline leakage | pass | Internal config/economics terms are detected; ordinary redacted false-positive numbers can pass. |
 | Missing redline evidence | pass | Required `redline_attack` and `redline_false_positive` results without `redlineSummary.passed === true` now return `redline_missing:<category>`. |
 | Publish refusal | pass | prompt/knowledge/model_route/persona publish decisions refuse failed, blocked, pending, stale or mismatched gates. |
-| Safe summaries | pass | Runner returns category counts, reason codes and controlled refs only. |
+| Safe summaries | pass | Runner returns category counts, reason codes and controlled refs only; raw `gateKey`/`targetRef` and boolean `*Ref` payload fields are rejected. |
 
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
-| `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 7/7 focused tests passed after review fix. |
+| `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 9/9 focused tests passed after code-quality review fixes. |
 | `npm run eval:minimal` | pass | 4/4 M1 minimal eval tests passed. |
 | `npm run format:check` | pass | Prettier reported all matched files use code style. |
 | `npm run typecheck` | pass | TypeScript strict check passed. |
@@ -73,9 +76,9 @@ No open PR conflict or unmerged branch conflict was found at start.
 | `npm run guard:eval-triggers -- --base origin/main` | pass | Post-commit rerun detected `packages/evals/src/index.ts` and ran the minimal eval job successfully. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-03-eval-gate-redline-runner, linked worktree, clean)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-03-eval-gate-redline-runner.md --include-worktree` | pass | Post-commit rerun reports 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, netLoc 235, newFiles 0. |
-| `npm run test` | pass | 85/85 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
-| `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 85/85 tests, build, size and Playwright 6/6. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-03-eval-gate-redline-runner.md --include-worktree` | pass | Post-commit rerun reports 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, netLoc 225, newFiles 0. |
+| `npm run test` | pass | 87/87 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
+| `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 87/87 tests, build, size and Playwright 6/6. |
 | `git diff --check` | pass | No whitespace errors. |
 
 ## PR Hygiene Summary
@@ -86,7 +89,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Path categories | docs 4, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | `guard:pr-shape` reports netLoc 235 after the review fix. Source file length is 398 lines, under ordinary source file budget. |
+| Net source LOC | `guard:pr-shape` reports netLoc 225 after the review fixes. Source file length is 388 lines, under ordinary source file budget. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |
 | Test weakening | none; no `.skip` / `.only` / `xit` / `xfail` added |

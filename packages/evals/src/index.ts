@@ -183,6 +183,7 @@ export function detectRedlineLeakage(fields: Record<string, unknown>): {
   return { findings, passed: findings.length === 0 };
 }
 
+// prettier-ignore
 export function evaluateM3EvalGate(input: {
   cases: M3EvalCaseInput[];
   gateKey: string;
@@ -192,69 +193,43 @@ export function evaluateM3EvalGate(input: {
   targetKind: string;
   targetRef: string;
 }) {
-  const targetKind = enumValue(
-    input.targetKind,
-    m3PublishChangeKinds,
-    "publish target kind"
-  );
+  const targetKind = enumValue(input.targetKind, m3PublishChangeKinds, "publish target kind");
+  const gateKey = controlledRef(input.gateKey, "eval gate key");
+  const targetRef = controlledRef(input.targetRef, "eval gate target ref");
   const cases = input.cases.map(createM3EvalCase);
   const results = input.results.map(createM3EvalResult);
-  const categoryCounts = countCategories(results);
+  const backed = backedResults(results, activeCaseKeys(cases));
+  const categoryCounts = countCategories(backed.results);
   const reasonCodes = [
     ...runStatusReasons(input.runStatus),
+    ...resultBackingReasons(backed.hasUnbacked),
     ...quotaReasons(m3RequiredCategoryQuotas[targetKind], categoryCounts),
-    ...redlineReasons(results, m3RequiredCategoryQuotas[targetKind])
+    ...redlineReasons(backed.results, m3RequiredCategoryQuotas[targetKind])
   ];
   const status = reasonCodes.length === 0 ? "passed" : "blocked";
   const controlledRefs = [...new Set(cases.map((evalCase) => evalCase.caseRef))];
-
-  return {
-    categoryCounts,
-    controlledRefs,
-    evidenceSummary: {
-      categoryCounts,
-      gateKey: input.gateKey,
-      reasonCodes,
-      targetKind,
-      targetRef: input.targetRef,
-      totalCases: cases.length,
-      totalResults: results.length
-    },
-    reasonCodes,
-    requiredQuotas: m3RequiredCategoryQuotas[targetKind],
-    stale: input.stale === true,
-    status,
-    targetKind,
-    targetRef: input.targetRef
-  };
+  return { categoryCounts, controlledRefs, evidenceSummary: { categoryCounts, gateKey, reasonCodes, targetKind, targetRef, totalCases: cases.length, totalResults: results.length }, reasonCodes, requiredQuotas: m3RequiredCategoryQuotas[targetKind], stale: input.stale === true, status, targetKind, targetRef };
 }
 
+// prettier-ignore
 export function decideM3PublishGate(input: {
   changeKind: string;
   gateResult: ReturnType<typeof evaluateM3EvalGate>;
   targetRef: string;
 }) {
   const targetKind = enumValue(input.changeKind, m3PublishChangeKinds, "change kind");
-  if (
-    input.gateResult.targetKind !== targetKind ||
-    input.gateResult.targetRef !== input.targetRef
-  ) {
-    return refuse("eval_gate_target_mismatch", targetKind, input.targetRef);
+  const targetRef = controlledRef(input.targetRef, "publish target ref");
+  if (input.gateResult.targetKind !== targetKind || input.gateResult.targetRef !== targetRef) {
+    return refuse("eval_gate_target_mismatch", targetKind, targetRef);
   }
-  if (input.gateResult.stale)
-    return refuse("eval_gate_stale", targetKind, input.targetRef);
+  if (input.gateResult.stale) return refuse("eval_gate_stale", targetKind, targetRef);
   if (input.gateResult.status !== "passed") {
-    return refuse(`eval_gate_${input.gateResult.status}`, targetKind, input.targetRef);
+    return refuse(`eval_gate_${input.gateResult.status}`, targetKind, targetRef);
   }
   if (!hasCompleteGateEvidence(input.gateResult)) {
-    return refuse("eval_gate_evidence_incomplete", targetKind, input.targetRef);
+    return refuse("eval_gate_evidence_incomplete", targetKind, targetRef);
   }
-  return {
-    decision: "allow" as const,
-    reasonCode: "eval_gate_passed",
-    targetKind,
-    targetRef: input.targetRef
-  };
+  return { decision: "allow" as const, reasonCode: "eval_gate_passed", targetKind, targetRef };
 }
 
 function check(
@@ -298,10 +273,25 @@ function countCategories(results: ReturnType<typeof createM3EvalResult>[]) {
   return counts;
 }
 
+// prettier-ignore
+function activeCaseKeys(cases: ReturnType<typeof createM3EvalCase>[]): Set<string> {
+  return new Set(cases.filter((evalCase) => evalCase.status === "active").map((evalCase) => `${evalCase.caseRef}\0${evalCase.category}`));
+}
+
+// prettier-ignore
+function backedResults(results: ReturnType<typeof createM3EvalResult>[], caseKeys: Set<string>) {
+  const backed = results.filter((result) => caseKeys.has(`${result.caseRef}\0${result.category}`));
+  return { hasUnbacked: backed.length !== results.length, results: backed };
+}
+
 function runStatusReasons(status: string): string[] {
   return enumValue(status, m3EvalRunStatuses, "eval run status") === "passed"
     ? []
     : [`run_status:${status}`];
+}
+
+function resultBackingReasons(hasUnbacked: boolean): string[] {
+  return hasUnbacked ? ["result_unbacked"] : [];
 }
 
 function quotaReasons(
@@ -342,8 +332,8 @@ function safePayloadKey(key: string): string {
 }
 
 function safePayloadValue(key: string, value: unknown): unknown {
-  if (typeof value === "boolean") return value;
   if (key.endsWith("Ref")) return controlledRef(value, "eval payload ref");
+  if (key === "passed" && typeof value === "boolean") return value;
   if (
     key === "shape" &&
     typeof value === "string" &&

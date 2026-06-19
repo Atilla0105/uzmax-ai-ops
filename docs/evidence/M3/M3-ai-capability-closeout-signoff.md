@@ -32,7 +32,8 @@ This evidence does not approve production, GA-0, real customer traffic, customer
 | baseline | pass | `HEAD` = `origin/main` = `1ae6b0ec8d60eb25623b78f600d588d88debc052` before this docs diff |
 | `git fetch --prune` | pass | refreshed origin before closeout edit |
 | `git branch --no-merged main` | pass | no branch output |
-| open PR audit | pass | `gh pr list --state open --json number,title,headRefName,baseRefName,isDraft,url` returned `[]` |
+| pre-PR open PR audit | pass | Before opening PR #48, `gh pr list --state open --json number,title,headRefName,baseRefName,isDraft,url` returned `[]` |
+| current review PR | open | [PR #48](https://github.com/Atilla0105/uzmax-ai-ops/pull/48) is the current review vehicle for this M3-10 branch after the pre-PR hygiene audit. |
 | owner-input evidence directories | absent | `git ls-files docs/evidence/M3/tutorial docs/evidence/M3/vision docs/evidence/M3/language-blind-review` returned no files |
 
 ## M3 Foundation Queue Ledger
@@ -51,7 +52,7 @@ This evidence does not approve production, GA-0, real customer traffic, customer
 
 ## Owner-input Blockers
 
-No current repo evidence shows these owner inputs are provided, accepted or explicitly branched by the project owner.
+No current repo evidence shows these owner inputs are provided, accepted or covered by a project-owner branch decision.
 
 | Blocker | Required by | Expected repo evidence destination | Current status |
 |---|---|---|---|
@@ -117,6 +118,7 @@ Future sensitive source material must stay in controlled storage. Repo evidence 
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors. |
 | `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden/eval/doc/workspace/pr-shape guards, 132/132 Node tests, build, size and Playwright 7/7. |
 | PR body metadata correction | pass | Initial PR CI parsed a backticked `Spec file` table value from the PR-open event payload; PR body was edited to plain parseable values and local PR-context `guard:pr-shape` passed. A follow-up commit retriggers CI with the corrected PR metadata. |
+| PR #48 review-fix validation | pass | After relabeling the M3-00 readiness sections as historical and qualifying the pre-PR audit, reran required docs-only checks and full `npm run check`; all passed. |
 | dual status check | pass | After large docs edits, assigned worktree contained only allowed docs changes and root/main remained `## main...origin/main`. |
 
 ## Spec Compliance Review
@@ -139,5 +141,5 @@ Future sensitive source material must stay in controlled storage. Repo evidence 
 Project owner merge/signoff of M3-10 would mean:
 
 - accepted: M3 foundation queue completion and closeout no-go evidence are recorded.
-- still blocked: M3 closeout until tutorial material pack, screenshot samples and language blind review are provided in controlled form or explicitly branched by the project owner.
+- still blocked: M3 closeout until tutorial material pack, screenshot samples and language blind review are provided in controlled form or covered by a project-owner branch decision.
 - not accepted: production readiness, real customer traffic, customer LLM, GA-0, prompt/model route release, knowledge publish, AI persona release, Business release, unsupported provider claims or 1.0 release.

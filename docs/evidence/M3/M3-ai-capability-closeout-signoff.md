@@ -116,6 +116,7 @@ Future sensitive source material must stay in controlled storage. Repo evidence 
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-10-ai-capability-closeout-signoff.md --include-worktree` | pass | 6 changed files; categories docs 6; source changed files 0, net LOC 0, new source files 0. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors. |
 | `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden/eval/doc/workspace/pr-shape guards, 132/132 Node tests, build, size and Playwright 7/7. |
+| PR body metadata correction | pass | Initial PR CI parsed a backticked `Spec file` table value from the PR-open event payload; PR body was edited to plain parseable values and local PR-context `guard:pr-shape` passed. A follow-up commit retriggers CI with the corrected PR metadata. |
 | dual status check | pass | After large docs edits, assigned worktree contained only allowed docs changes and root/main remained `## main...origin/main`. |
 
 ## Spec Compliance Review

@@ -149,6 +149,66 @@ describe("M3-03 eval gate redline runner", () => {
     );
   });
 
+  it("blocks gate and publish when required redline summaries are missing", () => {
+    const missingRedlineSummaries = evals.evaluateM3EvalGate({
+      cases: casesFor([
+        "redline_attack",
+        "redline_false_positive",
+        "language",
+        "intent"
+      ]),
+      gateKey: "gate:prompt:v2",
+      results: resultsFor(
+        ["redline_attack", "redline_false_positive", "language", "intent"],
+        {
+          omitRedlineSummaryFor: ["redline_attack", "redline_false_positive"]
+        }
+      ),
+      runStatus: "passed",
+      targetKind: "prompt",
+      targetRef: "prompt:v2"
+    });
+    const failedRedlineSummary = evals.evaluateM3EvalGate({
+      cases: casesFor([
+        "redline_attack",
+        "redline_false_positive",
+        "language",
+        "intent"
+      ]),
+      gateKey: "gate:prompt:v3",
+      results: resultsFor(
+        ["redline_attack", "redline_false_positive", "language", "intent"],
+        {
+          failedRedlineSummaryFor: ["redline_attack"]
+        }
+      ),
+      runStatus: "passed",
+      targetKind: "prompt",
+      targetRef: "prompt:v3"
+    });
+
+    assert.equal(missingRedlineSummaries.status, "blocked");
+    assert.deepEqual(
+      missingRedlineSummaries.reasonCodes.filter((reason) =>
+        reason.startsWith("redline_missing:")
+      ),
+      ["redline_missing:redline_attack", "redline_missing:redline_false_positive"]
+    );
+    assert.equal(
+      evals.decideM3PublishGate({
+        changeKind: "prompt",
+        gateResult: missingRedlineSummaries,
+        targetRef: "prompt:v2"
+      }).reasonCode,
+      "eval_gate_blocked"
+    );
+    assert.equal(failedRedlineSummary.status, "blocked");
+    assert.match(
+      failedRedlineSummary.reasonCodes.join(","),
+      /redline_failed:redline_attack/
+    );
+  });
+
   it("returns safe summaries and controlled refs without raw samples", () => {
     const result = passingGate();
     const serialized = JSON.stringify(result);
@@ -197,14 +257,24 @@ function casesFor(categories) {
   return categories.map((category) => baseCase(category, category));
 }
 
-function resultsFor(categories, status = "passed") {
+function resultsFor(categories, options = {}) {
   return categories.map((category) => ({
     category,
     caseRef: `manifest://m3-03/${category}`,
     outputRef: `controlled://eval-output/${category}`,
-    redlineSummary: { checkedRef: `redaction://m3-03/${category}`, passed: true },
-    status
+    ...redlineSummaryFor(category, options),
+    status: options.status ?? "passed"
   }));
+}
+
+function redlineSummaryFor(category, options) {
+  if (options.omitRedlineSummaryFor?.includes(category)) return {};
+  return {
+    redlineSummary: {
+      checkedRef: `redaction://m3-03/${category}`,
+      passed: !options.failedRedlineSummaryFor?.includes(category)
+    }
+  };
 }
 
 function baseCase(id, category) {

@@ -203,7 +203,7 @@ export function evaluateM3EvalGate(input: {
   const reasonCodes = [
     ...runStatusReasons(input.runStatus),
     ...quotaReasons(m3RequiredCategoryQuotas[targetKind], categoryCounts),
-    ...redlineReasons(results)
+    ...redlineReasons(results, m3RequiredCategoryQuotas[targetKind])
   ];
   const status = reasonCodes.length === 0 ? "passed" : "blocked";
   const controlledRefs = [...new Set(cases.map((evalCase) => evalCase.caseRef))];
@@ -288,13 +288,9 @@ function createM3EvalResult(input: M3EvalResultInput) {
   return { caseRef: controlledRef(input.caseRef, "eval result case ref"), category: enumValue(input.category, m3EvalCategories, "eval result category"), outputRef: input.outputRef ? controlledRef(input.outputRef, "eval result output ref") : undefined, redlineSummary: input.redlineSummary ? safePayload(input.redlineSummary) : undefined, status: enumValue(input.status, m3EvalResultStatuses, "eval result status") };
 }
 
+// prettier-ignore
 function countCategories(results: ReturnType<typeof createM3EvalResult>[]) {
-  const counts = Object.fromEntries(
-    Object.values(m3EvalCategories).map((category) => [
-      category,
-      { passed: 0, total: 0 }
-    ])
-  ) as Record<M3EvalCategory, { passed: number; total: number }>;
+  const counts = Object.fromEntries(Object.values(m3EvalCategories).map((category) => [category, { passed: 0, total: 0 }])) as Record<M3EvalCategory, { passed: number; total: number }>;
   for (const result of results) {
     counts[result.category].total += 1;
     if (result.status === "passed") counts[result.category].passed += 1;
@@ -319,22 +315,25 @@ function quotaReasons(
     .map(([category]) => `quota_missing:${category}`);
 }
 
-function redlineReasons(results: ReturnType<typeof createM3EvalResult>[]): string[] {
-  return results.flatMap((result) =>
-    result.redlineSummary?.passed === false ? [`redline_failed:${result.category}`] : []
-  );
+// prettier-ignore
+function redlineReasons(
+  results: ReturnType<typeof createM3EvalResult>[],
+  quotas: Record<string, number>
+): string[] {
+  const requiredRedlines = ["redline_attack", "redline_false_positive"].filter((category) => category in quotas);
+  return requiredRedlines.flatMap((category) => {
+    const categoryResults = results.filter((result) => result.category === category);
+    if (categoryResults.some((result) => result.redlineSummary?.passed === false)) return [`redline_failed:${category}`];
+    return categoryResults.some((result) => result.redlineSummary?.passed === true) ? [] : [`redline_missing:${category}`];
+  });
 }
 
+// prettier-ignore
 function safePayload(value: Record<string, unknown>): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("eval payload must be an object");
   }
-  return Object.fromEntries(
-    Object.entries(value).map(([key, entry]) => [
-      safePayloadKey(key),
-      safePayloadValue(key, entry)
-    ])
-  );
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [safePayloadKey(key), safePayloadValue(key, entry)]));
 }
 
 function safePayloadKey(key: string): string {

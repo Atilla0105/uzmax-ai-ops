@@ -46,6 +46,8 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Dependency setup | `npm ci` | pass | Linked worktree had no `node_modules`; dependencies installed without lockfile changes. npm reported existing audit advisories. |
 | RED | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | failed as expected | 6/6 tests failed because M3-03 eval runner exports/behavior were missing from `packages/evals`. |
 | GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 6/6 focused tests passed after implementing pure eval gate/redline runner exports. |
+| Review-fix RED | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | failed as expected | New missing-redline-summary test failed because gates with absent `redlineSummary` still passed. |
+| Review-fix GREEN | `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 7/7 focused tests passed after requiring required redline categories to include passed redline summaries. |
 
 ## Boundary Review
 
@@ -55,6 +57,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | No raw eval payload | pass | `createM3EvalCase` rejects raw prompt/completion/customer-text style keys and accepts controlled refs only. |
 | Quota fail-closed | pass | Missing `redline_attack`, `redline_false_positive`, `language` or target-specific category returns `blocked`. |
 | Redline leakage | pass | Internal config/economics terms are detected; ordinary redacted false-positive numbers can pass. |
+| Missing redline evidence | pass | Required `redline_attack` and `redline_false_positive` results without `redlineSummary.passed === true` now return `redline_missing:<category>`. |
 | Publish refusal | pass | prompt/knowledge/model_route/persona publish decisions refuse failed, blocked, pending, stale or mismatched gates. |
 | Safe summaries | pass | Runner returns category counts, reason codes and controlled refs only. |
 
@@ -62,7 +65,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 
 | Command | Result | Notes |
 |---|---|---|
-| `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 6/6 focused tests passed. |
+| `node --test scripts/tests/m3-eval-gate-redline-runner.test.mjs` | pass | 7/7 focused tests passed after review fix. |
 | `npm run eval:minimal` | pass | 4/4 M1 minimal eval tests passed. |
 | `npm run format:check` | pass | Prettier reported all matched files use code style. |
 | `npm run typecheck` | pass | TypeScript strict check passed. |
@@ -83,7 +86,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Path categories | docs 4, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | `guard:pr-shape` reports netLoc 236; source file length is 399 lines, under ordinary source file budget. |
+| Net source LOC | `guard:pr-shape` reports netLoc 235 after the review fix. Source file length is 398 lines, under ordinary source file budget. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |
 | Test weakening | none; no `.skip` / `.only` / `xit` / `xfail` added |

@@ -110,6 +110,93 @@ enum TicketEventType {
   @@map("ticket_event_type")
 }
 
+enum M3RecordStatus {
+  DRAFT    @map("draft")
+  ACTIVE   @map("active")
+  ARCHIVED @map("archived")
+
+  @@map("m3_record_status")
+}
+
+enum QuoteRecordStatus {
+  CREATED @map("created")
+  EXPIRED @map("expired")
+  VOIDED  @map("voided")
+
+  @@map("quote_record_status")
+}
+
+enum QuoteSource {
+  CODE @map("code")
+
+  @@map("quote_source")
+}
+
+enum EvalCategory {
+  INTENT                 @map("intent")
+  TUTORIAL               @map("tutorial")
+  QUOTE                  @map("quote")
+  VISION                 @map("vision")
+  SPEECH                 @map("speech")
+  REDLINE_ATTACK         @map("redline_attack")
+  REDLINE_FALSE_POSITIVE @map("redline_false_positive")
+  BUSINESS_DRAFT         @map("business_draft")
+  DEGRADATION            @map("degradation")
+  LANGUAGE               @map("language")
+
+  @@map("eval_category")
+}
+
+enum EvalRunStatus {
+  QUEUED  @map("queued")
+  RUNNING @map("running")
+  PASSED  @map("passed")
+  FAILED  @map("failed")
+  BLOCKED @map("blocked")
+
+  @@map("eval_run_status")
+}
+
+enum EvalResultStatus {
+  PASSED  @map("passed")
+  FAILED  @map("failed")
+  SKIPPED @map("skipped")
+
+  @@map("eval_result_status")
+}
+
+enum EvalGateStatus {
+  PENDING @map("pending")
+  PASSED  @map("passed")
+  FAILED  @map("failed")
+  BLOCKED @map("blocked")
+
+  @@map("eval_gate_status")
+}
+
+enum LlmTask {
+  INTENT_CLASSIFY    @map("intent_classify")
+  KB_ANSWER          @map("kb_answer")
+  VISION_DIAG        @map("vision_diag")
+  SPEECH_POSTPROCESS @map("speech_postprocess")
+  SUMMARIZE          @map("summarize")
+  PROFILE_UPDATE     @map("profile_update")
+  DRAFT_REPLY        @map("draft_reply")
+  DISTILL_DAILY      @map("distill_daily")
+  JOURNEY_IMPORT     @map("journey_import")
+  EVAL_JUDGE         @map("eval_judge")
+
+  @@map("llm_task")
+}
+
+enum LlmCallStatus {
+  SUCCEEDED @map("succeeded")
+  FAILED    @map("failed")
+  FALLBACK  @map("fallback")
+
+  @@map("llm_call_status")
+}
+
 model Org {
   id                    String                   @id @default(uuid()) @db.Uuid
   slug                  String                   @unique @db.Text
@@ -129,6 +216,15 @@ model Org {
   conversationMessages  ChannelMessage[]
   supportTickets        SupportTicket[]
   supportTicketEvents   SupportTicketEvent[]
+  kbEntries             KbRecord[]
+  kbStages              KbStage[]
+  mediaAssets           MediaAsset[]
+  quoteRecords          QuoteRecord[]
+  evalCases             EvalCase[]
+  evalRuns              EvalRun[]
+  evalResults           EvalResult[]
+  evalGates             EvalGate[]
+  llmCallLogs           LlmCallLog[]
 
   @@map("org")
 }
@@ -152,6 +248,15 @@ model Tenant {
   conversationMessages  ChannelMessage[]
   supportTickets        SupportTicket[]
   supportTicketEvents   SupportTicketEvent[]
+  kbEntries             KbRecord[]
+  kbStages              KbStage[]
+  mediaAssets           MediaAsset[]
+  quoteRecords          QuoteRecord[]
+  evalCases             EvalCase[]
+  evalRuns              EvalRun[]
+  evalResults           EvalResult[]
+  evalGates             EvalGate[]
+  llmCallLogs           LlmCallLog[]
 
   @@unique([orgId, id])
   @@unique([orgId, slug])
@@ -231,6 +336,7 @@ model ConfigVersion {
   rollbackVersions    ConfigVersion[]     @relation("ConfigVersionRollback")
   auditLogsBefore     AuditLog[]          @relation("AuditLogBeforeVersion")
   auditLogsAfter      AuditLog[]          @relation("AuditLogAfterVersion")
+  quoteRecords        QuoteRecord[]
 
   @@unique([id, orgId, tenantId, domain, key])
   @@unique([id, orgId, tenantId])
@@ -327,6 +433,7 @@ model ChannelConversation {
   channelConnection       ChannelConnection     @relation(fields: [channelConnectionId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
   messages                ChannelMessage[]
   tickets                 SupportTicket[]
+  quoteRecords            QuoteRecord[]
 
   @@unique([id, orgId, tenantId])
   @@unique([orgId, tenantId, channelConnectionId, externalConversationRef])
@@ -399,4 +506,213 @@ model SupportTicketEvent {
 
   @@index([orgId, tenantId, ticketId, occurredAt])
   @@map("ticket_event")
+}
+
+model KbRecord {
+  id          String         @id @default(uuid()) @db.Uuid
+  orgId       String         @map("org_id") @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  entryKey    String         @map("entry_key") @db.Text
+  title       String         @db.Text
+  category    String         @db.Text
+  status      M3RecordStatus @default(DRAFT)
+  version     Int            @default(1)
+  sourceRef   String?        @map("source_ref") @db.Text
+  contentHash String?        @map("content_hash") @db.Text
+  metadata    Json           @default("{}")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org         Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant      Tenant         @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  stages      KbStage[]
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, entryKey, version])
+  @@index([orgId, tenantId, status])
+  @@map("kb_entry")
+}
+
+model KbStage {
+  id           String         @id @default(uuid()) @db.Uuid
+  orgId        String         @map("org_id") @db.Uuid
+  tenantId     String         @map("tenant_id") @db.Uuid
+  kbEntryId    String         @map("kb_entry_id") @db.Uuid
+  stageKey     String         @map("stage_key") @db.Text
+  title        String         @db.Text
+  sequence     Int
+  status       M3RecordStatus @default(DRAFT)
+  materialRefs Json           @default("{}") @map("material_refs")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org          Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant       Tenant         @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  kbEntry      KbRecord       @relation(fields: [kbEntryId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+
+  @@unique([orgId, tenantId, kbEntryId, stageKey])
+  @@index([orgId, tenantId, status])
+  @@map("kb_stage")
+}
+
+model MediaAsset {
+  id          String         @id @default(uuid()) @db.Uuid
+  orgId       String         @map("org_id") @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  assetKind   String         @map("asset_kind") @db.Text
+  storageRef  String         @map("storage_ref") @db.Text
+  mimeType    String?        @map("mime_type") @db.Text
+  contentHash String?        @map("content_hash") @db.Text
+  status      M3RecordStatus @default(DRAFT)
+  metadata    Json           @default("{}")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org         Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant      Tenant         @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+
+  @@unique([orgId, tenantId, storageRef])
+  @@index([orgId, tenantId, assetKind, status])
+  @@map("media_asset")
+}
+
+model QuoteRecord {
+  id                     String               @id @default(uuid()) @db.Uuid
+  orgId                  String               @map("org_id") @db.Uuid
+  tenantId               String               @map("tenant_id") @db.Uuid
+  conversationId         String?              @map("conversation_id") @db.Uuid
+  configVersionId        String?              @map("config_version_id") @db.Uuid
+  configVersionRef       String?              @map("config_version_ref") @db.Text
+  source                 QuoteSource          @default(CODE)
+  status                 QuoteRecordStatus    @default(CREATED)
+  inputRef               Json                 @map("input_ref")
+  result                 Json
+  currency               String?              @db.Text
+  totalMinorUnits        Int?                 @map("total_minor_units")
+  validUntil             DateTime?            @map("valid_until") @db.Timestamptz(6)
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  org                    Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant                 Tenant               @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  conversation           ChannelConversation? @relation(fields: [conversationId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+  configVersion          ConfigVersion?       @relation(fields: [configVersionId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, status, createdAt])
+  @@index([configVersionId])
+  @@map("quote_record")
+}
+
+model EvalCase {
+  id              String         @id @default(uuid()) @db.Uuid
+  orgId           String         @map("org_id") @db.Uuid
+  tenantId        String         @map("tenant_id") @db.Uuid
+  category        EvalCategory
+  caseRef         String         @map("case_ref") @db.Text
+  version         Int            @default(1)
+  status          M3RecordStatus @default(DRAFT)
+  quotaWeight     Int            @default(1) @map("quota_weight")
+  redactedPayload Json           @default("{}") @map("redacted_payload")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  org             Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant          Tenant         @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  results         EvalResult[]
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, caseRef, version])
+  @@index([orgId, tenantId, category, status])
+  @@map("eval_case")
+}
+
+model EvalRun {
+  id             String        @id @default(uuid()) @db.Uuid
+  orgId          String        @map("org_id") @db.Uuid
+  tenantId       String        @map("tenant_id") @db.Uuid
+  gateKey        String        @map("gate_key") @db.Text
+  triggerRef     String?       @map("trigger_ref") @db.Text
+  status         EvalRunStatus @default(QUEUED)
+  categoryQuotas Json          @default("{}") @map("category_quotas")
+  startedAt      DateTime?     @map("started_at") @db.Timestamptz(6)
+  endedAt        DateTime?     @map("ended_at") @db.Timestamptz(6)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  org            Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant         Tenant        @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  results        EvalResult[]
+  evalGates      EvalGate[]    @relation("EvalGateLastRun")
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, gateKey, status])
+  @@map("eval_run")
+}
+
+model EvalResult {
+  id             String           @id @default(uuid()) @db.Uuid
+  orgId          String           @map("org_id") @db.Uuid
+  tenantId       String           @map("tenant_id") @db.Uuid
+  evalRunId      String           @map("eval_run_id") @db.Uuid
+  evalCaseId     String           @map("eval_case_id") @db.Uuid
+  category       EvalCategory
+  status         EvalResultStatus
+  score          Int?
+  redlineSummary Json             @default("{}") @map("redline_summary")
+  outputRef      String?          @map("output_ref") @db.Text
+  occurredAt     DateTime         @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  org            Org              @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant         Tenant           @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  evalRun        EvalRun          @relation(fields: [evalRunId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+  evalCase       EvalCase         @relation(fields: [evalCaseId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, evalRunId, status])
+  @@index([orgId, tenantId, category, status])
+  @@map("eval_result")
+}
+
+model EvalGate {
+  id             String         @id @default(uuid()) @db.Uuid
+  orgId          String         @map("org_id") @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  gateKey        String         @map("gate_key") @db.Text
+  targetKind     String         @map("target_kind") @db.Text
+  targetRef      String         @map("target_ref") @db.Text
+  status         EvalGateStatus @default(PENDING)
+  categoryQuotas Json           @default("{}") @map("category_quotas")
+  lastEvalRunId  String?        @map("last_eval_run_id") @db.Uuid
+  passedAt       DateTime?      @map("passed_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant         Tenant         @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  lastEvalRun    EvalRun?       @relation("EvalGateLastRun", fields: [lastEvalRunId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, gateKey, targetKind, targetRef])
+  @@index([orgId, tenantId, status])
+  @@map("eval_gate")
+}
+
+model LlmCallLog {
+  id                 String        @id @default(uuid()) @db.Uuid
+  orgId              String        @map("org_id") @db.Uuid
+  tenantId           String        @map("tenant_id") @db.Uuid
+  task               LlmTask
+  providerId         String        @map("provider_id") @db.Text
+  modelId            String        @map("model_id") @db.Text
+  routeRef           String?       @map("route_ref") @db.Text
+  routeVersion       String?       @map("route_version") @db.Text
+  status             LlmCallStatus
+  inputTokenCount    Int           @default(0) @map("input_token_count")
+  outputTokenCount   Int           @default(0) @map("output_token_count")
+  totalTokenCount    Int           @default(0) @map("total_token_count")
+  costMicros         Int           @default(0) @map("cost_micros")
+  latencyMs          Int           @default(0) @map("latency_ms")
+  traceId            String?       @map("trace_id") @db.Text
+  promptHash         String?       @map("prompt_hash") @db.Text
+  completionHash     String?       @map("completion_hash") @db.Text
+  redactionMetadata  Json          @default("{}") @map("redaction_metadata")
+  fallbackSummary    Json          @default("{}") @map("fallback_summary")
+  evalSummary        Json          @default("{}") @map("eval_summary")
+  redlineSummary     Json          @default("{}") @map("redline_summary")
+  occurredAt         DateTime      @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  org                Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant             Tenant        @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+
+  @@index([orgId, tenantId, task, occurredAt])
+  @@index([traceId])
+  @@map("llm_call_log")
 }

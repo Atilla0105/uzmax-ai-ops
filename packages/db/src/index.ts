@@ -1,4 +1,6 @@
 export const packageName = "@uzmax/db";
+// prettier-ignore
+export type { M3AiContractInput, createEvalCaseContract as M3CreateEvalCaseContract, createEvalGateContract as M3CreateEvalGateContract, createEvalResultContract as M3CreateEvalResultContract, createEvalRunContract as M3CreateEvalRunContract, createKbEntryContract as M3CreateKbEntryContract, createKbStageContract as M3CreateKbStageContract, createLlmCallLogContract as M3CreateLlmCallLogContract, createMediaAssetContract as M3CreateMediaAssetContract, createQuoteRecordContract as M3CreateQuoteRecordContract, evalCategories as M3EvalCategories, evalGateStatuses as M3EvalGateStatuses, evalResultStatuses as M3EvalResultStatuses, evalRunStatuses as M3EvalRunStatuses, llmCallStatuses as M3LlmCallStatuses, llmTasks as M3LlmTasks, m3AiTableNames as M3AiTableNames, m3RecordStatuses as M3RecordStatuses, quoteRecordStatuses as M3QuoteRecordStatuses, quoteSources as M3QuoteSources } from "./m3-ai-contracts";
 
 const ROLE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const UUID_TEXT =
@@ -28,6 +30,9 @@ export const messageDeliveryStatuses = values("cancelled", "failed", "queued", "
 export const ticketStatuses = values("claimed", "closed", "escalated", "locked", "open", "reopened");
 // prettier-ignore
 export const ticketEventTypes = values("claimed", "closed", "created", "escalated", "locked", "note_added", "reopened", "status_changed");
+// M3 compatibility bridge; canonical implementation lives in ./m3-ai-contracts.ts.
+// prettier-ignore
+export const m3AiTableNames = values("eval_case", "eval_gate", "eval_result", "eval_run", "kb_entry", "kb_stage", "llm_call_log", "media_asset", "quote_record"), m3RecordStatuses = values("active", "archived", "draft"), quoteRecordStatuses = values("created", "expired", "voided"), quoteSources = values("code"), evalCategories = values("business_draft", "degradation", "intent", "language", "quote", "redline_attack", "redline_false_positive", "speech", "tutorial", "vision"), evalRunStatuses = values("blocked", "failed", "passed", "queued", "running"), evalResultStatuses = values("failed", "passed", "skipped"), evalGateStatuses = values("blocked", "failed", "passed", "pending"), llmTasks = values("distill_daily", "draft_reply", "eval_judge", "intent_classify", "journey_import", "kb_answer", "profile_update", "speech_postprocess", "summarize", "vision_diag"), llmCallStatuses = values("failed", "fallback", "succeeded");
 
 export const rlsContextKeys = {
   orgId: "app.org_id",
@@ -262,46 +267,34 @@ export function createTenantSwitchAuditContract(
 }
 
 // prettier-ignore
-export function createConversationContract(input: ConversationContract): ConversationContract {
-  return {
-    ...scoped(input, "conversation"),
-    channelConnectionId: requireUuid(input.channelConnectionId, "conversation channelConnectionId"),
-    externalConversationRef: requireText(input.externalConversationRef, "externalConversationRef"),
-    id: requireUuid(input.id, "conversation id"),
-    ...optionalTextFields(input, ["lastMessageAt"]),
-    participantExternalRef: requireText(input.participantExternalRef, "participantExternalRef"),
-    status: requireEnumValue(input.status, conversationStatuses, "conversation status"),
-    unreadCount: requireInteger(input.unreadCount, "unreadCount", 0)
-  };
-}
+export function createConversationContract(input: ConversationContract): ConversationContract { return { ...scoped(input, "conversation"), channelConnectionId: requireUuid(input.channelConnectionId, "conversation channelConnectionId"), externalConversationRef: requireText(input.externalConversationRef, "externalConversationRef"), id: requireUuid(input.id, "conversation id"), ...optionalTextFields(input, ["lastMessageAt"]), participantExternalRef: requireText(input.participantExternalRef, "participantExternalRef"), status: requireEnumValue(input.status, conversationStatuses, "conversation status"), unreadCount: requireInteger(input.unreadCount, "unreadCount", 0) }; }
 
 // prettier-ignore
-export function createMessageContract(input: MessageContract): MessageContract {
-  return {
-    ...scoped(input, "message"),
-    channelConnectionId: requireUuid(input.channelConnectionId, "message channelConnectionId"),
-    content: requireRecord(input.content, "message content"),
-    contentKind: requireEnumValue(input.contentKind, messageContentKinds, "message contentKind"),
-    conversationId: requireUuid(input.conversationId, "message conversationId"),
-    deliveryStatus: requireEnumValue(input.deliveryStatus, messageDeliveryStatuses, "message deliveryStatus"),
-    direction: requireEnumValue(input.direction, messageDirections, "message direction"),
-    ...optionalTextFields(input, ["externalMessageRef"]),
-    id: requireUuid(input.id, "message id"),
-    occurredAt: requireText(input.occurredAt, "occurredAt")
-  };
-}
+export function createMessageContract(input: MessageContract): MessageContract { return { ...scoped(input, "message"), channelConnectionId: requireUuid(input.channelConnectionId, "message channelConnectionId"), content: requireRecord(input.content, "message content"), contentKind: requireEnumValue(input.contentKind, messageContentKinds, "message contentKind"), conversationId: requireUuid(input.conversationId, "message conversationId"), deliveryStatus: requireEnumValue(input.deliveryStatus, messageDeliveryStatuses, "message deliveryStatus"), direction: requireEnumValue(input.direction, messageDirections, "message direction"), ...optionalTextFields(input, ["externalMessageRef"]), id: requireUuid(input.id, "message id"), occurredAt: requireText(input.occurredAt, "occurredAt") }; }
 
-export function createTicketContract(input: TicketContract): TicketContract {
-  return {
-    ...scoped(input, "ticket"),
-    ...optionalUuidFields(input, ["assignedUserId", "lockedByUserId"]),
-    ...optionalTextFields(input, ["closedAt", "slaDueAt", "summary"]),
-    conversationId: requireUuid(input.conversationId, "ticket conversationId"),
-    id: requireUuid(input.id, "ticket id"),
-    priority: requireInteger(input.priority, "ticket priority", 1, 5),
-    status: requireEnumValue(input.status, ticketStatuses, "ticket status")
-  };
-}
+// prettier-ignore
+export function createTicketContract(input: TicketContract): TicketContract { return { ...scoped(input, "ticket"), ...optionalUuidFields(input, ["assignedUserId", "lockedByUserId"]), ...optionalTextFields(input, ["closedAt", "slaDueAt", "summary"]), conversationId: requireUuid(input.conversationId, "ticket conversationId"), id: requireUuid(input.id, "ticket id"), priority: requireInteger(input.priority, "ticket priority", 1, 5), status: requireEnumValue(input.status, ticketStatuses, "ticket status") }; }
+
+type M3Input = RlsTenantContext & { id: string } & Record<string, unknown>;
+
+// prettier-ignore
+export function createKbEntryContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "kb entry"), ...m3OptionalRecords(input, ["metadata"]), ...m3OptionalText(input, ["contentHash", "sourceRef"]), category: m3Text(input, "category", "kb entry category"), entryKey: m3Text(input, "entryKey", "kb entry key"), id: requireUuid(input.id, "kb entry id"), status: m3Enum(input, "status", m3RecordStatuses, "kb entry status"), title: m3Text(input, "title", "kb entry title"), version: m3Int(input, "version", 1) }; }
+// prettier-ignore
+export function createKbStageContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "kb stage"), id: requireUuid(input.id, "kb stage id"), kbEntryId: m3Uuid(input, "kbEntryId", "kb stage kbEntryId"), materialRefs: m3Record(input, "materialRefs", "kb stage materialRefs"), sequence: m3Int(input, "sequence", 0), stageKey: m3Text(input, "stageKey", "kb stage key"), status: m3Enum(input, "status", m3RecordStatuses, "kb stage status"), title: m3Text(input, "title", "kb stage title") }; }
+// prettier-ignore
+export function createMediaAssetContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "media asset"), ...m3OptionalRecords(input, ["metadata"]), ...m3OptionalText(input, ["contentHash", "mimeType"]), assetKind: m3Text(input, "assetKind", "media asset kind"), id: requireUuid(input.id, "media asset id"), status: m3Enum(input, "status", m3RecordStatuses, "media asset status"), storageRef: m3Text(input, "storageRef", "media asset storageRef") }; }
+// prettier-ignore
+export function createQuoteRecordContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "quote"), ...m3OptionalText(input, ["configVersionRef", "currency", "validUntil"]), ...m3OptionalUuid(input, ["configVersionId", "conversationId"]), ...m3OptionalInt(input, "totalMinorUnits", 0), id: requireUuid(input.id, "quote id"), inputRef: m3Record(input, "inputRef", "quote inputRef"), result: m3Record(input, "result", "quote result"), source: m3Enum(input, "source", quoteSources, "quote source"), status: m3Enum(input, "status", quoteRecordStatuses, "quote status") }; }
+// prettier-ignore
+export function createEvalCaseContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "eval case"), caseRef: m3Text(input, "caseRef", "eval case ref"), category: m3Enum(input, "category", evalCategories, "eval category"), id: requireUuid(input.id, "eval case id"), quotaWeight: m3Int(input, "quotaWeight", 1), redactedPayload: m3Record(input, "redactedPayload", "eval redactedPayload"), status: m3Enum(input, "status", m3RecordStatuses, "eval case status"), version: m3Int(input, "version", 1) }; }
+// prettier-ignore
+export function createEvalRunContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "eval run"), ...m3OptionalText(input, ["endedAt", "startedAt", "triggerRef"]), categoryQuotas: m3Record(input, "categoryQuotas", "eval categoryQuotas"), gateKey: m3Text(input, "gateKey", "eval gateKey"), id: requireUuid(input.id, "eval run id"), status: m3Enum(input, "status", evalRunStatuses, "eval run status") }; }
+// prettier-ignore
+export function createEvalResultContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "eval result"), ...m3OptionalRecords(input, ["redlineSummary"]), ...m3OptionalText(input, ["outputRef"]), ...m3OptionalInt(input, "score", 0, 100), category: m3Enum(input, "category", evalCategories, "eval category"), evalCaseId: m3Uuid(input, "evalCaseId", "eval result evalCaseId"), evalRunId: m3Uuid(input, "evalRunId", "eval result evalRunId"), id: requireUuid(input.id, "eval result id"), status: m3Enum(input, "status", evalResultStatuses, "eval result status") }; }
+// prettier-ignore
+export function createEvalGateContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "eval gate"), ...m3OptionalUuid(input, ["lastEvalRunId"]), categoryQuotas: m3Record(input, "categoryQuotas", "eval categoryQuotas"), gateKey: m3Text(input, "gateKey", "eval gateKey"), id: requireUuid(input.id, "eval gate id"), status: m3Enum(input, "status", evalGateStatuses, "eval gate status"), targetKind: m3Text(input, "targetKind", "eval gate targetKind"), targetRef: m3Text(input, "targetRef", "eval gate targetRef") }; }
+// prettier-ignore
+export function createLlmCallLogContract(input: M3Input): Record<string, unknown> { return { ...scoped(input, "llm call"), ...m3OptionalRecords(input, ["evalSummary", "fallbackSummary", "redactionMetadata", "redlineSummary"]), ...m3OptionalText(input, ["completionHash", "promptHash", "routeRef", "routeVersion", "traceId"]), costMicros: m3Int(input, "costMicros", 0), id: requireUuid(input.id, "llm call id"), inputTokenCount: m3Int(input, "inputTokenCount", 0), latencyMs: m3Int(input, "latencyMs", 0), modelId: m3Text(input, "modelId", "modelId"), outputTokenCount: m3Int(input, "outputTokenCount", 0), providerId: m3Text(input, "providerId", "providerId"), status: m3Enum(input, "status", llmCallStatuses, "llm call status"), task: m3Enum(input, "task", llmTasks, "llm task"), totalTokenCount: m3Int(input, "totalTokenCount", 0) }; }
 
 function requireText(value: string | undefined, name: string): string {
   const trimmed = value?.trim();
@@ -374,27 +367,28 @@ function camelKey(value: string): string {
   );
 }
 
-function optionalTextFields(
-  input: object,
-  keys: readonly string[]
-): Record<string, string> {
-  return optionalFields(input, keys, requireText);
-}
+// prettier-ignore
+function optionalTextFields(input: object, keys: readonly string[]): Record<string, string> { return optionalFields(input, keys, requireText); }
+// prettier-ignore
+function optionalUuidFields(input: object, keys: readonly string[]): Record<string, string> { return optionalFields(input, keys, requireUuid); }
+// prettier-ignore
+function optionalFields(input: object, keys: readonly string[], validate: (value: string | undefined, name: string) => string): Record<string, string> { const source = input as Record<string, string | undefined>; return Object.fromEntries(keys.flatMap((key) => (source[key] ? [[key, validate(source[key], key)]] : []))); }
 
-function optionalUuidFields(
-  input: object,
-  keys: readonly string[]
-): Record<string, string> {
-  return optionalFields(input, keys, requireUuid);
-}
-
-function optionalFields(
-  input: object,
-  keys: readonly string[],
-  validate: (value: string | undefined, name: string) => string
-): Record<string, string> {
-  const source = input as Record<string, string | undefined>;
-  return Object.fromEntries(
-    keys.flatMap((key) => (source[key] ? [[key, validate(source[key], key)]] : []))
-  );
-}
+// prettier-ignore
+function m3Text(input: M3Input, key: string, name = key): string { return requireText(input[key] as string | undefined, name); }
+// prettier-ignore
+function m3Uuid(input: M3Input, key: string, name = key): string { return requireUuid(input[key] as string | undefined, name); }
+// prettier-ignore
+function m3Record(input: M3Input, key: string, name = key): Record<string, unknown> { return requireRecord(input[key] as Record<string, unknown> | undefined, name); }
+// prettier-ignore
+function m3Int(input: M3Input, key: string, min: number, max = Number.MAX_SAFE_INTEGER): number { return requireInteger(input[key] as number, key, min, max); }
+// prettier-ignore
+function m3Enum<T extends string>(input: M3Input, key: string, source: Record<string, T>, name: string): T { return requireEnumValue(input[key] as string, source, name); }
+// prettier-ignore
+function m3OptionalText(input: M3Input, keys: readonly string[]): Record<string, string> { return optionalFields(input, keys, requireText); }
+// prettier-ignore
+function m3OptionalUuid(input: M3Input, keys: readonly string[]): Record<string, string> { return optionalFields(input, keys, requireUuid); }
+// prettier-ignore
+function m3OptionalRecords(input: M3Input, keys: readonly string[]): Record<string, Record<string, unknown>> { return Object.fromEntries(keys.flatMap((key) => (input[key] ? [[key, m3Record(input, key)]] : []))); }
+// prettier-ignore
+function m3OptionalInt(input: M3Input, key: string, min: number, max = Number.MAX_SAFE_INTEGER): Record<string, number> { return input[key] === undefined ? {} : { [key]: m3Int(input, key, min, max) }; }

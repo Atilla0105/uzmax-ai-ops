@@ -47,3 +47,18 @@ runner 必须 fail closed：
 
 - Gate 1 seed input: `docs/evidence/M1/eval-seed/history-samples-manifest.md`
 - M1-05 runner manifest: `docs/evidence/M1/eval-seed/m1-05-seed-runner-manifest.md`
+
+## M3 Eval Persistence Boundary
+
+`M3-01-ai-capability-data-contracts-foundation` adds DB persistence contracts for future eval gates:
+
+- `eval_case`: category, controlled `case_ref`, version, status, quota weight and redacted payload shape.
+- `eval_run`: gate key, trigger ref, status, category quotas and run timing.
+- `eval_result`: run/case refs, category, status, optional score, redline summary and controlled output ref.
+- `eval_gate`: target ref, gate status, category quotas and last run ref.
+
+This is a persistence foundation only. It does not implement the M3-03 eval runner, redline judge, publish refusal path, admin eval center, provider calls, prompt/model/persona release, production gate or GA-0.
+
+No raw sample content in git. Eval evidence may record manifest IDs, controlled storage refs, redaction method, payload shape, aggregate quotas, status and owner confirmation only. Raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone/address/payment data, raw prompts, raw completions, support personal accounts and secrets must remain outside the repo.
+
+M3-01 keeps G-03/G-05/G-06 as `foundation_queued_not_closed`. Full quota closure, redline false-positive evidence and publish refusal semantics require later specs and owner-input evidence where applicable.

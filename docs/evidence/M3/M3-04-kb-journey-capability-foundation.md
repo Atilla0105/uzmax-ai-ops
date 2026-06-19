@@ -71,7 +71,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | `npm run lint` | failed then fixed, final pass | First run found an unused type alias in KB source; after removal, rerun passed. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-04-kb-journey-capability-foundation, linked worktree, dirty allowed)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-04-kb-journey-capability-foundation.md --include-worktree` | pass | 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, newFiles 0. Guard reported netLoc 0; direct `git diff --numstat origin/main -- packages/capabilities/kb/src/index.ts` reports 362 added/0 deleted source lines and source file length is 363 lines, under the 400-line budget. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-04-kb-journey-capability-foundation.md --include-worktree` | pass | 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, source netLoc 362, newFiles 0. Source file length is 363 lines, under the 400-line budget. |
 | `npm run test` | pass | 92/92 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
 | `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 92/92 tests, build, size and Playwright 6/6. |
 | `git diff --check` | pass | No whitespace errors in tracked diff before staging. |
@@ -85,7 +85,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Path categories | docs 4, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | Guard reported netLoc 0; direct source diff reports +362/-0, under budget 400. Source file length is 363 lines, under ordinary source file budget. |
+| Net source LOC | Guard reported source netLoc 362, under budget 400. Source file length is 363 lines, under ordinary source file budget. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |
 | Test weakening | none; no `.skip` / `.only` / `xit` / `xfail` added |

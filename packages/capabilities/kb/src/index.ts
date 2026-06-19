@@ -6,6 +6,8 @@ export const kbJourneyResultStatuses = {
   stageCard: "stage_card"
 } as const;
 
+const stageOptionLimit = 4;
+
 type LocaleText = Record<string, string>;
 type LocaleSteps = Record<string, readonly string[]>;
 type StageStatus = "active" | "archived" | "draft";
@@ -144,7 +146,9 @@ export function answerKbJourneyStage(
   if (match.status === "selected") return stageCard(journey, match.stage, locale);
   if (match.status === "ambiguous") {
     return {
-      candidates: match.stages.map((stage) => stageSummary(stage, locale)),
+      candidates: match.stages
+        .slice(0, stageOptionLimit)
+        .map((stage) => stageSummary(stage, locale)),
       handoff: { reasonCode: "stage_ambiguous", required: true },
       reasonCode: "stage_ambiguous",
       status: kbJourneyResultStatuses.handoffRequired
@@ -162,7 +166,9 @@ export function answerKbJourneyStage(
   return {
     clarification: {
       kind: "stage",
-      options: stages.slice(0, 4).map((stage) => stageSummary(stage, locale))
+      options: stages
+        .slice(0, stageOptionLimit)
+        .map((stage) => stageSummary(stage, locale))
     },
     handoff: { reasonCode: "stage_not_found", required: false },
     reasonCode: "stage_not_found",
@@ -289,7 +295,7 @@ function nextAction(
   locale: string
 ): StageCardResult["card"]["nextAction"] {
   if (!nextStageKey) return { type: "complete" };
-  const next = journey.stages.find((stage) => stage.stageKey === nextStageKey);
+  const next = activeStages(journey).find((stage) => stage.stageKey === nextStageKey);
   if (!next) return { type: "complete" };
   return {
     stageKey: next.stageKey,
@@ -357,7 +363,8 @@ function requiredText(value: string | undefined, label: string): string {
 
 function normalize(value: string): string {
   return value
+    .normalize("NFKC")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
     .trim();
 }

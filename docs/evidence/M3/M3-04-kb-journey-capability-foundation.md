@@ -48,6 +48,8 @@ No open PR conflict or unmerged branch conflict was found at start.
 | RED test harness fix | `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs` | failed due test setup | Initial test read the not-yet-created M3-04 evidence file at module load. The test was adjusted to treat that file as optional until implementation creates it. |
 | RED | `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs` | failed as expected | 5/5 tests failed because M3-04 KB exports/behavior/docs/evidence were missing from the placeholder package and docs. |
 | GREEN | `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs` | pass | 5/5 focused tests passed after implementing pure KB journey contracts and docs notes. |
+| Review RED | `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs` | failed as expected | Code-quality regression tests exposed the prior Unicode normalization, inactive next-stage and unbounded ambiguous-candidate behavior. |
+| Review GREEN | `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs` | pass | 8/8 focused tests passed after preserving Unicode letters/numbers, resolving next actions only to active stages and capping ambiguous candidates at four refs. |
 
 ## Boundary Review
 
@@ -56,7 +58,9 @@ No open PR conflict or unmerged branch conflict was found at start.
 | No capability-to-capability import | pass | Focused test and full `npm run check` verify `packages/capabilities/kb` does not import `handoff` or any sibling capability. |
 | No DB/LLM/provider integration | pass | Focused test checks no `@uzmax/db`, `@uzmax/llm-gateway`, `process.env` or provider surface. |
 | Stage-card-only output | pass | Focused test asserts selected output excludes other stage cards and full journey arrays. |
-| Unknown/ambiguous fail closed | pass | Focused test asserts unknown returns `clarification_required` and ambiguous returns `handoff_required`. |
+| Unicode stage localization | pass | Focused test asserts Russian Cyrillic localized title and trigger matching return a bounded `stage_card`. |
+| Next stage safety | pass | Focused test asserts draft and archived `nextStageKey` targets fail closed to `complete`. |
+| Unknown/ambiguous fail closed | pass | Focused test asserts unknown returns `clarification_required` and ambiguous returns `handoff_required` with at most four candidate refs. |
 | Safe refs/no raw samples | pass | Focused test asserts controlled refs and no raw tutorial/customer/prompt fields in selected results. |
 | Owner tutorial blocker | pass | Evidence keeps F-01/H-01 foundation-only; owner material pack remains required for closeout. |
 
@@ -64,16 +68,16 @@ No open PR conflict or unmerged branch conflict was found at start.
 
 | Command | Result | Notes |
 |---|---|---|
-| `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs` | pass | 5/5 focused tests passed. |
+| `node --test scripts/tests/m3-kb-journey-capability-foundation.test.mjs` | pass | 8/8 focused tests passed. |
 | `npm run eval:minimal` | pass | 4/4 M1 minimal eval tests passed. |
 | `npm run format:check` | failed then fixed, final pass | First run found formatting issues in `packages/capabilities/kb/src/index.ts`; after targeted Prettier write, rerun passed. |
 | `npm run typecheck` | pass | TypeScript strict check passed. |
 | `npm run lint` | failed then fixed, final pass | First run found an unused type alias in KB source; after removal, rerun passed. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m3-04-kb-journey-capability-foundation, linked worktree, dirty allowed)`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-04-kb-journey-capability-foundation.md --include-worktree` | pass | 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, source netLoc 362, newFiles 0. Source file length is 363 lines, under the 400-line budget. |
-| `npm run test` | pass | 92/92 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
-| `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 92/92 tests, build, size and Playwright 6/6. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-04-kb-journey-capability-foundation.md --include-worktree` | pass | 6 changed files; categories docs 4/source 1/test 1; source changedFiles 1, source netLoc 362, newFiles 0. Source file length is 370 lines, under the 400-line budget. |
+| `npm run test` | pass | 95/95 tests passed. Guard negative tests print expected failure samples while their assertions pass. |
+| `npm run check` | pass | Full local gate passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden-terms, eval/doc/workspace/pr-shape guards, 95/95 tests, build, size and Playwright 6/6. |
 | `git diff --check` | pass | No whitespace errors in tracked diff before staging. |
 | `git status --short --branch` | pass | Final dirty state contains only the allowed M3-04 files before commit. |
 
@@ -85,7 +89,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 | Path categories | docs 4, source 1, test 1 |
 | Source changed files | 1 / budget 1 |
 | New source files | 0 / budget 0 |
-| Net source LOC | Guard reported source netLoc 362, under budget 400. Source file length is 363 lines, under ordinary source file budget. |
+| Net source LOC | Guard reported source netLoc 362, under budget 400. Source file length is 370 lines, under ordinary source file budget. |
 | External API/provider/SDK evidence | none; no external provider/SDK/connector/adapter added |
 | Exceptions | none |
 | Test weakening | none; no `.skip` / `.only` / `xit` / `xfail` added |
@@ -96,7 +100,7 @@ No open PR conflict or unmerged branch conflict was found at start.
 |---|---|---|
 | One spec / one PR | pass | This branch implements only M3-04. |
 | Touch list | pass | Diff is limited to this spec, KB source, focused test, contracts README, M3 evidence README and this evidence file. |
-| Source budget | pass | One existing source file changed; no new source files; direct source diff +362/-0 and file length 363 lines are under budget. |
+| Source budget | pass | One existing source file changed; no new source files; guard source netLoc 362 and file length 370 lines are under budget. |
 | Scope honesty | pass | Pure KB journey foundation only; no production, GA-0, real traffic, customer LLM, knowledge publish, DB persistence, admin UI or engine integration. |
 | Owner-input blockers | pass | F-01/H-01 remain foundation-only; owner material pack remains required for full tutorial closeout. |
 | Sensitive data | pass | Synthetic controlled test fixtures only; no raw tutorial/customer/sample/secret content. |
@@ -109,9 +113,11 @@ No open PR conflict or unmerged branch conflict was found at start.
 |---|---|---|
 | Pure package boundary | pass | No imports from DB, LLM gateway, provider SDKs, env vars or other capability packages. |
 | Stage-card-only behavior | pass | Selected output returns bounded selected stage/card/refs and never returns full journey arrays or all stage cards. |
-| Fail-closed behavior | pass | Unknown input returns `clarification_required`; ambiguous input returns `handoff_required`; neither hallucinates a selected stage. |
+| Unicode matching | pass | Normalization preserves Unicode letters/numbers and focused tests cover Cyrillic localized title/trigger matching. |
+| Next action safety | pass | `nextStageKey` resolves only to active stages; inactive or missing targets return `complete`. |
+| Fail-closed behavior | pass | Unknown input returns `clarification_required`; ambiguous input returns `handoff_required` with a bounded four-candidate ref list; neither hallucinates a selected stage. |
 | Ref safety | pass | Journey/stage/material refs must use controlled, manifest or redaction refs. |
-| Size/complexity | pass | KB source is 363 lines, below ordinary source file budget; lint/typecheck/full check passed. |
+| Size/complexity | pass | KB source is 370 lines, below ordinary source file budget; lint/typecheck/full check passed. |
 | Test quality | pass | Focused tests use synthetic controlled fixtures, cover success and fail-closed edges, and do not weaken existing tests. |
 
 ## Acceptance Mapping

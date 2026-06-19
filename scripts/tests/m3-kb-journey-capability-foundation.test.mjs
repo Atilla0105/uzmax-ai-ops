@@ -71,6 +71,75 @@ describe("M3-04 KB journey capability foundation", () => {
     assert.equal(result.card.steps.length, 2);
   });
 
+  it("matches non-ASCII localized titles and triggers", () => {
+    const journey = syntheticJourney({
+      stages: [
+        stageFixture({
+          key: "phone-cyrillic",
+          localizedTitles: {
+            ru: "Код телефона"
+          },
+          localizedTriggers: {
+            ru: ["код не пришёл", "проверка телефона"]
+          },
+          sequence: 1,
+          title: "Phone code",
+          triggers: ["phone code"]
+        })
+      ]
+    });
+    const titleResult = kb.answerKbJourneyStage({
+      journey,
+      locale: "ru",
+      query: "код телефона"
+    });
+    const triggerResult = kb.answerKbJourneyStage({
+      journey,
+      locale: "ru",
+      query: "код не пришёл"
+    });
+
+    for (const result of [titleResult, triggerResult]) {
+      assert.equal(result.status, "stage_card");
+      assert.deepEqual(result.stage, {
+        key: "phone-cyrillic",
+        ref: "controlled://kb/stage/phone-cyrillic",
+        sequence: 1,
+        title: "Код телефона"
+      });
+    }
+  });
+
+  it("does not point nextAction to draft or archived stages", () => {
+    for (const inactiveStatus of ["draft", "archived"]) {
+      const result = kb.answerKbJourneyStage({
+        journey: syntheticJourney({
+          stages: [
+            stageFixture({
+              key: "active",
+              nextStageKey: "inactive-target",
+              sequence: 1,
+              title: "Active",
+              triggers: ["active"]
+            }),
+            stageFixture({
+              key: "inactive-target",
+              sequence: 2,
+              status: inactiveStatus,
+              title: "Inactive target",
+              triggers: ["inactive"]
+            })
+          ]
+        }),
+        locale: "en",
+        query: "active"
+      });
+
+      assert.equal(result.status, "stage_card");
+      assert.deepEqual(result.card.nextAction, { type: "complete" });
+    }
+  });
+
   it("fails closed for unknown and ambiguous stage input without hallucinating", () => {
     const unknown = kb.answerKbJourneyStage({
       journey: syntheticJourney(),
@@ -116,6 +185,30 @@ describe("M3-04 KB journey capability foundation", () => {
       ["first-choice", "second-choice"]
     );
     assert.equal(ambiguous.card, undefined);
+  });
+
+  it("bounds ambiguous candidates to four stage refs", () => {
+    const ambiguous = kb.answerKbJourneyStage({
+      journey: syntheticJourney({
+        stages: Array.from({ length: 6 }, (_, index) =>
+          stageFixture({
+            key: `choice-${index + 1}`,
+            sequence: index + 1,
+            title: `Choice ${index + 1}`,
+            triggers: ["same phrase"]
+          })
+        )
+      }),
+      locale: "en",
+      query: "same phrase"
+    });
+
+    assert.equal(ambiguous.status, "handoff_required");
+    assert.equal(ambiguous.candidates.length, 4);
+    assert.deepEqual(
+      ambiguous.candidates.map((candidate) => candidate.key),
+      ["choice-1", "choice-2", "choice-3", "choice-4"]
+    );
   });
 
   it("accepts only controlled refs and keeps raw tutorial samples out of results", () => {
@@ -226,6 +319,7 @@ function stageFixture(overrides = {}) {
     localizedAnswers: overrides.localizedAnswers,
     localizedSteps: overrides.localizedSteps,
     localizedTitles: overrides.localizedTitles,
+    localizedTriggers: overrides.localizedTriggers,
     materialRefs: overrides.materialRefs ?? [
       {
         kind: "guide",
@@ -235,6 +329,7 @@ function stageFixture(overrides = {}) {
     ],
     nextStageKey: overrides.nextStageKey,
     sequence,
+    status: overrides.status,
     stageKey: key,
     stageRef: `controlled://kb/stage/${key}`,
     steps: overrides.steps ?? [`${title} step one`, `${title} step two`],

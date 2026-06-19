@@ -98,7 +98,7 @@ Repository evidence may record only manifest identifiers, storage refs, redactio
 | `npm run guard:forbidden-terms` | pass | forbidden-terms guard passed |
 | `npm run guard:doc-triggers` | pass | doc-trigger guard passed |
 | `npm run guard:workspace` | pass | linked feature worktree accepted |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-06-vision-screenshot-diagnostics-foundation.md --include-worktree` | pass | 6 changed files: docs 4, source 1, test 1; source net LOC 395; new source files 0 |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-06-vision-screenshot-diagnostics-foundation.md --include-worktree` | pass | 6 changed files: docs 4, source 1, test 1; source net LOC 394; new source files 0 |
 | `git diff --check origin/main...HEAD` | pass | no whitespace errors after review fix |
 | `npm run check` | pass | Full chain passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden/eval/doc/workspace/pr-shape guards, 112/112 node tests, build, size and Playwright 6/6 |
 
@@ -110,7 +110,7 @@ Repository evidence may record only manifest identifiers, storage refs, redactio
 | Touch modules | M3-06 spec/evidence; contracts README; M3 evidence README; `packages/capabilities/vision/src/index.ts`; focused test |
 | Path categories | source: 1; test: 1; docs: 4; generated/lock/config: 0 |
 | Source changed files | `packages/capabilities/vision/src/index.ts` |
-| Source net LOC | 395 by `guard:pr-shape`; source file length 396 lines |
+| Source net LOC | 394 by `guard:pr-shape`; source file length 395 lines |
 | New source files | 0 |
 | Test changes | Added focused M3-06 node test with post-review blocker regressions for raw text carrier fields, swapped ref schemes and unsupported-kind fail-closed behavior |
 | Generated/lock/config changes | none |

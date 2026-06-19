@@ -179,7 +179,6 @@ const sampleManifestCaseKeys = keySet(
 function validateCandidate(candidate: DiagnosisCandidate): DiagnosisCandidate {
   assertNoRawScreenshotInput(candidate);
   assertAllowedKeys(candidate, candidateKeys, "diagnosis candidate");
-  token(candidate.pageKind, "screenshot kind");
   confidence(candidate.confidence);
   token(candidate.diagnosisCode, "diagnosis code");
   boundedText(candidate.diagnosisTitle, "diagnosis title");

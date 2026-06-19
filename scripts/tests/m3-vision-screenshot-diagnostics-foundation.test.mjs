@@ -172,13 +172,15 @@ describe("M3-06 vision screenshot diagnostics foundation", () => {
     assert.equal(uncertain.status, "uncertain");
     assert.equal(uncertain.reasonCode, "candidate_uncertain");
 
-    const unsupported = vision.evaluateScreenshotDiagnosis({
-      candidate: { ...highConfidenceCandidate(), pageKind: "receipt_photo" },
-      input
-    });
-    assert.equal(unsupported.status, "handoff_required");
-    assert.equal(unsupported.reasonCode, "unsupported_screenshot_kind");
-    assert.equal(unsupported.card, undefined);
+    for (const pageKind of ["receipt_photo", "x", "receipt photo", ""]) {
+      const unsupported = vision.evaluateScreenshotDiagnosis({
+        candidate: { ...highConfidenceCandidate(), pageKind },
+        input
+      });
+      assert.equal(unsupported.status, "handoff_required");
+      assert.equal(unsupported.reasonCode, "unsupported_screenshot_kind");
+      assert.equal(unsupported.card, undefined);
+    }
   });
 
   it("rejects raw candidate fields and unsafe evidence refs", () => {

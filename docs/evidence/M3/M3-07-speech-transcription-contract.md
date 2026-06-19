@@ -19,6 +19,7 @@
   - `redactionRef`: `redaction://`
 - `evaluateSpeechTranscription` returns `transcript_ready` only for high-confidence controlled synthetic candidates with matching language/script and required signals.
 - Result/evidence refs such as model/provider/postprocess/evidence refs must use `controlled://`.
+- `controlledRef()` rejects nested carriers inside ref bodies, including public URLs such as `storage://https://example.test/audio.ogg` and `controlled://https://example.test/result`.
 - Low confidence, missing signals, ambiguous/uncertain candidates, unsupported language and language/script mismatch fail closed without confident transcript output.
 - Raw carriers and sensitive fields are rejected in inputs, candidates and manifests.
 - `createSpeechSampleManifest` records controlled manifest metadata only and keeps F-03 blocked as foundation-only.
@@ -38,6 +39,11 @@
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-07-speech-transcription-contract.md --include-worktree` | pass; 9 changed files, docs 5, lock 1, config 1, source 1, test 1 |
 | `npm run check` | pass; format, typecheck, lint, depcruise, jscpd, knip, guards, 119 Node tests, build, size and 6 Playwright tests passed |
 | `git -C /Users/atilla/Documents/UZMAX智能运营 status --short --branch` | root/main stayed clean after migration: `## main...origin/main` |
+
+Post-review blocker closure:
+
+- Tightened speech `controlledRef()` parsing to reject nested URL/data/blob/file/path carriers inside ref bodies.
+- Added focused regression coverage for nested public URLs in `audioStorageRef`, `manifestRef`, `redactionRef`, `evidenceRefs`, `providerResultRef` and `modelResultRef`.
 
 ## PR Hygiene
 

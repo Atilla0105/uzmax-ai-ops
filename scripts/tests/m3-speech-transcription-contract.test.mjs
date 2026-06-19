@@ -51,6 +51,9 @@ describe("M3-07 speech transcription contract", () => {
     for (const unsafe of [
       { audioStorageRef: "data:audio/ogg;base64,AAAA" },
       { audioStorageRef: "https://example.test/audio.ogg" },
+      { audioStorageRef: "storage://https://example.test/audio.ogg" },
+      { manifestRef: "manifest://https://example.test/manifest" },
+      { redactionRef: "redaction://https://example.test/redaction" },
       { audioStorageRef: "/tmp/audio.ogg" },
       { audioStorageRef: "TWFuIGlzIGRpc3Rpbmd1aXNoZWQ=" },
       { rawAudioBytes: "bytes" },
@@ -205,6 +208,39 @@ describe("M3-07 speech transcription contract", () => {
           input
         }),
       /providerResultRef must use controlled refs/
+    );
+    assert.throws(
+      () =>
+        speech.evaluateSpeechTranscription({
+          candidate: {
+            ...highConfidenceCandidate(),
+            providerResultRef: "controlled://https://example.test/result"
+          },
+          input
+        }),
+      /providerResultRef must use controlled refs/
+    );
+    assert.throws(
+      () =>
+        speech.evaluateSpeechTranscription({
+          candidate: {
+            ...highConfidenceCandidate(),
+            modelResultRef: "controlled://https://example.test/result"
+          },
+          input
+        }),
+      /modelResultRef must use controlled refs/
+    );
+    assert.throws(
+      () =>
+        speech.evaluateSpeechTranscription({
+          candidate: {
+            ...highConfidenceCandidate(),
+            evidenceRefs: ["controlled://https://example.test/result"]
+          },
+          input
+        }),
+      /evidenceRefs\[0\] must use controlled refs/
     );
     assert.throws(
       () =>

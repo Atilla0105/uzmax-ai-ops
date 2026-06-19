@@ -148,25 +148,19 @@ export function createSpeechSampleManifest(input: {
   };
 }
 
-const ownerConfirmationStatuses = {
-  confirmed: "confirmed",
-  missing: "missing",
-  pending: "pending"
-} as const;
+// prettier-ignore
+const ownerConfirmationStatuses = { confirmed: "confirmed", missing: "missing", pending: "pending" } as const;
 
 const controlledRefPattern =
-  /^(controlled|manifest|redaction|storage):\/\/[a-z0-9][a-z0-9:/._-]{0,160}$/i;
-const unsafeRefPatterns = [
-  /^data:/i,
-  /^https?:\/\//i,
-  /^(?:\/|\.\/|\.\.\/|[a-z]:\\)/i,
-  /^blob:/i,
-  /^[a-z0-9+/]{24,}={0,2}$/i
-];
+  /^(controlled|manifest|redaction|storage):\/\/([a-z0-9][a-z0-9/._-]{0,160})$/i;
+const unsafeRefBodyPattern =
+  /\/\/|(?:^|\/)\.{1,2}(?:\/|$)|(?:^|\/)(?:data|blob|file|https?)(?:[:/]|$)/i;
+// prettier-ignore
+const unsafeRefPatterns = [/^data:/i, /^https?:\/\//i, /^(?:\/|\.\/|\.\.\/|[a-z]:\\)/i, /^blob:/i, /^[a-z0-9+/]{24,}={0,2}$/i];
 const rawFieldPattern =
   /^(raw.*|.*audio.*bytes.*|.*base64.*|.*blob.*|.*bytes.*|dataUrl|filePath|telegramPayload|telegramUpdate|rawTranscript|customerPlaintext|customerText|messageText|messageBody|caption|body|notes|order.*|phone.*|address.*|payment.*|secret.*|prompt|completion|jsonl|csv|export)$/i;
-const transcriptInputKeys = keySet("audioStorageRef language manifestRef redactionRef");
-const transcriptionInputKeys = transcriptInputKeys;
+// prettier-ignore
+const transcriptionInputKeys = keySet("audioStorageRef language manifestRef redactionRef");
 const candidateKeys = keySet(
   "ambiguous confidence evidenceRefs language modelResultRef postprocessResultRef " +
     "providerResultRef requiredSignals transcriptText uncertain"
@@ -299,16 +293,22 @@ function controlledRef(
   allowedSchemes = ["controlled", "manifest", "redaction", "storage"]
 ): string {
   const trimmed = typeof value === "string" ? value.trim() : "";
-  const scheme = trimmed.split("://")[0] ?? "";
-  if (
-    !trimmed ||
-    unsafeRefPatterns.some((pattern) => pattern.test(trimmed)) ||
-    !controlledRefPattern.test(trimmed) ||
-    !allowedSchemes.includes(scheme)
-  ) {
+  if (!isSafeControlledRef(trimmed, allowedSchemes)) {
     throw new Error(`${name} must use ${allowedSchemes.join("/")} refs`);
   }
   return trimmed;
+}
+
+function isSafeControlledRef(value: string, allowedSchemes: string[]): boolean {
+  const match = controlledRefPattern.exec(value);
+  if (!match) return false;
+  const scheme = match[1] ?? "";
+  const body = match[2] ?? "";
+  return Boolean(
+    allowedSchemes.includes(scheme) &&
+    !unsafeRefPatterns.some((pattern) => pattern.test(value)) &&
+    !unsafeRefBodyPattern.test(body)
+  );
 }
 
 function optionalControlledRef(value: unknown, name: string): string | undefined {

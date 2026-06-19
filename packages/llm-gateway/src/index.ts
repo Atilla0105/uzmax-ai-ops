@@ -43,7 +43,7 @@ const allowedMetadataKey =
 const forbiddenMetadataKey =
   /(body|content|cost|customer|key|margin|profit|raw|secret|threshold|token)/i;
 // prettier-ignore
-const safeMetadataValuePatterns = { hash: /^sha256:[a-z0-9_-]{4,64}$/i, id: /^[a-z][a-z0-9_-]{1,40}$/i, ref: /^(controlled|manifest|redaction|storage|truncation):\/\/[a-z0-9][a-z0-9:/._-]{0,96}$/i, unsafe: /(address|body|completion|content|customer|order|phone|prompt|raw|secret|text|token)/i };
+const safeMetadataValuePatterns = { hash: /^sha256:[a-f0-9]{64}$/, id: /^[a-z][a-z0-9_-]{1,40}$/i, ref: /^(controlled|manifest|redaction|storage|truncation):\/\/[a-z0-9][a-z0-9:/._-]{0,96}$/i, unsafe: /(address|body|completion|content|customer|order|phone|prompt|raw|secret|text|token)/i };
 
 export type LlmProviderPort = {
   invoke: (request: {
@@ -209,14 +209,14 @@ function createAccountingDraft(input: {
   const inputTokenCount = input.result.inputTokenCount ?? 0;
   const outputTokenCount = input.result.outputTokenCount ?? 0;
   return removeUndefined({
-    completionHash: input.result.completionHash,
+    completionHash: input.status === "failed" ? undefined : input.result.completionHash,
     costMicros: input.status === "failed" ? 0 : (input.result.costMicros ?? 0),
     fallbackSummary: input.fallbackSummary,
     inputTokenCount,
     latencyMs: input.result.latencyMs ?? 0,
     modelId: input.provider.modelId,
     outputTokenCount,
-    promptHash: input.result.promptHash,
+    promptHash: input.status === "failed" ? undefined : input.result.promptHash,
     providerId: input.provider.providerId,
     redactionMetadata: metadataRecord(input.input.redactionMetadata),
     routeRef: input.route.routeRef,
@@ -259,7 +259,8 @@ function classifyFailure(result: MockProviderResult, route: LlmRouteConfig) {
   if (result.status === "timeout" || (result.latencyMs ?? 0) > route.timeoutMs) {
     return "timeout";
   }
-  if (!hasValidTelemetry(result)) return "accounting_invalid";
+  // prettier-ignore
+  if (!hasValidTelemetry(result) || [result.completionHash, result.promptHash].some((value) => value !== undefined && !safeMetadataValuePatterns.hash.test(value))) return "accounting_invalid";
   return budgetFailure(result, route);
 }
 
@@ -348,9 +349,8 @@ function uniqueStrings(values: unknown, name: string, allowEmpty = false): strin
 }
 
 function hasValidTelemetry(result: MockProviderResult): boolean {
-  return ["costMicros", "inputTokenCount", "latencyMs", "outputTokenCount"].every(
-    (key) => nonNegativeInt(result[key as keyof MockProviderResult])
-  );
+  // prettier-ignore
+  return ["costMicros", "inputTokenCount", "latencyMs", "outputTokenCount"].every((key) => nonNegativeInt(result[key as keyof MockProviderResult]));
 }
 
 function metadataRecord(value: unknown): Record<string, unknown> | undefined {

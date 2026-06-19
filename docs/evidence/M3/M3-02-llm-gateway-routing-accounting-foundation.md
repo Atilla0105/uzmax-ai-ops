@@ -66,14 +66,15 @@ The post-PR code quality review returned `Ready to merge? With fixes`. M3-02 fol
 - Provider calls now race against `route.timeoutMs`; wall-clock timeouts create failed attempt accounting drafts and continue to fallback.
 - Provider thrown errors, including synchronous throws before a promise is returned, are caught and converted to safe `failure` attempts without copying raw error payloads.
 - Successful provider results must include finite non-negative integer `inputTokenCount`, `outputTokenCount`, `costMicros` and `latencyMs`; invalid or missing telemetry is `accounting_invalid` and falls back.
-- `redactionMetadata` and `truncationMetadata` are validated through a narrow key allowlist plus key-specific value rules for hashes, controlled refs, short ids and counts; raw/free-text prompt/customer-like values fail closed even under allowed keys.
+- `redactionMetadata` and `truncationMetadata` are validated through a narrow key allowlist plus key-specific value rules for opaque `sha256:` + 64 lowercase hex hashes, controlled refs, short ids and counts; raw/free-text prompt/customer-like values fail closed even under allowed keys.
+- Provider-returned `promptHash` and `completionHash` must also be opaque `sha256:` + 64 lowercase hex values before success accounting; semantic hash labels such as `sha256:customer_order_phone` are `accounting_invalid`, fall back, and are not copied into failed attempt drafts.
 - Route config rejects duplicate `providerRefs`, duplicate fallbacks and fallback equal to primary; runtime provider arrays also reject duplicate `providerId` before routing.
 
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
-| `node --test scripts/tests/m3-llm-gateway-routing-accounting-foundation.test.mjs` | pass | 8/8 focused tests passed after code-quality review fixes. |
+| `node --test scripts/tests/m3-llm-gateway-routing-accounting-foundation.test.mjs` | pass | 8/8 focused tests passed after code-quality and opaque-hash privacy fixes. |
 | `npm run format:check` | pass | Initial run found formatting issues in the new source/test files; after targeted Prettier write, rerun passed. |
 | `npm run typecheck` | pass | TypeScript strict check passed. |
 | `npm run lint` | pass | ESLint passed. |

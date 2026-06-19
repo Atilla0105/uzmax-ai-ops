@@ -18,6 +18,7 @@ const gateway = await importTypescriptSource("packages/llm-gateway/src/index.ts"
 const db = await importTypescriptSource("packages/db/src/m3-ai-contracts.ts");
 
 const expectedTaskValues = Object.values(db.llmTasks).sort();
+const safeHash = `sha256:${"a".repeat(64)}`;
 
 describe("M3-02 LLM gateway routing and accounting foundation", () => {
   it("exports the M3 task and status constants without provider SDK surface", () => {
@@ -196,7 +197,8 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
       ["missing_input", { costMicros: 1, latencyMs: 1, outputTokenCount: 1 }],
       ["negative_output", { costMicros: 1, inputTokenCount: 1, latencyMs: 1, outputTokenCount: -1 }],
       ["nan_cost", { costMicros: Number.NaN, inputTokenCount: 1, latencyMs: 1, outputTokenCount: 1 }],
-      ["fractional_latency", { costMicros: 1, inputTokenCount: 1, latencyMs: 1.25, outputTokenCount: 1 }]
+      ["fractional_latency", { costMicros: 1, inputTokenCount: 1, latencyMs: 1.25, outputTokenCount: 1 }],
+      ["semantic_prompt_hash", { costMicros: 1, inputTokenCount: 1, latencyMs: 1, outputTokenCount: 1, promptHash: "sha256:customer_order_phone" }]
     ];
 
     for (const [mode, metrics] of invalidMetrics) {
@@ -248,6 +250,7 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
       traceId: "trace-safe"
     });
     assert.equal(safe.accountingDraft.status, "succeeded");
+    assert.equal(safe.accountingDraft.promptHash, safeHash);
     assert.deepEqual(safe.accountingDraft.redactionMetadata, safeMetadata());
     await assert.rejects(
       () =>
@@ -264,6 +267,7 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
     for (const [key, value] of [
       ["contextRef", "customer said raw order address and phone"],
       ["policy", "copy the customer prompt into the answer"],
+      ["promptHash", "sha256:customer_order_phone"],
       ["redactedSegments", "two"]
     ]) {
       await assert.rejects(() => invokeWithMetadata({ [key]: value }), /metadata/);
@@ -305,6 +309,7 @@ function successProvider(providerId, resultOverrides = {}) {
     inputTokenCount: 20,
     latencyMs: 20,
     outputTokenCount: 30,
+    promptHash: safeHash,
     status: "succeeded",
     ...resultOverrides
   });
@@ -364,12 +369,7 @@ function safeInput() {
 
 function safeMetadata() {
   // prettier-ignore
-  return {
-    contextRef: "controlled://context/ref-1",
-    policy: "m3-02-redacted",
-    promptHash: "sha256:redacted",
-    truncatedSegments: 2
-  };
+  return { contextRef: "controlled://context/ref-1", policy: "m3-02-redacted", promptHash: safeHash, truncatedSegments: 2 };
 }
 
 function invokeWithMetadata(redactionMetadata) {

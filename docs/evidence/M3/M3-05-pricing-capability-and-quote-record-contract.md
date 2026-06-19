@@ -25,7 +25,7 @@ This evidence records the M3-05 pricing capability and quote record contract fou
 | Command | Result |
 |---|---|
 | `node --test scripts/tests/m3-pricing-capability-and-quote-record-contract.test.mjs` before docs/evidence completion | RED: 5/6 passed; failed because contracts/evidence docs did not yet record M3-05 |
-| `node --test scripts/tests/m3-pricing-capability-and-quote-record-contract.test.mjs` | PASS: 8/8 tests passed |
+| `node --test scripts/tests/m3-pricing-capability-and-quote-record-contract.test.mjs` | PASS: 10/10 tests passed |
 | `npm run format:check` | PASS: all matched files use Prettier style |
 | `npm run typecheck` | PASS |
 | `npm run lint` | PASS |
@@ -37,7 +37,7 @@ This evidence records the M3-05 pricing capability and quote record contract fou
 | `npm run guard:workspace` | PASS: linked worktree, dirty allowed |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-05-pricing-capability-and-quote-record-contract.md --include-worktree` | PASS: 6 changed files; docs 4, source 1, test 1 |
 | `git diff --check` | PASS |
-| `npm run check` | PASS: format, typecheck, lint, depcruise, jscpd, knip, guards, 103 node tests, build, size-limit and 6 Playwright tests passed |
+| `npm run check` | PASS: format, typecheck, lint, depcruise, jscpd, knip, guards, 105 node tests, build, size-limit and 6 Playwright tests passed |
 
 ## Acceptance Mapping
 

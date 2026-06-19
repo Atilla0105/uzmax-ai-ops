@@ -247,6 +247,47 @@ describe("M3-05 pricing capability and quote record contract", () => {
     );
   });
 
+  it("keeps minimum adjustment safe at the safe-integer boundary", () => {
+    const quote = pricing.createPricingQuote({
+      config: syntheticConfig({
+        baseMinorUnits: Number.MAX_SAFE_INTEGER - 1,
+        minTotalMinorUnits: Number.MAX_SAFE_INTEGER,
+        perKgMinorUnits: 0
+      }),
+      parameters: {
+        ...validParameters(),
+        billableWeightGrams: 0
+      }
+    });
+
+    const minimumLine = quote.result.lineItems.find((item) => item.code === "minimum");
+
+    assert.equal(minimumLine?.amountMinorUnits, 1);
+    assert.equal(quote.totalMinorUnits, Number.MAX_SAFE_INTEGER);
+    assert.equal(quote.result.totalMinorUnits, Number.MAX_SAFE_INTEGER);
+  });
+
+  it("keeps quote total safe after subtotal reaches the safe-integer boundary", () => {
+    const quote = pricing.createPricingQuote({
+      config: syntheticConfig({
+        baseMinorUnits: Number.MAX_SAFE_INTEGER - 1,
+        minTotalMinorUnits: 0,
+        perKgMinorUnits: 1
+      }),
+      parameters: {
+        ...validParameters(),
+        billableWeightGrams: 1000
+      }
+    });
+
+    assert.equal(
+      quote.result.lineItems.some((item) => item.code === "minimum"),
+      false
+    );
+    assert.equal(quote.totalMinorUnits, Number.MAX_SAFE_INTEGER);
+    assert.equal(quote.result.totalMinorUnits, Number.MAX_SAFE_INTEGER);
+  });
+
   it("documents M3-05 as foundation-only F-04 evidence without raw samples or production release", () => {
     assert.match(contracts, /M3 Pricing Capability And Quote Record Contract/);
     assert.match(contracts, /LLM parameter candidates/);

@@ -148,10 +148,49 @@ Claim and lock semantics are unchanged: `claim` assigns the ticket; `lock` is th
 
 This contract still does not wire real DB persistence, WebSocket/realtime, worker/engine consumers, admin API clients, production traffic, Telegram Business, LLM/prompt/model route, outbound sending or `message.content` customer plaintext paths. ADR-003/customer-data restrictions remain active for future M3/production work.
 
+## M3 AI Capability Data Contracts Foundation
+
+`M3-01-ai-capability-data-contracts-foundation` 引入 M3 AI capability 的最小 DB contracts foundation：
+
+- `packages/db/prisma/schema.prisma` 定义 `kb_entry`、`kb_stage`、`media_asset`、`quote_record`、`eval_case`、`eval_run`、`eval_result`、`eval_gate`、`llm_call_log` 的 Prisma model mapping、status/category values 和 tenant-scoped relations。
+- `packages/db/migrations/0004_ai_capability_data_contracts_foundation.sql` 定义同名 Postgres tables、enum、tenant FK、scope-preserving cross-table FK、RLS select/insert/update policies 和 `uzmax_app_runtime` least-privilege grants。
+- `packages/db/src/m3-ai-contracts.ts` 暴露可读版 `m3AiTableNames`、M3 status/category/task values，以及 pure builders/validators for KB refs, media assets, quote records, eval contracts and LLM call logs。
+- `packages/db/src/index.ts` provides direct M3 exports while preserving existing DB exports. This keeps legacy data-URL based DB source tests working without a relative barrel import.
+
+所有 M3-01 tenant-scoped table 都必须：
+
+- 带 `org_id` 与 `tenant_id`。
+- FK 到 `tenant(org_id, id)`；跨表引用同时带 scope。
+- `enable` + `force row level security`。
+- 在缺少 `app.org_id` 或 `app.tenant_id` 时 fail closed。
+- 只授予 runtime role `select`、`insert`、`update`；不得授予 delete。
+
+Quote contract boundary:
+
+- The quote source of truth is code plus versioned config provenance.
+- `quote_record.source` 只允许 `code`。
+- `quote_record` 必须保留 structured input ref、code-created result 和 config/version provenance。
+- LLM 不得作为价格 source of truth；LLM 只允许在后续 specs 中抽取参数，报价计算必须由 code/config 完成。
+
+LLM call log boundary:
+
+- LLM call log must not store raw prompt or raw completion。
+- 允许字段仅限 task、provider/model IDs、route/version refs、token counts、cost/latency、status、trace id、prompt/completion hash、redaction/truncation metadata、fallback/eval/redline summaries and controlled refs。
+- ADR-003 dev-only/customer-LLM-blocked 仍生效：no production, GA-0, real customer traffic, customer LLM, prompt/model/persona release or provider route release is approved by M3-01。
+
+Eval persistence boundary:
+
+- `eval_case` stores category, controlled `case_ref`, version, status, quota weight and redacted payload shape only。
+- `eval_run` / `eval_result` / `eval_gate` store status, category quotas, refs and summary fields needed for future gate enforcement。
+- No raw sample content in git. Raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone/address/payment data, support personal accounts, raw prompts and raw completions remain barred from repo evidence。
+
+M3-01 does not close F-01/F-02/F-04/F-05/G-01/G-02/G-03/G-05/G-06/H-01. It only provides foundation for later M3 runtime, eval gate, KB/tutorial, pricing, vision, speech and breaker/redline specs. It does not implement production runtime, API/worker/engine/admin integration, provider adapters, real eval runner, knowledge publish, prompt/model/persona release, customer asset/order connector/distill/Business schema or real customer traffic.
+
 ## Verification
 
 本契约的本地验证入口：
 
+- `node --test scripts/tests/m3-ai-capability-data-contracts-foundation.test.mjs`
 - `UZMAX_RLS_DATABASE_URL=postgresql://user:pass@localhost:5432/db npm exec --workspace @uzmax/db -- prisma validate --schema prisma/schema.prisma`
 - `npm run typecheck`
 - `npm run lint`

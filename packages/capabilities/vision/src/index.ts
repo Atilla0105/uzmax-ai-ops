@@ -42,15 +42,16 @@ export function createScreenshotDiagnosisInput(
   input: AnyRecord
 ): ScreenshotDiagnosisInput {
   assertNoRawScreenshotInput(input);
+  assertAllowedKeys(input, diagnosisInputKeys, "screenshot input");
   return {
-    manifestRef: controlledRef(input.manifestRef, "manifestRef"),
-    redactionRef: controlledRef(input.redactionRef, "redactionRef"),
+    manifestRef: controlledRef(input.manifestRef, "manifestRef", ["manifest"]),
+    redactionRef: controlledRef(input.redactionRef, "redactionRef", ["redaction"]),
     screenshotKind: enumValue(
       input.screenshotKind,
       visionScreenshotKinds,
       "screenshot kind"
     ),
-    storageRef: controlledRef(input.storageRef, "storageRef")
+    storageRef: controlledRef(input.storageRef, "storageRef", ["storage"])
   };
 }
 
@@ -61,6 +62,13 @@ export function evaluateScreenshotDiagnosis(input: {
   const screenshotInput = createScreenshotDiagnosisInput(input.input);
   const candidate = validateCandidate(input.candidate);
 
+  if (!isScreenshotKind(candidate.pageKind)) {
+    return failClosed(
+      "handoff_required",
+      "unsupported_screenshot_kind",
+      screenshotInput
+    );
+  }
   if (candidate.pageKind !== screenshotInput.screenshotKind) {
     return failClosed("handoff_required", "screenshot_kind_mismatch", screenshotInput);
   }
@@ -105,16 +113,8 @@ export function createScreenshotSampleManifest(input: {
   redactionMethod: string;
 }): AnyRecord {
   assertNoRawScreenshotInput(input);
-  const cases = input.cases.map((manifestCase) => ({
-    caseId: token(manifestCase.caseId, "caseId"),
-    category: enumValue(manifestCase.category, visionScreenshotKinds, "case category"),
-    expectedOutcomeRef: controlledRef(
-      manifestCase.expectedOutcomeRef,
-      "expectedOutcomeRef"
-    ),
-    redactionRef: controlledRef(manifestCase.redactionRef, "case redactionRef"),
-    storageRef: controlledRef(manifestCase.storageRef, "case storageRef")
-  }));
+  assertAllowedKeys(input, sampleManifestKeys, "sample manifest");
+  const cases = input.cases.map(sampleManifestCase);
   const ownerConfirmationStatus = enumValue(
     input.ownerConfirmationStatus,
     ownerConfirmationStatuses,
@@ -132,7 +132,7 @@ export function createScreenshotSampleManifest(input: {
     categoryCounts,
     f02Closeout:
       confirmed && actualCount >= 20 ? "not_closed_foundation_only" : "blocked",
-    manifestRef: controlledRef(input.manifestRef, "manifestRef"),
+    manifestRef: controlledRef(input.manifestRef, "manifestRef", ["manifest"]),
     ownerConfirmationStatus,
     redactionMethod: token(input.redactionMethod, "redactionMethod"),
     requiredCount: 20,
@@ -153,24 +153,69 @@ const publicUrlPattern = /^https?:\/\//i;
 const filePathPattern = /^(?:\/|\.\/|\.\.\/|[a-z]:\\)/i;
 const blobPattern = /^blob:/i;
 const base64LikePattern = /^[a-z0-9+/]{24,}={0,2}$/i;
+const unsafeRefPatterns = [
+  dataUrlPattern,
+  publicUrlPattern,
+  filePathPattern,
+  blobPattern,
+  base64LikePattern
+];
 const rawFieldPattern =
-  /^(raw.*|.*base64.*|.*blob.*|.*bytes.*|.*ocr.*|customerPlaintext|customerText|publicUrl|filePath)$/i;
+  /^(raw.*|.*base64.*|.*blob.*|.*bytes.*|.*ocr.*|messageText|customerMessage|customerPlaintext|customerText|caption|notes|publicUrl|filePath)$/i;
+const diagnosisInputKeys = keySet("manifestRef redactionRef screenshotKind storageRef");
+const candidateKeys = keySet(
+  "actions ambiguous confidence diagnosisCode diagnosisTitle evidenceRefs " +
+    "modelResultRef observations pageKind providerResultRef requiredSignals uncertain"
+);
+const candidateItemKeys = keySet("code evidenceRef title");
+const requiredSignalKeys = keySet("keyUiPresent pageKindMatched redactionConfirmed");
+const sampleManifestKeys = keySet(
+  "accessScope cases manifestRef ownerConfirmationStatus redactionMethod"
+);
+const sampleManifestCaseKeys = keySet(
+  "caseId category expectedOutcomeRef redactionRef storageRef"
+);
 
 function validateCandidate(candidate: DiagnosisCandidate): DiagnosisCandidate {
   assertNoRawScreenshotInput(candidate);
-  enumValue(candidate.pageKind, visionScreenshotKinds, "screenshot kind");
+  assertAllowedKeys(candidate, candidateKeys, "diagnosis candidate");
+  token(candidate.pageKind, "screenshot kind");
   confidence(candidate.confidence);
   token(candidate.diagnosisCode, "diagnosis code");
   boundedText(candidate.diagnosisTitle, "diagnosis title");
   controlledRefList(candidate.evidenceRefs ?? [], "evidenceRefs");
   if (candidate.modelResultRef)
-    controlledRef(candidate.modelResultRef, "modelResultRef");
+    controlledRef(candidate.modelResultRef, "modelResultRef", ["controlled"]);
   if (candidate.providerResultRef) {
-    controlledRef(candidate.providerResultRef, "providerResultRef");
+    controlledRef(candidate.providerResultRef, "providerResultRef", ["controlled"]);
+  }
+  if (candidate.requiredSignals) {
+    assertAllowedKeys(
+      candidate.requiredSignals,
+      requiredSignalKeys,
+      "required signals"
+    );
   }
   (candidate.observations ?? []).forEach(item);
   (candidate.actions ?? []).forEach(action);
   return candidate;
+}
+
+function sampleManifestCase(manifestCase: AnyRecord) {
+  assertAllowedKeys(manifestCase, sampleManifestCaseKeys, "sample manifest case");
+  return {
+    caseId: token(manifestCase.caseId, "caseId"),
+    category: enumValue(manifestCase.category, visionScreenshotKinds, "case category"),
+    expectedOutcomeRef: controlledRef(
+      manifestCase.expectedOutcomeRef,
+      "expectedOutcomeRef",
+      ["controlled"]
+    ),
+    redactionRef: controlledRef(manifestCase.redactionRef, "case redactionRef", [
+      "redaction"
+    ]),
+    storageRef: controlledRef(manifestCase.storageRef, "case storageRef", ["storage"])
+  };
 }
 
 function failClosed(
@@ -217,7 +262,7 @@ function optionalControlledRef(
   value: string | undefined,
   name: string
 ): Record<string, string> {
-  return value ? { [name]: controlledRef(value, name) } : {};
+  return value ? { [name]: controlledRef(value, name, ["controlled"]) } : {};
 }
 
 function hasRequiredSignals(signals: Record<string, unknown> | undefined): boolean {
@@ -227,6 +272,7 @@ function hasRequiredSignals(signals: Record<string, unknown> | undefined): boole
 }
 
 function item(input: DiagnosisCandidateItem): DiagnosisCandidateItem {
+  assertAllowedKeys(input as unknown as AnyRecord, candidateItemKeys, "observation");
   return {
     code: token(input.code, "observation code"),
     ...(input.evidenceRef
@@ -237,6 +283,7 @@ function item(input: DiagnosisCandidateItem): DiagnosisCandidateItem {
 }
 
 function action(input: DiagnosisCandidateItem): DiagnosisCandidateItem {
+  assertAllowedKeys(input as unknown as AnyRecord, candidateItemKeys, "action");
   return {
     code: token(input.code, "action code"),
     title: boundedText(input.title, "action title")
@@ -253,19 +300,40 @@ function assertNoRawScreenshotInput(value: unknown): void {
   }
 }
 
-function controlledRef(value: unknown, name: string): string {
-  if (
-    typeof value !== "string" ||
-    dataUrlPattern.test(value.trim()) ||
-    publicUrlPattern.test(value.trim()) ||
-    filePathPattern.test(value.trim()) ||
-    blobPattern.test(value.trim()) ||
-    base64LikePattern.test(value.trim()) ||
-    !controlledRefPattern.test(value.trim())
-  ) {
-    throw new Error(`${name} must be a controlled ref`);
+function assertAllowedKeys(
+  value: AnyRecord,
+  allowedKeys: ReadonlySet<string>,
+  name: string
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.has(key)) throw new Error(`${name} unsupported field: ${key}`);
   }
-  return value.trim();
+}
+
+function keySet(keys: string): ReadonlySet<string> {
+  return new Set(keys.split(" "));
+}
+
+function controlledRef(
+  value: unknown,
+  name: string,
+  allowedSchemes = ["controlled", "manifest", "redaction", "storage"]
+): string {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  const scheme = trimmed.split("://")[0] ?? "";
+  if (
+    !trimmed ||
+    hasUnsafeRefValue(trimmed) ||
+    !controlledRefPattern.test(trimmed) ||
+    !allowedSchemes.includes(scheme)
+  ) {
+    throw new Error(`${name} must use ${allowedSchemes.join("/")} refs`);
+  }
+  return trimmed;
+}
+
+function hasUnsafeRefValue(value: string): boolean {
+  return unsafeRefPatterns.some((pattern) => pattern.test(value));
 }
 
 function controlledRefList(values: unknown[], name: string): string[] {
@@ -281,6 +349,10 @@ function enumValue<T extends string>(
     throw new Error(`${name} is unsupported`);
   }
   return value as T;
+}
+
+function isScreenshotKind(value: string): value is ScreenshotKind {
+  return Object.values(visionScreenshotKinds).includes(value as ScreenshotKind);
 }
 
 function confidence(value: unknown): number {

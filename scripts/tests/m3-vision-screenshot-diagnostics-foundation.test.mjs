@@ -60,7 +60,22 @@ describe("M3-06 vision screenshot diagnostics foundation", () => {
       assert.throws(
         () =>
           vision.createScreenshotDiagnosisInput({ ...controlledInput(), ...unsafe }),
-        /raw screenshot input is not allowed|must be a controlled ref/
+        /raw screenshot input is not allowed|must use .* refs|must be a controlled ref/
+      );
+    }
+
+    for (const swapped of [
+      { storageRef: "manifest://vision/screenshot-case-001" },
+      { manifestRef: "storage://vision/screenshots/case-001" },
+      { redactionRef: "storage://vision/screenshots/case-001" }
+    ]) {
+      assert.throws(
+        () =>
+          vision.createScreenshotDiagnosisInput({
+            ...controlledInput(),
+            ...swapped
+          }),
+        /must use .* refs|must be a controlled ref/
       );
     }
   });
@@ -157,14 +172,13 @@ describe("M3-06 vision screenshot diagnostics foundation", () => {
     assert.equal(uncertain.status, "uncertain");
     assert.equal(uncertain.reasonCode, "candidate_uncertain");
 
-    assert.throws(
-      () =>
-        vision.evaluateScreenshotDiagnosis({
-          candidate: { ...highConfidenceCandidate(), pageKind: "receipt_photo" },
-          input
-        }),
-      /screenshot kind is unsupported/
-    );
+    const unsupported = vision.evaluateScreenshotDiagnosis({
+      candidate: { ...highConfidenceCandidate(), pageKind: "receipt_photo" },
+      input
+    });
+    assert.equal(unsupported.status, "handoff_required");
+    assert.equal(unsupported.reasonCode, "unsupported_screenshot_kind");
+    assert.equal(unsupported.card, undefined);
   });
 
   it("rejects raw candidate fields and unsafe evidence refs", () => {
@@ -185,7 +199,7 @@ describe("M3-06 vision screenshot diagnostics foundation", () => {
           },
           input
         }),
-      /must be a controlled ref/
+      /must use .* refs|must be a controlled ref/
     );
 
     assert.throws(
@@ -196,6 +210,20 @@ describe("M3-06 vision screenshot diagnostics foundation", () => {
         }),
       /raw screenshot input is not allowed/
     );
+
+    for (const rawField of ["messageText", "customerMessage", "caption"]) {
+      assert.throws(
+        () =>
+          vision.evaluateScreenshotDiagnosis({
+            candidate: {
+              ...highConfidenceCandidate(),
+              [rawField]: "customer typed a payment problem"
+            },
+            input
+          }),
+        /raw screenshot input is not allowed|unsupported field/
+      );
+    }
   });
 
   it("builds a safe sample manifest while preserving the >=20 owner sample blocker", () => {
@@ -251,6 +279,23 @@ describe("M3-06 vision screenshot diagnostics foundation", () => {
           redactionMethod: "manual_redaction_v1"
         }),
       /raw screenshot input is not allowed/
+    );
+
+    assert.throws(
+      () =>
+        vision.createScreenshotSampleManifest({
+          accessScope: "owner_controlled_storage",
+          cases: [
+            {
+              ...manifestCase("notes-case"),
+              notes: "customer text copied from screenshot"
+            }
+          ],
+          manifestRef: "manifest://vision/screenshot-cases",
+          ownerConfirmationStatus: "confirmed",
+          redactionMethod: "manual_redaction_v1"
+        }),
+      /raw screenshot input is not allowed|unsupported field/
     );
   });
 

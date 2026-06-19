@@ -1,12 +1,12 @@
 # M3-06 Vision Screenshot Diagnostics Foundation Evidence
 
-> evidence_id: M3-06-vision-screenshot-diagnostics-foundation  
-> spec: `docs/specs/M3-06-vision-screenshot-diagnostics-foundation.md`  
-> branch: `codex/m3-06-vision-screenshot-diagnostics-foundation`  
-> worktree: `/Users/atilla/Documents/uzmax-m3-06-vision-screenshot-diagnostics-foundation`  
-> base: `origin/main` at `fe1bd31fda4368cb341edc260c954e5bfa98fb61`  
-> status: foundation-only  
-> redaction_status: No raw screenshots, raw OCR/text, customer plaintext, Telegram payloads, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, raw prompt/completion or secrets included
+- evidence_id: M3-06-vision-screenshot-diagnostics-foundation
+- spec: `docs/specs/M3-06-vision-screenshot-diagnostics-foundation.md`
+- branch: `codex/m3-06-vision-screenshot-diagnostics-foundation`
+- worktree: `/Users/atilla/Documents/uzmax-m3-06-vision-screenshot-diagnostics-foundation`
+- base: `origin/main` at `fe1bd31fda4368cb341edc260c954e5bfa98fb61`
+- status: foundation-only
+- redaction_status: No raw screenshots, raw OCR/text, customer plaintext, Telegram payloads, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, raw prompt/completion or secrets included
 
 ## Scope
 
@@ -52,12 +52,21 @@ No open PR conflict or unmerged branch conflict was found at start.
 
 | Behavior | Evidence |
 |---|---|
-| Controlled refs only | `createScreenshotDiagnosisInput` accepts `storageRef`, `manifestRef`, `redactionRef` and supported screenshot kind only. |
-| Raw input rejected | Raw screenshot content, data URLs, public URLs, file paths, base64/blob-ish payloads, raw OCR/text and customer plaintext fail closed before diagnosis. |
+| Controlled refs only | `createScreenshotDiagnosisInput` accepts `storageRef`, `manifestRef`, `redactionRef` and supported screenshot kind only; field-specific refs keep `storage://`, `manifest://` and `redaction://` schemes. |
+| Raw input rejected | Raw screenshot content, data URLs, public URLs, file paths, base64/blob-ish payloads, raw OCR/text, customer plaintext and unknown free-text carrier fields fail closed before diagnosis. |
 | Bounded diagnosis card | High-confidence synthetic controlled candidates return `diagnosis_card` with bounded diagnosis, observations, actions and controlled refs only. |
-| Uncertainty handoff | Low confidence, missing required signals, ambiguous diagnosis, explicit uncertainty and kind mismatch return `handoff_required` or `uncertain` without a card. |
+| Uncertainty handoff | Low confidence, missing required signals, ambiguous diagnosis, explicit uncertainty, kind mismatch and unsupported screenshot kinds return `handoff_required` or `uncertain` without a card. |
 | Sample manifest | `createScreenshotSampleManifest` records safe refs/counts/categories/redaction/access/owner status and never raw screenshot content. |
 | Owner blocker | Missing or <20 owner samples keeps `f02Closeout` blocked; >=20 samples only reaches `not_closed_foundation_only` for future eval. |
+
+## Review Blocker Closure
+
+| Blocker | Closure Evidence |
+|---|---|
+| Raw/customer text rejection bypassable | Candidate and sample manifest inputs now use strict allowlists plus recursive raw-field rejection. Focused tests cover candidate `messageText`, `customerMessage`, `caption` and manifest `notes`. |
+| Controlled refs not field-prefix constrained | `storageRef`, `manifestRef`, `redactionRef`, case storage/redaction refs and model/provider/result refs now require their field-specific schemes. Focused tests cover swapped storage/manifest/redaction schemes. |
+| Unsupported candidate kind threw instead of fail-closed | Unsupported tokenized screenshot kinds now return structured `handoff_required` with reason `unsupported_screenshot_kind` and no `diagnosis_card`. |
+| Evidence whitespace | This evidence header no longer uses trailing spaces for Markdown line breaks; `git diff --check origin/main...HEAD` is required before push. |
 
 ## Acceptance Mapping
 
@@ -82,15 +91,15 @@ Repository evidence may record only manifest identifiers, storage refs, redactio
 | `node --test scripts/tests/m3-vision-screenshot-diagnostics-foundation.test.mjs` | pass | 7/7 tests passed |
 | `npm run format:check` | pass | Prettier check passed |
 | `npm run typecheck` | pass | TypeScript check passed |
-| `npm run lint` | pass | ESLint passed after reducing `evaluateScreenshotDiagnosis` complexity below the <=10 limit |
+| `npm run lint` | pass | ESLint passed with source complexity and file length kept within budget |
 | `npm run depcruise` | pass | no dependency violations |
 | `npm run jscpd` | pass | no duplicates found after making the focused test helper distinct |
 | `npm run knip` | pass | no unused files/dependencies reported |
 | `npm run guard:forbidden-terms` | pass | forbidden-terms guard passed |
 | `npm run guard:doc-triggers` | pass | doc-trigger guard passed |
 | `npm run guard:workspace` | pass | linked feature worktree accepted |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-06-vision-screenshot-diagnostics-foundation.md --include-worktree` | pass | 6 changed files: docs 4, source 1, test 1 |
-| `git diff --check` | pass | no whitespace errors |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-06-vision-screenshot-diagnostics-foundation.md --include-worktree` | pass | 6 changed files: docs 4, source 1, test 1; source net LOC 395; new source files 0 |
+| `git diff --check origin/main...HEAD` | pass | no whitespace errors after review fix |
 | `npm run check` | pass | Full chain passed: format, typecheck, lint, depcruise, jscpd, knip, forbidden/eval/doc/workspace/pr-shape guards, 112/112 node tests, build, size and Playwright 6/6 |
 
 ## PR Hygiene
@@ -101,8 +110,9 @@ Repository evidence may record only manifest identifiers, storage refs, redactio
 | Touch modules | M3-06 spec/evidence; contracts README; M3 evidence README; `packages/capabilities/vision/src/index.ts`; focused test |
 | Path categories | source: 1; test: 1; docs: 4; generated/lock/config: 0 |
 | Source changed files | `packages/capabilities/vision/src/index.ts` |
+| Source net LOC | 395 by `guard:pr-shape`; source file length 396 lines |
 | New source files | 0 |
-| Test changes | Added focused M3-06 node test |
+| Test changes | Added focused M3-06 node test with post-review blocker regressions for raw text carrier fields, swapped ref schemes and unsupported-kind fail-closed behavior |
 | Generated/lock/config changes | none |
 | External API evidence | none; no external API/provider/SDK/connector/adapter added |
 | Search conclusion | Existing repo had placeholder vision package only; M3-01 media/eval compatibility and M3-03 ref payload boundary exist, but no screenshot diagnostics runtime contract. In-place extension was the correct source home. |

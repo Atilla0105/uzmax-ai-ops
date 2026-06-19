@@ -240,12 +240,12 @@ Boundary:
 
 `M3-06-vision-screenshot-diagnostics-foundation` 引入 `packages/capabilities/vision/src/index.ts` 的纯 package contract：
 
-- `createScreenshotDiagnosisInput` accepts only controlled screenshot refs: `storageRef`, `manifestRef`, `redactionRef` and a supported screenshot kind (`order_page`, `merchant_chat`, `payment_page`).
-- Raw screenshot content, data URLs, public URLs, file paths, base64/blob-ish payloads, raw OCR/text and customer plaintext are rejected before diagnosis.
-- `evaluateScreenshotDiagnosis` validates synthetic controlled diagnosis candidates with page kind, required signals/checklist, confidence, bounded observations/actions, evidence refs and optional model/provider result refs as controlled refs only.
+- `createScreenshotDiagnosisInput` accepts only controlled screenshot refs: `storageRef` must use `storage://`, `manifestRef` must use `manifest://`, `redactionRef` must use `redaction://`, plus a supported screenshot kind (`order_page`, `merchant_chat`, `payment_page`).
+- Raw screenshot content, data URLs, public URLs, file paths, base64/blob-ish payloads, raw OCR/text, customer plaintext and unknown free-text carrier fields are rejected before diagnosis.
+- `evaluateScreenshotDiagnosis` validates synthetic controlled diagnosis candidates with page kind, required signals/checklist, confidence, bounded observations/actions, evidence refs and optional model/provider result refs as controlled refs only; candidate, observation/action and manifest shapes are strict allowlists.
 - High-confidence controlled candidates return status `diagnosis_card` with diagnosis code/title, bounded observations/actions and controlled refs.
 - Low confidence, missing required signals, ambiguous candidate, explicit uncertainty, unsafe input or unsupported screenshot kind fail closed to `handoff_required` or `uncertain`; the contract must not generate a confident answer.
-- `createScreenshotSampleManifest` records count, category counts, controlled storage/redaction/expected-outcome refs, redaction method, access scope and owner confirmation status without raw screenshot content.
+- `createScreenshotSampleManifest` records count, category counts, `storage://` storage refs, `redaction://` redaction refs, `controlled://` expected-outcome refs, redaction method, access scope and owner confirmation status without raw screenshot content.
 
 Boundary:
 

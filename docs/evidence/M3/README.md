@@ -14,6 +14,8 @@ Current KB journey capability foundation: `M3-04-kb-journey-capability-foundatio
 
 Current pricing capability and quote record contract foundation: `M3-05-pricing-capability-and-quote-record-contract.md`.
 
+Current vision screenshot diagnostics foundation: `M3-06-vision-screenshot-diagnostics-foundation.md`.
+
 M3 current status: `ready_to_start_specs__owner_inputs_block_closeout`. This means future M3 specs may start in queue order under one spec / one PR and touch-module governance. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release or 1.0 release approval.
 
 M2 prior state: `owner_accepted_m2_milestone_evidence` only. Project owner accepted M2 milestone evidence, but M2 evidence explicitly did not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
@@ -35,5 +37,7 @@ M3-03 records a pure `packages/evals` foundation for eval gate category/status p
 M3-04 records a pure `packages/capabilities/kb` foundation for tutorial stage localization, stage-card-only answers, controlled refs and unknown/ambiguous fail-closed behavior. It uses no DB persistence, LLM provider, other capability import, engine integration, admin UI, knowledge publish, raw owner tutorial pack or real customer traffic. F-01/H-01 are foundation-only and not closed; the tutorial material pack owner blocker remains active.
 
 M3-05 records a pure `packages/capabilities/pricing` foundation for deterministic code-created quotes, LLM parameter candidate boundaries and M3-01 compatible `quote_record` drafts. It uses no DB persistence, LLM/provider call, other capability import, engine/API/admin/worker integration, pricing API, order connector, customer asset integration, raw samples or real customer traffic. F-04 is foundation-only and not closed for production; DB persistence, E2E quote flow and customer asset quote history remain future work.
+
+M3-06 records a pure `packages/capabilities/vision` foundation for controlled screenshot refs, bounded synthetic diagnosis cards, uncertainty-to-handoff/fail-closed behavior and safe sample manifests. It uses no raw screenshots, raw OCR/customer text, DB persistence, LLM/provider call, other capability import, engine/API/admin/worker integration, real eval runner or real customer traffic. F-02 is foundation-only and not closed; >=20 owner screenshot samples and future real eval evidence remain active blockers.
 
 M3 evidence must not include raw sample content in git. Do not commit raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts or secrets. Future sensitive source material must stay in controlled storage; repo evidence may only record manifests, redaction method, storage refs, access scope, retention period and project owner confirmation status.

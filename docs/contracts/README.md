@@ -270,6 +270,22 @@ Boundary:
 - No real ASR, provider SDK, LLM key, env var, raw voice/audio/transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, raw prompt/completion or secrets belong in this contract or evidence.
 - F-03 remains foundation-only and not closed: full speech acceptance still requires real/integration voice sample evidence, owner sample handling, provider/spike decision if any, and future flow validation.
 
+## M3 Breaker Radius And Redline Output Guard
+
+`M3-08-breaker-radius-and-redline-output-guard` 引入 `packages/engine/src/index.ts` 的纯 engine contract：
+
+- `evaluateBreakerRadius` returns deterministic user, user+capability, capability or global breaker decisions with controlled refs and safe degradation semantics.
+- Single-user redline/attack events cannot trigger global shutdown; repeated capability failures disable only the named capability; systemic cross-user/cross-capability risk escalates to global degradation.
+- `guardRedlineOutput` suppresses customer-facing output that leaks internal config, thresholds, cost, profit, margin, private route/budget/guard values and does not echo unsafe output.
+- False-positive-safe ordinary synthetic numbers such as weight, size and count can pass when no internal control/economics terms appear.
+- `decideEngineSafetyAction` returns explicit suppress outbound, handoff/ticket/draft-hold and controlled-audit-ref semantics.
+
+Boundary:
+
+- This is a pure engine foundation only; it does not persist to DB, import `packages/evals`, call `packages/llm-gateway`, import capability packages, send outbound messages, integrate with API/admin/worker or release production breaker/output policy.
+- No real redline samples, raw customer text, raw prompts/completions, provider SDK/key/env, model route, prompt/persona release, GA-0 or real customer traffic belongs in this contract or evidence.
+- F-05/F-06/G-05/L-02 remain foundation-only and not closed: production output filter, runtime breaker events, fault injection, leave-ticket drill and false-positive dashboard remain future work.
+
 ## Verification
 
 本契约的本地验证入口：

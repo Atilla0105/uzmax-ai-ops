@@ -132,12 +132,69 @@ test("shows M2-04 loading empty error permission and degraded states", async ({
   await expect(page.getByTestId("m2-state-degraded")).toContainText("Degraded");
 });
 
+test("renders the M3-09 knowledge resources and eval gate shell", async ({ page }) => {
+  await page.goto("/design");
+  await expect(page.getByTestId("m3-knowledge-eval-shell")).toBeVisible();
+  await expect(page.getByTestId("m3-shell-mode")).toContainText(
+    "synthetic local shell"
+  );
+
+  await expect(page.getByTestId("m3-resource-categories")).toContainText("Facts");
+  await expect(page.getByTestId("m3-resource-categories")).toContainText("Journeys");
+  await expect(page.getByTestId("m3-resource-categories")).toContainText("Stages");
+  await expect(page.getByTestId("m3-resource-categories")).toContainText("Materials");
+  await expect(page.getByTestId("m3-knowledge-resources")).toContainText(
+    "Fact entries"
+  );
+  await page.getByTestId("m3-category-journeys").click();
+  await expect(page.getByTestId("m3-knowledge-resources")).toContainText(
+    "Journey flows"
+  );
+  await page.getByTestId("m3-category-stages").click();
+  await expect(page.getByTestId("m3-knowledge-resources")).toContainText("Stage cards");
+  await page.getByTestId("m3-category-materials").click();
+  await expect(page.getByTestId("m3-knowledge-resources")).toContainText(
+    "Material refs"
+  );
+
+  await expect(page.getByTestId("m3-production-gate")).toContainText("Production gate");
+  await expect(page.getByTestId("m3-production-gate")).toContainText("failed");
+  await expect(page.getByTestId("m3-gate-failures")).toContainText("Knowledge target");
+  await expect(page.getByTestId("m3-gate-failures")).toContainText("Prompt target");
+  await expect(page.getByTestId("m3-gate-failures")).toContainText("Model route");
+  await expect(page.getByTestId("m3-publish-policy")).toContainText(
+    "Save prompt blocked"
+  );
+  await expect(page.getByTestId("m3-publish-policy")).toContainText(
+    "Publish knowledge blocked"
+  );
+  await expect(page.getByTestId("m3-publish-policy")).toContainText(
+    "Release model route blocked"
+  );
+  await expect(
+    page.getByRole("button", { name: "Save prompt blocked" })
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Publish knowledge blocked" })
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Release model route blocked" })
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Production action blocked" })
+  ).toBeDisabled();
+  await expect(page.getByTestId("m3-knowledge-eval-shell")).not.toContainText(
+    /raw|export|jsonl|csv|customer plaintext|telegram payload|screenshot|voice transcript|ORD-|PAY-|TG-|phone|address|payment|support personal|secret|@[\w_]+|\+?\d[\d\s-]{6,}/i
+  );
+});
+
 test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 860 });
   await page.goto("/design");
   await expect(page.getByTestId("admin-shell")).toBeVisible();
   await expect(page.getByTestId("release-readiness")).toBeVisible();
   await expect(page.getByTestId("m2-conversation-ticket-shell")).toBeVisible();
+  await expect(page.getByTestId("m3-knowledge-eval-shell")).toBeVisible();
   await expect(page.getByTestId("conversation-filters")).toContainText("Needs human");
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(320);

@@ -62,3 +62,11 @@ This is a persistence foundation only. It does not implement the M3-03 eval runn
 No raw sample content in git. Eval evidence may record manifest IDs, controlled storage refs, redaction method, payload shape, aggregate quotas, status and owner confirmation only. Raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone/address/payment data, raw prompts, raw completions, support personal accounts and secrets must remain outside the repo.
 
 M3-01 keeps G-03/G-05/G-06 as `foundation_queued_not_closed`. Full quota closure, redline false-positive evidence and publish refusal semantics require later specs and owner-input evidence where applicable.
+
+## M3 LLM Gateway Eval Hook Boundary
+
+`M3-02-llm-gateway-routing-accounting-foundation` validates route-level eval gate ref/status metadata so model-route changes can carry future gate provenance.
+
+This hook is metadata only. It does not implement the M3-03 eval runner, redline judge, production publish refusal path, admin eval center, provider calls, prompt/model/persona release, production gate or GA-0.
+
+Gateway accounting drafts may include eval summary refs in later integrations, but raw prompt, raw completion, raw sample content and customer plaintext remain barred from git and from M3-02 contract evidence.

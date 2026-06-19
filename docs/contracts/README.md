@@ -186,6 +186,24 @@ Eval persistence boundary:
 
 M3-01 does not close F-01/F-02/F-04/F-05/G-01/G-02/G-03/G-05/G-06/H-01. It only provides foundation for later M3 runtime, eval gate, KB/tutorial, pricing, vision, speech and breaker/redline specs. It does not implement production runtime, API/worker/engine/admin integration, provider adapters, real eval runner, knowledge publish, prompt/model/persona release, customer asset/order connector/distill/Business schema or real customer traffic.
 
+## M3 LLM Gateway Routing Accounting Foundation
+
+`M3-02-llm-gateway-routing-accounting-foundation` 引入 `packages/llm-gateway/src/index.ts` 的纯 package contract：
+
+- task list mirrors M3-01 `llmTasks`: `intent_classify`、`kb_answer`、`vision_diag`、`speech_postprocess`、`summarize`、`profile_update`、`draft_reply`、`distill_daily`、`journey_import`、`eval_judge`。
+- `createLlmRouteConfig` validates task、primary/fallback provider refs、timeout、input/output/total token budgets、cost budget and eval gate ref/status metadata。
+- `createMockLlmProvider` is a deterministic mock provider/port for tests and local contract evidence only。
+- `invokeLlmRoute` tries primary first, then configured fallbacks on deterministic failure、timeout or budget failure。
+- Each invocation returns an accounting draft compatible with M3-01 `llm_call_log` shape: task、provider/model IDs、route ref/version、token counts、cost/latency、status、trace id、fallback summary、redaction/truncation metadata and optional prompt/completion hashes。
+
+Boundary:
+
+- This is an accounting draft only; M3-02 does not persist to DB and does not runtime import `packages/db`。
+- No real provider, SDK, key, env var, customer LLM, raw sample or customer content is used。
+- Accounting drafts must not contain raw prompt or raw completion。
+- Customer-facing/draft tasks such as `kb_answer` and `draft_reply` require redaction metadata and reject internal config fields。
+- Eval gate status is metadata only; production publish refusal remains M3-03。
+
 ## Verification
 
 本契约的本地验证入口：

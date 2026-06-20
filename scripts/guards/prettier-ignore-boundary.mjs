@@ -236,6 +236,9 @@ export function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Path-safe entry check (matches the other guards): immune to non-ASCII roots
+// and the macOS /var -> /private/var symlink. Filename is split so this guard
+// never counts itself as a marker occurrence.
+if (process.argv[1]?.endsWith(`${"prettier"}${"-ignore"}-boundary.mjs`)) {
   main();
 }

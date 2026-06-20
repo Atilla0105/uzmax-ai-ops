@@ -43,6 +43,8 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run format:check
+      - run:
+          npm run guard:prettier-ignore -- --base "${{ steps.guard-base.outputs.base }}"
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run depcruise

@@ -63,9 +63,14 @@ describe("format ignore boundary guard", () => {
   });
 
   it("fails when a diff adds the marker in monitored source or test paths", () => {
-    const repo = createBaselineFixture();
+    const diffTarget = "packages/engine/src/index.ts";
+    const repo = createDiffOnlyFixture(diffTarget);
     initMain(repo);
-    append(repo, "packages/engine/src/index.ts", `// ${marker}\n`);
+    append(repo, diffTarget, `// ${marker}\n`);
+
+    const currentTreeResult = collectViolations(repo);
+    assert.equal(currentTreeResult.total, 89);
+    assert.deepEqual(currentTreeResult.violations, []);
 
     assert.throws(
       () =>
@@ -109,6 +114,14 @@ function createBaselineFixture() {
   return repo;
 }
 
+function createDiffOnlyFixture(diffTarget) {
+  const repo = tempRepo();
+  for (const [file, count] of baselineCounts.entries()) {
+    write(repo, file, markerBlock(file === diffTarget ? count - 1 : count));
+  }
+  return repo;
+}
+
 function markerBlock(count) {
   return Array.from({ length: count }, (_, index) => `// ${marker} ${index}\n`).join(
     ""
@@ -116,7 +129,8 @@ function markerBlock(count) {
 }
 
 function initMain(repo) {
-  run("git", ["init", "-b", "main"], repo);
+  run("git", ["init"], repo);
+  run("git", ["checkout", "-B", "main"], repo);
   run("git", ["config", "user.email", "agent@example.com"], repo);
   run("git", ["config", "user.name", "Agent"], repo);
   run("git", ["add", "."], repo);

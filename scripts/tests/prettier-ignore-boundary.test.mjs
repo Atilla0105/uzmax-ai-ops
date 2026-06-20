@@ -1,6 +1,13 @@
 import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
@@ -103,6 +110,20 @@ describe("format ignore boundary guard", () => {
       result.violations.join("\n"),
       new RegExp(`total ${marker} count exceeds baseline`)
     );
+  });
+
+  it("runs its CLI entry point from a non-ASCII path", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "uzmax-智能运营-"));
+    tempRepos.push(dir);
+    const copied = path.join(dir, `${"prettier"}${"-ignore"}-boundary.mjs`);
+    copyFileSync(guardScript, copied);
+
+    const output = execFileSync(process.execPath, [copied], {
+      cwd: dir,
+      encoding: "utf8"
+    });
+
+    assert.match(output, /\d+\/\d+ marker/);
   });
 });
 

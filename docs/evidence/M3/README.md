@@ -32,7 +32,9 @@ Current pre-M4 prettier-ignore guard: `M3-13-pre-m4-prettier-ignore-guard.md`.
 
 Current M3 closeout and prettier guard follow-up: `M3-14-m3-closeout-and-prettier-guard-followup.md`.
 
-M3 current status: `foundation_queue_complete__owner_inputs_block_closeout`. This means M3-01 through M3-09 foundation PRs are complete and merged, and M3-11 through M3-14 have added signoff-before governance follow-ups, but M3 closeout remains no-go until owner-input blockers are provided in controlled form or the project owner explicitly decides the branch path. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
+Current M3 non-ASCII prettier guard entrypoint follow-up: `M3-15-nonascii-prettier-guard-entrypoint.md`.
+
+M3 current status: `foundation_queue_complete__owner_inputs_block_closeout`. This means M3-01 through M3-09 foundation PRs are complete and merged, and M3-11 through M3-15 have added signoff-before governance follow-ups, but M3 closeout remains no-go until owner-input blockers are provided in controlled form or the project owner explicitly decides the branch path. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
 
 M2 prior state: `owner_accepted_m2_milestone_evidence` only. Project owner accepted M2 milestone evidence, but M2 evidence explicitly did not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
 
@@ -69,6 +71,8 @@ M3-12 records a pre-M4 safety-critical formatter cleanup. It removes logic-shape
 M3-13 records a pre-M4 prettier-ignore boundary guard. It freezes the monitored source/test baseline, blocks spread in code/test paths, and does not clean business source or alter M3 owner signoff status.
 
 M3-14 records a follow-up that hardens the prettier-ignore boundary focused test fixture and backfills M3 closeout evidence with M3-11/M3-12/M3-13/M3-14 status. It does not mark M3 accepted and does not start M4.
+
+M3-15 records a follow-up that fixes the prettier-ignore guard CLI entrypoint under non-ASCII script paths and adds a focused regression so the guard no longer silently skips `main()` on the local Chinese root path. It does not mark M3 accepted and does not start M4.
 
 M3-07 records incident `docs/incidents/INC-2026-06-19-m3-07-root-main-worktree-pollution.md`: a relative edit operation wrote M3-07 files into root/main before commit. The polluted diff was sealed, root/main was cleaned and rechecked, changes were restored only into the assigned worktree, and M3-07 required absolute-path edits plus root/worktree dual status checks for the rest of that slice. After PR #45 merged, this incident is `institutionalized_in_docs`.
 

@@ -1,7 +1,7 @@
 # M3 KB Candidate Pack
 
 > evidence_id: M3-kb-candidate-pack
-> status: candidate_generated_owner_review_pending
+> status: candidate_owner_review_completed_not_published
 > created_at: 2026-06-21
 > source_manifest: `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`
 > publish_status: not_published
@@ -9,7 +9,8 @@
 ## Review Rules
 
 - This is a candidate pack, not the official knowledge base.
-- Customer-facing publication requires project owner review.
+- Project owner review is recorded for the candidate pack on 2026-06-21, with no corrections provided in that turn.
+- Customer-facing publication still requires a future import/publish spec, eval gate evidence and explicit release decision.
 - Exact route price, quote, SLA, cost, order status and compensation decisions must come from system data, code calculators, policies or human review, not free-form LLM judgment.
 - If a customer asks about a concrete parcel, ask for one key identifier first: customer ID, tracking number, order number or phone number.
 - If a customer asks about restricted goods, uncertain goods, claims, billing review, customs exceptions, enterprise terms or agent cooperation, collect the minimum required facts and hand off.
@@ -23,6 +24,14 @@
 | Telegram top intents | delivery 273, inbound 198, billing 187, timing_customs 154, account 138, pricing 72, restricted_goods 62, claim_after_sales 27, business 3 |
 | Telegram top language signals | latin_other 1209, uz_latin 524, ru_latin_mixed 518, uz_ru_mixed 150, ru_or_cyrillic 28 |
 | Review caveat | Telegram rows are `needs_human_review`; this pack uses aggregate intent/sample refs only |
+
+## Owner Review Record
+
+| Fact | Evidence |
+|---|---|
+| Review status | `owner_review_completed_no_corrections_provided` |
+| Review source | Project owner wrote `审核完了` in the Codex thread on 2026-06-21 after PR #54 candidate-pack review. |
+| Scope | Candidate content review only; not knowledge publish, DB/admin import, eval closure, M3 closeout, M4 start, production, customer LLM or 1.0 release. |
 
 ## Journey Stage Candidates
 
@@ -204,10 +213,9 @@ Boundaries:
 | `fact-pickup-delivery` | fact | Confirm self-pickup and home delivery conditions. |
 | `fact-claims-lost-damaged` | policy | Confirm evidence and time-window requirements. |
 
-## Suggested Owner Review Checklist
+## Owner Review Checklist
 
-- Confirm every numeric range and threshold.
-- Mark any customer-facing wording that should be softened, removed or translated first.
-- Confirm whether FAQ Chinese canonical answers can be used as source of truth for Uzbek/Russian drafts.
-- Decide which entries become public KB, internal-only KB or handoff-only guidance.
-- Confirm no raw source text, customer identifier or unsupported promise is present.
+- Candidate pack review completed by project owner on 2026-06-21.
+- No corrections were provided in that turn.
+- Future import/publish work must still decide which entries become public KB, internal-only KB or handoff-only guidance.
+- Future translation/eval work must still confirm Uzbek/Russian customer-facing wording and redline behavior.

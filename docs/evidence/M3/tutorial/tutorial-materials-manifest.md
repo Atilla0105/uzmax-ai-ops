@@ -2,7 +2,7 @@
 
 > evidence_id: M3-tutorial-materials-manifest
 > milestone: M3
-> status: candidate_generated_owner_review_pending
+> status: candidate_owner_review_completed_not_published
 > created_at: 2026-06-21
 > spec: `docs/specs/M3-16-kb-material-candidates.md`
 > sensitive_data_location: source material remains outside repository in owner-local controlled storage
@@ -21,26 +21,34 @@
 
 | Artifact | Purpose | Status |
 |---|---|---|
-| `docs/evidence/M3/tutorial/kb-candidate-pack.md` | owner-reviewable candidate knowledge pack derived from FAQ plus redacted Telegram evidence refs | `candidate_generated_owner_review_pending` |
+| `docs/evidence/M3/tutorial/kb-candidate-pack.md` | owner-reviewed candidate knowledge pack derived from FAQ plus redacted Telegram evidence refs | `candidate_owner_review_completed_not_published` |
 | `docs/evidence/M3/tutorial/journey-import-report.md` | draft journey/stage import mapping for M3 KB foundation contract | `draft_not_imported_not_published` |
+
+## Owner Review Record
+
+| Fact | Evidence |
+|---|---|
+| Review status | `owner_review_completed_no_corrections_provided` |
+| Review source | Project owner wrote `审核完了` in the Codex thread on 2026-06-21. |
+| Publication boundary | Review completion does not mean official KB, import, eval closure, publish, M3 closeout, M4 start or production release. |
 
 ## Coverage Summary
 
 | Area | Source coverage | Candidate status |
 |---|---|---|
-| Service scope and language policy | QA-01 through QA-05 | candidate ready for owner review |
-| Registration, Telegram binding, customer ID and address | QA-06 through QA-12 plus Telegram account/status templates | candidate ready for owner review |
-| Ordering, pre-alert, inbound and warehouse handling | QA-13 through QA-20 plus inbound/delivery seed refs | candidate ready for owner review |
-| Route choice, pricing and timing | QA-21 through QA-32 plus pricing/timing seed refs | candidate ready for owner review; exact pricing remains calculator/system-config controlled |
-| Restricted and sensitive goods | QA-33 through QA-40 plus restricted_goods seed refs | candidate ready for owner review; specific product questions require image/link/quantity and human review when uncertain |
-| Customs and tax | QA-41 through QA-45 plus timing_customs seed refs | candidate ready for owner review |
-| Billing, payment and storage | QA-46 through QA-50 plus billing seed refs | candidate ready for owner review |
-| Pickup and delivery | QA-51 through QA-56 plus delivery seed refs | candidate ready for owner review |
-| After-sales and claims | QA-57 through QA-60 plus claim_after_sales seed refs | candidate ready for owner review; compensation decisions require human review |
+| Service scope and language policy | QA-01 through QA-05 | owner review completed; no corrections provided |
+| Registration, Telegram binding, customer ID and address | QA-06 through QA-12 plus Telegram account/status templates | owner review completed; no corrections provided |
+| Ordering, pre-alert, inbound and warehouse handling | QA-13 through QA-20 plus inbound/delivery seed refs | owner review completed; no corrections provided |
+| Route choice, pricing and timing | QA-21 through QA-32 plus pricing/timing seed refs | owner review completed; exact pricing remains calculator/system-config controlled |
+| Restricted and sensitive goods | QA-33 through QA-40 plus restricted_goods seed refs | owner review completed; specific product questions require image/link/quantity and human review when uncertain |
+| Customs and tax | QA-41 through QA-45 plus timing_customs seed refs | owner review completed; no corrections provided |
+| Billing, payment and storage | QA-46 through QA-50 plus billing seed refs | owner review completed; no corrections provided |
+| Pickup and delivery | QA-51 through QA-56 plus delivery seed refs | owner review completed; no corrections provided |
+| After-sales and claims | QA-57 through QA-60 plus claim_after_sales seed refs | owner review completed; compensation decisions require human review |
 
 ## Boundary
 
 - This manifest does not mean knowledge publish.
 - This manifest does not mean M3 closeout, F-01/H-01 full closure, production readiness, GA-0, real customer traffic or customer LLM approval.
-- Owner review is still required before any candidate becomes official knowledge.
+- Future import/eval/publish gates are still required before any candidate becomes official knowledge.
 - Screenshot diagnostic samples and Uzbek Latin/Cyrillic/Russian blind review remain separate M3 blockers.

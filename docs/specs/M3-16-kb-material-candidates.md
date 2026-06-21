@@ -8,7 +8,7 @@
 
 ## 项目 owner 确认点与 AI agent 执行/复核责任
 
-Owner：确认是否接受本 PR 作为“知识库候选包已生成、进入 owner review”的记录；后续仍需确认候选内容是否可对客、是否需要改口径、是否补截图、是否允许进入正式知识库或发布流程。
+Owner：确认是否接受本 PR 作为“知识库候选包已生成、进入 owner review”的记录；如果 owner 在本 PR 周期内完成审核，AI agent 可将证据状态更新为 `owner_review_completed_no_corrections_provided` 或记录 owner 提供的修正项。后续仍需确认是否允许进入正式知识库、导入、评测或发布流程。
 
 AI agent：只在 `/Users/atilla/Documents/uzmax-m3-16-kb-material-candidates` / `codex/m3-16-kb-material-candidates` 中执行；读取已脱敏本地材料，提炼通用知识，不提交原始聊天、原始截图、客户明文、Telegram payload、订单号、电话、地址、支付信息、客服个人账号、raw prompt/completion 或 secrets。
 
@@ -84,14 +84,14 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 2. 从 60 条高频 QA 提炼 canonical knowledge candidates、journey stages、处理边界、handoff triggers。
 3. 用脱敏 Telegram 样本补充真实问法覆盖、intent/language counts 和模板 evidence refs，不复制原始问答内容。
 4. 生成 `tutorial-materials-manifest.md`、`journey-import-report.md` 和 `kb-candidate-pack.md`。
-5. 更新 M3 closeout/README：tutorial blocker 从 `absent` 更新为 `candidate_generated_owner_review_pending`，但 M3 closeout 仍 blocked。
+5. 更新 M3 closeout/README：tutorial blocker 从 `absent` 更新为 `candidate_owner_review_completed_not_published`，但 M3 closeout 仍 blocked。
 6. 运行 required validation 并记录结果。
 
 ## 通过条件
 
 - Candidate pack covers service intro, account/address, order/prealert/inbound, route/pricing/timing, restricted goods, customs/tax, billing/payment/storage, pickup/delivery and after-sales claims.
 - Candidate pack records source refs by QA ids and Telegram sample ids/hashes only; it does not paste raw customer messages or raw Telegram payloads.
-- `tutorial-materials-manifest.md` records source file hashes, review status, output artifacts and owner-review requirement.
+- `tutorial-materials-manifest.md` records source file hashes, review status, output artifacts and owner review record.
 - `journey-import-report.md` records import draft status, stage keys, evidence refs, blockers and non-publish boundary.
 - M3 closeout remains `foundation_queue_complete__owner_inputs_block_closeout`; screenshot samples and blind review remain blocked.
 - Required validation passes or is honestly recorded: `npm run format:check`, `npm run guard:doc-triggers`, `npm run guard:workspace`, explicit assigned/root `npm run guard:worker-boundary`, `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-16-kb-material-candidates.md --include-worktree`, `git diff --check origin/main...HEAD`, and full `npm run check` if feasible.
@@ -115,11 +115,11 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 
 | Item | M3-16 status | Notes |
 |---|---|---|
-| F-01 | candidate_generated_owner_review_pending | Tutorial/knowledge candidate pack exists; owner review and future import/eval evidence still required before closeout. |
-| H-01 | material_candidate_partial | Knowledge facts/journeys/stages/material refs are drafted as evidence; no DB/admin/publish closure. |
+| F-01 | candidate_owner_review_completed_not_closed | Tutorial/knowledge candidate pack exists and owner review is recorded; future import/eval evidence is still required before closeout. |
+| H-01 | material_candidate_owner_reviewed_partial | Knowledge facts/journeys/stages/material refs are drafted as evidence and owner-reviewed; no DB/admin/publish closure. |
 | G-03 | not_closed | No production publish path or eval gate release; knowledge publish remains blocked until later gate. |
 | J-05 | evidence_updated | M3 evidence now records generated candidate pack instead of absent tutorial material evidence. |
 | K-03 | active | One spec / one branch / one PR slice. |
 | K-04 | active | Docs-only touch list; no schema/lock/shared config changes. |
 
-M3-16 does not close M3. It converts one M3 blocker from missing input to candidate material pending owner review; remaining screenshot and blind-review blockers stay active.
+M3-16 does not close M3. It converts one M3 blocker from missing input to owner-reviewed candidate material; future import/eval/publish gates, screenshot samples and blind-review blockers stay active.

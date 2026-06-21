@@ -3,9 +3,10 @@
 > evidence_id: M3-16-kb-material-candidates
 > milestone: M3
 > spec: `docs/specs/M3-16-kb-material-candidates.md`
-> status: implemented_validated
+> status: implemented_validated_owner_review_completed_not_published
 > created_at: 2026-06-21
 > owner_ai_boundary: Project owner decides whether candidate knowledge is accepted, edited, translated, published, or held for later. AI agent derives candidate materials, records source hashes and validation evidence only.
+> owner_review_status: owner_review_completed_no_corrections_provided
 > sensitive_data_location: source materials remain in owner-local controlled storage
 > redaction_status: no raw Telegram payloads, customer plaintext, screenshots, voice transcripts, raw prompts, raw completions, order IDs, phone numbers, addresses, payment data, support personal accounts, LLM keys or secrets
 
@@ -54,21 +55,22 @@ Not included:
 | `docs/evidence/M3/tutorial/tutorial-materials-manifest.md` | created |
 | `docs/evidence/M3/tutorial/journey-import-report.md` | created |
 | `docs/evidence/M3/tutorial/kb-candidate-pack.md` | created |
-| M3 closeout evidence | updated to `tutorial_candidate_generated_owner_review_pending` while preserving M3 no-go |
+| Owner review record | project owner wrote `审核完了` in the Codex thread on 2026-06-21; no corrections were provided in this turn |
+| M3 closeout evidence | updated to `tutorial_candidate_owner_review_completed_not_published` while preserving M3 no-go |
 | M3 README | indexed M3-16 and updated tutorial blocker status |
 
 ## Acceptance Mapping
 
 | Item | M3-16 status | Notes |
 |---|---|---|
-| F-01 | candidate_generated_owner_review_pending | Candidate tutorial/knowledge pack exists, but owner review, import/eval and publish gate remain future. |
-| H-01 | material_candidate_partial | Facts/journeys/stages/material refs drafted as evidence; no DB/admin/publish closure. |
+| F-01 | candidate_owner_review_completed_not_closed | Candidate tutorial/knowledge pack exists and owner review is recorded, but import/eval and publish gate remain future. |
+| H-01 | material_candidate_owner_reviewed_partial | Facts/journeys/stages/material refs drafted as evidence and owner-reviewed; no DB/admin/publish closure. |
 | G-03 | not_closed | No knowledge publish or production gate release. |
 | J-05 | evidence_updated | M3 evidence now records generated tutorial/KB candidate evidence. |
 | K-03 | active | One spec / one branch / one PR slice. |
 | K-04 | active | Docs-only; no schema/lock/shared config changes. |
 
-M3-16 does not close M3. It changes only the tutorial material blocker state from absent to candidate generated / owner review pending. Screenshot samples and language blind review remain active blockers.
+M3-16 does not close M3. It changes only the tutorial material blocker state from absent to candidate generated and owner-review completed. It does not mean knowledge import, knowledge publish, M3 owner signoff or production release. Screenshot samples and language blind review remain active blockers.
 
 ## Validation
 
@@ -95,8 +97,6 @@ M3-16 does not close M3. It changes only the tutorial material blocker state fro
 
 ## Remaining Work
 
-- Owner review of candidate pack.
-- Correct/approve wording and translation policy.
 - Future import/persistence/admin/publish spec after approval.
 - Eval gate coverage for tutorial stage localization.
 - Screenshot diagnostic samples and language blind review remain unresolved.

@@ -23,15 +23,15 @@ This report records a draft journey/stage mapping that is compatible with the M3
 | stage count | 9 |
 | source pack | 60 QA reference + redacted Telegram aggregate/sample-id refs |
 | publish status | not published |
-| owner review | required |
+| owner review | completed on 2026-06-21; no corrections provided in that turn |
 
 ## Draft Stages
 
 | Sequence | Stage key | Stage title | Source refs | Material refs | Closeout note |
 |---:|---|---|---|---|---|
-| 1 | `service-intro` | 公司与服务介绍 | QA-01..QA-05 | `manifest://m3-16/material/service-intro` | ready for owner review |
-| 2 | `account-address` | 注册、Telegram 绑定、客户 ID 与地址 | QA-06..QA-12; seed intents `account` | `manifest://m3-16/material/account-address` | ready for owner review |
-| 3 | `order-prealert-inbound` | 下单、预报、入库与仓库处理 | QA-13..QA-20; seed intents `inbound`, `delivery` | `manifest://m3-16/material/order-prealert-inbound` | ready for owner review |
+| 1 | `service-intro` | 公司与服务介绍 | QA-01..QA-05 | `manifest://m3-16/material/service-intro` | owner review completed; not imported |
+| 2 | `account-address` | 注册、Telegram 绑定、客户 ID 与地址 | QA-06..QA-12; seed intents `account` | `manifest://m3-16/material/account-address` | owner review completed; not imported |
+| 3 | `order-prealert-inbound` | 下单、预报、入库与仓库处理 | QA-13..QA-20; seed intents `inbound`, `delivery` | `manifest://m3-16/material/order-prealert-inbound` | owner review completed; not imported |
 | 4 | `route-pricing-timing` | 运输路线、价格与时效 | QA-21..QA-32; seed intents `pricing`, `timing_customs` | `manifest://m3-16/material/route-pricing-timing` | exact pricing remains calculator/config controlled |
 | 5 | `restricted-goods` | 可寄、敏感品与禁运品 | QA-33..QA-40; seed intent `restricted_goods` | `manifest://m3-16/material/restricted-goods` | product-specific uncertainty must hand off |
 | 6 | `customs-tax` | 清关、资料与税费 | QA-41..QA-45; seed intent `timing_customs` | `manifest://m3-16/material/customs-tax` | abnormal customs cases require human review |
@@ -50,12 +50,11 @@ This report records a draft journey/stage mapping that is compatible with the M3
 | Exact quote, SLA, cost and order-status decisions remain outside LLM/KB | pass |
 | Ambiguous account, billing, claims, restricted goods and customs cases route to human review | pass |
 | Raw Telegram messages are not committed | pass |
-| Owner review required before official KB publish | pass |
+| Owner review recorded before any future official KB publish | pass |
 
 ## Remaining Work
 
-- Owner review and corrections on candidate pack.
-- Future import/persistence spec to turn approved candidates into real KB entries/stages.
+- Future import/persistence spec to turn reviewed candidates into real KB entries/stages.
 - Eval gate cases for tutorial stage localization and redline behavior.
 - Knowledge publish workflow and rollback path.
 - Screenshot samples and language blind review remain separate M3 closeout blockers.

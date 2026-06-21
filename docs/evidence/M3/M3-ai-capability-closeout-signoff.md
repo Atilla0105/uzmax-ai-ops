@@ -10,16 +10,16 @@
 > source_files: `AGENTS.md`, four v1.1 root docs, `docs/specs/M3-00-ai-capability-readiness-pack.md`, `docs/specs/M3-11-pre-m4-worker-write-boundary-governance.md`, `docs/specs/M3-12-pre-m4-safety-critical-ignore-cleanup.md`, `docs/specs/M3-13-pre-m4-prettier-ignore-guard.md`, `docs/specs/M3-14-m3-closeout-and-prettier-guard-followup.md`, `docs/specs/M3-15-nonascii-prettier-guard-entrypoint.md`, `docs/specs/M3-16-kb-material-candidates.md`, `docs/evidence/M3/README.md`, `docs/evidence/M3/M3-ai-capability-readiness-pack.md`, `docs/evidence/M3/M3-01*` through `M3-16*`, `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`, `docs/evidence/M3/tutorial/journey-import-report.md`, `docs/evidence/M3/tutorial/kb-candidate-pack.md`, `docs/preflight/01-owner-inputs-checklist.md`, `docs/incidents/README.md`, M3-07/M3-09 incident records, local `git`/`gh` verification on 2026-06-19, 2026-06-20 and 2026-06-21.
 > sensitive_data_location: none in repository
 > redaction_status: no raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, raw prompts, raw completions, LLM keys or secrets included
-> review_notes: M3-01 through M3-09 foundation queue is merged. M3-11 through M3-15 are signoff-before governance follow-ups covering worker write-boundary detection, safety-critical formatter cleanup, prettier-ignore boundary guarding, closeout/test follow-up and the non-ASCII guard entrypoint fix. M3-16 generates a candidate tutorial/KB material pack from owner-local controlled sources and leaves it owner-review pending. M3 closeout remains blocked by candidate review/import/eval, screenshot samples and Uzbek Latin/Cyrillic/Russian blind review. Production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, M4 start and 1.0 release remain blocked or future-gated.
+> review_notes: M3-01 through M3-09 foundation queue is merged. M3-11 through M3-15 are signoff-before governance follow-ups covering worker write-boundary detection, safety-critical formatter cleanup, prettier-ignore boundary guarding, closeout/test follow-up and the non-ASCII guard entrypoint fix. M3-16 generates an owner-reviewed candidate tutorial/KB material pack from owner-local controlled sources. M3 closeout remains blocked by future import/eval/publish gates, screenshot samples and Uzbek Latin/Cyrillic/Russian blind review. Production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, M4 start and 1.0 release remain blocked or future-gated.
 > signoff: no_go__foundation_queue_complete__owner_inputs_block_closeout; not M3 owner accepted; not production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release or 1.0 release signoff
 
 ## Current Decision
 
 M3-01 through M3-09 foundation queue is complete and merged to `main`, with post-merge main CI success for the latest M3 commits verified from GitHub Actions.
 
-M3 closeout is not accepted. Current M3 status remains `foundation_queue_complete__owner_inputs_block_closeout`: the foundation queue is done, and M3-16 adds a candidate tutorial/KB material pack, but M3 closeout remains no-go until that candidate is owner-reviewed and carried through future import/eval/publish gates, and until the remaining owner-input blockers are provided in controlled form or the project owner explicitly decides the branch path for them.
+M3 closeout is not accepted. Current M3 status remains `foundation_queue_complete__owner_inputs_block_closeout`: the foundation queue is done, and M3-16 adds an owner-reviewed candidate tutorial/KB material pack, but M3 closeout remains no-go until that candidate is carried through future import/eval/publish gates, and until the remaining owner-input blockers are provided in controlled form or the project owner explicitly decides the branch path for them.
 
-After M3-10 recorded the no-go closeout, M3-11 through M3-15 added signoff-before governance follow-ups. These follow-ups improve worker write-boundary detection, clean safety-critical formatter bypasses, freeze future `prettier-ignore` spread, harden that guard's focused test evidence and fix the non-ASCII local entrypoint failure. M3-16 adds candidate tutorial/KB materials, but it does not approve those materials, import or publish knowledge, provide screenshot samples or language blind review, and it does not start M4.
+After M3-10 recorded the no-go closeout, M3-11 through M3-15 added signoff-before governance follow-ups. These follow-ups improve worker write-boundary detection, clean safety-critical formatter bypasses, freeze future `prettier-ignore` spread, harden that guard's focused test evidence and fix the non-ASCII local entrypoint failure. M3-16 adds owner-reviewed candidate tutorial/KB materials, but it does not import or publish knowledge, provide screenshot samples or language blind review, and it does not start M4.
 
 This evidence does not approve production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release or 1.0 release.
 
@@ -53,7 +53,7 @@ The M3-10 rows below are historical evidence from the original no-go closeout PR
 | M3-16 root/main status | pass | `/Users/atilla/Documents/UZMAX智能运营` remained `## main...origin/main` before M3-16 edits. |
 | M3-16 open PR audit | pass | `gh pr list --state open --json number,title,headRefName,baseRefName,isDraft,url` returned `[]` before creating this branch. |
 | M3-16 no-merged branch audit | pass | `git branch --no-merged main` returned no branch output before creating this branch. |
-| owner-input evidence directories | partial_candidate | `docs/evidence/M3/tutorial/` now contains candidate tutorial/KB evidence; `docs/evidence/M3/vision/` and `docs/evidence/M3/language-blind-review/` remain absent. |
+| owner-input evidence directories | partial_owner_reviewed_candidate | `docs/evidence/M3/tutorial/` now contains owner-reviewed candidate tutorial/KB evidence; `docs/evidence/M3/vision/` and `docs/evidence/M3/language-blind-review/` remain absent. |
 
 ## M3 Foundation Queue Ledger
 
@@ -83,19 +83,19 @@ These follow-ups happened after the M3-10 no-go closeout record and before M3 ow
 
 ## M3 Owner-Material Candidate Follow-up Ledger
 
-This follow-up happens after the M3-10 no-go closeout record and before M3 owner acceptance. It turns one missing owner-material blocker into a candidate pack for owner review only; it does not publish knowledge, close M3 or start M4.
+This follow-up happens after the M3-10 no-go closeout record and before M3 owner acceptance. It turns one missing owner-material blocker into an owner-reviewed candidate pack; it does not publish knowledge, close M3 or start M4.
 
 | Slice | Status | Scope | Main evidence |
 |---|---|---|---|
-| M3-16 | `implemented_validated` | Docs-only candidate tutorial/KB material pack from owner-local FAQ and redacted Telegram source manifests; no raw source files copied, no DB/admin/runtime/publish path. | `docs/specs/M3-16-kb-material-candidates.md`; `docs/evidence/M3/M3-16-kb-material-candidates.md`; `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md`; `docs/evidence/M3/tutorial/kb-candidate-pack.md` |
+| M3-16 | `implemented_validated_owner_review_completed_not_published` | Docs-only owner-reviewed candidate tutorial/KB material pack from owner-local FAQ and redacted Telegram source manifests; no raw source files copied, no DB/admin/runtime/publish path. | `docs/specs/M3-16-kb-material-candidates.md`; `docs/evidence/M3/M3-16-kb-material-candidates.md`; `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md`; `docs/evidence/M3/tutorial/kb-candidate-pack.md` |
 
 ## Owner-input Blockers
 
-Current repo evidence shows a candidate tutorial/KB material pack exists for owner review. It does not show the candidate pack is accepted, imported, evaluated, published or covered by a project-owner branch decision, and it does not provide screenshot samples or language blind review.
+Current repo evidence shows an owner-reviewed candidate tutorial/KB material pack exists. It does not show the candidate pack is imported, evaluated, published or covered by a project-owner branch decision for release, and it does not provide screenshot samples or language blind review.
 
 | Blocker | Required by | Expected repo evidence destination | Current status |
 |---|---|---|---|
-| Phase-one tutorial material pack | v1.1 technical architecture owner critical path; F-01/H-01 closeout | `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md`; `docs/evidence/M3/tutorial/kb-candidate-pack.md` | `candidate_generated_owner_review_pending_not_closed` |
+| Phase-one tutorial material pack | v1.1 technical architecture owner critical path; F-01/H-01 closeout | `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md`; `docs/evidence/M3/tutorial/kb-candidate-pack.md` | `candidate_owner_review_completed_not_published_not_closed` |
 | Screenshot diagnostic samples >=20 | v1.1 owner critical path; F-02 closeout and screenshot eval | `docs/evidence/M3/vision/screenshot-cases-manifest.md`; `docs/evidence/M3/vision/eval-run-report.md` | `blocked_until_owner_input_or_owner_branch_decision` |
 | Uzbek Latin/Cyrillic/Russian blind review | G-04 matrix item and M3 owner critical path | `docs/evidence/M3/language-blind-review/blind-review-report.md` | `blocked_until_owner_input_or_owner_branch_decision` |
 
@@ -105,7 +105,7 @@ These blockers do not erase the completed foundation queue or the M3-16 candidat
 
 | Item | M3-10 status | Evidence | Release status |
 |---|---|---|---|
-| F-01 | foundation_plus_candidate_owner_review_pending_not_closed | M3-04 stage localization/stage-card-only foundation merged; M3-16 candidate tutorial/KB pack exists; owner approval, import/eval and publish evidence absent | not production closed |
+| F-01 | foundation_plus_owner_reviewed_candidate_not_closed | M3-04 stage localization/stage-card-only foundation merged; M3-16 owner-reviewed candidate tutorial/KB pack exists; import/eval and publish evidence absent | not production closed |
 | F-02 | foundation_done_owner_input_blocked_not_closed | M3-06 screenshot diagnostics foundation merged; >=20 owner screenshot samples and eval report absent | not production closed |
 | F-03 | foundation_done_not_closed | M3-07 speech transcription contract foundation merged | real voice flow/provider evidence future |
 | F-04 | foundation_done_not_closed | M3-05 code-created quote contract merged | persistence/E2E quote flow future |
@@ -117,7 +117,7 @@ These blockers do not erase the completed foundation queue or the M3-16 candidat
 | G-04 | owner_input_blocked_not_closed | blind review evidence absent | strong-model routing/optimization remains locked/frozen |
 | G-05 | foundation_supported_not_closed | M3-03/M3-08 false-positive/output guard foundation | admin false-positive dashboard future |
 | G-06 | partial_foundation_full_not_closed | quota shapes and seed/foundation evidence exist | full 1.0 >=200 set and quotas future |
-| H-01 | material_candidate_partial_not_closed | M3-01/M3-04/M3-09 knowledge/resource foundation evidence plus M3-16 candidate facts/journey/material refs | no knowledge publish/owner approval/import/media upload closure |
+| H-01 | material_candidate_owner_reviewed_partial_not_closed | M3-01/M3-04/M3-09 knowledge/resource foundation evidence plus M3-16 owner-reviewed candidate facts/journey/material refs | no knowledge publish/import/media upload closure |
 | I-01 | local_ui_partial_not_closed | M3-09 local knowledge/eval shell | full desktop core remains broader 1.0 |
 | J-05 | evidence_rolling_archive_updated | M3 evidence recorded per slice and rolled up here, including M3-11 through M3-15 governance follow-ups and M3-16 candidate material evidence | no release signoff |
 | K-03 | active | dedicated M3-16 spec/branch/PR flow maintained; coordinator owns final PR, merge and post-merge hygiene evidence | ongoing governance |
@@ -132,7 +132,7 @@ These blockers do not erase the completed foundation queue or the M3-16 candidat
 
 Existing M2 workspace guard, M3-11 worker write-boundary guard/runbook and incident docs are sufficient to make current worker/root state visible and to stop/report wrong-checkout writes. They are not a complete technical prevention for every path-agnostic edit tool; runtime/harness sandboxing still owns prevention for future parallel work.
 
-M3-13 added a `prettier-ignore` spread guard after M3-12 reduced safety-critical logic bypasses. M3-14 hardens that guard's focused test fixture so diff-added marker detection is directly verified without relying on current-tree baseline expansion. M3-15 fixes the guard's non-ASCII CLI entrypoint so the same guard no longer silently skips execution on the local Chinese root path. M3-16 adds owner-material candidate evidence only and does not change the guard baseline.
+M3-13 added a `prettier-ignore` spread guard after M3-12 reduced safety-critical logic bypasses. M3-14 hardens that guard's focused test fixture so diff-added marker detection is directly verified without relying on current-tree baseline expansion. M3-15 fixes the guard's non-ASCII CLI entrypoint so the same guard no longer silently skips execution on the local Chinese root path. M3-16 adds owner-reviewed material candidate evidence only and does not change the guard baseline.
 
 ## Sensitive Data Boundary
 
@@ -174,7 +174,7 @@ Future sensitive source material must stay in controlled storage. Repo evidence 
 | Docs + source + test scope | pass | M3-16 includes docs-only candidate materials and evidence updates; no source, test, config, lock, generated, dist, business runtime or raw sample changes. |
 | Guard baseline unchanged | pass | M3-16 does not touch guard scripts or tests. |
 | Queue completion wording | pass | Foundation queue is complete, but M3 closeout remains blocked. |
-| Owner-input blockers | pass | Tutorial pack is candidate generated but owner-review/import/eval/publish pending; >=20 screenshots and language blind review remain unresolved. |
+| Owner-input blockers | pass | Tutorial pack is owner-reviewed but import/eval/publish pending; >=20 screenshots and language blind review remain unresolved. |
 | Release honesty | pass | No production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release or 1.0 release approval. |
 | Incident handling | pass | M3-07 and M3-09 statuses are updated after merged PRs; M3-11 records the in-repo worker write-boundary detection/runbook follow-up while runtime/harness prevention remains outside this evidence. |
 | Test integrity | pass | No test deletion, assertion weakening, `.skip` / `.only` / `xit` / `xfail`, mock expansion or snapshot growth. |
@@ -186,6 +186,6 @@ Future sensitive source material must stay in controlled storage. Repo evidence 
 
 Project owner merge/signoff of this M3 closeout evidence would mean:
 
-- accepted: M3 foundation queue completion, closeout no-go evidence, M3-11 through M3-15 signoff-before governance follow-up records and M3-16 candidate material evidence are recorded.
-- still blocked: M3 closeout until the candidate tutorial/KB material pack is owner-reviewed and carried through future import/eval/publish gates, and until screenshot samples and language blind review are provided in controlled form or covered by a project-owner branch decision.
+- accepted: M3 foundation queue completion, closeout no-go evidence, M3-11 through M3-15 signoff-before governance follow-up records and M3-16 owner-reviewed candidate material evidence are recorded.
+- still blocked: M3 closeout until the candidate tutorial/KB material pack is carried through future import/eval/publish gates, and until screenshot samples and language blind review are provided in controlled form or covered by a project-owner branch decision.
 - not accepted: production readiness, real customer traffic, customer LLM, GA-0, prompt/model route release, knowledge publish, AI persona release, Business release, unsupported provider claims or 1.0 release.

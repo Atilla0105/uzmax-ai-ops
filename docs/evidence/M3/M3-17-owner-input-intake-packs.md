@@ -80,6 +80,7 @@ M3-17 does not close M3. It changes the missing evidence destinations to control
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M3-17-owner-input-intake-packs.md --include-worktree` | pass | No PR context found for the branch; explicit spec shape passed with 7 changed docs files, source changed files 0, net source LOC 0 and new source files 0. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors. |
 | `npm run check` | pass | Full local gate passed: format, prettier-ignore guard, typecheck, lint, depcruise, jscpd, knip, forbidden/eval/doc/workspace/worker/pr-shape guards, 150/150 Node tests, build, size and Playwright 7/7. |
+| PR #55 CI | external_blocked | GitHub Actions run `27915399066`, job `82599751310`, failed before any steps started. Check-run annotation says account payments/spending limit must be fixed; no job logs were available. |
 
 ## Spec Compliance Review
 

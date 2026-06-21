@@ -34,17 +34,19 @@ Current M3 closeout and prettier guard follow-up: `M3-14-m3-closeout-and-prettie
 
 Current M3 non-ASCII prettier guard entrypoint follow-up: `M3-15-nonascii-prettier-guard-entrypoint.md`.
 
-M3 current status: `foundation_queue_complete__owner_inputs_block_closeout`. This means M3-01 through M3-09 foundation PRs are complete and merged, and M3-11 through M3-15 have added signoff-before governance follow-ups, but M3 closeout remains no-go until owner-input blockers are provided in controlled form or the project owner explicitly decides the branch path. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
+Current KB material candidate pack: `M3-16-kb-material-candidates.md`.
+
+M3 current status: `foundation_queue_complete__owner_inputs_block_closeout`. This means M3-01 through M3-09 foundation PRs are complete and merged, M3-11 through M3-15 have added signoff-before governance follow-ups, and M3-16 has generated a candidate tutorial/KB material pack from owner-local controlled sources. M3 closeout remains no-go until the candidate pack is owner-reviewed and future import/eval evidence exists, and until the remaining screenshot and language blind-review blockers are resolved or the project owner explicitly decides the branch path. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
 
 M2 prior state: `owner_accepted_m2_milestone_evidence` only. Project owner accepted M2 milestone evidence, but M2 evidence explicitly did not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
 
 M3 owner-input blockers from the v1.1 root docs:
 
-- phase-one tutorial material pack is required before M3/tutorial closeout; expected evidence destinations are `docs/evidence/M3/tutorial/tutorial-materials-manifest.md` and `docs/evidence/M3/tutorial/journey-import-report.md`;
+- phase-one tutorial material pack is required before M3/tutorial closeout; M3-16 now provides candidate materials in `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`, `docs/evidence/M3/tutorial/journey-import-report.md` and `docs/evidence/M3/tutorial/kb-candidate-pack.md`, but owner review, future import/eval evidence and publish gates are still pending;
 - screenshot diagnostic samples >=20 are required before F-02 closeout; expected evidence destinations are `docs/evidence/M3/vision/screenshot-cases-manifest.md` and `docs/evidence/M3/vision/eval-run-report.md`;
 - Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04; expected evidence destination is `docs/evidence/M3/language-blind-review/blind-review-report.md`.
 
-No current repo evidence in this M3 readiness pack provides those owner inputs. M3 closeout remains blocked until they are provided in controlled form or explicitly branched by the project owner.
+Current repo evidence includes a candidate tutorial/KB material pack only. M3 closeout remains blocked until the candidate pack is owner-reviewed and carried through future import/eval/publish gates, and until screenshot samples and language blind review are provided in controlled form or explicitly branched by the project owner.
 
 M3-01 records the first `packages/db` global serial point for M3. It adds minimal schema/contracts/eval persistence/LLM accounting foundation only; F-01/F-02/F-04/F-05/G-01/G-02/G-03/G-05/G-06/H-01 remain foundation/queued and not closed. The owner-input blockers above remain in force.
 
@@ -52,7 +54,7 @@ M3-02 records a pure `packages/llm-gateway` foundation for task route validation
 
 M3-03 records a pure `packages/evals` foundation for eval gate category/status parity, redline leakage checks, category quota fail-closed behavior and prompt/knowledge/model route/persona publish refusal decision semantics. It uses no real fixtures, raw samples, provider calls, persistence, API/worker/engine/admin integration or production publish path. F-05/G-03 are foundation-only and not closed for production.
 
-M3-04 records a pure `packages/capabilities/kb` foundation for tutorial stage localization, stage-card-only answers, controlled refs and unknown/ambiguous fail-closed behavior. It uses no DB persistence, LLM provider, other capability import, engine integration, admin UI, knowledge publish, raw owner tutorial pack or real customer traffic. F-01/H-01 are foundation-only and not closed; the tutorial material pack owner blocker remains active.
+M3-04 records a pure `packages/capabilities/kb` foundation for tutorial stage localization, stage-card-only answers, controlled refs and unknown/ambiguous fail-closed behavior. It uses no DB persistence, LLM provider, other capability import, engine integration, admin UI, knowledge publish, raw owner tutorial pack or real customer traffic. F-01/H-01 are foundation-only and not closed; M3-16 later adds candidate tutorial materials, but owner review and future import/eval/publish gates remain active.
 
 M3-05 records a pure `packages/capabilities/pricing` foundation for deterministic code-created quotes, LLM parameter candidate boundaries and M3-01 compatible `quote_record` drafts. It uses no DB persistence, LLM/provider call, other capability import, engine/API/admin/worker integration, pricing API, order connector, customer asset integration, raw samples or real customer traffic. F-04 is foundation-only and not closed for production; DB persistence, E2E quote flow and customer asset quote history remain future work.
 
@@ -73,6 +75,8 @@ M3-13 records a pre-M4 prettier-ignore boundary guard. It freezes the monitored 
 M3-14 records a follow-up that hardens the prettier-ignore boundary focused test fixture and backfills M3 closeout evidence with M3-11/M3-12/M3-13/M3-14 status. It does not mark M3 accepted and does not start M4.
 
 M3-15 records a follow-up that fixes the prettier-ignore guard CLI entrypoint under non-ASCII script paths and adds a focused regression so the guard no longer silently skips `main()` on the local Chinese root path. It does not mark M3 accepted and does not start M4.
+
+M3-16 records a docs-only candidate tutorial/KB material pack derived from the owner-local FAQ file and redacted Telegram sample manifests. It stores source hashes, aggregate counts, QA ids, sample ids, draft journey stages and candidate fact boundaries only; it does not copy raw source files, publish knowledge, close M3 or start M4.
 
 M3-07 records incident `docs/incidents/INC-2026-06-19-m3-07-root-main-worktree-pollution.md`: a relative edit operation wrote M3-07 files into root/main before commit. The polluted diff was sealed, root/main was cleaned and rechecked, changes were restored only into the assigned worktree, and M3-07 required absolute-path edits plus root/worktree dual status checks for the rest of that slice. After PR #45 merged, this incident is `institutionalized_in_docs`.
 

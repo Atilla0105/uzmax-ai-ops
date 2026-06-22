@@ -23,41 +23,43 @@ export class CustomerAssetService {
     private readonly repository: CustomerAssetRepositoryPort
   ) {}
 
-  listCustomers(accessContext: AccessContext, filters: CustomerAssetListFilters) {
+  async listCustomers(accessContext: AccessContext, filters: CustomerAssetListFilters) {
     assertPermission(accessContext, "customer:read");
     return {
-      items: this.repository.listCustomers(accessContext, filters).map(customerSummary)
+      items: (await this.repository.listCustomers(accessContext, filters)).map(
+        customerSummary
+      )
     };
   }
 
-  getCustomerDetail(accessContext: AccessContext, customerId: string) {
+  async getCustomerDetail(accessContext: AccessContext, customerId: string) {
     assertPermission(accessContext, "customer:read");
-    const customer = this.requireCustomer(accessContext, customerId);
-    return { item: this.buildDetail(accessContext, customer) };
+    const customer = await this.requireCustomer(accessContext, customerId);
+    return { item: await this.buildDetail(accessContext, customer) };
   }
 
-  listFieldDefinitions(accessContext: AccessContext) {
+  async listFieldDefinitions(accessContext: AccessContext) {
     assertPermission(accessContext, "customer:read");
-    return { items: this.repository.listFieldDefinitions(accessContext) };
+    return { items: await this.repository.listFieldDefinitions(accessContext) };
   }
 
-  listTagDefinitions(accessContext: AccessContext) {
+  async listTagDefinitions(accessContext: AccessContext) {
     assertPermission(accessContext, "customer:read");
-    return { items: this.repository.listTagDefinitions(accessContext) };
+    return { items: await this.repository.listTagDefinitions(accessContext) };
   }
 
-  restoreCustomerFlags(
+  async restoreCustomerFlags(
     accessContext: AccessContext,
     customerId: string,
     input: CustomerAssetRestoreInput
   ) {
     assertPermission(accessContext, "customer:write");
-    const customer = this.requireCustomer(accessContext, customerId);
+    const customer = await this.requireCustomer(accessContext, customerId);
     const restoredFlags = restoreFlags(input, customer);
     if (restoredFlags.length === 0) {
       throw new CustomerAssetApiError(400, "restore flag is required");
     }
-    const updated = this.repository.saveCustomer({
+    const updated = await this.repository.saveCustomer({
       ...customer,
       blacklistedAt: restoredFlags.includes("blacklisted")
         ? undefined
@@ -78,39 +80,44 @@ export class CustomerAssetService {
     };
   }
 
-  private requireCustomer(accessContext: AccessContext, customerId: string) {
-    const customer = this.repository.getCustomer(accessContext, customerId);
+  private async requireCustomer(accessContext: AccessContext, customerId: string) {
+    const customer = await this.repository.getCustomer(accessContext, customerId);
     if (!customer) throw new CustomerAssetApiError(404, "customer not found");
     return customer;
   }
 
-  private buildDetail(accessContext: AccessContext, customer: CustomerAssetCustomer) {
-    const fieldDefinitions = this.repository.listFieldDefinitions(accessContext);
-    const tagDefinitions = this.repository.listTagDefinitions(accessContext);
+  private async buildDetail(
+    accessContext: AccessContext,
+    customer: CustomerAssetCustomer
+  ) {
+    const [fieldDefinitions, tagDefinitions, fieldValues, identities, tagAssignments] =
+      await Promise.all([
+        this.repository.listFieldDefinitions(accessContext),
+        this.repository.listTagDefinitions(accessContext),
+        this.repository.listFieldValues(accessContext, customer.id),
+        this.repository.listIdentities(accessContext, customer.id),
+        this.repository.listTagAssignments(accessContext, customer.id)
+      ]);
     return {
       customer,
-      fields: this.repository
-        .listFieldValues(accessContext, customer.id)
-        .map((value) => ({
-          ...value,
-          definition: requireRelated(
-            fieldDefinitions.find(
-              (definition) => definition.id === value.fieldDefinitionId
-            ),
-            "field definition not found"
-          )
-        })),
-      identities: this.repository.listIdentities(accessContext, customer.id),
+      fields: fieldValues.map((value) => ({
+        ...value,
+        definition: requireRelated(
+          fieldDefinitions.find(
+            (definition) => definition.id === value.fieldDefinitionId
+          ),
+          "field definition not found"
+        )
+      })),
+      identities,
       relatedRefs: customer.relatedRefs ?? {},
-      tags: this.repository
-        .listTagAssignments(accessContext, customer.id)
-        .map((tag) => ({
-          ...tag,
-          definition: requireRelated(
-            tagDefinitions.find((definition) => definition.id === tag.tagDefinitionId),
-            "tag definition not found"
-          )
-        }))
+      tags: tagAssignments.map((tag) => ({
+        ...tag,
+        definition: requireRelated(
+          tagDefinitions.find((definition) => definition.id === tag.tagDefinitionId),
+          "tag definition not found"
+        )
+      }))
     };
   }
 }

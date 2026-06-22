@@ -13,30 +13,36 @@ import type {
 
 export const CUSTOMER_ASSET_REPOSITORY = Symbol("CUSTOMER_ASSET_REPOSITORY");
 
+type MaybePromise<T> = T | Promise<T>;
+
 export type CustomerAssetRepositoryPort = {
   getCustomer(
     accessContext: AccessContext,
     customerId: string
-  ): CustomerAssetCustomer | undefined;
+  ): MaybePromise<CustomerAssetCustomer | undefined>;
   listCustomers(
     accessContext: AccessContext,
     filters: CustomerAssetListFilters
-  ): CustomerAssetCustomer[];
-  listFieldDefinitions(accessContext: AccessContext): CustomerAssetFieldDefinition[];
+  ): MaybePromise<CustomerAssetCustomer[]>;
+  listFieldDefinitions(
+    accessContext: AccessContext
+  ): MaybePromise<CustomerAssetFieldDefinition[]>;
   listFieldValues(
     accessContext: AccessContext,
     customerId: string
-  ): CustomerAssetFieldValue[];
+  ): MaybePromise<CustomerAssetFieldValue[]>;
   listIdentities(
     accessContext: AccessContext,
     customerId: string
-  ): CustomerAssetIdentity[];
+  ): MaybePromise<CustomerAssetIdentity[]>;
   listTagAssignments(
     accessContext: AccessContext,
     customerId: string
-  ): CustomerAssetTagAssignment[];
-  listTagDefinitions(accessContext: AccessContext): CustomerAssetTagDefinition[];
-  saveCustomer(customer: CustomerAssetCustomer): CustomerAssetCustomer;
+  ): MaybePromise<CustomerAssetTagAssignment[]>;
+  listTagDefinitions(
+    accessContext: AccessContext
+  ): MaybePromise<CustomerAssetTagDefinition[]>;
+  saveCustomer(customer: CustomerAssetCustomer): MaybePromise<CustomerAssetCustomer>;
 };
 
 export class InMemoryCustomerAssetRepository implements CustomerAssetRepositoryPort {
@@ -65,9 +71,16 @@ export class InMemoryCustomerAssetRepository implements CustomerAssetRepositoryP
   }
 
   listCustomers(accessContext: AccessContext, filters: CustomerAssetListFilters) {
+    const scopedAssignments = scoped(this.tagAssignments, accessContext);
+    const scopedDefinitions = scoped(this.tagDefinitions, accessContext);
     return scoped(this.customers, accessContext)
       .filter((customer) =>
-        matchesFilters(customer, filters, this.tagAssignments, this.tagDefinitions)
+        matchesCustomerAssetFilters(
+          customer,
+          filters,
+          scopedAssignments,
+          scopedDefinitions
+        )
       )
       .sort((left, right) => right.id.localeCompare(left.id))
       .map(clone);
@@ -111,14 +124,13 @@ export class InMemoryCustomerAssetRepository implements CustomerAssetRepositoryP
   }
 }
 
-function matchesFilters(
+export function matchesCustomerAssetFilters(
   customer: CustomerAssetCustomer,
   filters: CustomerAssetListFilters,
   assignments: readonly CustomerAssetTagAssignment[],
   definitions: readonly CustomerAssetTagDefinition[]
 ) {
-  if (filters.flag === "blacklisted" && !customer.isBlacklisted) return false;
-  if (filters.flag === "unreachable" && !customer.isUnreachable) return false;
+  if (!matchesBasicFlag(customer, filters)) return false;
   if (!filters.tagKey) return true;
   const definition = definitions.find((tag) => tag.tagKey === filters.tagKey);
   return assignments.some(
@@ -126,6 +138,15 @@ function matchesFilters(
       assignment.customerId === customer.id &&
       assignment.tagDefinitionId === definition?.id
   );
+}
+
+function matchesBasicFlag(
+  customer: CustomerAssetCustomer,
+  filters: CustomerAssetListFilters
+) {
+  if (filters.flag === "blacklisted" && !customer.isBlacklisted) return false;
+  if (filters.flag === "unreachable" && !customer.isUnreachable) return false;
+  return true;
 }
 
 function scoped<T extends { orgId: string; tenantId: string }>(

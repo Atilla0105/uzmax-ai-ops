@@ -188,6 +188,40 @@ test("renders the M3-09 knowledge resources and eval gate shell", async ({ page 
   );
 });
 
+test("renders the M4-01 order path status shell truthfully", async ({ page }) => {
+  await page.goto("/design");
+  await expect(page.getByTestId("m4-order-path-status-shell")).toBeVisible();
+  await expect(page.getByTestId("m4-primary-path")).toContainText(
+    "订单数据主路径：导入快照"
+  );
+  await expect(page.getByTestId("m4-primary-path")).toContainText(
+    "No direct order API configured"
+  );
+  await expect(page.getByTestId("m4-primary-path")).toContainText(
+    "Project decision, not live API degradation"
+  );
+  await expect(page.getByTestId("m4-order-path-state")).toContainText("ADR-B02");
+  await expect(page.getByTestId("m4-order-path-state")).toContainText("no_api_for_m4");
+  await expect(page.getByTestId("m4-order-path-state")).toContainText("P0 main path");
+  await expect(page.getByTestId("m4-order-path-state")).toContainText(
+    "Stale warning required"
+  );
+  await expect(page.getByTestId("m4-order-path-state")).toContainText(
+    "Hand off on missing data"
+  );
+  await expect(page.getByTestId("m4-future-gates")).toContainText("Import jobs");
+  await expect(page.getByTestId("m4-future-gates")).toContainText("Order search");
+  await expect(page.getByTestId("m4-future-gates")).toContainText("Customer linkage");
+  await expect(page.getByRole("button", { name: "Import job gated" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Order search gated" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Customer linkage gated" })
+  ).toBeDisabled();
+  await expect(page.getByTestId("m4-order-path-status-shell")).not.toContainText(
+    /temporary outage|live outage|API failure|raw payload|csv export|xlsx|ORD-|PAY-|TG-|phone|address|payment|secret|@[\w_]+|\+?\d[\d\s-]{6,}/i
+  );
+});
+
 test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 860 });
   await page.goto("/design");
@@ -195,6 +229,10 @@ test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) =>
   await expect(page.getByTestId("release-readiness")).toBeVisible();
   await expect(page.getByTestId("m2-conversation-ticket-shell")).toBeVisible();
   await expect(page.getByTestId("m3-knowledge-eval-shell")).toBeVisible();
+  await expect(page.getByTestId("m4-order-path-status-shell")).toBeVisible();
+  await expect(page.getByTestId("m4-primary-path")).toContainText(
+    "订单数据主路径：导入快照"
+  );
   await expect(page.getByTestId("conversation-filters")).toContainText("Needs human");
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(320);

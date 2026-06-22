@@ -101,9 +101,62 @@ export async function importApiRuntime() {
     "packages/capabilities/handoff/src/index.ts",
     "handoff-index.mjs"
   );
+  await writeModule(
+    outDir,
+    "packages/capabilities/order-read/src/index.ts",
+    "order-read-index.mjs"
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/order-import.types.ts",
+    "order-import.types.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/capabilities/order-read/src/index.ts": "./order-read-index.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/order-import.repository.ts",
+    "order-import.repository.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "./order-import.types.ts": "./order-import.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/order-import.service.ts",
+    "order-import.service.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/capabilities/order-read/src/index.ts":
+        "./order-read-index.mjs",
+      "./order-import.repository.ts": "./order-import.repository.mjs",
+      "./order-import.types.ts": "./order-import.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/order-import.controller.ts",
+    "order-import.controller.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "./access-context.ts": "./access-context.mjs",
+      "./order-import.service.ts": "./order-import.service.mjs",
+      "./order-import.types.ts": "./order-import.types.mjs"
+    }
+  );
+  await writeModule(outDir, "apps/api/src/order-import.ts", "order-import.mjs", {
+    "./order-import.controller.ts": "./order-import.controller.mjs",
+    "./order-import.repository.ts": "./order-import.repository.mjs",
+    "./order-import.service.ts": "./order-import.service.mjs",
+    "./order-import.types.ts": "./order-import.types.mjs"
+  });
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
     "./access-context.ts": "./access-context.mjs",
-    "./conversation-ticket.ts": "./conversation-ticket.mjs"
+    "./conversation-ticket.ts": "./conversation-ticket.mjs",
+    "./order-import.ts": "./order-import.mjs"
   });
   await writeModule(outDir, "apps/api/src/main.ts", "main.mjs", {
     "./app.module.ts": "./app.module.mjs"

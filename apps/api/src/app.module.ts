@@ -13,6 +13,11 @@ import {
   ConversationTicketService,
   InMemoryConversationTicketRepository
 } from "./conversation-ticket.ts";
+import {
+  InMemoryOrderImportRepository,
+  OrderImportController,
+  OrderImportService
+} from "./order-import.ts";
 import type {
   DisabledTelegramBotIngressQueue as ContractDisabledTelegramBotIngressQueue,
   InMemoryTelegramBotIngressQueue,
@@ -79,15 +84,18 @@ class TelegramBotWebhookController {
     api.ApiAccessContextController,
     api.ApiHealthController,
     ConversationTicketController,
+    OrderImportController,
     TelegramBotWebhookController
   ],
   providers: [
     api.ApiAccessContextGuard,
     api.ApiAccessContextService,
     ConversationTicketService,
+    OrderImportService,
     TelegramBotWebhookService,
     DisabledTelegramBotIngressQueue,
     InMemoryConversationTicketRepository,
+    InMemoryOrderImportRepository,
     { provide: api.API_AUDIT_SINK, useClass: api.InMemoryAuditSink },
     { provide: api.API_AUTHZ_REPOSITORY, useClass: api.DisabledAuthzRepository },
     {

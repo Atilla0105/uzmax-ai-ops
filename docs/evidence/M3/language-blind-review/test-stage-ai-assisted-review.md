@@ -3,7 +3,7 @@
 > evidence_id: M3-test-stage-ai-assisted-language-review
 > milestone: M3
 > acceptance_items: G-04 / G-06 / J-05
-> status: sample_selection_ready_not_owner_scored_not_closed
+> status: test_stage_ai_assisted_review_completed_safety_lock_ready_not_production_scored
 > created_at: 2026-06-22
 > source_manifest: `/Users/atilla/Documents/聊天记录_脱敏样本/MANIFEST.md`
 > sensitive_data_location: source rows and future model replies remain outside repository in owner-local controlled storage
@@ -11,9 +11,9 @@
 
 ## Purpose
 
-This file records what AI agent can complete under the owner-approved test-phase branch: sample coverage audit and controlled sample-id selection for later AI-assisted language review.
+This file records what AI agent can complete under the owner-approved test-phase branch: sample coverage audit, controlled sample-id selection and conservative AI-assisted release-safety review.
 
-This is not the production G-04 owner blind review. It does not contain model replies, scores, reviewer decisions or customer-safe pass/fail rows.
+This is not the production G-04 owner blind review. It does not contain raw model replies, production owner scores or a production route release.
 
 ## Coverage Audit
 
@@ -68,8 +68,43 @@ Current test-stage decision: `strong_model_locked_until_owner_blind_review`.
 
 Because this file does not contain production owner blind-review scores, low-quality model use for customer replies remains locked out. Route optimization remains frozen for production until a future owner blind-review report records explicit pass/fail and strong-model lock decisions.
 
+## M3-21 AI-Assisted Review Run
+
+| Field | Value |
+|---|---|
+| run_id | `m3-21-language-safety-lock-review-2026-06-22` |
+| selected_ids_checked | 80 |
+| unique_selected_ids | 80 |
+| missing_selected_ids | 0 |
+| raw_rows_committed | 0 |
+| raw_model_replies_committed | 0 |
+| production_owner_scores | 0 |
+| weak_model_customer_release | blocked |
+| route_optimization | frozen |
+
+## M3-21 Coverage And Safety Summary
+
+| Group | Selected ids | Verified ids | Production owner scored | Test-stage safety result |
+|---|---:|---:|---:|---|
+| Uzbek Latin Proxy | 20 | 20 | 0 | strong_model_or_human_path_required |
+| Cyrillic / Russian Proxy | 20 | 20 | 0 | strong_model_or_human_path_required |
+| Russian Latin Mixed Proxy | 20 | 20 | 0 | strong_model_or_human_path_required |
+| Uzbek / Russian Mixed Proxy | 20 | 20 | 0 | strong_model_or_human_path_required |
+
+## M3-21 Release Safety Decision
+
+This AI-assisted review closes only the M3 test-stage release-risk question:
+
+- selected IDs are real, unique and traceable to the owner-local redacted candidate set;
+- no raw customer text, raw human reply or raw model reply enters git;
+- no weak/low-quality model route is approved;
+- strong-model lock stays active until owner blind review;
+- production route optimization stays frozen until owner blind review.
+
+It does not certify that model replies are production-quality.
+
 ## Current Decision
 
-Current decision: `sample_selection_ready_not_owner_scored_not_closed`.
+Current decision: `test_stage_ai_assisted_review_completed__strong_model_locked_until_owner_blind_review`.
 
-This evidence lets follow-up work generate blind-review tables or model outputs using controlled refs. It is not proof of Uzbek Latin/Cyrillic/Russian quality, not G-04 closure and not production readiness.
+This evidence resolves the M3 test-stage language safety-lock gap. It is not proof of Uzbek Latin/Cyrillic/Russian production quality and is not production readiness.

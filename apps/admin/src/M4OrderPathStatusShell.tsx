@@ -1,6 +1,22 @@
 import { useState } from "react";
 
 import "./m4-order-path-status-shell.css";
+import {
+  createOrderImportApiClient,
+  type OrderImportApiClient
+} from "./orderImportApiClient";
+
+type OrderImportApiClientContractAnchor = {
+  client: typeof createOrderImportApiClient;
+  instance: OrderImportApiClient;
+};
+const orderImportApiClientContractAnchor: Pick<
+  OrderImportApiClientContractAnchor,
+  "client"
+> = {
+  client: createOrderImportApiClient
+};
+void orderImportApiClientContractAnchor;
 
 const pathSignals = [
   ["ADR-B02", "no_api_for_m4", "API not configured"],

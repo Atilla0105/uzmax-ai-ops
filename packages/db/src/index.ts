@@ -1,6 +1,10 @@
 export const packageName = "@uzmax/db";
 // prettier-ignore
 export type { M3AiContractInput, createEvalCaseContract as M3CreateEvalCaseContract, createEvalGateContract as M3CreateEvalGateContract, createEvalResultContract as M3CreateEvalResultContract, createEvalRunContract as M3CreateEvalRunContract, createKbEntryContract as M3CreateKbEntryContract, createKbStageContract as M3CreateKbStageContract, createLlmCallLogContract as M3CreateLlmCallLogContract, createMediaAssetContract as M3CreateMediaAssetContract, createQuoteRecordContract as M3CreateQuoteRecordContract, evalCategories as M3EvalCategories, evalGateStatuses as M3EvalGateStatuses, evalResultStatuses as M3EvalResultStatuses, evalRunStatuses as M3EvalRunStatuses, llmCallStatuses as M3LlmCallStatuses, llmTasks as M3LlmTasks, m3AiTableNames as M3AiTableNames, m3RecordStatuses as M3RecordStatuses, quoteRecordStatuses as M3QuoteRecordStatuses, quoteSources as M3QuoteSources } from "./m3-ai-contracts";
+export type {
+  M4CustomerAssetContractInput,
+  m4CustomerAssetContracts as M4CustomerAssetContracts
+} from "./m4-customer-asset-contracts";
 
 const ROLE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const UUID_TEXT =

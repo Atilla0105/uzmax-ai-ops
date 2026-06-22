@@ -38,7 +38,10 @@ describe("M1-01 platform schema and RLS contract", () => {
     assert.match(schema, /@@map\("org_member"\)/);
     assert.match(schema, /@@map\("tenant_member"\)/);
     assert.match(schema, /@@map\("permission_grant"\)/);
-    assert.doesNotMatch(schema, /model (Customer|Conversation|Order|Knowledge)/);
+    assert.doesNotMatch(
+      migration,
+      /create table if not exists (customer|conversation|order|knowledge)/i
+    );
   });
 
   it("keeps platform RLS fail-closed on missing tenant context", () => {
@@ -86,7 +89,10 @@ describe("M1-04 audit and config version foundation", () => {
     assert.match(schema, /enum ConfigVersionStatus/);
     assert.match(schema, /@@map\("audit_log"\)/);
     assert.match(schema, /@@map\("config_version"\)/);
-    assert.doesNotMatch(schema, /model (Customer|Conversation|Message|Order|KbEntry)/);
+    assert.doesNotMatch(
+      governanceMigration,
+      /create table if not exists (customer|conversation|message|order|kb_entry)/i
+    );
   });
 
   it("keeps governance RLS scoped to selected org and tenant", () => {

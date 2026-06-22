@@ -101,6 +101,14 @@ export async function importApiRuntime() {
     "packages/capabilities/handoff/src/index.ts",
     "handoff-index.mjs"
   );
+  for (const [name, replacements] of customerAssetRuntimeModules()) {
+    await writeModule(
+      outDir,
+      `apps/api/src/customer-asset.${name}.ts`,
+      `customer-asset.${name}.mjs`,
+      replacements
+    );
+  }
   await writeModule(
     outDir,
     "packages/capabilities/order-read/src/index.ts",
@@ -156,6 +164,9 @@ export async function importApiRuntime() {
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
     "./access-context.ts": "./access-context.mjs",
     "./conversation-ticket.ts": "./conversation-ticket.mjs",
+    "./customer-asset.controller.ts": "./customer-asset.controller.mjs",
+    "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
+    "./customer-asset.service.ts": "./customer-asset.service.mjs",
     "./order-import.ts": "./order-import.mjs"
   });
   await writeModule(outDir, "apps/api/src/main.ts", "main.mjs", {
@@ -175,4 +186,34 @@ async function writeModule(outDir, sourcePath, outputName, replacements = {}) {
     fileName: sourcePath
   });
   await writeFile(path.join(outDir, outputName), outputText);
+}
+
+function customerAssetRuntimeModules() {
+  return [
+    ["types", { "../../../packages/authz/src/index.ts": "./authz-index.mjs" }],
+    [
+      "repository",
+      {
+        "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+        "./customer-asset.types.ts": "./customer-asset.types.mjs"
+      }
+    ],
+    [
+      "service",
+      {
+        "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+        "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
+        "./customer-asset.types.ts": "./customer-asset.types.mjs"
+      }
+    ],
+    [
+      "controller",
+      {
+        "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+        "./access-context.ts": "./access-context.mjs",
+        "./customer-asset.service.ts": "./customer-asset.service.mjs",
+        "./customer-asset.types.ts": "./customer-asset.types.mjs"
+      }
+    ]
+  ];
 }

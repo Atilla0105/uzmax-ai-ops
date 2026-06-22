@@ -14,6 +14,12 @@ import {
   InMemoryConversationTicketRepository
 } from "./conversation-ticket.ts";
 import {
+  CUSTOMER_ASSET_REPOSITORY,
+  InMemoryCustomerAssetRepository
+} from "./customer-asset.repository.ts";
+import { CustomerAssetController } from "./customer-asset.controller.ts";
+import { CustomerAssetService } from "./customer-asset.service.ts";
+import {
   ORDER_IMPORT_REPOSITORY,
   InMemoryOrderImportRepository,
   OrderImportController,
@@ -103,6 +109,7 @@ class TelegramBotWebhookController {
     api.ApiAccessContextController,
     api.ApiHealthController,
     ConversationTicketController,
+    CustomerAssetController,
     OrderImportController,
     TelegramBotWebhookController
   ],
@@ -110,10 +117,16 @@ class TelegramBotWebhookController {
     api.ApiAccessContextGuard,
     api.ApiAccessContextService,
     ConversationTicketService,
+    CustomerAssetService,
     OrderImportService,
     TelegramBotWebhookService,
     DisabledTelegramBotIngressQueue,
     InMemoryConversationTicketRepository,
+    InMemoryCustomerAssetRepository,
+    {
+      provide: CUSTOMER_ASSET_REPOSITORY,
+      useExisting: InMemoryCustomerAssetRepository
+    },
     InMemoryOrderImportRepository,
     { provide: ORDER_IMPORT_REPOSITORY, useExisting: InMemoryOrderImportRepository },
     { provide: api.API_AUDIT_SINK, useClass: api.InMemoryAuditSink },

@@ -3,23 +3,23 @@
 > evidence_id: M3-ai-capability-closeout-signoff
 > milestone: M3
 > acceptance_items: F-01 / F-02 / F-03 / F-04 / F-05 / F-06 / G-01 / G-02 / G-03 / G-04 / G-05 / G-06 / H-01 / I-01 / J-05 / K-03 / K-04
-> status: foundation_queue_complete__owner_inputs_block_closeout
+> status: foundation_queue_complete__test_stage_f02_ready__owner_inputs_remaining
 > created_at: 2026-06-19
 > updated_at: 2026-06-22
 > owner_ai_boundary: Project owner decides tutorial materials, screenshot samples, language blind review, real customer data, customer LLM, provider keys/routes, knowledge publish, AI persona release, GA-0, cost, compliance and 1.0 release. AI agent records current repo/GitHub evidence, blockers, validation and incident status only.
-> source_files: `AGENTS.md`, four v1.1 root docs, `docs/specs/M3-00-ai-capability-readiness-pack.md`, `docs/specs/M3-11-pre-m4-worker-write-boundary-governance.md`, `docs/specs/M3-12-pre-m4-safety-critical-ignore-cleanup.md`, `docs/specs/M3-13-pre-m4-prettier-ignore-guard.md`, `docs/specs/M3-14-m3-closeout-and-prettier-guard-followup.md`, `docs/specs/M3-15-nonascii-prettier-guard-entrypoint.md`, `docs/specs/M3-16-kb-material-candidates.md`, `docs/specs/M3-17-owner-input-intake-packs.md`, `docs/specs/M3-18-ci-cost-stopgap.md`, `docs/specs/M3-19-test-phase-ai-materials.md`, `docs/evidence/M3/README.md`, `docs/evidence/M3/M3-ai-capability-readiness-pack.md`, `docs/evidence/M3/M3-01*` through `M3-19*`, `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`, `docs/evidence/M3/tutorial/journey-import-report.md`, `docs/evidence/M3/tutorial/kb-candidate-pack.md`, `docs/evidence/M3/tutorial/test-stage-kb-structure.md`, `docs/evidence/M3/vision/screenshot-cases-manifest.md`, `docs/evidence/M3/vision/eval-run-report.md`, `docs/evidence/M3/language-blind-review/blind-review-report.md`, `docs/evidence/M3/language-blind-review/test-stage-ai-assisted-review.md`, `docs/preflight/01-owner-inputs-checklist.md`, `docs/incidents/README.md`, M3-07/M3-09 incident records, local `git`/`gh` verification on 2026-06-19, 2026-06-20, 2026-06-21 and 2026-06-22.
+> source_files: `AGENTS.md`, four v1.1 root docs, `docs/specs/M3-00-ai-capability-readiness-pack.md`, `docs/specs/M3-11-pre-m4-worker-write-boundary-governance.md`, `docs/specs/M3-12-pre-m4-safety-critical-ignore-cleanup.md`, `docs/specs/M3-13-pre-m4-prettier-ignore-guard.md`, `docs/specs/M3-14-m3-closeout-and-prettier-guard-followup.md`, `docs/specs/M3-15-nonascii-prettier-guard-entrypoint.md`, `docs/specs/M3-16-kb-material-candidates.md`, `docs/specs/M3-17-owner-input-intake-packs.md`, `docs/specs/M3-18-ci-cost-stopgap.md`, `docs/specs/M3-19-test-phase-ai-materials.md`, `docs/specs/M3-20-vision-screenshot-samples.md`, `docs/evidence/M3/README.md`, `docs/evidence/M3/M3-ai-capability-readiness-pack.md`, `docs/evidence/M3/M3-01*` through `M3-20*`, `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`, `docs/evidence/M3/tutorial/journey-import-report.md`, `docs/evidence/M3/tutorial/kb-candidate-pack.md`, `docs/evidence/M3/tutorial/test-stage-kb-structure.md`, `docs/evidence/M3/vision/screenshot-cases-manifest.md`, `docs/evidence/M3/vision/eval-run-report.md`, `docs/evidence/M3/language-blind-review/blind-review-report.md`, `docs/evidence/M3/language-blind-review/test-stage-ai-assisted-review.md`, `docs/preflight/01-owner-inputs-checklist.md`, `docs/incidents/README.md`, M3-07/M3-09 incident records, local `git`/`gh` verification on 2026-06-19, 2026-06-20, 2026-06-21 and 2026-06-22.
 > sensitive_data_location: none in repository
 > redaction_status: no raw/export/jsonl/csv, customer plaintext, Telegram payloads, screenshots, voice transcripts, order IDs, phone numbers, addresses, payment data, support personal accounts, raw prompts, raw completions, LLM keys or secrets included
-> review_notes: M3-01 through M3-09 foundation queue is merged. M3-11 through M3-15 are signoff-before governance follow-ups covering worker write-boundary detection, safety-critical formatter cleanup, prettier-ignore boundary guarding, closeout/test follow-up and the non-ASCII guard entrypoint fix. M3-16 generates an owner-reviewed candidate tutorial/KB material pack from owner-local controlled sources. M3-17 creates controlled intake evidence shells for screenshot samples and Uzbek Latin/Cyrillic/Russian blind review. M3-18 records a CI cost stopgap. M3-19 records the owner-approved test-phase source branch and prepares KB structure plus language sample-selection evidence. M3 closeout remains blocked by future import/eval/publish gates, actual screenshot samples/eval and completed production owner blind review. Production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, M4 start and 1.0 release remain blocked or future-gated.
-> signoff: no_go__foundation_queue_complete__owner_inputs_block_closeout; not M3 owner accepted; not production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release or 1.0 release signoff
+> review_notes: M3-01 through M3-09 foundation queue is merged. M3-11 through M3-15 are signoff-before governance follow-ups covering worker write-boundary detection, safety-critical formatter cleanup, prettier-ignore boundary guarding, closeout/test follow-up and the non-ASCII guard entrypoint fix. M3-16 generates an owner-reviewed candidate tutorial/KB material pack from owner-local controlled sources. M3-17 creates controlled intake evidence shells for screenshot samples and Uzbek Latin/Cyrillic/Russian blind review. M3-18 records a CI cost stopgap. M3-19 records the owner-approved test-phase source branch and prepares KB structure plus language sample-selection evidence. M3-20 records 26 owner-confirmed test-fixture screenshot cases and AI visual eval pass evidence for F-02 test-stage closure. M3 closeout remains blocked by future import/eval/publish gates and completed production owner blind review unless the project owner explicitly accepts the test-stage branch boundary for M3. Production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, M4 start and 1.0 release remain blocked or future-gated.
+> signoff: no_go__test_stage_f02_ready__owner_inputs_remaining; not M3 owner accepted; not production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release or 1.0 release signoff
 
 ## Current Decision
 
 M3-01 through M3-09 foundation queue is complete and merged to `main`, with post-merge main CI success for the latest M3 commits verified from GitHub Actions.
 
-M3 closeout is not accepted. Current M3 status remains `foundation_queue_complete__owner_inputs_block_closeout`: the foundation queue is done, M3-16 adds an owner-reviewed candidate tutorial/KB material pack, M3-17 adds controlled intake shells for screenshot and language blind-review blockers, M3-18 reduces CI cost exposure, and M3-19 records the owner-approved test-phase source branch with KB structure and language sample-selection evidence. M3 closeout remains no-go until the candidate knowledge is carried through future import/eval/publish gates, and until screenshot samples plus production owner blind-review evidence are actually provided/reviewed in controlled form or explicitly branched by the project owner.
+M3 closeout is not accepted yet. Current M3 status is `foundation_queue_complete__test_stage_f02_ready__owner_inputs_remaining`: the foundation queue is done, M3-16 adds an owner-reviewed candidate tutorial/KB material pack, M3-17 adds controlled intake shells for screenshot and language blind-review blockers, M3-18 reduces CI cost exposure, M3-19 records the owner-approved test-phase source branch with KB structure and language sample-selection evidence, and M3-20 adds 26 owner-confirmed test-fixture screenshot cases plus AI visual eval pass evidence. M3 closeout remains no-go until the candidate knowledge is carried through future import/eval/publish gates and production owner blind review is completed, unless the project owner explicitly accepts this test-stage branch boundary for M3 signoff.
 
-After M3-10 recorded the no-go closeout, M3-11 through M3-15 added signoff-before governance follow-ups. These follow-ups improve worker write-boundary detection, clean safety-critical formatter bypasses, freeze future `prettier-ignore` spread, harden that guard's focused test evidence and fix the non-ASCII local entrypoint failure. M3-16 adds owner-reviewed candidate tutorial/KB materials, M3-17 adds screenshot/language owner-input intake evidence shells, M3-18 records CI path cost controls, and M3-19 creates test-stage KB/language evidence. They do not import or publish knowledge, provide actual screenshot samples, complete production blind review, run production evals or start M4.
+After M3-10 recorded the no-go closeout, M3-11 through M3-15 added signoff-before governance follow-ups. These follow-ups improve worker write-boundary detection, clean safety-critical formatter bypasses, freeze future `prettier-ignore` spread, harden that guard's focused test evidence and fix the non-ASCII local entrypoint failure. M3-16 adds owner-reviewed candidate tutorial/KB materials, M3-17 adds screenshot/language owner-input intake evidence shells, M3-18 records CI path cost controls, M3-19 creates test-stage KB/language evidence, and M3-20 provides the actual screenshot sample/eval evidence for the test stage. They do not import or publish knowledge, complete production blind review, run production provider evals or start M4.
 
 This evidence does not approve production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release or 1.0 release.
 
@@ -63,7 +63,11 @@ The M3-10 rows below are historical evidence from the original no-go closeout PR
 | M3-19 assigned branch | pass | `codex/m3-19-test-phase-ai-materials` |
 | M3-19 worker status | pass | Worker status before M3-19 edits was `## codex/m3-19-test-phase-ai-materials`. |
 | M3-19 root/main status | pass | `/Users/atilla/Documents/UZMAX智能运营` remained `## main...origin/main` before M3-19 edits. |
-| owner-input evidence directories | intake_ready_owner_input_pending | `docs/evidence/M3/tutorial/` contains owner-reviewed candidate tutorial/KB evidence; M3-17 creates `docs/evidence/M3/vision/` and `docs/evidence/M3/language-blind-review/` intake shells, with current screenshot count 0 and blind-review counts 0/0/0. |
+| M3-20 assigned worktree | pass | `/Users/atilla/Documents/uzmax-m3-20-vision-screenshot-samples` |
+| M3-20 assigned branch | pass | `codex/m3-20-vision-screenshot-samples` |
+| M3-20 worker status | pass | Worker status before M3-20 edits was `## codex/m3-20-vision-screenshot-samples`. |
+| M3-20 root/main status | pass | `/Users/atilla/Documents/UZMAX智能运营` remained `## main...origin/main` before M3-20 edits. |
+| owner-input evidence directories | screenshot_test_stage_ready_language_pending | `docs/evidence/M3/tutorial/` contains owner-reviewed candidate tutorial/KB evidence; `docs/evidence/M3/vision/` now records 26 owner-confirmed test-fixture screenshot cases and test-stage AI visual eval pass; `docs/evidence/M3/language-blind-review/` remains production owner-scoring pending. |
 
 ## M3 Foundation Queue Ledger
 
@@ -115,25 +119,26 @@ These follow-ups happened after M3-17 and before M3 owner acceptance. They reduc
 |---|---|---|---|
 | M3-18 | `implemented_validated_cost_stopgap` | Path-aware CI cost stopgap; docs-only PRs run lightweight governance gates while heavy gates remain conditional or manually forced. | `docs/specs/M3-18-ci-cost-stopgap.md`; `docs/evidence/M3/M3-18-ci-cost-stopgap.md` |
 | M3-19 | `test_phase_branch_recorded_not_closed` | Owner-approved test-phase source branch; test-stage KB structure and controlled language sample-id selection using local FAQ/redacted sample metadata. | `docs/specs/M3-19-test-phase-ai-materials.md`; `docs/evidence/M3/M3-19-test-phase-ai-materials.md`; `docs/evidence/M3/tutorial/test-stage-kb-structure.md`; `docs/evidence/M3/language-blind-review/test-stage-ai-assisted-review.md` |
+| M3-20 | `test_stage_f02_sample_eval_ready_not_production_closed` | 26 owner-confirmed test-fixture screenshot cases plus AI visual eval pass; no raw images or visible values in git; production provider/e2e future-gated. | `docs/specs/M3-20-vision-screenshot-samples.md`; `docs/evidence/M3/M3-20-vision-screenshot-samples.md`; `docs/evidence/M3/vision/screenshot-cases-manifest.md`; `docs/evidence/M3/vision/eval-run-report.md` |
 
 ## Owner-input Blockers
 
-Current repo evidence shows an owner-reviewed candidate tutorial/KB material pack exists and M3-19 records a project-owner test-phase branch decision for using local FAQ/redacted samples and future citable public materials. It does not show the candidate pack is imported, evaluated, published or covered by a project-owner branch decision for production release, and it does not provide screenshot samples or production language blind review.
+Current repo evidence shows an owner-reviewed candidate tutorial/KB material pack exists, M3-19 records a project-owner test-phase branch decision for using local FAQ/redacted samples and future citable public materials, and M3-20 records 26 owner-confirmed test-fixture screenshot cases with AI visual eval pass evidence. It does not show the candidate pack is imported, evaluated, published or covered by a project-owner branch decision for production release, and it does not provide production language blind review.
 
 | Blocker | Required by | Expected repo evidence destination | Current status |
 |---|---|---|---|
 | Phase-one tutorial material pack | v1.1 technical architecture owner critical path; F-01/H-01 closeout | `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`; `docs/evidence/M3/tutorial/journey-import-report.md`; `docs/evidence/M3/tutorial/kb-candidate-pack.md`; `docs/evidence/M3/tutorial/test-stage-kb-structure.md` | `test_structure_ready_not_imported_not_published_not_closed` |
-| Screenshot diagnostic samples >=20 | v1.1 owner critical path; F-02 closeout and screenshot eval | `docs/evidence/M3/vision/screenshot-cases-manifest.md`; `docs/evidence/M3/vision/eval-run-report.md` | `intake_ready_owner_samples_pending_not_closed`; current usable case count 0; eval not run |
+| Screenshot diagnostic samples >=20 | v1.1 owner critical path; F-02 closeout and screenshot eval | `docs/evidence/M3/vision/screenshot-cases-manifest.md`; `docs/evidence/M3/vision/eval-run-report.md` | `test_stage_sample_eval_ready_not_production_closed`; current usable case count 26; AI visual eval passed 26/26; production provider/e2e future |
 | Uzbek Latin/Cyrillic/Russian blind review | G-04 matrix item and M3 owner critical path | `docs/evidence/M3/language-blind-review/blind-review-report.md`; `docs/evidence/M3/language-blind-review/test-stage-ai-assisted-review.md` | `sample_selection_ready_not_owner_scored_not_closed`; current production reviewed counts 0/0/0; strong-model decision pending |
 
-These blockers do not erase the completed foundation queue or the M3-16 candidate pack. They do block M3 closeout, F-01/F-02/G-04 closure, and any downstream release claim that depends on them.
+These blockers do not erase the completed foundation queue, the M3-16 candidate pack or the M3-20 screenshot sample/eval pass. They do block production release claims and still block final M3 owner acceptance unless the project owner explicitly accepts the test-stage branch boundary for M3.
 
 ## Acceptance Mapping
 
 | Item | M3-10 status | Evidence | Release status |
 |---|---|---|---|
 | F-01 | test_structure_ready_not_closed | M3-04 stage localization/stage-card-only foundation merged; M3-16 owner-reviewed candidate tutorial/KB pack exists; M3-19 test-stage KB structure exists; import/eval and publish evidence absent | not production closed |
-| F-02 | intake_ready_owner_samples_pending_not_closed | M3-06 screenshot diagnostics foundation merged; M3-17 screenshot manifest/eval shells exist; current usable screenshot count is 0 and eval report has no run | not production closed |
+| F-02 | test_stage_sample_eval_ready_not_production_closed | M3-06 screenshot diagnostics foundation merged; M3-20 records 26 owner-confirmed test-fixture screenshot cases and AI visual eval pass with low-confidence/sensitive paths handoff-required | production provider/e2e future |
 | F-03 | foundation_done_not_closed | M3-07 speech transcription contract foundation merged | real voice flow/provider evidence future |
 | F-04 | foundation_done_not_closed | M3-05 code-created quote contract merged | persistence/E2E quote flow future |
 | F-05 | foundation_supported_not_closed | M3-02/M3-03/M3-05/M3-06/M3-08 redline/context foundation evidence | production output filter future |
@@ -143,12 +148,12 @@ These blockers do not erase the completed foundation queue or the M3-16 candidat
 | G-03 | foundation_and_ui_partial_not_closed | M3-03 publish refusal semantics and M3-09 local UI shell merged | no production publish API/admin integration |
 | G-04 | sample_selection_ready_not_owner_scored_not_closed | M3-17 blind-review report shell exists; M3-19 selects controlled test sample ids; current production Uzbek Latin/Cyrillic/Russian reviewed counts are 0/0/0 and strong-model decision is pending | strong-model routing/optimization remains locked/frozen |
 | G-05 | foundation_supported_not_closed | M3-03/M3-08 false-positive/output guard foundation | admin false-positive dashboard future |
-| G-06 | test_coverage_improved_full_not_closed | quota shapes, seed/foundation evidence and M3-19 language sample-selection evidence exist | full 1.0 >=200 set and production quotas future |
+| G-06 | test_coverage_improved_full_not_closed | quota shapes, seed/foundation evidence, M3-19 language sample-selection evidence and M3-20 screenshot quota/eval evidence exist | full 1.0 >=200 set and production quotas future |
 | H-01 | test_kb_structure_ready_not_published | M3-01/M3-04/M3-09 knowledge/resource foundation evidence plus M3-16 owner-reviewed candidate facts/journey/material refs and M3-19 test-stage KB structure | no knowledge publish/import/media upload closure |
 | I-01 | local_ui_partial_not_closed | M3-09 local knowledge/eval shell | full desktop core remains broader 1.0 |
-| J-05 | evidence_rolling_archive_updated | M3 evidence recorded per slice and rolled up here, including M3-11 through M3-19 follow-ups and test-phase material branch evidence | no release signoff |
-| K-03 | active | dedicated spec/branch/PR flow maintained through M3-19 | ongoing governance |
-| K-04 | active | queue and touch-module rules maintained; no schema/lock/generated/dist/customer-data edits in M3-19 | ongoing governance |
+| J-05 | evidence_rolling_archive_updated | M3 evidence recorded per slice and rolled up here, including M3-11 through M3-20 follow-ups and test-phase material branch evidence | no release signoff |
+| K-03 | active | dedicated spec/branch/PR flow maintained through M3-20 | ongoing governance |
+| K-04 | active | queue and touch-module rules maintained; no schema/lock/generated/dist/customer-data edits in M3-20 | ongoing governance |
 
 ## Milestone Incidents
 
@@ -159,7 +164,7 @@ These blockers do not erase the completed foundation queue or the M3-16 candidat
 
 Existing M2 workspace guard, M3-11 worker write-boundary guard/runbook and incident docs are sufficient to make current worker/root state visible and to stop/report wrong-checkout writes. They are not a complete technical prevention for every path-agnostic edit tool; runtime/harness sandboxing still owns prevention for future parallel work.
 
-M3-13 added a `prettier-ignore` spread guard after M3-12 reduced safety-critical logic bypasses. M3-14 hardens that guard's focused test fixture so diff-added marker detection is directly verified without relying on current-tree baseline expansion. M3-15 fixes the guard's non-ASCII CLI entrypoint so the same guard no longer silently skips execution on the local Chinese root path. M3-16 adds owner-reviewed material candidate evidence only and does not change the guard baseline. M3-18 changes CI path selection, and M3-19 is docs-only test material evidence.
+M3-13 added a `prettier-ignore` spread guard after M3-12 reduced safety-critical logic bypasses. M3-14 hardens that guard's focused test fixture so diff-added marker detection is directly verified without relying on current-tree baseline expansion. M3-15 fixes the guard's non-ASCII CLI entrypoint so the same guard no longer silently skips execution on the local Chinese root path. M3-16 adds owner-reviewed material candidate evidence only and does not change the guard baseline. M3-18 changes CI path selection, M3-19 is docs-only test material evidence, and M3-20 is docs-only screenshot sample/eval evidence.
 
 ## Sensitive Data Boundary
 
@@ -193,17 +198,18 @@ Future sensitive source material must stay in controlled storage. Repo evidence 
 | M3-17 follow-up validation | pass | `npm ci`, `format:check`, `guard:doc-triggers`, `guard:workspace`, explicit assigned/root `guard:worker-boundary`, explicit `guard:pr-shape`, `git diff --check` and full `npm run check` passed. Explicit PR shape reported 7 docs files, source changed files 0, net source LOC 0 and new source files 0; full check passed 150/150 Node tests and Playwright 7/7. |
 | PR #55 CI | external_blocked | GitHub Actions run `27915399066`, job `82599751310`, failed before any steps started. Check-run annotation says account payments/spending limit must be fixed; no job logs were available. |
 | dual status check | pass | After M3-17 docs edits and validation, assigned worktree contained only allowed docs changes and root/main remained `## main...origin/main`. |
+| M3-20 follow-up validation | pass | `npm ci`, targeted sensitive-value grep, `format:check`, `guard:doc-triggers`, `guard:workspace`, explicit assigned/root `guard:worker-boundary`, explicit `guard:pr-shape`, `git diff --check` and full `npm run check` passed. Explicit PR shape reported 6 docs files, source changed files 0, net source LOC 0 and new source files 0; full check passed 150/150 Node tests and Playwright 7/7. |
 
 ## Spec Compliance Review
 
 | Check | Result | Evidence |
 |---|---|---|
-| One spec / one PR | pass | This branch implements only M3-17 as a coordinator-reviewed follow-up before PR creation. |
-| Touch list | pass | Explicit PR shape validation confirmed the diff is limited to 7 docs files inside the M3-17 touch list. |
-| Docs + source + test scope | pass | M3-17 includes docs-only intake evidence updates; no source, test, config, lock, generated, dist, business runtime or raw sample changes. |
-| Guard baseline unchanged | pass | M3-17 does not touch guard scripts or tests. |
+| One spec / one PR | pass | This branch implements only M3-20 as a coordinator-reviewed follow-up before PR creation. |
+| Touch list | pass | Explicit PR shape validation confirmed the diff is limited to 6 docs files inside the M3-20 touch list. |
+| Docs + source + test scope | pass | M3-20 includes docs-only screenshot sample/eval evidence updates; no source, test, config, lock, generated, dist, business runtime or raw sample changes. |
+| Guard baseline unchanged | pass | M3-20 does not touch guard scripts or tests. |
 | Queue completion wording | pass | Foundation queue is complete, but M3 closeout remains blocked. |
-| Owner-input blockers | pass | Tutorial pack is owner-reviewed but import/eval/publish pending; M3-17 creates intake shells for screenshots and language blind review, but actual samples/reviews remain unresolved. |
+| Owner-input blockers | pass | Tutorial pack is owner-reviewed but import/eval/publish pending; M3-20 resolves the screenshot sample/eval blocker for test-stage evidence; production language blind review remains unresolved unless owner accepts the test-stage branch boundary. |
 | Release honesty | pass | No production, GA-0, real traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release or 1.0 release approval. |
 | Incident handling | pass | M3-07 and M3-09 statuses are updated after merged PRs; M3-11 records the in-repo worker write-boundary detection/runbook follow-up while runtime/harness prevention remains outside this evidence. |
 | Test integrity | pass | No test deletion, assertion weakening, `.skip` / `.only` / `xit` / `xfail`, mock expansion or snapshot growth. |
@@ -215,6 +221,6 @@ Future sensitive source material must stay in controlled storage. Repo evidence 
 
 Project owner merge/signoff of this M3 closeout evidence would mean:
 
-- accepted: M3 foundation queue completion, closeout no-go evidence, M3-11 through M3-15 signoff-before governance follow-up records, M3-16 owner-reviewed candidate material evidence, M3-18 CI cost stopgap evidence and M3-19 test-phase material branch evidence are recorded.
-- still blocked: M3 closeout until the candidate tutorial/KB material pack is carried through future import/eval/publish gates, and until screenshot samples and production language blind review are provided/reviewed in controlled form or covered by a project-owner production branch decision.
+- accepted: M3 foundation queue completion, closeout no-go evidence, M3-11 through M3-15 signoff-before governance follow-up records, M3-16 owner-reviewed candidate material evidence, M3-18 CI cost stopgap evidence, M3-19 test-phase material branch evidence and M3-20 screenshot test-stage sample/eval evidence are recorded.
+- still blocked: M3 closeout until the candidate tutorial/KB material pack is carried through future import/eval/publish gates and production language blind review is provided/reviewed in controlled form, unless the project owner explicitly accepts the test-stage branch boundary for M3 signoff.
 - not accepted: production readiness, real customer traffic, customer LLM, GA-0, prompt/model route release, knowledge publish, AI persona release, Business release, unsupported provider claims or 1.0 release.

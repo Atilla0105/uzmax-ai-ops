@@ -37,7 +37,7 @@
 |---|---|---|
 | 当前目录是否为正式 git repo | ready | `.git/` 已创建，`main` 已推送到私有 GitHub repo |
 | 工程 package 配置 | ready | root `package.json` 已定义 workspaces、Node 版本与本地/CI 脚本 |
-| CI 配置 | ready | `.github/workflows/ci.yml` 已配置 format/type/lint/depcruise/jscpd/knip/guards/test/build/size/Playwright；workflow 显式声明 `contents: read`，同一 PR 的旧 CI run 可被新 commit 取消，diff-based guards 按 PR base 或 push before SHA 解析 base；PR #1-#6 与最新 main push CI 通过 |
+| CI 配置 | ready_path_aware_stopgap_local_validated_pending_remote_ci | `.github/workflows/ci.yml` 已配置 path-aware CI cost stopgap：docs-only PR 保留 `npm ci`、format、prettier-ignore、eval/doc/workspace guards 和 PR shape，跳过 core heavy gates、spikes、size 与 Playwright；non-docs path 运行 core type/lint/depcruise/jscpd/knip/forbidden/prisma/test/build；DB/authz/package paths 运行 SPK-03/SPK-04；admin/frontend paths 运行 size、Playwright install 和 Playwright；manual `workflow_dispatch full=true` 可强制完整 CI。workflow 显式声明 `contents: read`，同一 PR 的旧 CI run 可被新 commit 取消，diff-based guards 按 PR base 或 push before SHA 解析 base。M3-18 本地验证已通过；远端 CI 当前受 GitHub billing/payment 或 spending-limit 外部状态阻断，恢复后需重新观察。 |
 | Gate 0 最低输入 | repo_ready__ci_ruleset_ready | repo、CI、PR template、main ruleset 已就绪 |
 
 ## Owner Review / Approval 现状

@@ -266,6 +266,83 @@ test("covers the M4-06 import snapshot admin shell states", async ({ page }) => 
   );
 });
 
+test("renders the M4-16 customer asset admin shell", async ({ page }) => {
+  await page.goto("/design");
+  await expect(page.getByTestId("m4-customer-asset-shell")).toBeVisible();
+  await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await expect(page.getByTestId("m4-customer-shell-mode")).toContainText("Tenant B");
+
+  await expect(page.getByTestId("m4-customer-filters")).toContainText("Language");
+  await expect(page.getByTestId("m4-customer-filters")).toContainText("Script");
+  await expect(page.getByTestId("m4-customer-filters")).toContainText("Journey stage");
+  await expect(page.getByTestId("m4-customer-filters")).toContainText(
+    "Unresolved issues"
+  );
+  await expect(page.getByTestId("m4-customer-filters")).toContainText("Blacklist");
+  await expect(page.getByTestId("m4-customer-filters")).toContainText("Unreachable");
+  await expect(page.getByTestId("m4-customer-filters")).toContainText("Has order");
+  await expect(page.getByTestId("m4-customer-filters")).toContainText("Has quote");
+
+  await expect(page.getByTestId("m4-customer-list")).toContainText("customer://alpha");
+  await expect(page.getByTestId("m4-customer-detail")).toContainText(
+    "identity://alpha-primary"
+  );
+  await expect(page.getByTestId("m4-customer-field-tags")).toContainText(
+    "field://journey-stage"
+  );
+  await expect(page.getByTestId("m4-customer-field-tags")).toContainText(
+    "tag://conversation-issue"
+  );
+  await expect(page.getByTestId("m4-customer-related-refs")).toContainText(
+    "conversation://alpha-history"
+  );
+  await expect(page.getByTestId("m4-customer-related-refs")).toContainText(
+    "ticket://alpha-open"
+  );
+  await expect(page.getByTestId("m4-customer-related-refs")).toContainText(
+    "snapshot://order-alpha"
+  );
+  await expect(page.getByTestId("m4-customer-related-refs")).toContainText(
+    "quote://alpha-draft"
+  );
+  await expect(page.getByTestId("m4-customer-secondary")).toContainText(
+    "Conversation tags"
+  );
+  await expect(page.getByTestId("m4-customer-asset-shell")).not.toContainText(
+    /raw payload|csv export|xlsx|ORD-|PAY-|TG-|phone|address|payment|secret|@[\w_]+|\+?\d[\d\s-]{6,}/i
+  );
+});
+
+test("covers the M4-16 customer restore local action and filters", async ({ page }) => {
+  await page.goto("/design");
+  const customerFilters = page.getByTestId("m4-customer-filters");
+  await customerFilters.getByRole("button", { name: "Blacklist" }).click();
+  await expect(page.getByTestId("m4-customer-list")).toContainText("customer://alpha");
+  await expect(page.getByTestId("m4-customer-list")).not.toContainText(
+    "customer://beta"
+  );
+
+  await expect(page.getByTestId("m4-customer-restore-state")).toContainText(
+    "Restore draft not created"
+  );
+  await page.getByRole("button", { name: "Restore flags locally" }).click();
+  await expect(page.getByTestId("m4-customer-restore-state")).toContainText(
+    "customer_restore_flags"
+  );
+  await expect(page.getByTestId("m4-customer-restore-state")).toContainText(
+    "reason://owner-review"
+  );
+
+  await customerFilters.getByRole("button", { name: "Unreachable" }).click();
+  await expect(page.getByTestId("m4-customer-list")).toContainText("unreachable");
+  await expect(page.getByTestId("m4-customer-secondary")).toContainText(
+    "Audit persistence"
+  );
+  await expect(page.getByTestId("m4-customer-asset-shell")).not.toContainText(
+    /raw payload|csv export|xlsx|ORD-|PAY-|TG-|phone|address|payment|secret|@[\w_]+|\+?\d[\d\s-]{6,}/i
+  );
+});
+
 test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 860 });
   await page.goto("/design");
@@ -274,8 +351,12 @@ test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) =>
   await expect(page.getByTestId("m2-conversation-ticket-shell")).toBeVisible();
   await expect(page.getByTestId("m3-knowledge-eval-shell")).toBeVisible();
   await expect(page.getByTestId("m4-order-path-status-shell")).toBeVisible();
+  await expect(page.getByTestId("m4-customer-asset-shell")).toBeVisible();
   await expect(page.getByTestId("m4-primary-path")).toContainText(
     "订单数据主路径：导入快照"
+  );
+  await expect(page.getByTestId("m4-customer-filters")).toContainText(
+    "Unresolved issues"
   );
   await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
     "Failed rows"
@@ -294,5 +375,6 @@ test("keeps the M1 shell usable at the tablet breakpoint", async ({ page }) => {
   await expect(page.getByTestId("tenant-switcher")).toBeVisible();
   await expect(page.getByLabel("Search")).toBeVisible();
   await expect(page.getByTestId("release-readiness")).toContainText("Owner:");
+  await expect(page.getByTestId("m4-customer-detail")).toContainText("Customer detail");
   await expect(page.getByTestId("ticket-detail")).toContainText("SLA policy ref");
 });

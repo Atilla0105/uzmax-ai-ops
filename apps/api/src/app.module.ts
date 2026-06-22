@@ -14,9 +14,13 @@ import {
   InMemoryConversationTicketRepository
 } from "./conversation-ticket.ts";
 import {
+  ORDER_IMPORT_REPOSITORY,
   InMemoryOrderImportRepository,
   OrderImportController,
-  OrderImportService
+  OrderImportService,
+  PersistenceOrderImportRepository,
+  type OrderImportPersistenceGateway,
+  type OrderImportPersistenceScope
 } from "./order-import.ts";
 import type {
   DisabledTelegramBotIngressQueue as ContractDisabledTelegramBotIngressQueue,
@@ -49,6 +53,18 @@ type TelegramBotContractAnchor = {
 };
 
 type TelegramBotWebhookBody = TelegramBotContractAnchor["input"]["body"];
+type OrderImportRepositoryContractAnchor = {
+  gateway: OrderImportPersistenceGateway;
+  persistenceAdapter: typeof PersistenceOrderImportRepository;
+  scope: OrderImportPersistenceScope;
+};
+const orderImportRepositoryContractAnchor: Pick<
+  OrderImportRepositoryContractAnchor,
+  "persistenceAdapter"
+> = {
+  persistenceAdapter: PersistenceOrderImportRepository
+};
+void orderImportRepositoryContractAnchor;
 
 @Injectable()
 class DisabledTelegramBotIngressQueue {
@@ -96,6 +112,7 @@ class TelegramBotWebhookController {
     DisabledTelegramBotIngressQueue,
     InMemoryConversationTicketRepository,
     InMemoryOrderImportRepository,
+    { provide: ORDER_IMPORT_REPOSITORY, useExisting: InMemoryOrderImportRepository },
     { provide: api.API_AUDIT_SINK, useClass: api.InMemoryAuditSink },
     { provide: api.API_AUTHZ_REPOSITORY, useClass: api.DisabledAuthzRepository },
     {

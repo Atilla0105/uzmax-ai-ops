@@ -75,6 +75,16 @@ M1-04 只关闭 schema/API/admin contract 地基：默认 API 仍使用 contract
 
 `access_context.denied` 是无法安全得到 org/tenant scope 时的 pre-audit 拒绝事件，不直接映射到正式 `audit_log`。`tenant_switch.denied` 在能够解析当前 audit context 时必须使用正式 `AuditLogContract`，包含 `module`、`action`、`object_type`、`content.before` / `content.after` 和当前 tenant scope。
 
+### M4 API Audit Prisma Sink Adapter
+
+`M4-20-api-audit-prisma-sink-contract` adds an opt-in API audit persistence adapter:
+
+- `apps/api/src/audit-log.prisma-sink.ts` exposes `AuditLogPrismaClientPort`, `PrismaAuditSink` and `toPrismaAuditLogCreateData`.
+- The adapter validates incoming events through the existing `packages/db/src/index.ts` `createAuditLogContract` helper before mapping Prisma `AuditLog` model fields.
+- Persisted data uses Prisma field names: `orgId`, `tenantId`, `actorUserId`, `eventType`, `module`, `action`, `objectType`, `objectId`, `content`, version refs, trace ref and `occurredAt`.
+- `access_context.denied` remains a pre-audit event and is not directly persisted unless a later scoped contract can supply the full `AuditLogContract` shape.
+- Default `AppModule` still provides `api.InMemoryAuditSink`; M4-20 does not instantiate PrismaClient, read env, connect to DB, or close production audit readiness.
+
 ## M2 Channel Conversation Foundation
 
 `M2-01-channel-conversation-db-contracts-foundation` 引入 M2 渠道/对话/消息/工单 DB contracts foundation：

@@ -15,6 +15,8 @@ const serviceSource = read("apps/api/src/order-import.service.ts");
 const appModule = read("apps/api/src/app.module.ts");
 const spec = read("docs/specs/M4-08-order-import-repository-port.md");
 const evidence = read("docs/evidence/M4/M4-08-order-import-repository-port.md");
+const m411Spec = read("docs/specs/M4-11-order-import-prisma-gateway.md");
+const m411Evidence = read("docs/evidence/M4/M4-11-order-import-prisma-gateway.md");
 const m4Index = read("docs/evidence/M4/README.md");
 const repository = await importOrderImportRepositorySource();
 const orderRead = await importTypescriptSource(
@@ -41,7 +43,7 @@ describe("M4-08 order import repository port", () => {
     assert.equal(fresh.orderStatusRef, "status://order/in-transit");
   });
 
-  it("maps persistence gateway jobs and row errors inside the selected tenant", () => {
+  it("maps persistence gateway jobs and row errors inside the selected tenant", async () => {
     const adapter = new repository.module.PersistenceOrderImportRepository({
       findOrderSnapshot() {
         return undefined;
@@ -62,20 +64,20 @@ describe("M4-08 order import repository port", () => {
     const accessContext = contextFor(TENANT_A);
 
     assert.deepEqual(
-      adapter.listJobs(accessContext).map((job) => job.id),
+      (await adapter.listJobs(accessContext)).map((job) => job.id),
       ["job-a"]
     );
     assert.equal(
-      adapter.getJob(accessContext, "job-a").sourceRef,
+      (await adapter.getJob(accessContext, "job-a")).sourceRef,
       "storage://order-imports/job-a"
     );
     assert.deepEqual(
-      adapter.listRowErrors(accessContext, "job-a").map((error) => error.id),
+      (await adapter.listRowErrors(accessContext, "job-a")).map((error) => error.id),
       ["row-a"]
     );
   });
 
-  it("passes query scope to the persistence gateway and feeds order-read safely", () => {
+  it("passes query scope to the persistence gateway and feeds order-read safely", async () => {
     const calls = [];
     const adapter = new repository.module.PersistenceOrderImportRepository({
       findOrderSnapshot(scope, lookup) {
@@ -93,7 +95,7 @@ describe("M4-08 order import repository port", () => {
       }
     });
     const accessContext = contextFor(TENANT_A);
-    const snapshot = adapter.findSnapshot(accessContext, {
+    const snapshot = await adapter.findSnapshot(accessContext, {
       queryKind: "order_ref",
       queryRef: "query://order/fresh-a"
     });
@@ -116,7 +118,7 @@ describe("M4-08 order import repository port", () => {
     assert.equal(fresh.customerVisible.orderStatusRef, "status://order/in-transit");
   });
 
-  it("fails closed for archived or cross-tenant snapshots and stale reads still hand off", () => {
+  it("fails closed for archived or cross-tenant snapshots and stale reads still hand off", async () => {
     const archived = new repository.module.PersistenceOrderImportRepository(
       gatewayWithSnapshot({
         ...snapshotRow(
@@ -128,7 +130,7 @@ describe("M4-08 order import repository port", () => {
       })
     );
     assert.equal(
-      archived.findSnapshot(contextFor(TENANT_A), {
+      await archived.findSnapshot(contextFor(TENANT_A), {
         queryKind: "order_ref",
         queryRef: "query://order/archived-a"
       }),
@@ -141,7 +143,7 @@ describe("M4-08 order import repository port", () => {
       )
     );
     assert.equal(
-      crossTenant.findSnapshot(contextFor(TENANT_A), {
+      await crossTenant.findSnapshot(contextFor(TENANT_A), {
         queryKind: "order_ref",
         queryRef: "query://order/b"
       }),
@@ -157,7 +159,7 @@ describe("M4-08 order import repository port", () => {
       now: "2026-06-22T12:00:00.000Z",
       queryKind: "order_ref",
       queryRef: "query://order/stale-a",
-      snapshot: staleAdapter.findSnapshot(contextFor(TENANT_A), {
+      snapshot: await staleAdapter.findSnapshot(contextFor(TENANT_A), {
         queryKind: "order_ref",
         queryRef: "query://order/stale-a"
       })
@@ -175,12 +177,126 @@ describe("M4-08 order import repository port", () => {
     assert.match(m4Index, /DB client wiring, worker import/);
     assert.doesNotMatch(
       `${repositorySource}\n${serviceSource}\n${appModule}`,
-      /PrismaClient|@prisma\/client|process\.env|order_connector|fetch\(|https?:\/\//i
+      /new PrismaClient|process\.env|order_connector|fetch\(|https?:\/\//i
     );
     assert.doesNotMatch(
       repositorySource,
       /raw payload|csv export|xlsx export|phone|address|payment|secret/i
     );
+  });
+});
+
+describe("M4-11 order import Prisma gateway", () => {
+  it("maps async Prisma import jobs through the repository port", async () => {
+    const calls = [];
+    const prisma = prismaStub({
+      importJob: {
+        async findMany(args) {
+          calls.push({ args, delegate: "importJob.findMany" });
+          return [
+            {
+              ...jobRow("job-a", TENANT_A),
+              completedAt: new Date("2026-06-22T12:00:00.000Z"),
+              status: "COMPLETED_WITH_ERRORS"
+            },
+            jobRow("job-b", TENANT_B)
+          ];
+        }
+      }
+    });
+    const gateway = new repository.module.PrismaOrderImportPersistenceGateway(prisma);
+    const adapter = new repository.module.PersistenceOrderImportRepository(gateway);
+
+    const jobs = await adapter.listJobs(contextFor(TENANT_A));
+
+    assert.deepEqual(calls, [
+      {
+        args: {
+          orderBy: { createdAt: "desc" },
+          take: 50,
+          where: { orgId: ORG_ID, tenantId: TENANT_A }
+        },
+        delegate: "importJob.findMany"
+      }
+    ]);
+    assert.deepEqual(
+      jobs.map((job) => pick(job, ["completedAt", "id", "status"])),
+      [
+        {
+          completedAt: "2026-06-22T12:00:00.000Z",
+          id: "job-a",
+          status: "completed_with_errors"
+        }
+      ]
+    );
+  });
+
+  it("maps scoped snapshot lookup delegates and misses unsupported query kinds", async () => {
+    const calls = [];
+    const prisma = prismaStub({
+      orderSnapshot: {
+        async findFirst(args) {
+          calls.push({ args, delegate: "orderSnapshot.findFirst" });
+          return {
+            ...snapshotRow(
+              TENANT_A,
+              "controlled://order/ref-a",
+              "2026-06-23T00:00:00.000Z"
+            ),
+            expiresAt: new Date("2026-06-23T00:00:00.000Z"),
+            sourceUpdatedAt: new Date("2026-06-22T00:00:00.000Z"),
+            status: "ACTIVE"
+          };
+        }
+      }
+    });
+    const gateway = new repository.module.PrismaOrderImportPersistenceGateway(prisma);
+    const adapter = new repository.module.PersistenceOrderImportRepository(gateway);
+
+    const snapshot = await adapter.findSnapshot(contextFor(TENANT_A), {
+      queryKind: "order_ref",
+      queryRef: "controlled://order/ref-a"
+    });
+    const missing = await gateway.findOrderSnapshot(
+      { orgId: ORG_ID, tenantId: TENANT_A },
+      { queryKind: "search_ref", queryRef: "query://order/search-a" }
+    );
+
+    assert.deepEqual(calls, [
+      {
+        args: {
+          orderBy: { sourceUpdatedAt: "desc" },
+          where: {
+            externalOrderRef: "controlled://order/ref-a",
+            orgId: ORG_ID,
+            status: "ACTIVE",
+            tenantId: TENANT_A
+          }
+        },
+        delegate: "orderSnapshot.findFirst"
+      }
+    ]);
+    assert.equal(snapshot.expiresAt, "2026-06-23T00:00:00.000Z");
+    assert.equal(snapshot.sourceUpdatedAt, "2026-06-22T00:00:00.000Z");
+    assert.equal(missing, undefined);
+  });
+
+  it("keeps Prisma gateway contract opt-in and runtime side effects absent", () => {
+    assert.match(repositorySource, /type OrderImportPrismaClientPort/);
+    assert.match(repositorySource, /class PrismaOrderImportPersistenceGateway/);
+    assert.match(appModule, /PrismaOrderImportPersistenceGateway/);
+    assert.match(appModule, /useExisting: InMemoryOrderImportRepository/);
+    assert.doesNotMatch(
+      `${repositorySource}\n${appModule}`,
+      /@prisma\/client|new PrismaClient|process\.env|order_connector|fetch\(|https?:\/\//i
+    );
+    assert.doesNotMatch(
+      appModule,
+      /useClass: PrismaOrderImportPersistenceGateway|useExisting: PrismaOrderImportPersistenceGateway/
+    );
+    assert.match(m411Spec, /Prisma gateway contract foundation/);
+    assert.match(m411Evidence, /no raw customer\/order data/);
+    assert.match(m4Index, /M4-11 order import Prisma gateway/);
   });
 });
 
@@ -253,6 +369,28 @@ function gatewayWithSnapshot(snapshot) {
       return [];
     }
   };
+}
+
+function prismaStub(overrides = {}) {
+  return {
+    importJob: {
+      findFirst: async () => null,
+      findMany: async () => [],
+      ...(overrides.importJob ?? {})
+    },
+    importRowError: {
+      findMany: async () => [],
+      ...(overrides.importRowError ?? {})
+    },
+    orderSnapshot: {
+      findFirst: async () => null,
+      ...(overrides.orderSnapshot ?? {})
+    }
+  };
+}
+
+function pick(record, keys) {
+  return Object.fromEntries(keys.map((key) => [key, record[key]]));
 }
 
 async function importOrderImportRepositorySource() {

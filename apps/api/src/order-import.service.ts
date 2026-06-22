@@ -24,14 +24,14 @@ export class OrderImportService {
 
   async listImportJobs(accessContext: AccessContext) {
     assertPermission(accessContext, "order:read");
-    return { items: this.repository.listJobs(accessContext) };
+    return { items: await this.repository.listJobs(accessContext) };
   }
 
   async listImportRowErrors(accessContext: AccessContext, jobId: string) {
     assertPermission(accessContext, "order:read");
-    const job = this.repository.getJob(accessContext, jobId);
+    const job = await this.repository.getJob(accessContext, jobId);
     if (!job) throw new OrderImportApiError(404, "import job not found");
-    return { items: this.repository.listRowErrors(accessContext, jobId) };
+    return { items: await this.repository.listRowErrors(accessContext, jobId) };
   }
 
   async searchSnapshot(
@@ -43,7 +43,7 @@ export class OrderImportService {
       now: input.now,
       queryKind: input.queryKind,
       queryRef: input.queryRef,
-      snapshot: this.repository.findSnapshot(accessContext, {
+      snapshot: await this.repository.findSnapshot(accessContext, {
         queryKind: input.queryKind,
         queryRef: input.queryRef
       })

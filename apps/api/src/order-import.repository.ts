@@ -16,17 +16,22 @@ export type OrderSnapshotLookup = {
   queryRef: string;
 };
 
+type MaybePromise<T> = T | Promise<T>;
+
 export type OrderImportRepositoryPort = {
   findSnapshot(
     accessContext: AccessContext,
     lookup: OrderSnapshotLookup
-  ): OrderSnapshotRecord | undefined;
+  ): MaybePromise<OrderSnapshotRecord | undefined>;
   getJob(
     accessContext: AccessContext,
     jobId: string
-  ): OrderImportJobSummary | undefined;
-  listJobs(accessContext: AccessContext): OrderImportJobSummary[];
-  listRowErrors(accessContext: AccessContext, jobId: string): OrderImportRowErrorItem[];
+  ): MaybePromise<OrderImportJobSummary | undefined>;
+  listJobs(accessContext: AccessContext): MaybePromise<OrderImportJobSummary[]>;
+  listRowErrors(
+    accessContext: AccessContext,
+    jobId: string
+  ): MaybePromise<OrderImportRowErrorItem[]>;
 };
 
 export type OrderImportPersistenceScope = {
@@ -38,21 +43,39 @@ export type OrderImportPersistenceGateway = {
   findOrderSnapshot(
     scope: OrderImportPersistenceScope,
     lookup: OrderSnapshotLookup
-  ): M4OrderImportContractInput | undefined;
+  ): MaybePromise<M4OrderImportContractInput | undefined>;
   getImportJob(
     scope: OrderImportPersistenceScope,
     jobId: string
-  ): M4OrderImportContractInput | undefined;
+  ): MaybePromise<M4OrderImportContractInput | undefined>;
   listImportJobs(
     scope: OrderImportPersistenceScope
-  ): readonly M4OrderImportContractInput[];
+  ): MaybePromise<readonly M4OrderImportContractInput[]>;
   listImportRowErrors(
     scope: OrderImportPersistenceScope,
     jobId: string
-  ): readonly M4OrderImportContractInput[];
+  ): MaybePromise<readonly M4OrderImportContractInput[]>;
 };
 
 type OrderImportPersistenceRow = M4OrderImportContractInput;
+type PrismaOrderImportFindManyDelegate = {
+  findMany(args: {
+    orderBy?: Record<string, unknown> | readonly Record<string, unknown>[];
+    take?: number;
+    where: Record<string, unknown>;
+  }): Promise<readonly unknown[]>;
+};
+type PrismaOrderImportFindFirstDelegate = {
+  findFirst(args: {
+    orderBy?: Record<string, unknown>;
+    where: Record<string, unknown>;
+  }): Promise<unknown | null>;
+};
+export type OrderImportPrismaClientPort = {
+  importJob: PrismaOrderImportFindManyDelegate & PrismaOrderImportFindFirstDelegate;
+  importRowError: PrismaOrderImportFindManyDelegate;
+  orderSnapshot: PrismaOrderImportFindFirstDelegate;
+};
 
 export class InMemoryOrderImportRepository implements OrderImportRepositoryPort {
   private jobs: OrderImportJobSummary[];
@@ -91,26 +114,66 @@ export class InMemoryOrderImportRepository implements OrderImportRepositoryPort 
 export class PersistenceOrderImportRepository implements OrderImportRepositoryPort {
   constructor(private readonly gateway: OrderImportPersistenceGateway) {}
 
-  listJobs(accessContext: AccessContext) {
-    return this.gateway
-      .listImportJobs(scopeFor(accessContext))
-      .flatMap((row) => mapJob(row, accessContext));
+  async listJobs(accessContext: AccessContext) {
+    const rows = await this.gateway.listImportJobs(scopeFor(accessContext));
+    return rows.flatMap((row) => mapJob(row, accessContext));
   }
 
-  getJob(accessContext: AccessContext, jobId: string) {
-    const row = this.gateway.getImportJob(scopeFor(accessContext), jobId);
+  async getJob(accessContext: AccessContext, jobId: string) {
+    const row = await this.gateway.getImportJob(scopeFor(accessContext), jobId);
     return row ? mapJob(row, accessContext)[0] : undefined;
   }
 
-  listRowErrors(accessContext: AccessContext, jobId: string) {
-    return this.gateway
-      .listImportRowErrors(scopeFor(accessContext), jobId)
-      .flatMap((row) => mapRowError(row, accessContext));
+  async listRowErrors(accessContext: AccessContext, jobId: string) {
+    const rows = await this.gateway.listImportRowErrors(scopeFor(accessContext), jobId);
+    return rows.flatMap((row) => mapRowError(row, accessContext));
   }
 
-  findSnapshot(accessContext: AccessContext, lookup: OrderSnapshotLookup) {
-    const row = this.gateway.findOrderSnapshot(scopeFor(accessContext), lookup);
+  async findSnapshot(accessContext: AccessContext, lookup: OrderSnapshotLookup) {
+    const row = await this.gateway.findOrderSnapshot(scopeFor(accessContext), lookup);
     return row ? mapSnapshot(row, accessContext, lookup.queryRef)[0] : undefined;
+  }
+}
+
+export class PrismaOrderImportPersistenceGateway implements OrderImportPersistenceGateway {
+  constructor(private readonly prisma: OrderImportPrismaClientPort) {}
+
+  listImportJobs(scope: OrderImportPersistenceScope) {
+    return this.prisma.importJob.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      where: scope
+    }) as Promise<readonly M4OrderImportContractInput[]>;
+  }
+
+  async getImportJob(scope: OrderImportPersistenceScope, jobId: string) {
+    return nullableRow(
+      (await this.prisma.importJob.findFirst({
+        where: { ...scope, id: jobId }
+      })) as M4OrderImportContractInput | null
+    );
+  }
+
+  listImportRowErrors(scope: OrderImportPersistenceScope, jobId: string) {
+    return this.prisma.importRowError.findMany({
+      orderBy: [{ rowNumber: "asc" }, { createdAt: "asc" }],
+      take: 500,
+      where: { ...scope, importJobId: jobId }
+    }) as Promise<readonly M4OrderImportContractInput[]>;
+  }
+
+  async findOrderSnapshot(
+    scope: OrderImportPersistenceScope,
+    lookup: OrderSnapshotLookup
+  ) {
+    const where = snapshotWhere(scope, lookup);
+    if (!where) return undefined;
+    return nullableRow(
+      (await this.prisma.orderSnapshot.findFirst({
+        orderBy: { sourceUpdatedAt: "desc" },
+        where
+      })) as M4OrderImportContractInput | null
+    );
   }
 }
 
@@ -202,7 +265,7 @@ function mapJob(
       id: stringValue(row.id),
       orgId: stringValue(row.orgId),
       sourceRef: stringValue(row.fileRef),
-      status: stringValue(row.status),
+      status: enumStringValue(row.status),
       successfulRows: numberValue(row.successfulRows),
       tenantId: stringValue(row.tenantId),
       totalRows: numberValue(row.totalRows)
@@ -235,7 +298,9 @@ function mapSnapshot(
   accessContext: AccessContext,
   queryRef: string
 ): OrderSnapshotRecord[] {
-  if (!matchesScope(row, accessContext) || row.status === "archived") return [];
+  if (!matchesScope(row, accessContext) || enumStringValue(row.status) === "archived") {
+    return [];
+  }
   return [
     {
       customerRef: optionalString(row.customerRef),
@@ -261,12 +326,17 @@ function matchesScope(row: OrderImportPersistenceRow, accessContext: AccessConte
 }
 
 function optionalString(value: unknown): string | undefined {
-  return value === undefined ? undefined : stringValue(value);
+  return value == null ? undefined : stringValue(value);
 }
 
 function stringValue(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
   if (typeof value !== "string" || !value.trim()) throw new Error("row value required");
   return value.trim();
+}
+
+function enumStringValue(value: unknown): string {
+  return stringValue(value).toLowerCase();
 }
 
 function numberValue(value: unknown): number {
@@ -279,4 +349,24 @@ function recordValue(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   throw new Error("row record value required");
+}
+
+function nullableRow(
+  row: M4OrderImportContractInput | null
+): M4OrderImportContractInput | undefined {
+  return row ?? undefined;
+}
+
+function snapshotWhere(
+  scope: OrderImportPersistenceScope,
+  lookup: OrderSnapshotLookup
+): Record<string, unknown> | undefined {
+  const activeScope = { ...scope, status: "ACTIVE" };
+  if (lookup.queryKind === "batch_ref") {
+    return { ...activeScope, externalBatchRef: lookup.queryRef };
+  }
+  if (lookup.queryKind === "external_ref" || lookup.queryKind === "order_ref") {
+    return { ...activeScope, externalOrderRef: lookup.queryRef };
+  }
+  return undefined;
 }

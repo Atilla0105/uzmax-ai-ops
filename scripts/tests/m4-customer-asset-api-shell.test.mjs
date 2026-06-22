@@ -48,7 +48,8 @@ describe("M4-14 customer asset API shell", () => {
 
   it("lists and details selected-tenant customers with fields, tags and refs", async () => {
     const service = new api.module.CustomerAssetService(
-      new api.module.InMemoryCustomerAssetRepository(seed())
+      new api.module.InMemoryCustomerAssetRepository(seed()),
+      auditSink()
     );
     const accessContext = contextFor(TENANT_A, ["customer:read"]);
 
@@ -79,7 +80,8 @@ describe("M4-14 customer asset API shell", () => {
 
   it("restores customer flags with an audit draft and write permission", async () => {
     const service = new api.module.CustomerAssetService(
-      new api.module.InMemoryCustomerAssetRepository(seed())
+      new api.module.InMemoryCustomerAssetRepository(seed()),
+      auditSink()
     );
     const accessContext = contextFor(TENANT_A, ["customer:read", "customer:write"]);
 
@@ -91,10 +93,31 @@ describe("M4-14 customer asset API shell", () => {
 
     assert.equal(result.item.isBlacklisted, false);
     assert.equal(result.item.isUnreachable, false);
-    assert.deepEqual(result.auditDraft, {
-      action: "customer_restore_flags",
-      actorUserId: USER_A,
-      customerId: CUSTOMER_A,
+    assert.deepEqual(
+      {
+        action: result.auditDraft.action,
+        actorUserId: result.auditDraft.actorUserId,
+        eventType: result.auditDraft.eventType,
+        module: result.auditDraft.module,
+        objectId: result.auditDraft.objectId,
+        objectType: result.auditDraft.objectType
+      },
+      {
+        action: "customer_restore_flags",
+        actorUserId: USER_A,
+        eventType: "customer.flags_restored",
+        module: "customer_asset",
+        objectId: CUSTOMER_A,
+        objectType: "customer"
+      }
+    );
+    assert.deepEqual(result.auditDraft.content.before, {
+      isBlacklisted: true,
+      isUnreachable: true
+    });
+    assert.deepEqual(result.auditDraft.content.after, {
+      isBlacklisted: false,
+      isUnreachable: false,
       reasonRef: "reason://customer/manual-review",
       restoredFlags: ["blacklisted", "unreachable"]
     });
@@ -119,7 +142,8 @@ describe("M4-14 customer asset API shell", () => {
   it("maps controller validation, access and not-found failures to HTTP statuses", async () => {
     const controller = new api.module.CustomerAssetController(
       new api.module.CustomerAssetService(
-        new api.module.InMemoryCustomerAssetRepository(seed())
+        new api.module.InMemoryCustomerAssetRepository(seed()),
+        auditSink()
       )
     );
     const request = { accessContext: contextFor(TENANT_A, ["customer:read"]) };
@@ -230,6 +254,15 @@ function seed() {
   };
 }
 
+function auditSink() {
+  return {
+    events: [],
+    async record(event) {
+      this.events.push(event);
+    }
+  };
+}
+
 function customer(id, tenantId, isBlacklisted, isUnreachable) {
   return {
     blacklistedAt: isBlacklisted ? "2026-06-22T00:00:00.000Z" : undefined,
@@ -273,10 +306,11 @@ async function importCustomerAssetApiSource() {
     return destination.href;
   };
   const authz = await importTypescriptSource("packages/authz/src/index.ts");
+  const db = await importTypescriptSource("packages/db/src/index.ts");
   const nestCommon = createNestCommonStub(writeTempModule);
   const accessContext = writeTempModule(
     "access-context-stub.mjs",
-    "export class ApiAccessContextGuard {}"
+    'export const API_AUDIT_SINK = "API_AUDIT_SINK"; export class ApiAccessContextGuard {}'
   );
   const typesUrl = writeSource(writeTempModule, "customer-asset.types", {
     "../../../packages/authz/src/index.ts": authz.moduleUrl
@@ -287,6 +321,8 @@ async function importCustomerAssetApiSource() {
   });
   const serviceUrl = writeSource(writeTempModule, "customer-asset.service", {
     "../../../packages/authz/src/index.ts": authz.moduleUrl,
+    "../../../packages/db/src/index.ts": db.moduleUrl,
+    "./access-context.ts": accessContext,
     "./customer-asset.repository.ts": repositoryUrl,
     "./customer-asset.types.ts": typesUrl,
     "@nestjs/common": nestCommon

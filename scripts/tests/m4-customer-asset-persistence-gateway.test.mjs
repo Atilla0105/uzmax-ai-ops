@@ -31,7 +31,7 @@ describe("M4-17 customer asset persistence gateway", () => {
   it("maps selected-tenant customer rows, tags, fields, identities and refs", async () => {
     const gateway = customerAssetGateway();
     const repository = new api.module.PersistenceCustomerAssetRepository(gateway);
-    const service = new api.module.CustomerAssetService(repository);
+    const service = new api.module.CustomerAssetService(repository, auditSink());
     const accessContext = contextFor(TENANT_A, ["customer:read"]);
 
     const listed = await repository.listCustomers(accessContext, {
@@ -62,7 +62,8 @@ describe("M4-17 customer asset persistence gateway", () => {
   it("passes restore saves through the gateway without audit persistence", async () => {
     const gateway = customerAssetGateway();
     const service = new api.module.CustomerAssetService(
-      new api.module.PersistenceCustomerAssetRepository(gateway)
+      new api.module.PersistenceCustomerAssetRepository(gateway),
+      auditSink()
     );
     const accessContext = contextFor(TENANT_A, ["customer:read", "customer:write"]);
 
@@ -80,21 +81,23 @@ describe("M4-17 customer asset persistence gateway", () => {
     assert.deepEqual(
       {
         auditAction: result.auditDraft.action,
-        auditReason: result.auditDraft.reasonRef,
+        auditReason: result.auditDraft.content.after.reasonRef,
+        auditType: result.auditDraft.eventType,
         blacklisted: result.item.isBlacklisted,
-        restoredFlags: result.auditDraft.restoredFlags,
+        restoredFlags: result.auditDraft.content.after.restoredFlags,
         unreachable: result.item.isUnreachable
       },
       {
         auditAction: "customer_restore_flags",
         auditReason: restoreInput.reasonRef,
+        auditType: "customer.flags_restored",
         blacklisted: false,
         restoredFlags: ["blacklisted", "unreachable"],
         unreachable: false
       }
     );
     assert.equal(result.auditDraft.actorUserId, USER_A);
-    assert.equal(result.auditDraft.customerId, CUSTOMER_A);
+    assert.equal(result.auditDraft.objectId, CUSTOMER_A);
     assert.deepEqual(gateway.saved.scope, { orgId: ORG_ID, tenantId: TENANT_A });
     assert.equal(gateway.saved.customer.isBlacklisted, false);
     assert.equal(gateway.saved.customer.isUnreachable, false);
@@ -200,6 +203,15 @@ function customerAssetGateway() {
   return fixture;
 }
 
+function auditSink() {
+  return {
+    events: [],
+    async record(event) {
+      this.events.push(event);
+    }
+  };
+}
+
 function customerRow(id, tenantId, overrides = {}) {
   return {
     blacklistedAt: "2026-06-22T00:00:00.000Z",
@@ -289,6 +301,10 @@ function tagAssignmentRow() {
 
 async function importCustomerAssetSource() {
   const authzUrl = inlineSource(read("packages/authz/src/index.ts"));
+  const dbUrl = inlineSource(read("packages/db/src/index.ts"));
+  const accessContextUrl = inlineJavaScript(
+    'export const API_AUDIT_SINK = "API_AUDIT_SINK";'
+  );
   const nestCommonUrl = inlineJavaScript(`
     export function Inject(){ return () => {}; }
     export function Injectable(){ return () => {}; }
@@ -314,6 +330,8 @@ async function importCustomerAssetSource() {
   const serviceUrl = inlineSource(
     replaceImports(read("apps/api/src/customer-asset.service.ts"), {
       "../../../packages/authz/src/index.ts": authzUrl,
+      "../../../packages/db/src/index.ts": dbUrl,
+      "./access-context.ts": accessContextUrl,
       "./customer-asset.repository.ts": repositoryUrl,
       "./customer-asset.types.ts": typesUrl,
       "@nestjs/common": nestCommonUrl

@@ -132,6 +132,7 @@ describe("M1-04 audit and config version foundation", () => {
   it("exposes governance table names and pure contract builders", () => {
     assert.equal(db.governanceTableNames.auditLog, "audit_log");
     assert.equal(db.governanceTableNames.configVersion, "config_version");
+    assert.equal(db.auditEventTypes.customerFlagsRestored, "customer.flags_restored");
     assert.equal(db.auditEventTypes.permissionGrantChanged, "permission_grant.changed");
     assert.equal(db.configVersionDomains.featureFlag, "feature_flag");
 
@@ -179,6 +180,49 @@ describe("M1-04 audit and config version foundation", () => {
           content: { after: { versionId: VERSION_TWO_UUID }, before: [] }
         }),
       /audit before must be an object/
+    );
+
+    const customerRestore = db.createCustomerAssetRestoreAuditContract({
+      actorUserId: USER_UUID,
+      after: { isBlacklisted: false, isUnreachable: false },
+      before: { isBlacklisted: true, isUnreachable: true },
+      customerId: "55555555-5555-4555-8555-555555555555",
+      orgId: ORG_UUID,
+      reasonRef: "reason://customer/manual-review",
+      restoredFlags: ["blacklisted", "unreachable"],
+      tenantId: TENANT_UUID
+    });
+    assert.deepEqual(
+      {
+        action: customerRestore.action,
+        eventType: customerRestore.eventType,
+        module: customerRestore.module,
+        objectType: customerRestore.objectType
+      },
+      {
+        action: "customer_restore_flags",
+        eventType: "customer.flags_restored",
+        module: "customer_asset",
+        objectType: "customer"
+      }
+    );
+    assert.deepEqual(customerRestore.content.before, {
+      isBlacklisted: true,
+      isUnreachable: true
+    });
+    assert.deepEqual(customerRestore.content.after, {
+      isBlacklisted: false,
+      isUnreachable: false,
+      reasonRef: "reason://customer/manual-review",
+      restoredFlags: ["blacklisted", "unreachable"]
+    });
+    assert.throws(
+      () =>
+        db.createCustomerAssetRestoreAuditContract({
+          ...customerRestore,
+          restoredFlags: []
+        }),
+      /customer restored flags are required/
     );
   });
 });

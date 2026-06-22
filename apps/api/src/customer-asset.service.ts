@@ -4,7 +4,13 @@ import {
   assertPermission,
   type AccessContext
 } from "../../../packages/authz/src/index.ts";
+import {
+  createCustomerAssetRestoreAuditContract,
+  type CustomerAssetRestoreFlag
+} from "../../../packages/db/src/index.ts";
 
+import { API_AUDIT_SINK } from "./access-context.ts";
+import type { AuditSink } from "./access-context-core.ts";
 import {
   CUSTOMER_ASSET_REPOSITORY,
   type CustomerAssetRepositoryPort
@@ -20,7 +26,9 @@ import {
 export class CustomerAssetService {
   constructor(
     @Inject(CUSTOMER_ASSET_REPOSITORY)
-    private readonly repository: CustomerAssetRepositoryPort
+    private readonly repository: CustomerAssetRepositoryPort,
+    @Inject(API_AUDIT_SINK)
+    private readonly auditSink: AuditSink
   ) {}
 
   async listCustomers(accessContext: AccessContext, filters: CustomerAssetListFilters) {
@@ -74,8 +82,24 @@ export class CustomerAssetService {
         ? undefined
         : customer.unreachableAt
     });
+    const auditEvent = createCustomerAssetRestoreAuditContract({
+      actorUserId: accessContext.userId,
+      after: customerFlagSnapshot(updated),
+      before: customerFlagSnapshot(customer),
+      customerId: updated.id,
+      orgId: accessContext.orgId,
+      reasonRef: input.reasonRef,
+      restoredFlags,
+      tenantId: accessContext.selectedTenantId
+    });
+    await this.auditSink.record(auditEvent);
     return {
-      auditDraft: auditDraft(accessContext, updated.id, input.reasonRef, restoredFlags),
+      auditDraft: {
+        ...auditEvent,
+        customerId: updated.id,
+        reasonRef: input.reasonRef,
+        restoredFlags
+      },
       item: customerSummary(updated)
     };
   }
@@ -140,25 +164,17 @@ function customerSummary(customer: CustomerAssetCustomer) {
 function restoreFlags(
   input: CustomerAssetRestoreInput,
   customer: CustomerAssetCustomer
-): ("blacklisted" | "unreachable")[] {
+): CustomerAssetRestoreFlag[] {
   return [
     input.restoreBlacklisted && customer.isBlacklisted ? "blacklisted" : undefined,
     input.restoreUnreachable && customer.isUnreachable ? "unreachable" : undefined
-  ].filter((value): value is "blacklisted" | "unreachable" => value !== undefined);
+  ].filter((value): value is CustomerAssetRestoreFlag => value !== undefined);
 }
 
-function auditDraft(
-  accessContext: AccessContext,
-  customerId: string,
-  reasonRef: string,
-  restoredFlags: readonly ("blacklisted" | "unreachable")[]
-) {
+function customerFlagSnapshot(customer: CustomerAssetCustomer) {
   return {
-    action: "customer_restore_flags",
-    actorUserId: accessContext.userId,
-    customerId,
-    reasonRef,
-    restoredFlags
+    isBlacklisted: customer.isBlacklisted,
+    isUnreachable: customer.isUnreachable
   };
 }
 

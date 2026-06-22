@@ -202,6 +202,9 @@ function customerAssetRuntimeModules() {
       "service",
       {
         "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+        "../../../packages/db/src/index.ts": "./db-index.mjs",
+        "./access-context.ts": "./access-context.mjs",
+        "./access-context-core.ts": "./access-context-core.mjs",
         "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
         "./customer-asset.types.ts": "./customer-asset.types.mjs"
       }

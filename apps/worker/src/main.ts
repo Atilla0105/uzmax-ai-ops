@@ -29,6 +29,60 @@ export type OrderImportWorkerDrafts = {
   snapshotDrafts: readonly Record<string, unknown>[];
 };
 
+export type OrderImportCsvParseInput = {
+  csvText: string;
+  maxRows?: number;
+  sourceRef: string;
+};
+
+export type OrderImportCsvParseResult = {
+  headers: readonly string[];
+  rows: readonly AnyRecord[];
+  sourceRef: string;
+};
+
+type CsvParseState = {
+  field: string;
+  quoted: boolean;
+  record: string[];
+  records: string[][];
+};
+
+const orderImportCsvHeaderMap = {
+  customer_ref: "customerRef",
+  expires_at: "expiresAt",
+  external_batch_ref: "externalBatchRef",
+  external_order_ref: "externalOrderRef",
+  order_status_ref: "orderStatusRef",
+  source_updated_at: "sourceUpdatedAt"
+} as const;
+const requiredOrderImportCsvHeaders = [
+  "expires_at",
+  "external_order_ref",
+  "order_status_ref",
+  "source_updated_at"
+] as const;
+
+export function parseOrderImportCsvText(
+  input: OrderImportCsvParseInput
+): OrderImportCsvParseResult {
+  const maxRows = maxImportRows(input.maxRows);
+  const records = parseCsvRecords(input.csvText);
+  const headers = normalizeCsvHeaders(records[0]);
+  assertCsvHeaders(headers);
+
+  const rows: AnyRecord[] = [];
+  for (const record of records.slice(1)) {
+    if (isBlankCsvRecord(record)) continue;
+    if (rows.length >= maxRows) {
+      throw new Error("order import CSV row count exceeds maxRows");
+    }
+    rows.push(csvRecordToOrderRow(record, headers, rows.length + 1, input.sourceRef));
+  }
+
+  return { headers, rows, sourceRef: input.sourceRef };
+}
+
 export function createOrderImportWorkerDrafts(
   input: OrderImportWorkerDraftInput
 ): OrderImportWorkerDrafts {
@@ -111,4 +165,152 @@ function assertIdAllocation(
   if (ids.length !== expectedCount) {
     throw new Error(`${name} must match generated draft count`);
   }
+}
+
+function csvRecordToOrderRow(
+  record: readonly string[],
+  headers: readonly string[],
+  rowNumber: number,
+  sourceRef: string
+): AnyRecord {
+  if (record.length > headers.length) {
+    throw new Error(`order import CSV row ${rowNumber} has too many columns`);
+  }
+
+  const payloadSummary: AnyRecord = {
+    rowRef: `import://order-import/row-${rowNumber}`
+  };
+  const row: AnyRecord = { payloadSummary, rowNumber, sourceRef };
+  for (let index = 0; index < headers.length; index += 1) {
+    const cell = record[index]?.trim();
+    if (!cell) continue;
+    const field =
+      orderImportCsvHeaderMap[headers[index] as keyof typeof orderImportCsvHeaderMap];
+    row[field] = cell;
+    if (field === "orderStatusRef") payloadSummary.statusRef = cell;
+  }
+  return row;
+}
+
+function normalizeCsvHeaders(record: readonly string[] | undefined): string[] {
+  if (!record || isBlankCsvRecord(record)) {
+    throw new Error("order import CSV must include a header row");
+  }
+  return record.map((header) =>
+    header.trim().toLowerCase().replace(/\s+/g, "_").replaceAll("-", "_")
+  );
+}
+
+function assertCsvHeaders(headers: readonly string[]) {
+  const seen = new Set<string>();
+  for (const header of headers) {
+    if (!header) throw new Error("order import CSV header is required");
+    if (seen.has(header)) {
+      throw new Error(`order import CSV header ${header} is duplicated`);
+    }
+    if (!(header in orderImportCsvHeaderMap)) {
+      throw new Error(`order import CSV header ${header} is not allowed`);
+    }
+    seen.add(header);
+  }
+  for (const header of requiredOrderImportCsvHeaders) {
+    if (!seen.has(header)) {
+      throw new Error(`order import CSV header ${header} is required`);
+    }
+  }
+}
+
+function parseCsvRecords(csvText: string): string[][] {
+  if (typeof csvText !== "string" || !csvText.trim()) {
+    throw new Error("csvText is required");
+  }
+  const state: CsvParseState = {
+    field: "",
+    quoted: false,
+    record: [],
+    records: []
+  };
+  for (let index = 0; index < csvText.length; index += 1) {
+    index = consumeCsvCharacter(csvText, index, state);
+  }
+  finishCsvParse(state);
+  return state.records;
+}
+
+function consumeCsvCharacter(
+  csvText: string,
+  index: number,
+  state: CsvParseState
+): number {
+  if (state.quoted) return consumeQuotedCsvCharacter(csvText, index, state);
+  return consumeUnquotedCsvCharacter(csvText, index, state);
+}
+
+function consumeQuotedCsvCharacter(
+  csvText: string,
+  index: number,
+  state: CsvParseState
+): number {
+  const character = csvText[index];
+  if (character !== '"') {
+    state.field += character;
+    return index;
+  }
+  if (csvText[index + 1] === '"') {
+    state.field += '"';
+    return index + 1;
+  }
+  state.quoted = false;
+  return index;
+}
+
+function consumeUnquotedCsvCharacter(
+  csvText: string,
+  index: number,
+  state: CsvParseState
+): number {
+  const character = csvText[index];
+  if (character === '"') {
+    if (state.field.length > 0) throw new Error("quote must start a CSV field");
+    state.quoted = true;
+  } else if (character === ",") {
+    pushCsvField(state);
+  } else if (character === "\n" || character === "\r") {
+    if (character === "\r" && csvText[index + 1] === "\n") index += 1;
+    pushCsvRecord(state);
+  } else {
+    state.field += character;
+  }
+  return index;
+}
+
+function finishCsvParse(state: CsvParseState) {
+  if (state.quoted) throw new Error("unterminated quoted CSV field");
+  pushCsvRecord(state);
+  while (state.records.length > 1 && isBlankCsvRecord(state.records.at(-1) ?? [])) {
+    state.records.pop();
+  }
+}
+
+function pushCsvRecord(state: CsvParseState) {
+  pushCsvField(state);
+  state.records.push(state.record);
+  state.record = [];
+}
+
+function pushCsvField(state: CsvParseState) {
+  state.record.push(state.field);
+  state.field = "";
+}
+
+function isBlankCsvRecord(record: readonly string[]): boolean {
+  return record.every((cell) => !cell.trim());
+}
+
+function maxImportRows(value: number | undefined): number {
+  if (value === undefined) return 500;
+  if (!Number.isInteger(value) || value < 1 || value > 5000) {
+    throw new Error("maxRows must be an integer from 1 to 5000");
+  }
+  return value;
 }

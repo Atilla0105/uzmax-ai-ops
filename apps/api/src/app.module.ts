@@ -8,6 +8,12 @@ import {
 } from "@nestjs/common";
 
 import * as api from "./access-context.ts";
+import type {
+  AuditLogPrismaClientPort,
+  PrismaAuditLogCreateData,
+  PrismaAuditSink,
+  toPrismaAuditLogCreateData
+} from "./audit-log.prisma-sink.ts";
 import {
   ConversationTicketController,
   ConversationTicketService,
@@ -82,6 +88,12 @@ type CustomerAssetPersistenceContractAnchor = {
   prismaGateway: typeof PrismaCustomerAssetPersistenceGateway;
   scope: CustomerAssetPersistenceScope;
 };
+type ApiAuditPersistenceContractAnchor = {
+  createData: typeof toPrismaAuditLogCreateData;
+  createDataShape: PrismaAuditLogCreateData;
+  prismaClient: AuditLogPrismaClientPort;
+  prismaSink: typeof PrismaAuditSink;
+};
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
   "persistenceAdapter" | "prismaGateway"
@@ -96,6 +108,12 @@ function customerAssetPersistenceContractAnchor(
   void contract;
 }
 void customerAssetPersistenceContractAnchor;
+function apiAuditPersistenceContractAnchor(
+  contract: ApiAuditPersistenceContractAnchor
+) {
+  void contract;
+}
+void apiAuditPersistenceContractAnchor;
 
 @Injectable()
 class DisabledTelegramBotIngressQueue {

@@ -1,6 +1,8 @@
 # M4 Evidence
 
-M4 evidence covers order/customer milestone records: SPK-02 order SaaS API branch decision, import-snapshot main path evidence, customer asset/order snapshot workflows, fields/tags, quote records and identity merge/split evidence.
+M4 evidence is intended to track order/customer milestone records: SPK-02 order SaaS API branch decision, import-snapshot main path evidence, customer asset/order snapshot workflows, fields/tags, quote records and identity merge/split evidence.
+
+Current M4 evidence only contains the SPK-02 no-API branch evidence and its process-boundary record.
 
 Current SPK-02 evidence: `spikes/SPK-02-order-saas-api/manifest.md`.
 

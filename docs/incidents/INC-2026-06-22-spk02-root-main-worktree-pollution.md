@@ -71,7 +71,7 @@ No commit, push, PR creation or merge happened from the polluted root/main check
 - Status: active for this branch.
 - Control: runtime/harness write prevention remains outside the in-repo guard. The repo guard is forensic and detects assigned/root mismatches; it is not a complete technical jail for path-agnostic edit tools.
 - Status: documented.
-- Follow-up spec/PR if any: none required before coordinator review once this incident record, spec touch list and SPK-02 manifest evidence are merged in the SPK-02 PR. Broader runtime/harness prevention remains a coordinator/tooling concern outside this docs-only branch.
+- Follow-up spec/PR if any: none required inside SPK-02 before coordinator review/merge after this incident record is included. Broader runtime/harness prevention remains a future coordinator/tooling decision if the project wants stronger prevention for path-agnostic edit tools.
 
 ## Institutionalized Status
 

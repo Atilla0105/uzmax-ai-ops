@@ -45,7 +45,7 @@ No API credentials, env files, token values, order IDs, phone/address/payment da
 | Dependency install | `npm ci` | completed after node_modules was missing; npm audit reported 3 high severity vulnerabilities, not introduced by this docs PR |
 | Worker boundary | `UZMAX_ASSIGNED_WORKTREE=/Users/atilla/Documents/uzmax-spk-02-order-api-no-api-closure UZMAX_PRIMARY_ROOT=/Users/atilla/Documents/UZMAX智能运营 npm run guard:worker-boundary` | `worker-write-boundary: ok (codex/spk-02-order-api-no-api-closure, /Users/atilla/Documents/uzmax-spk-02-order-api-no-api-closure)` |
 
-Runtime/harness prevention is outside this repository guard. This branch used absolute assigned paths and command cwd binding; root/main checkout remained coordination/read-only.
+The pre-edit worker boundary guard passed, but a later path-agnostic relative edit violated the intended root/main read-only boundary. After cleanup, controls switched to absolute assigned paths or `git -C /Users/atilla/Documents/uzmax-spk-02-order-api-no-api-closure` for writes, and final root/main status was clean.
 
 ## Evidence Search Scope
 

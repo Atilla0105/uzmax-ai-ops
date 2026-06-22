@@ -1,22 +1,19 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
 
-import ts from "typescript";
+import { importWorkerEntrypoint, readRepoText } from "./m4-worker-test-loader.mjs";
 
-const repoRoot = process.cwd();
 const ORG_ID = "11111111-1111-4111-8111-111111111111";
 const TENANT_ID = "22222222-2222-4222-8222-222222222222";
 const USER_ID = "33333333-3333-4333-8333-333333333333";
 const IMPORT_JOB_ID = "44444444-4444-4444-8444-444444444444";
 const SNAPSHOT_ID = "55555555-5555-4555-8555-555555555555";
 const ROW_ERROR_ID = "66666666-6666-4666-8666-666666666666";
-const workerSource = read("apps/worker/src/main.ts");
-const spec = read("docs/specs/M4-09-order-import-worker-contract.md");
-const evidence = read("docs/evidence/M4/M4-09-order-import-worker-contract.md");
-const m4Index = read("docs/evidence/M4/README.md");
-const worker = await importWorkerSource();
+const workerSource = readRepoText("apps/worker/src/main.ts");
+const spec = readRepoText("docs/specs/M4-09-order-import-worker-contract.md");
+const evidence = readRepoText("docs/evidence/M4/M4-09-order-import-worker-contract.md");
+const m4Index = readRepoText("docs/evidence/M4/README.md");
+const worker = await importWorkerEntrypoint();
 
 describe("M4-09 order import worker contract", () => {
   it("creates import job, snapshot and row error drafts from controlled rows", () => {
@@ -161,42 +158,4 @@ function validRow(rowNumber) {
 
 function pick(record, keys) {
   return Object.fromEntries(keys.map((key) => [key, record[key]]));
-}
-
-async function importWorkerSource() {
-  const orderReadUrl = compileTsModuleUrl(
-    read("packages/capabilities/order-read/src/index.ts")
-  );
-  const dbUrl = compileTsModuleUrl(
-    read("packages/db/src/m4-order-import-contracts.ts")
-  );
-  const moduleUrl = compileTsModuleUrl(
-    workerSource
-      .replaceAll(
-        "../../../packages/capabilities/order-read/src/index.ts",
-        orderReadUrl
-      )
-      .replaceAll("../../../packages/db/src/m4-order-import-contracts.ts", dbUrl)
-  );
-  return { module: await import(moduleUrl), moduleUrl };
-}
-
-function read(relativePath) {
-  return readFileSync(path.join(repoRoot, relativePath), {
-    encoding: "utf8"
-  });
-}
-
-function compileTsModuleUrl(sourceText) {
-  const compiled = ts.transpileModule(sourceText, {
-    compilerOptions: {
-      emitDecoratorMetadata: false,
-      experimentalDecorators: true,
-      module: ts.ModuleKind.ES2022,
-      target: ts.ScriptTarget.ES2023
-    }
-  }).outputText;
-  return `data:text/javascript;base64,${Buffer.from(compiled, "utf8").toString(
-    "base64"
-  )}`;
 }

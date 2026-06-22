@@ -18,6 +18,7 @@ import {
   InMemoryOrderImportRepository,
   OrderImportController,
   OrderImportService,
+  PrismaOrderImportPersistenceGateway,
   PersistenceOrderImportRepository,
   type OrderImportPersistenceGateway,
   type OrderImportPersistenceScope
@@ -56,13 +57,15 @@ type TelegramBotWebhookBody = TelegramBotContractAnchor["input"]["body"];
 type OrderImportRepositoryContractAnchor = {
   gateway: OrderImportPersistenceGateway;
   persistenceAdapter: typeof PersistenceOrderImportRepository;
+  prismaGateway: typeof PrismaOrderImportPersistenceGateway;
   scope: OrderImportPersistenceScope;
 };
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
-  "persistenceAdapter"
+  "persistenceAdapter" | "prismaGateway"
 > = {
-  persistenceAdapter: PersistenceOrderImportRepository
+  persistenceAdapter: PersistenceOrderImportRepository,
+  prismaGateway: PrismaOrderImportPersistenceGateway
 };
 void orderImportRepositoryContractAnchor;
 

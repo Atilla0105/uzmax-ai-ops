@@ -4,7 +4,7 @@ M3 evidence covers AI capabilities, LLM gateway, eval gate and the minimum knowl
 
 Current readiness pack: `M3-ai-capability-readiness-pack.md`.
 
-Current closeout/no-go record: `M3-ai-capability-closeout-signoff.md`.
+Current closeout/signoff record: `M3-ai-capability-closeout-signoff.md`.
 
 Current DB/contracts foundation: `M3-01-ai-capability-data-contracts-foundation.md`.
 
@@ -46,7 +46,9 @@ Current vision screenshot sample/eval evidence: `M3-20-vision-screenshot-samples
 
 Current language safety-lock evidence: `M3-21-language-safety-lock-review.md`.
 
-M3 current status: `foundation_queue_complete__test_stage_f02_g04_ready__owner_signoff_pending`. This means M3-01 through M3-09 foundation PRs are complete and merged, M3-11 through M3-15 have added signoff-before governance follow-ups, M3-16 has generated an owner-reviewed candidate tutorial/KB material pack from owner-local controlled sources, M3-17 has prepared controlled intake evidence shells, M3-18 has reduced CI cost exposure, M3-19 has recorded the owner-approved test-phase source branch with KB structure and language sample-selection evidence, M3-20 has recorded 26 owner-confirmed test-fixture screenshot cases with AI visual eval pass evidence, and M3-21 has recorded the language strong-model lock / route-freeze safety decision. M3 test-stage closeout is ready for project-owner signoff. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
+Current owner closeout signoff: `M3-22-owner-closeout-signoff.md`.
+
+M3 current status: `owner_accepted_m3_test_stage_closeout_evidence`. This means M3-01 through M3-09 foundation PRs are complete and merged, M3-11 through M3-15 have added signoff-before governance follow-ups, M3-16 has generated an owner-reviewed candidate tutorial/KB material pack from owner-local controlled sources, M3-17 has prepared controlled intake evidence shells, M3-18 has reduced CI cost exposure, M3-19 has recorded the owner-approved test-phase source branch with KB structure and language sample-selection evidence, M3-20 has recorded 26 owner-confirmed test-fixture screenshot cases with AI visual eval pass evidence, M3-21 has recorded the language strong-model lock / route-freeze safety decision, and M3-22 has recorded project-owner M3 test-stage closeout signoff. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
 
 M2 prior state: `owner_accepted_m2_milestone_evidence` only. Project owner accepted M2 milestone evidence, but M2 evidence explicitly did not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
 
@@ -56,7 +58,7 @@ M3 owner-input blockers from the v1.1 root docs:
 - screenshot diagnostic samples >=20 are required before F-02 closeout; M3-20 updates `docs/evidence/M3/vision/screenshot-cases-manifest.md` and `docs/evidence/M3/vision/eval-run-report.md` with 26 owner-confirmed test-fixture cases and AI visual eval pass evidence; production provider/e2e remains future-gated;
 - Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04; M3-21 records a test-stage safety-lock decision after verifying 80 selected controlled ids. Production reviewed counts remain 0/0/0, but weak/low-quality model release is blocked by `strong_model_locked_until_owner_blind_review` and route optimization remains frozen.
 
-Current repo evidence includes an owner-reviewed candidate tutorial/KB material pack, a test-stage KB structure, M3-20 screenshot sample/eval evidence and M3-21 language safety-lock evidence. M3 test-stage closeout is ready for project-owner signoff while production import/eval/publish, production blind-review quality pass, production provider/e2e, customer LLM, GA-0 and 1.0 release remain future-gated.
+Current repo evidence includes an owner-reviewed candidate tutorial/KB material pack, a test-stage KB structure, M3-20 screenshot sample/eval evidence, M3-21 language safety-lock evidence and M3-22 owner closeout signoff. M3 test-stage closeout evidence is owner accepted while production import/eval/publish, production blind-review quality pass, production provider/e2e, customer LLM, GA-0, M4 and 1.0 release remain future-gated.
 
 M3-01 records the first `packages/db` global serial point for M3. It adds minimal schema/contracts/eval persistence/LLM accounting foundation only; F-01/F-02/F-04/F-05/G-01/G-02/G-03/G-05/G-06/H-01 remain foundation/queued and not closed. The owner-input blockers above remain in force.
 
@@ -74,7 +76,7 @@ M3-07 records a pure `packages/capabilities/speech` foundation for field-specifi
 
 M3-08 records a pure `packages/engine` foundation for user-level, user+capability, capability-level and global breaker radius decisions plus redline output guard behavior and safe degradation/handoff contract semantics. It uses no DB persistence, evals import, LLM/provider call, capability import, API/admin/worker integration, real redline samples, production output filter or real customer traffic. F-05/F-06/G-05/L-02 are foundation-only and not closed; production output filtering, runtime breaker events, real fault injection, leave-ticket drill and false-positive dashboard remain future work.
 
-M3-09 records a pure `apps/admin` synthetic/local shell for facts, journeys, stages, materials and eval gate failed/blocked semantics. It uses no backend import, DB persistence, real API client, eval runner integration, provider call, real fixture, knowledge publish, production gate runtime or real customer traffic. G-03/H-01/I-01 are partial/foundation evidence only and not closed; production publish integration, full desktop core, owner tutorial material pack, screenshot sample evidence, language blind review and M3 closeout remain active blockers.
+M3-09 records a pure `apps/admin` synthetic/local shell for facts, journeys, stages, materials and eval gate failed/blocked semantics. It uses no backend import, DB persistence, real API client, eval runner integration, provider call, real fixture, knowledge publish, production gate runtime or real customer traffic. G-03/H-01/I-01 are partial/foundation evidence only and not closed for production; production publish integration and full desktop core remain future work.
 
 M3-11 records a pre-M4 worker write-boundary governance follow-up after M3-07/M3-09 root/main pollution incidents. It adds in-repo detection/forensics and runbook evidence for assigned worktree/root-main state, but it is not a runtime jail and does not start M4.
 
@@ -97,6 +99,8 @@ M3-19 records the project owner test-phase material branch decision. It allows A
 M3-20 records the project owner screenshot test-fixture branch decision and F-02 test-stage sample/eval evidence. It manifests 26 owner-confirmed screenshot cases using controlled refs only and records AI visual review pass 26/26; raw images and visible values stay outside git, and production provider/e2e remains future-gated.
 
 M3-21 records the project owner test-stage language safety-lock decision. It verifies 80 selected controlled sample ids from the owner-local redacted candidate set and keeps weak/low-quality model release blocked by strong-model lock until owner blind review; raw rows and model replies stay outside git, and production language quality pass remains future-gated.
+
+M3-22 records the project owner test-stage closeout signoff. It changes M3 from `owner_signoff_pending` to `owner_accepted_m3_test_stage_closeout_evidence`; it does not approve production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, M4 start or 1.0 release.
 
 M3-07 records incident `docs/incidents/INC-2026-06-19-m3-07-root-main-worktree-pollution.md`: a relative edit operation wrote M3-07 files into root/main before commit. The polluted diff was sealed, root/main was cleaned and rechecked, changes were restored only into the assigned worktree, and M3-07 required absolute-path edits plus root/worktree dual status checks for the rest of that slice. After PR #45 merged, this incident is `institutionalized_in_docs`.
 

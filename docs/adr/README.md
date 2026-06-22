@@ -15,6 +15,7 @@
 | ADR | 状态 | 结论 |
 |---|---|---|
 | `ADR-B01-telegram-business.md` | accepted | `no_go_owner_inputs_missing`; M2 缺真实 Telegram Business 账号/实测证据，Business 模块当前关闭，C-03b 成为 P0 |
+| `ADR-B02-order-api.md` | accepted/current branch | `no_api_for_m4__import_snapshot_main_path`; 2026-06-22 owner input “暂时没有api”，E-01 当前不阻断，E-02 导入快照为 P0 主路径，E-03/E-04 仍 P0 |
 
 ## 编号规则
 

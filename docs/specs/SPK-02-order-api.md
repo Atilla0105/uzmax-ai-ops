@@ -80,7 +80,7 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 
 ## 实施步骤
 
-1. 更新本 SPK-02 spec，使 machine-readable touch list 与本 PR 实际触碰的 5 个 docs 文件一致。
+1. 更新本 SPK-02 spec，使 machine-readable touch list 与本 PR 实际触碰的 docs 文件一致。
 2. 新增 `docs/adr/ADR-B02-order-api.md`，记录 `no_api_for_m4__import_snapshot_main_path` 当前分支，并明确该结论不是永久 API 不存在声明。
 3. 更新 `docs/adr/README.md`，把 ADR-B02 加入 accepted/current branch 索引。
 4. 新增 `docs/evidence/M4/README.md`，记录 M4 evidence boundaries：当前仅 SPK-02 no-API closure，不表示 production、GA-0、真实流量、customer LLM 或 1.0 release。

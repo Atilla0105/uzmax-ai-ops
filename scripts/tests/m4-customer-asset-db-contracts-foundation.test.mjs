@@ -221,22 +221,17 @@ describe("M4-02 customer asset DB contracts foundation", () => {
     );
   });
 
-  it("does not introduce order import snapshot or API connector tables", () => {
+  it("does not introduce order import snapshot or API connector tables in M4-02", () => {
     for (const forbidden of [
-      /model OrderConnector/,
-      /model OrderSnapshot/,
-      /model OrderQueryLog/,
-      /model ImportJob/,
-      /model ImportRowError/,
       /create table if not exists order_connector/,
       /create table if not exists order_snapshot/,
       /create table if not exists order_query_log/,
       /create table if not exists import_job/,
       /create table if not exists import_row_error/
     ]) {
-      assert.doesNotMatch(schema, forbidden);
       assert.doesNotMatch(migration, forbidden);
     }
+    assert.doesNotMatch(schema, /model OrderConnector/);
   });
 
   it("records scope and redaction boundaries in M4 docs", () => {

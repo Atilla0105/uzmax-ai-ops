@@ -19,6 +19,10 @@ import {
 } from "./customer-asset.repository.ts";
 import { CustomerAssetController } from "./customer-asset.controller.ts";
 import type {
+  CustomerAssetPrismaClientPort,
+  PrismaCustomerAssetPersistenceGateway
+} from "./customer-asset.prisma-gateway.ts";
+import type {
   CustomerAssetPersistenceGateway,
   CustomerAssetPersistenceScope,
   PersistenceCustomerAssetRepository
@@ -74,6 +78,8 @@ type OrderImportRepositoryContractAnchor = {
 type CustomerAssetPersistenceContractAnchor = {
   gateway: CustomerAssetPersistenceGateway;
   persistenceAdapter: typeof PersistenceCustomerAssetRepository;
+  prismaClient: CustomerAssetPrismaClientPort;
+  prismaGateway: typeof PrismaCustomerAssetPersistenceGateway;
   scope: CustomerAssetPersistenceScope;
 };
 const orderImportRepositoryContractAnchor: Pick<

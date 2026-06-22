@@ -5,6 +5,13 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run full CI including external spikes and Playwright
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
@@ -37,6 +44,90 @@ jobs:
               echo "base=HEAD^" >> "$GITHUB_OUTPUT"
             fi
           fi
+      - name: Classify changed paths
+        id: path-scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="${{ steps.guard-base.outputs.base }}"
+          if git rev-parse --verify "$base" >/dev/null 2>&1; then
+            changed_files="$(git diff --name-only "$base" HEAD)"
+          else
+            changed_files="$(git diff --name-only HEAD^ HEAD)"
+          fi
+
+          docs_only=true
+          frontend_changed=false
+          spike_changed=false
+
+          if [ -z "$changed_files" ]; then
+            docs_only=false
+          fi
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            case "$file" in
+              docs/*|docs/**|README.md|SECURITY.md)
+                ;;
+              *)
+                docs_only=false
+                ;;
+            esac
+
+            case "$file" in
+              apps/admin/*|apps/admin/**|packages/ui-tokens/*|packages/ui-tokens/**|playwright.config.ts)
+                frontend_changed=true
+                ;;
+            esac
+
+            case "$file" in
+              packages/db/*|packages/db/**|packages/authz/*|packages/authz/**|package.json|package-lock.json)
+                spike_changed=true
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          force_full="${{ github.event_name == 'workflow_dispatch' && inputs.full }}"
+          run_core=false
+          run_spikes=false
+          run_playwright=false
+
+          if [ "$docs_only" != "true" ] || [ "$force_full" = "true" ]; then
+            run_core=true
+          fi
+          if [ "$spike_changed" = "true" ] || [ "$force_full" = "true" ]; then
+            run_spikes=true
+          fi
+          if [ "$frontend_changed" = "true" ] || [ "$force_full" = "true" ]; then
+            run_playwright=true
+          fi
+
+          {
+            echo "docs_only=$docs_only"
+            echo "frontend_changed=$frontend_changed"
+            echo "spike_changed=$spike_changed"
+            echo "run_core=$run_core"
+            echo "run_spikes=$run_spikes"
+            echo "run_playwright=$run_playwright"
+            echo "changed_files<<EOF"
+            printf '%s\n' "$changed_files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Report CI path scope
+        shell: bash
+        env:
+          UZMAX_CI_CHANGED_FILES: ${{ steps.path-scope.outputs.changed_files }}
+        run: |
+          echo "docs_only=${{ steps.path-scope.outputs.docs_only }}"
+          echo "frontend_changed=${{ steps.path-scope.outputs.frontend_changed }}"
+          echo "spike_changed=${{ steps.path-scope.outputs.spike_changed }}"
+          echo "run_core=${{ steps.path-scope.outputs.run_core }}"
+          echo "run_spikes=${{ steps.path-scope.outputs.run_spikes }}"
+          echo "run_playwright=${{ steps.path-scope.outputs.run_playwright }}"
+          echo "changed_files:"
+          printf '%s\n' "$UZMAX_CI_CHANGED_FILES"
       - uses: actions/setup-node@v4
         with:
           cache: npm
@@ -45,27 +136,36 @@ jobs:
       - run: npm run format:check
       - run:
           npm run guard:prettier-ignore -- --base "${{ steps.guard-base.outputs.base }}"
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run depcruise
-      - run: npm run jscpd
-      - run: npm run knip
-      - run: npm run guard:forbidden-terms
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run typecheck
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run lint
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run depcruise
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run jscpd
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run knip
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run guard:forbidden-terms
       - run:
           npm run guard:eval-triggers -- --base "${{ steps.guard-base.outputs.base }}"
       - run: npm run guard:doc-triggers
       - run: npm run guard:workspace
       - if: github.event_name == 'pull_request'
         run: npm run guard:pr-shape -- --base "${{ steps.guard-base.outputs.base }}"
-      - run: npm run -w @uzmax/db prisma:generate
-      - name: SPK-03 RLS Prisma pool spike
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run -w @uzmax/db prisma:generate
+      - if: steps.path-scope.outputs.run_spikes == 'true'
+        name: SPK-03 RLS Prisma pool spike
         env:
           UZMAX_RLS_DATABASE_URL: >-
             ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=16&pool_timeout=60
           UZMAX_RLS_SET_ROLE: uzmax_spk03_ci
           UZMAX_RLS_SPIKE_CONCURRENCY: "16"
         run: npm run -w @uzmax/db spike:rls-prisma-pool
-      - name: SPK-04 dual-auth chain spike
+      - if: steps.path-scope.outputs.run_spikes == 'true'
+        name: SPK-04 dual-auth chain spike
         env:
           UZMAX_RLS_DATABASE_URL: >-
             ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=16&pool_timeout=60
@@ -74,8 +174,13 @@ jobs:
           UZMAX_SUPABASE_SECRET_KEY: ${{ secrets.UZMAX_SUPABASE_SECRET_KEY }}
           UZMAX_SUPABASE_URL: https://enyocaykcgcfcswycujg.supabase.co
         run: npm run -w @uzmax/authz spike:dual-auth
-      - run: npm run test
-      - run: npm run build
-      - run: npm run size
-      - run: npx playwright install --with-deps chromium
-      - run: npm run playwright
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run test
+      - if: steps.path-scope.outputs.run_core == 'true'
+        run: npm run build
+      - if: steps.path-scope.outputs.run_playwright == 'true'
+        run: npm run size
+      - if: steps.path-scope.outputs.run_playwright == 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.path-scope.outputs.run_playwright == 'true'
+        run: npm run playwright

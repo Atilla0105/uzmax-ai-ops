@@ -29,6 +29,16 @@ export type OrderImportWorkerDrafts = {
   snapshotDrafts: readonly Record<string, unknown>[];
 };
 
+export type OrderImportWorkerPersistenceGateway = {
+  persistImportJob(draft: Record<string, unknown>): Promise<void> | void;
+  persistImportRowErrors(
+    drafts: readonly Record<string, unknown>[]
+  ): Promise<void> | void;
+  persistOrderSnapshots(
+    drafts: readonly Record<string, unknown>[]
+  ): Promise<void> | void;
+};
+
 export type OrderImportCsvParseInput = {
   csvText: string;
   maxRows?: number;
@@ -39,6 +49,21 @@ export type OrderImportCsvParseResult = {
   headers: readonly string[];
   rows: readonly AnyRecord[];
   sourceRef: string;
+};
+
+export type OrderImportCsvTextPersistenceJobInput = Omit<
+  OrderImportWorkerDraftInput,
+  "rows"
+> &
+  OrderImportCsvParseInput;
+
+export type OrderImportCsvTextPersistenceJobResult = OrderImportWorkerDrafts & {
+  parsed: OrderImportCsvParseResult;
+  persisted: {
+    importJobs: 1;
+    rowErrors: number;
+    snapshots: number;
+  };
 };
 
 type CsvParseState = {
@@ -114,6 +139,32 @@ export function createOrderImportWorkerDrafts(
     snapshotDrafts: batch.successfulRows.map((snapshot, index) =>
       createSnapshotDraft(input, snapshot, input.snapshotIds[index])
     )
+  };
+}
+
+export async function runOrderImportCsvTextPersistenceJob(
+  input: OrderImportCsvTextPersistenceJobInput,
+  gateway: OrderImportWorkerPersistenceGateway
+): Promise<OrderImportCsvTextPersistenceJobResult> {
+  const parsed = parseOrderImportCsvText(input);
+  const drafts = createOrderImportWorkerDrafts({
+    ...input,
+    rows: parsed.rows,
+    sourceRef: parsed.sourceRef
+  });
+
+  await gateway.persistImportJob(drafts.importJobDraft);
+  await gateway.persistOrderSnapshots(drafts.snapshotDrafts);
+  await gateway.persistImportRowErrors(drafts.rowErrorDrafts);
+
+  return {
+    ...drafts,
+    parsed,
+    persisted: {
+      importJobs: 1,
+      rowErrors: drafts.rowErrorDrafts.length,
+      snapshots: drafts.snapshotDrafts.length
+    }
   };
 }
 

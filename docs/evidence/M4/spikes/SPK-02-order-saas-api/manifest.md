@@ -122,17 +122,22 @@ Controls for remainder of SPK-02:
 - Run assigned/root dual status checks after edits, formatters, archive restores, generated writes and validation residue.
 - Continue explicit worker boundary guard. Runtime/harness prevention remains outside the in-repo guard; the repo guard is forensic/detection evidence, not a complete write jail.
 
-## Validation To Record For This PR
+## Validation Results For Coordinator Review
 
-| Command | Required result |
+The worker branch does not open or merge the PR. Coordinator opens the SPK-02 one-spec/one-PR after coordinator spec compliance and quality review. K-03 remains active.
+
+| Command / check | Executed result |
 |---|---|
+| `npm ci` | pass; npm audit reported 3 high severity vulnerabilities, not introduced by this docs PR |
 | `npm run format:check` | pass |
 | `npm run guard:doc-triggers` | pass |
 | `npm run guard:workspace` | pass |
 | `UZMAX_ASSIGNED_WORKTREE=/Users/atilla/Documents/uzmax-spk-02-order-api-no-api-closure UZMAX_PRIMARY_ROOT=/Users/atilla/Documents/UZMAX智能运营 npm run guard:worker-boundary` | pass |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/SPK-02-order-api.md --include-worktree` | pass |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/SPK-02-order-api.md --include-worktree` | pass; 6 docs files, source changed files 0, net LOC 0, new source files 0 |
 | `git diff --check origin/main...HEAD` | pass |
-| `npm run check` | run if feasible; record exact unrelated external/account/spending failure if it fails |
+| `npm run check` | pass, including build, size-limit and 7 Playwright tests |
+| Final assigned worktree status | clean on `codex/spk-02-order-api-no-api-closure` |
+| Final root/main status | clean on `main...origin/main` |
 
 ## Future Reopen Conditions
 

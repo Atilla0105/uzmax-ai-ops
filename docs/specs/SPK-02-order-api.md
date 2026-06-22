@@ -86,7 +86,8 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 4. 新增 `docs/evidence/M4/README.md`，记录 M4 evidence boundaries：当前仅 SPK-02 no-API closure，不表示 production、GA-0、真实流量、customer LLM 或 1.0 release。
 5. 新增 `docs/evidence/M4/spikes/SPK-02-order-saas-api/manifest.md`，记录 owner input、pre-edit worktree/root evidence、无外部订单 API 调用、验收映射、敏感数据边界和未来重开条件。
 6. 新增 SPK-02 root/main worktree pollution incident record，并在本 spec 与 manifest 中记录检测、清理、验证和永久控制。
-7. 运行 required validation，复核 diff 只含 allowlist 文件，然后提交本 worker branch；不打开 PR，不合并。
+7. 运行 required validation，复核 diff 只含 allowlist 文件，然后提交本 worker branch；worker 不打开 PR、不合并。
+8. Coordinator 完成 spec compliance review 与 code/docs quality review 后，才由 coordinator 打开 SPK-02 的 one-spec/one-PR；K-03 one-spec/one-PR 仍保持 active。
 
 ## 通过条件
 
@@ -99,6 +100,7 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 - 无订单、过期快照、导入主路径异常或 connector 降级时必须转人工或降级留单；AI 不得凭 LLM 判断订单状态。
 - evidence 记录 pre-edit worker/root/PR/branch/boundary command 输出，且不包含 raw order/customer data。
 - Incident evidence records root/main pollution facts, affected paths, no commit/push/PR/merge from polluted root/main, cleanup back to clean root/main, final assigned worktree clean after commit, root cause/failure mode and controls.
+- Worker branch does not open or merge the PR. Coordinator opens the SPK-02 one-spec/one-PR only after coordinator spec/quality review.
 - Required validation passes or is honestly recorded: `npm run format:check`, `npm run guard:doc-triggers`, `npm run guard:workspace`, explicit assigned/root `npm run guard:worker-boundary`, `npm run guard:pr-shape -- --base origin/main --spec docs/specs/SPK-02-order-api.md --include-worktree`, `git diff --check origin/main...HEAD`, and full `npm run check` if feasible.
 
 ## 失败分支
@@ -127,7 +129,7 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 | E-03 | `p0_remains__stale_snapshot_warning` | 快照过期提示仍是 P0，过期数据不得被当实时状态输出。 |
 | E-04 | `p0_remains__no_fabricated_order_status` | 无订单、过期快照或降级时必须转人工/留单；AI 不得编造物流或订单状态。 |
 | 条件式 Spike 通则 §13 | active | 无 API 或不可用时 E-01 移出阻断清单，E-02 升级为 P0 主路径，E-03/E-04 仍 P0。 |
-| K-03 | active | 一 spec / 一 PR；本 PR 只实现 SPK-02 docs-only closure。 |
+| K-03 | active | 一 spec / 一 PR；worker branch does not open/merge PR; coordinator opens SPK-02 PR after review. |
 | K-04 | active | Touch modules explicit；docs-only；不进入 source/test/config/lock/generated。 |
 | Workspace incident handling | `pending_merge` | `INC-2026-06-22-spk02-root-main-worktree-pollution` records the SPK-02 root/main write, cleanup and controls as PR process evidence. |
 

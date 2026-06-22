@@ -20,7 +20,7 @@ export const governanceTableNames = values("audit_log", "config_version");
 // prettier-ignore
 export const channelConversationTableNames = values("channel_connection", "conversation", "message", "telegram_update_dedupe", "ticket", "ticket_event");
 // prettier-ignore
-export const auditEventTypes = { accessContextDenied: "access_context.denied", configVersionRollbackRequested: "config_version.rollback_requested", configVersionSaved: "config_version.saved", permissionGrantChanged: "permission_grant.changed", tenantSwitchAllowed: "tenant_switch.allowed", tenantSwitchDenied: "tenant_switch.denied" } as const;
+export const auditEventTypes = { accessContextDenied: "access_context.denied", configVersionRollbackRequested: "config_version.rollback_requested", configVersionSaved: "config_version.saved", customerFlagsRestored: "customer.flags_restored", permissionGrantChanged: "permission_grant.changed", tenantSwitchAllowed: "tenant_switch.allowed", tenantSwitchDenied: "tenant_switch.denied" } as const;
 // prettier-ignore
 export const configVersionDomains = values("business_config", "feature_flag", "template_copy");
 // prettier-ignore
@@ -93,6 +93,19 @@ export type ConfigVersionDraftInput = Omit<
   ConfigVersionContract,
   "createdAt" | "createdByUserId" | "id" | "orgId" | "tenantId"
 > & { versionId: string };
+export type CustomerAssetRestoreFlag = "blacklisted" | "unreachable";
+export type CustomerAssetRestoreFlagSnapshot = Record<
+  "isBlacklisted" | "isUnreachable",
+  boolean
+>;
+export type CustomerAssetRestoreAuditInput = RlsTenantContext & {
+  after: CustomerAssetRestoreFlagSnapshot;
+  before: CustomerAssetRestoreFlagSnapshot;
+  customerId: string;
+  reasonRef: string;
+  restoredFlags: readonly CustomerAssetRestoreFlag[];
+  traceId?: string;
+} & { actorUserId: string };
 // prettier-ignore
 export type PermissionGrantAuditInput = RlsTenantContext & { after: Record<string, unknown>; before: Record<string, unknown>; traceId?: string } & Record<"actorUserId" | "permission" | "targetUserId", string>;
 // prettier-ignore
@@ -222,6 +235,32 @@ export function createScopedConfigVersionContract(
   });
 }
 
+export function createCustomerAssetRestoreAuditContract(
+  input: CustomerAssetRestoreAuditInput
+): AuditLogContract {
+  const restoredFlags = requireCustomerRestoreFlags(input.restoredFlags);
+  return createAuditLogContract({
+    action: "customer_restore_flags",
+    actorUserId: input.actorUserId,
+    content: {
+      after: {
+        ...customerRestoreFlagSnapshot(input.after, "customer restore after"),
+        reasonRef: requireText(input.reasonRef, "customer restore reasonRef"),
+        restoredFlags
+      },
+      before: customerRestoreFlagSnapshot(input.before, "customer restore before")
+    },
+    eventType: auditEventTypes.customerFlagsRestored,
+    module: "customer_asset",
+    objectId: requireUuid(input.customerId, "customer restore customerId"),
+    objectType: "customer",
+    occurredAt: new Date().toISOString(),
+    orgId: input.orgId,
+    tenantId: input.tenantId,
+    ...optionalTextFields(input, ["traceId"])
+  });
+}
+
 export function createPermissionGrantAuditContract(
   input: PermissionGrantAuditInput
 ): AuditLogContract {
@@ -345,6 +384,11 @@ function requireInteger(
   return value;
 }
 
+function requireBoolean(value: boolean, name: string): boolean {
+  if (typeof value !== "boolean") throw new Error(`${name} must be a boolean`);
+  return value;
+}
+
 function requireAuditContent(content: AuditLogContent): AuditLogContent {
   return {
     after: content.after === null ? null : requireRecord(content.after, "audit after"),
@@ -367,6 +411,29 @@ function values<const T extends readonly string[]>(
   ...items: T
 ): Readonly<Record<string, T[number]>> {
   return Object.fromEntries(items.map((item) => [camelKey(item), item]));
+}
+
+function customerRestoreFlagSnapshot(
+  snapshot: CustomerAssetRestoreFlagSnapshot,
+  name: string
+): CustomerAssetRestoreFlagSnapshot {
+  return {
+    isBlacklisted: requireBoolean(snapshot.isBlacklisted, `${name} isBlacklisted`),
+    isUnreachable: requireBoolean(snapshot.isUnreachable, `${name} isUnreachable`)
+  };
+}
+
+function requireCustomerRestoreFlags(
+  flags: readonly CustomerAssetRestoreFlag[]
+): CustomerAssetRestoreFlag[] {
+  const unique = [...new Set(flags)];
+  if (unique.length === 0) throw new Error("customer restored flags are required");
+  for (const flag of unique) {
+    if (flag !== "blacklisted" && flag !== "unreachable") {
+      throw new Error("customer restored flag is invalid");
+    }
+  }
+  return unique;
 }
 
 function camelKey(value: string): string {

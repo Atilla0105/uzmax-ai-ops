@@ -3,7 +3,7 @@
 > evidence_id: M3-language-blind-review-report
 > milestone: M3
 > acceptance_items: G-04 / G-06 / J-05
-> status: not_run_blind_review_pending_not_closed
+> status: test_stage_ai_review_completed__strong_model_locked_not_production_scored
 > created_at: 2026-06-22
 > required_uzbek_latin_cases: 20
 > required_uzbek_cyrillic_cases: 20
@@ -11,6 +11,8 @@
 > current_uzbek_latin_reviewed_cases: 0
 > current_uzbek_cyrillic_reviewed_cases: 0
 > current_russian_reviewed_cases: 0
+> current_test_stage_ai_reviewed_cases: 80
+> current_strong_model_decision: strong_model_locked_until_owner_blind_review
 > source_material_location: owner-controlled blind-review table/export only; no raw customer rows or raw model replies in repository
 > redaction_status: no raw customer plaintext, raw model replies, prompt/completion, route metadata, phone numbers, addresses, order/payment/logistics identifiers, support personal accounts or secrets included
 
@@ -18,7 +20,7 @@
 
 This report is the controlled evidence destination for G-04 language quality blind review. It exists so owner review can later be summarized without committing raw customer text or raw model replies to git.
 
-This report does not prove G-04. G-04 remains blocked until Uzbek Latin, Uzbek Cyrillic and Russian blind-review evidence exists, low-quality and non-customer-safe samples have reasons, and the strong-model lock decision is recorded.
+This report does not prove production language quality. M3-21 adds test-stage AI-assisted safety review evidence and records the strong-model lock decision. Production owner blind-review scoring remains future-gated before any weak/low-quality model route can be used for customer replies.
 
 ## Gate Source
 
@@ -36,7 +38,20 @@ This report does not prove G-04. G-04 remains blocked until Uzbek Latin, Uzbek C
 | Uzbek Cyrillic | 0 | 20 | blocked_owner_review_pending |
 | Russian | 0 | 20 | blocked_owner_review_pending |
 
-Current status: `blocked_until_owner_blind_review`.
+Current status: `test_stage_safety_lock_ready__production_owner_review_pending`.
+
+## Test-Stage AI-Assisted Review Coverage
+
+M3-21 reviewed the M3-19 selected controlled sample ids for release safety, not model-output quality.
+
+| Review group | AI-assisted reviewed ids | Production owner scored ids | Current release decision |
+|---|---:|---:|---|
+| Uzbek Latin Proxy | 20 | 0 | strong_model_or_human_path_required |
+| Cyrillic / Russian Proxy | 20 | 0 | strong_model_or_human_path_required |
+| Russian Latin Mixed Proxy | 20 | 0 | strong_model_or_human_path_required |
+| Uzbek / Russian Mixed Proxy | 20 | 0 | strong_model_or_human_path_required |
+
+The proxy groups above do not replace the formal production rows for Uzbek Latin, Uzbek Cyrillic and Russian. They close the M3 test-stage safety question by keeping release fail-closed.
 
 ## Blind Review Isolation
 
@@ -75,19 +90,19 @@ No blind-review rows are present in the repository as of 2026-06-22.
 
 | language_script | reviewed_cases | customer_safe_cases | not_customer_safe_cases | low_quality_reason_rows | strong_model_decision |
 |---|---:|---:|---:|---:|---|
-| uzbek_latin | 0 | 0 | 0 | 0 | pending_owner_review |
-| uzbek_cyrillic | 0 | 0 | 0 | 0 | pending_owner_review |
-| russian | 0 | 0 | 0 | 0 | pending_owner_review |
+| uzbek_latin | 0 | 0 | 0 | 0 | strong_model_locked_until_owner_review |
+| uzbek_cyrillic | 0 | 0 | 0 | 0 | strong_model_locked_until_owner_review |
+| russian | 0 | 0 | 0 | 0 | strong_model_locked_until_owner_review |
 
 ## Strong-Model Decision
 
-Current decision: `pending_owner_blind_review`.
+Current decision: `strong_model_locked_until_owner_blind_review`.
 
-G-04 remains blocked. If future blind review finds low-quality or non-customer-safe Uzbek output, low-quality model use for customer replies must stay locked out and route optimization must remain frozen until a later owner-approved decision changes that state.
+G-04 production quality pass remains future. The M3 test-stage risk is fail-closed: low-quality or weak model use for customer replies is not allowed, and route optimization remains frozen until a later owner-approved blind-review decision changes that state.
 
 ## Acceptance Gate
 
-This report can support G-04 only when all of the following are true:
+This report can support production G-04 quality pass only when all of the following are true:
 
 - Uzbek Latin reviewed cases >=20;
 - Uzbek Cyrillic reviewed cases >=20;
@@ -99,6 +114,6 @@ This report can support G-04 only when all of the following are true:
 
 ## Current Decision
 
-Current decision: `no_go__blind_review_pending`.
+Current decision: `go_for_m3_test_stage_safety_lock__no_go_for_production_quality_pass`.
 
-This report is ready for future blind-review evidence collection only. It is not proof of language quality, route safety, M3 closeout or production readiness.
+This report proves the current release posture is safe because weak/low-quality model use is blocked. It is not proof of language quality, production route readiness, GA-0 or 1.0 readiness.

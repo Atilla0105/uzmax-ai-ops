@@ -52,7 +52,7 @@ describe("M4-14 customer asset API shell", () => {
     );
     const accessContext = contextFor(TENANT_A, ["customer:read"]);
 
-    const listed = service.listCustomers(accessContext, {
+    const listed = await service.listCustomers(accessContext, {
       flag: "blacklisted",
       tagKey: "needs-review"
     });
@@ -60,30 +60,30 @@ describe("M4-14 customer asset API shell", () => {
       listed.items.map((item) => item.id),
       [CUSTOMER_A]
     );
-    const detail = service.getCustomerDetail(accessContext, CUSTOMER_A).item;
+    const detail = (await service.getCustomerDetail(accessContext, CUSTOMER_A)).item;
     assert.equal(detail.identities[0].externalSubjectRef, "identity://controlled/a");
     assert.equal(detail.fields[0].definition.fieldKey, "journey.stage");
     assert.equal(detail.tags[0].definition.tagKey, "needs-review");
     assert.deepEqual(detail.relatedRefs.orderSnapshotRefs, [
       "order-snapshot://controlled/a"
     ]);
-    assert.throws(
+    await assert.rejects(
       () => service.getCustomerDetail(accessContext, CUSTOMER_B),
       /customer not found/
     );
-    assert.throws(
+    await assert.rejects(
       () => service.listCustomers(contextFor(TENANT_A, []), {}),
       /permission is not granted/
     );
   });
 
-  it("restores customer flags with an audit draft and write permission", () => {
+  it("restores customer flags with an audit draft and write permission", async () => {
     const service = new api.module.CustomerAssetService(
       new api.module.InMemoryCustomerAssetRepository(seed())
     );
     const accessContext = contextFor(TENANT_A, ["customer:read", "customer:write"]);
 
-    const result = service.restoreCustomerFlags(accessContext, CUSTOMER_A, {
+    const result = await service.restoreCustomerFlags(accessContext, CUSTOMER_A, {
       reasonRef: "reason://customer/manual-review",
       restoreBlacklisted: true,
       restoreUnreachable: true
@@ -99,10 +99,10 @@ describe("M4-14 customer asset API shell", () => {
       restoredFlags: ["blacklisted", "unreachable"]
     });
     assert.deepEqual(
-      service.listCustomers(accessContext, { flag: "blacklisted" }).items,
+      (await service.listCustomers(accessContext, { flag: "blacklisted" })).items,
       []
     );
-    assert.throws(
+    await assert.rejects(
       () =>
         service.restoreCustomerFlags(
           contextFor(TENANT_A, ["customer:read"]),

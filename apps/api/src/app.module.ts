@@ -18,6 +18,11 @@ import {
   InMemoryCustomerAssetRepository
 } from "./customer-asset.repository.ts";
 import { CustomerAssetController } from "./customer-asset.controller.ts";
+import type {
+  CustomerAssetPersistenceGateway,
+  CustomerAssetPersistenceScope,
+  PersistenceCustomerAssetRepository
+} from "./customer-asset.persistence.ts";
 import { CustomerAssetService } from "./customer-asset.service.ts";
 import {
   ORDER_IMPORT_REPOSITORY,
@@ -66,6 +71,11 @@ type OrderImportRepositoryContractAnchor = {
   prismaGateway: typeof PrismaOrderImportPersistenceGateway;
   scope: OrderImportPersistenceScope;
 };
+type CustomerAssetPersistenceContractAnchor = {
+  gateway: CustomerAssetPersistenceGateway;
+  persistenceAdapter: typeof PersistenceCustomerAssetRepository;
+  scope: CustomerAssetPersistenceScope;
+};
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
   "persistenceAdapter" | "prismaGateway"
@@ -74,6 +84,12 @@ const orderImportRepositoryContractAnchor: Pick<
   prismaGateway: PrismaOrderImportPersistenceGateway
 };
 void orderImportRepositoryContractAnchor;
+function customerAssetPersistenceContractAnchor(
+  contract: CustomerAssetPersistenceContractAnchor
+) {
+  void contract;
+}
+void customerAssetPersistenceContractAnchor;
 
 @Injectable()
 class DisabledTelegramBotIngressQueue {

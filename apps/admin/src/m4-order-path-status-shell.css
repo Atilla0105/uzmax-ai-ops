@@ -7,7 +7,9 @@
 .m4-layout,
 .m4-signal-table,
 .m4-gate-list,
-.m4-action-row {
+.m4-action-row,
+.m4-query-shell,
+.m4-remaining-gates {
   display: grid;
   gap: var(--uzmax-space-3);
 }
@@ -55,7 +57,12 @@
 .m4-section-heading span,
 .m4-signal-row span,
 .m4-gate span,
-.m4-gate small {
+.m4-gate small,
+.m4-ref-list dt,
+.m4-ref-list dd,
+.m4-row-error span,
+.m4-snapshot-detail span,
+.m4-mini-metric span {
   color: var(--uzmax-color-muted);
   font-size: 13px;
 }
@@ -113,6 +120,137 @@
   background: var(--uzmax-color-surface);
 }
 
+.m4-import-summary,
+.m4-ref-list,
+.m4-query-tabs,
+.m4-snapshot-detail,
+.m4-remaining-gates {
+  display: grid;
+  gap: var(--uzmax-space-2);
+}
+
+.m4-import-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.m4-mini-metric {
+  display: grid;
+  gap: var(--uzmax-space-1);
+  border-left: 4px solid var(--uzmax-color-accent);
+  padding: var(--uzmax-space-2);
+  background: var(--uzmax-color-surface);
+}
+
+.m4-mini-metric.warn {
+  border-left-color: var(--uzmax-color-warn);
+}
+
+.m4-mini-metric strong {
+  font-family: var(--uzmax-font-mono);
+  font-size: 22px;
+}
+
+.m4-ref-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.m4-ref-list div {
+  min-width: 0;
+  border: 1px solid var(--uzmax-color-border);
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-2);
+  background: var(--uzmax-color-surface);
+}
+
+.m4-ref-list dt {
+  font-weight: 700;
+}
+
+.m4-ref-list dd {
+  margin: var(--uzmax-space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.m4-row-error-table {
+  border: 1px solid var(--uzmax-color-border);
+  border-radius: var(--uzmax-radius-sm);
+  overflow: hidden;
+}
+
+.m4-row-error {
+  display: grid;
+  grid-template-columns: minmax(58px, 0.35fr) minmax(0, 1fr) minmax(120px, 0.7fr);
+  gap: var(--uzmax-space-2);
+  align-items: center;
+  border-bottom: 1px solid var(--uzmax-color-border);
+  padding: var(--uzmax-space-2);
+  background: var(--uzmax-color-surface);
+}
+
+.m4-row-error.header {
+  color: var(--uzmax-color-muted);
+  background: var(--uzmax-color-surface-muted);
+  font-weight: 700;
+}
+
+.m4-query-shell {
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-4) var(--uzmax-space-3);
+  background: var(--uzmax-color-surface-muted);
+  box-shadow: inset 0 0 0 1px var(--uzmax-color-border);
+}
+
+.m4-query-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.m4-query-tabs button {
+  min-width: 0;
+  border: 1px solid var(--uzmax-color-border);
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-2) var(--uzmax-space-3);
+  color: var(--uzmax-color-ink);
+  background: var(--uzmax-color-surface);
+  overflow-wrap: anywhere;
+}
+
+.m4-query-tabs button.selected {
+  border-color: var(--uzmax-color-accent);
+  box-shadow: var(--uzmax-shadow-focus);
+}
+
+.m4-snapshot-detail {
+  grid-template-columns: minmax(82px, auto) minmax(150px, 0.8fr) repeat(
+      4,
+      minmax(0, 1fr)
+    );
+  align-items: center;
+  border: 1px solid var(--uzmax-color-border);
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-2);
+  background: var(--uzmax-color-surface);
+}
+
+.m4-snapshot-badge {
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-1) var(--uzmax-space-2);
+  color: var(--uzmax-color-surface);
+  background: var(--uzmax-color-accent);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.m4-snapshot-badge.stale,
+.m4-snapshot-badge.missing {
+  background: var(--uzmax-color-warn);
+}
+
+.m4-remaining-gates {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .m4-action-row {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -133,6 +271,12 @@
   .m4-primary-path,
   .m4-layout,
   .m4-signal-row,
+  .m4-import-summary,
+  .m4-ref-list,
+  .m4-row-error,
+  .m4-query-tabs,
+  .m4-snapshot-detail,
+  .m4-remaining-gates,
   .m4-action-row {
     grid-template-columns: 1fr;
   }
@@ -155,9 +299,13 @@
 @media (max-width: 480px) {
   .m4-shell,
   .m4-column,
+  .m4-query-shell,
   .m4-signal-table,
   .m4-signal-row,
-  .m4-gate {
+  .m4-row-error-table,
+  .m4-row-error,
+  .m4-gate,
+  .m4-snapshot-detail {
     max-width: 100%;
     overflow-wrap: anywhere;
   }

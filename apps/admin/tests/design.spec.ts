@@ -209,16 +209,60 @@ test("renders the M4-01 order path status shell truthfully", async ({ page }) =>
   await expect(page.getByTestId("m4-order-path-state")).toContainText(
     "Hand off on missing data"
   );
-  await expect(page.getByTestId("m4-future-gates")).toContainText("Import jobs");
-  await expect(page.getByTestId("m4-future-gates")).toContainText("Order search");
-  await expect(page.getByTestId("m4-future-gates")).toContainText("Customer linkage");
-  await expect(page.getByRole("button", { name: "Import job gated" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Order search gated" })).toBeDisabled();
-  await expect(
-    page.getByRole("button", { name: "Customer linkage gated" })
-  ).toBeDisabled();
+  await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
+    "completed_with_errors"
+  );
+  await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
+    "Successful rows"
+  );
+  await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
+    "Failed rows"
+  );
+  await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
+    "order_status_ref_required"
+  );
+  await expect(page.getByTestId("m4-order-snapshot-search")).toContainText(
+    "Fresh snapshot"
+  );
+  await expect(page.getByTestId("m4-order-snapshot-search")).toContainText(
+    "Snapshot-backed order search"
+  );
+  await expect(page.getByTestId("m4-remaining-gates")).toContainText("Runtime parser");
+  await expect(page.getByTestId("m4-remaining-gates")).toContainText(
+    "Customer linkage"
+  );
+  await expect(page.getByTestId("m4-remaining-gates")).toContainText("AI runtime/eval");
   await expect(page.getByTestId("m4-order-path-status-shell")).not.toContainText(
     /temporary outage|live outage|API failure|raw payload|csv export|xlsx|ORD-|PAY-|TG-|phone|address|payment|secret|@[\w_]+|\+?\d[\d\s-]{6,}/i
+  );
+});
+
+test("covers the M4-06 import snapshot admin shell states", async ({ page }) => {
+  await page.goto("/design");
+  const detail = page.getByTestId("m4-snapshot-detail");
+
+  await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
+    "storage://order-imports/snapshot-a"
+  );
+  await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
+    "snapshot_expiry_not_after_source_update"
+  );
+  await expect(detail).toContainText("snapshot_ready");
+  await expect(detail).toContainText("Status ref: status://order/in-transit");
+  await expect(detail).toContainText("Handoff: not required");
+
+  await page.getByRole("button", { name: "Expired snapshot" }).click();
+  await expect(detail).toContainText("order_snapshot_stale");
+  await expect(detail).toContainText("Handoff: required");
+  await expect(detail).toContainText("Status ref hidden until fresh snapshot exists");
+  await expect(detail).not.toContainText("status://order/in-transit");
+
+  await page.getByRole("button", { name: "Missing snapshot" }).click();
+  await expect(detail).toContainText("order_snapshot_missing");
+  await expect(detail).toContainText("no matching controlled snapshot ref");
+  await expect(detail).toContainText("Handoff: required");
+  await expect(page.getByTestId("m4-order-path-status-shell")).not.toContainText(
+    /raw payload|csv export|xlsx|ORD-|PAY-|TG-|phone|address|payment|secret|@[\w_]+|\+?\d[\d\s-]{6,}/i
   );
 });
 
@@ -232,6 +276,9 @@ test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) =>
   await expect(page.getByTestId("m4-order-path-status-shell")).toBeVisible();
   await expect(page.getByTestId("m4-primary-path")).toContainText(
     "订单数据主路径：导入快照"
+  );
+  await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
+    "Failed rows"
   );
   await expect(page.getByTestId("conversation-filters")).toContainText("Needs human");
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);

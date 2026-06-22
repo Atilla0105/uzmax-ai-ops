@@ -5,6 +5,10 @@ export type {
   M4CustomerAssetContractInput,
   m4CustomerAssetContracts as M4CustomerAssetContracts
 } from "./m4-customer-asset-contracts";
+export type {
+  M4OrderImportContractInput,
+  m4OrderImportContracts as M4OrderImportContracts
+} from "./m4-order-import-contracts";
 
 const ROLE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const UUID_TEXT =

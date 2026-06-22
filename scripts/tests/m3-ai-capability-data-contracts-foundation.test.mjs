@@ -296,7 +296,6 @@ describe("M3-01 AI capability data contracts foundation", () => {
       /model BusinessConnection/,
       /model CustomerAsset/,
       /model OrderConnector/,
-      /model OrderSnapshot/,
       /model KbCandidate/,
       /model Distill/,
       /create table if not exists business_connection/,
@@ -315,7 +314,11 @@ describe("M3-01 AI capability data contracts foundation", () => {
       /create table if not exists custom_field_definition/,
       /create table if not exists customer_field_value/,
       /create table if not exists tag_definition/,
-      /create table if not exists tag_assignment/
+      /create table if not exists tag_assignment/,
+      /create table if not exists order_snapshot/,
+      /create table if not exists import_job/,
+      /create table if not exists import_row_error/,
+      /create table if not exists order_query_log/
     ]) {
       assert.doesNotMatch(migration, m3ForbiddenTable);
     }

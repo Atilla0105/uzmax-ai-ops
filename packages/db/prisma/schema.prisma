@@ -228,6 +228,57 @@ enum TagTargetKind {
   @@map("tag_target_kind")
 }
 
+enum OrderSnapshotSourceKind {
+  IMPORT_SNAPSHOT @map("import_snapshot")
+
+  @@map("order_snapshot_source_kind")
+}
+
+enum OrderSnapshotRecordStatus {
+  ACTIVE   @map("active")
+  ARCHIVED @map("archived")
+
+  @@map("order_snapshot_record_status")
+}
+
+enum ImportJobStatus {
+  QUEUED                @map("queued")
+  RUNNING               @map("running")
+  COMPLETED             @map("completed")
+  COMPLETED_WITH_ERRORS @map("completed_with_errors")
+  FAILED                @map("failed")
+  ROLLED_BACK           @map("rolled_back")
+
+  @@map("import_job_status")
+}
+
+enum ImportRowErrorSeverity {
+  WARNING @map("warning")
+  ERROR   @map("error")
+
+  @@map("import_row_error_severity")
+}
+
+enum OrderQueryKind {
+  ORDER_REF    @map("order_ref")
+  BATCH_REF    @map("batch_ref")
+  CUSTOMER_REF @map("customer_ref")
+  EXTERNAL_REF @map("external_ref")
+  SEARCH_REF   @map("search_ref")
+
+  @@map("order_query_kind")
+}
+
+enum OrderQueryOutcome {
+  HIT      @map("hit")
+  MISS     @map("miss")
+  STALE    @map("stale")
+  DEGRADED @map("degraded")
+  HANDOFF  @map("handoff")
+
+  @@map("order_query_outcome")
+}
+
 model Org {
   id                    String                   @id @default(uuid()) @db.Uuid
   slug                  String                   @unique @db.Text
@@ -253,6 +304,10 @@ model Org {
   customerFieldValues   CustomerFieldValue[]
   tagDefinitions        TagDefinition[]
   tagAssignments        TagAssignment[]
+  orderSnapshots        OrderSnapshot[]
+  importJobs            ImportJob[]
+  importRowErrors       ImportRowError[]
+  orderQueryLogs        OrderQueryLog[]
   kbEntries             KbRecord[]
   kbStages              KbStage[]
   mediaAssets           MediaAsset[]
@@ -291,6 +346,10 @@ model Tenant {
   customerFieldValues   CustomerFieldValue[]
   tagDefinitions        TagDefinition[]
   tagAssignments        TagAssignment[]
+  orderSnapshots        OrderSnapshot[]
+  importJobs            ImportJob[]
+  importRowErrors       ImportRowError[]
+  orderQueryLogs        OrderQueryLog[]
   kbEntries             KbRecord[]
   kbStages              KbStage[]
   mediaAssets           MediaAsset[]
@@ -574,6 +633,8 @@ model Customer {
   identities           CustomerIdentity[]
   fieldValues          CustomerFieldValue[]
   tagAssignments       TagAssignment[]
+  orderSnapshots       OrderSnapshot[]
+  orderQueryLogs       OrderQueryLog[]
 
   @@unique([id, orgId, tenantId])
   @@index([orgId, tenantId, status, updatedAt])
@@ -692,6 +753,118 @@ model TagAssignment {
   @@unique([orgId, tenantId, customerId, tagDefinitionId])
   @@index([orgId, tenantId, tagDefinitionId])
   @@map("tag_assignment")
+}
+
+model OrderSnapshot {
+  id                String                    @id @default(uuid()) @db.Uuid
+  orgId             String                    @map("org_id") @db.Uuid
+  tenantId          String                    @map("tenant_id") @db.Uuid
+  customerId        String?                   @map("customer_id") @db.Uuid
+  importJobId       String?                   @map("import_job_id") @db.Uuid
+  externalOrderRef  String                    @map("external_order_ref") @db.Text
+  externalBatchRef  String?                   @map("external_batch_ref") @db.Text
+  orderStatusRef    String                    @map("order_status_ref") @db.Text
+  sourceKind        OrderSnapshotSourceKind   @default(IMPORT_SNAPSHOT) @map("source_kind")
+  sourceRef         String                    @map("source_ref") @db.Text
+  sourceUpdatedAt   DateTime                  @map("source_updated_at") @db.Timestamptz(6)
+  expiresAt         DateTime                  @map("expires_at") @db.Timestamptz(6)
+  payloadSummary    Json                      @default("{}") @map("payload_summary")
+  status            OrderSnapshotRecordStatus @default(ACTIVE)
+  metadata          Json                      @default("{}")
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org               Org                       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant            Tenant                    @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  customer          Customer?                 @relation(fields: [customerId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+  importJob         ImportJob?                @relation(fields: [importJobId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+  queryLogs         OrderQueryLog[]
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, externalOrderRef])
+  @@index([orgId, tenantId, externalBatchRef])
+  @@index([orgId, tenantId, customerId, status])
+  @@index([orgId, tenantId, expiresAt])
+  @@map("order_snapshot")
+}
+
+model ImportJob {
+  id             String          @id @default(uuid()) @db.Uuid
+  orgId          String          @map("org_id") @db.Uuid
+  tenantId       String          @map("tenant_id") @db.Uuid
+  fileRef        String          @map("file_ref") @db.Text
+  fileSha256     String?         @map("file_sha256") @db.Text
+  status         ImportJobStatus @default(QUEUED)
+  totalRows      Int             @default(0) @map("total_rows")
+  successfulRows Int             @default(0) @map("successful_rows")
+  failedRows     Int             @default(0) @map("failed_rows")
+  errorReportRef String?         @map("error_report_ref") @db.Text
+  rollbackOfJobId String?        @map("rollback_of_job_id") @db.Uuid
+  createdByUserId String?        @map("created_by_user_id") @db.Uuid
+  startedAt      DateTime?       @map("started_at") @db.Timestamptz(6)
+  completedAt    DateTime?       @map("completed_at") @db.Timestamptz(6)
+  metadata       Json            @default("{}")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant         Tenant          @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  rollbackOfJob  ImportJob?      @relation("ImportJobRollback", fields: [rollbackOfJobId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+  rollbackJobs   ImportJob[]     @relation("ImportJobRollback")
+  orderSnapshots OrderSnapshot[]
+  rowErrors      ImportRowError[]
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, status, createdAt])
+  @@index([orgId, tenantId, rollbackOfJobId])
+  @@map("import_job")
+}
+
+model ImportRowError {
+  id          String                 @id @default(uuid()) @db.Uuid
+  orgId       String                 @map("org_id") @db.Uuid
+  tenantId    String                 @map("tenant_id") @db.Uuid
+  importJobId String                 @map("import_job_id") @db.Uuid
+  rowNumber   Int                    @map("row_number")
+  columnKey   String?                @map("column_key") @db.Text
+  errorCode   String                 @map("error_code") @db.Text
+  messageRef  String                 @map("message_ref") @db.Text
+  rowRef      String?                @map("row_ref") @db.Text
+  severity    ImportRowErrorSeverity @default(ERROR)
+  metadata    Json                   @default("{}")
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  org         Org                    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant      Tenant                 @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  importJob   ImportJob              @relation(fields: [importJobId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Cascade)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, importJobId, rowNumber])
+  @@map("import_row_error")
+}
+
+model OrderQueryLog {
+  id                String            @id @default(uuid()) @db.Uuid
+  orgId             String            @map("org_id") @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  customerId        String?           @map("customer_id") @db.Uuid
+  orderSnapshotId   String?           @map("order_snapshot_id") @db.Uuid
+  queryKind         OrderQueryKind     @map("query_kind")
+  queryRef          String            @map("query_ref") @db.Text
+  outcome           OrderQueryOutcome
+  staleSnapshotUsed Boolean           @default(false) @map("stale_snapshot_used")
+  handoffRequired   Boolean           @default(false) @map("handoff_required")
+  reasonRef         String?           @map("reason_ref") @db.Text
+  metadata          Json              @default("{}")
+  occurredAt        DateTime          @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  org               Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant            Tenant            @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+  customer          Customer?         @relation(fields: [customerId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+  orderSnapshot     OrderSnapshot?    @relation(fields: [orderSnapshotId, orgId, tenantId], references: [id, orgId, tenantId], onDelete: Restrict)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, queryKind, outcome, occurredAt])
+  @@index([orgId, tenantId, customerId, occurredAt])
+  @@index([orgId, tenantId, orderSnapshotId])
+  @@map("order_query_log")
 }
 
 model KbRecord {

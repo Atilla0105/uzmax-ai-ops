@@ -54,6 +54,7 @@ Runtime/harness prevention is outside this repository guard. This branch used ab
 | SPK-02 spec | present before this PR | Existing spec described API spike/failure branches; this PR narrows it to docs-only current no-API closure. |
 | ADR-B02 | missing before this PR | `docs/adr/README.md` reserved the filename; this PR creates the ADR. |
 | M4 evidence directory | missing before this PR | This PR creates the M4 README and SPK-02 manifest only. |
+| SPK-02 incident record | missing before follow-up | This PR records `INC-2026-06-22-spk02-root-main-worktree-pollution` because SPK-02 authoring briefly wrote the same docs changes into root/main before cleanup. |
 | Root docs | current | PRD, architecture, backend design and acceptance matrix all support the conditional no-API branch. |
 | Order SaaS API docs/sandbox credentials | absent from repo and owner input says no current API | No external API spike was attempted. |
 
@@ -88,6 +89,38 @@ This manifest intentionally excludes:
 - API credentials, tokens, env files or account identifiers.
 
 If future SPK-02 work captures any sensitive source material, it must stay in controlled storage. The repo may only receive a manifest that records redaction method, access scope, retention period and project owner confirmation status.
+
+## Boundary Incident Record
+
+Incident: `docs/incidents/INC-2026-06-22-spk02-root-main-worktree-pollution.md`.
+
+Detection:
+
+- During SPK-02 docs-only authoring, the initial relative/path-agnostic `apply_patch` wrote the same five docs changes into root/main `/Users/atilla/Documents/UZMAX智能运营` instead of the assigned worktree.
+- Affected root/main paths before cleanup:
+  - `docs/specs/SPK-02-order-api.md`
+  - `docs/adr/ADR-B02-order-api.md`
+  - `docs/adr/README.md`
+  - `docs/evidence/M4/README.md`
+  - `docs/evidence/M4/spikes/SPK-02-order-saas-api/manifest.md`
+- The mismatch was detected because the assigned worktree stayed clean while root/main showed modified/untracked SPK-02 docs paths.
+
+Cleanup:
+
+- No commit, push, PR creation or merge happened from the polluted root/main checkout.
+- The same docs changes were migrated to the assigned worktree.
+- Root/main was restored to clean: `git -C /Users/atilla/Documents/UZMAX智能运营 status --short --branch` -> `## main...origin/main`.
+- The assigned worktree was committed cleanly in `b7f823e48da05683567d4a7f4bfbf2540ca3285a`, then this follow-up records the incident in the same branch.
+
+Sensitive-data boundary:
+
+- No raw order/customer data, CSV/XLSX export, credentials, env, secrets, screenshots, customer identifiers, payment data, LLM/provider call, external API call or production data were introduced by the polluted root/main writes.
+
+Controls for remainder of SPK-02:
+
+- Use absolute assigned paths or `git -C /Users/atilla/Documents/uzmax-spk-02-order-api-no-api-closure` for all writes.
+- Run assigned/root dual status checks after edits, formatters, archive restores, generated writes and validation residue.
+- Continue explicit worker boundary guard. Runtime/harness prevention remains outside the in-repo guard; the repo guard is forensic/detection evidence, not a complete write jail.
 
 ## Validation To Record For This PR
 

@@ -29,15 +29,16 @@ spike
 - `docs/adr/README.md`
 - `docs/evidence/M4/README.md`
 - `docs/evidence/M4/spikes/SPK-02-order-saas-api/manifest.md`
+- `docs/incidents/INC-2026-06-22-spk02-root-main-worktree-pollution.md`
 
 说明/备注：
 
-本 PR 只允许 SPK-02 docs-only/no-API closure。未列出的模块默认不可改，尤其不得修改 `apps/**`、`packages/**`、`scripts/**`、lockfile、config、generated/dist、raw samples、screenshots、CSV/XLSX exports、订单 ID、电话、地址、支付、客户数据、credentials、env files、root checkout 或其他 worktree。
+本 PR 只允许 SPK-02 docs-only/no-API closure and process evidence for that same PR. The incident file is in scope because SPK-02 authoring triggered the `docs/incidents/README.md` threshold for writing to root/main outside the assigned worktree, and coordinator review/merge needs repo evidence rather than chat-only closure. 未列出的模块默认不可改，尤其不得修改 `apps/**`、`packages/**`、`scripts/**`、lockfile、config、generated/dist、raw samples、screenshots、CSV/XLSX exports、订单 ID、电话、地址、支付、客户数据、credentials、env files、root checkout 或其他 worktree。
 
 ## 变更预算与路径分类
 
 - source 预算：changed source files <= 0；net source LOC <= 0；new source files <= 0。
-- path categories：docs = 本 spec、ADR-B02、ADR index、M4 evidence README、SPK-02 manifest；source/test/generated/lock/config = none。
+- path categories：docs = 本 spec、ADR-B02、ADR index、M4 evidence README、SPK-02 manifest、SPK-02 incident record；source/test/generated/lock/config = none。
 - 新增 source 文件前的 `rg` 搜索结论和归属理由：无新增 source。已检索 `ADR-B02`、`SPK-02`、`order-api`、`order-saas`、`M4` 于 `docs`、四份 v1.1 根文档和 `AGENTS.md`，确认当前缺少 ADR-B02 与 M4 SPK-02 evidence，需要新增 docs-only closure，不需要新增或修改 source。
 - 外部 API/SDK/provider/connector/adapter 依据：none。本 PR 不新增 provider/connector/adapter，不调用外部订单 API，不引用未实测 SDK 能力；只记录项目 owner 当前 no-API 输入与根文档条件式分支。
 - 是否需要例外：none。
@@ -69,6 +70,14 @@ updated
 
 Single worker, single linked worktree, single branch, single docs spec. Touch modules are exactly the allowed list above. This PR does not touch schema, lockfile, shared config, CI/guard scripts, generated artifacts, provider routes, runtime release gates, production configuration, app/package source, CSV/XLSX exports or customer/order data.
 
+## 事故与 closeout 记录
+
+- Incident: `docs/incidents/INC-2026-06-22-spk02-root-main-worktree-pollution.md`.
+- Status before merge: `pending_merge`.
+- Scope: process evidence for this same SPK-02 PR after a relative `apply_patch` operation wrote the same five SPK-02 docs changes into root/main before cleanup.
+- Controls for remainder of SPK-02: use absolute assigned paths or `git -C /Users/atilla/Documents/uzmax-spk-02-order-api-no-api-closure` for all writes; run assigned/root dual status checks after edits, formatters, generated writes or validation residue; keep explicit worker boundary guard evidence.
+- This incident record does not expand SPK-02 into source/runtime work and does not authorize root/main writes.
+
 ## 实施步骤
 
 1. 更新本 SPK-02 spec，使 machine-readable touch list 与本 PR 实际触碰的 5 个 docs 文件一致。
@@ -76,11 +85,12 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 3. 更新 `docs/adr/README.md`，把 ADR-B02 加入 accepted/current branch 索引。
 4. 新增 `docs/evidence/M4/README.md`，记录 M4 evidence boundaries：当前仅 SPK-02 no-API closure，不表示 production、GA-0、真实流量、customer LLM 或 1.0 release。
 5. 新增 `docs/evidence/M4/spikes/SPK-02-order-saas-api/manifest.md`，记录 owner input、pre-edit worktree/root evidence、无外部订单 API 调用、验收映射、敏感数据边界和未来重开条件。
-6. 运行 required validation，复核 diff 只含 allowlist 文件，然后提交本 worker branch；不打开 PR，不合并。
+6. 新增 SPK-02 root/main worktree pollution incident record，并在本 spec 与 manifest 中记录检测、清理、验证和永久控制。
+7. 运行 required validation，复核 diff 只含 allowlist 文件，然后提交本 worker branch；不打开 PR，不合并。
 
 ## 通过条件
 
-- Diff 只包含本 spec、ADR-B02、ADR README、M4 evidence README 和 SPK-02 manifest。
+- Diff 只包含本 spec、ADR-B02、ADR README、M4 evidence README、SPK-02 manifest 和 SPK-02 incident record。
 - ADR-B02 status 为 accepted/current branch，并使用 `no_api_for_m4__import_snapshot_main_path` 或同等清晰 token。
 - E-01 当前状态写为 `not_current_blocker__no_api_for_m4` 或同等清晰 token。
 - E-02 当前状态写为 `p0_current_main_path__import_snapshot` 或同等清晰 token。
@@ -88,6 +98,7 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 - 后台订单 UI 未来文案固定为“订单数据主路径：导入快照”，不得描述为临时 API outage。
 - 无订单、过期快照、导入主路径异常或 connector 降级时必须转人工或降级留单；AI 不得凭 LLM 判断订单状态。
 - evidence 记录 pre-edit worker/root/PR/branch/boundary command 输出，且不包含 raw order/customer data。
+- Incident evidence records root/main pollution facts, affected paths, no commit/push/PR/merge from polluted root/main, cleanup back to clean root/main, final assigned worktree clean after commit, root cause/failure mode and controls.
 - Required validation passes or is honestly recorded: `npm run format:check`, `npm run guard:doc-triggers`, `npm run guard:workspace`, explicit assigned/root `npm run guard:worker-boundary`, `npm run guard:pr-shape -- --base origin/main --spec docs/specs/SPK-02-order-api.md --include-worktree`, `git diff --check origin/main...HEAD`, and full `npm run check` if feasible.
 
 ## 失败分支
@@ -118,5 +129,6 @@ Single worker, single linked worktree, single branch, single docs spec. Touch mo
 | 条件式 Spike 通则 §13 | active | 无 API 或不可用时 E-01 移出阻断清单，E-02 升级为 P0 主路径，E-03/E-04 仍 P0。 |
 | K-03 | active | 一 spec / 一 PR；本 PR 只实现 SPK-02 docs-only closure。 |
 | K-04 | active | Touch modules explicit；docs-only；不进入 source/test/config/lock/generated。 |
+| Workspace incident handling | `pending_merge` | `INC-2026-06-22-spk02-root-main-worktree-pollution` records the SPK-02 root/main write, cleanup and controls as PR process evidence. |
 
 SPK-02 当前 closure 不关闭 M4 订单/客户 milestone，不批准 production、GA-0、真实客户流量、customer LLM、订单导入 runtime、正式知识库写入或 1.0 release。

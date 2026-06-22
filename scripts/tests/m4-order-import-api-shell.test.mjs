@@ -154,7 +154,7 @@ describe("M4-07 order import API shell", () => {
     assert.match(evidence, /no raw customer\/order data/);
     assert.match(evidence, /no `order_connector`/);
     assert.match(m4Index, /M4-07 order import API shell/);
-    assert.match(m4Index, /DB repository, worker integration/);
+    assert.match(m4Index, /DB repository\/runtime wiring, worker integration/);
     assert.doesNotMatch(
       `${source}\n${serviceSource}\n${repositorySource}`,
       /raw payload|csv export|xlsx export|phone|address|payment|secret/i
@@ -282,6 +282,7 @@ function createNestCommonStub(writeTempModule) {
       "export const Controller = decorator;",
       "export const ForbiddenException = exception(403);",
       "export const Get = decorator;",
+      "export const Inject = decorator;",
       "export const Injectable = decorator;",
       "export const NotFoundException = exception(404);",
       "export const Param = decorator;",

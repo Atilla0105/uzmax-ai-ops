@@ -12,6 +12,7 @@ Current M4 evidence contains:
 - M4-05 order-read import snapshot contract evidence: `M4-05-order-read-import-snapshot-contract.md`.
 - M4-06 admin order import snapshot shell evidence: `M4-06-admin-order-import-snapshot-shell.md`.
 - M4-07 order import API shell evidence: `M4-07-order-import-api-shell.md`.
+- M4-08 order import repository port evidence: `M4-08-order-import-repository-port.md`.
 
 Current SPK-02 branch status is `no_api_for_m4__import_snapshot_main_path`: project owner provided the input “暂时没有api” on 2026-06-22. This records only the current M4 no-API branch. It does not claim the order SaaS API is permanently impossible and can be superseded by a new spec/ADR revision/superseding ADR after owner provides API docs, sandbox credentials or controlled test evidence.
 
@@ -24,9 +25,9 @@ Current acceptance mapping:
 | D-05 | `foundation_supported_not_closed` | M4-02 adds blacklist/unreachable flags and timestamps; restore API/admin/audit flow remains future scope. |
 | D-07 | `foundation_supported_not_closed` | M4-02 adds customer field and customer tag definitions/assignments; conversation tags/admin config remain future scope. |
 | E-01 | `not_current_blocker__no_api_for_m4` | No usable API docs/sandbox credentials for current M4 branch; no API connector claim. |
-| E-02 | `p0_current_main_path__import_snapshot` | CSV/table import snapshot is the current order-data main path. M4-04 adds DB contracts, M4-05 adds pure row/batch contracts, M4-06 adds synthetic admin visibility, and M4-07 adds API shell visibility for import jobs/errors/search; DB repository, worker import and admin E2E remain future scope. |
-| E-03 | `p0_remains__stale_snapshot_warning` | M4-04 adds expiry fields, M4-05 adds stale handoff contract, M4-06 adds admin stale warning shell, and M4-07 adds stale API response contract; persisted/runtime warning remains required. |
-| E-04 | `p0_remains__no_fabricated_order_status` | M4-05 pure contract, M4-06 admin shell and M4-07 API shell hand off missing/stale/degraded reads without status fabrication; AI eval/runtime integration remains future scope. |
+| E-02 | `p0_current_main_path__import_snapshot` | CSV/table import snapshot is the current order-data main path. M4-04 adds DB contracts, M4-05 adds pure row/batch contracts, M4-06 adds synthetic admin visibility, M4-07 adds API shell visibility for import jobs/errors/search, and M4-08 adds repository port/persistence mappers; DB client wiring, worker import and admin E2E remain future scope. |
+| E-03 | `p0_remains__stale_snapshot_warning` | M4-04 adds expiry fields, M4-05 adds stale handoff contract, M4-06 adds admin stale warning shell, M4-07 adds stale API response contract, and M4-08 preserves expiry/source fields through repository mapping; persisted/runtime warning remains required. |
+| E-04 | `p0_remains__no_fabricated_order_status` | M4-05 pure contract, M4-06 admin shell, M4-07 API shell and M4-08 repository mapping hand off missing/stale/degraded reads without status fabrication; AI eval/runtime integration remains future scope. |
 | I-01 | `partial_admin_shell_not_closed` | M4-01 adds visible admin order-path status shell and M4-06 extends import/search states; full desktop core order/customer workflow remains future scope. |
 
 M4 current evidence boundary:
@@ -36,6 +37,6 @@ M4 current evidence boundary:
 - No raw order/customer data belongs in this directory: no CSV/XLSX exports, raw payloads, screenshots, order IDs, phone numbers, addresses, payment information, customer plaintext, credentials or env files.
 - Future admin order UI wording for the no-API branch must be `订单数据主路径：导入快照`; do not present the branch as a temporary API outage.
 - Future API reopening requires owner-provided docs/sandbox credentials or controlled test evidence, plus a new spec and ADR revision/superseding ADR.
-- M4-01, M4-02, M4-04, M4-05, M4-06 and M4-07 are foundation/partial evidence only. They do not close the order import workflow runtime/admin/E2E blockers, DB repository, worker integration, stale snapshot runtime warning, customer asset API/admin flows, AI order-read runtime/eval, production readiness or release signoff.
+- M4-01, M4-02, M4-04, M4-05, M4-06, M4-07 and M4-08 are foundation/partial evidence only. They do not close the order import workflow runtime/admin/E2E blockers, DB repository/runtime wiring, worker integration, stale snapshot runtime warning, customer asset API/admin flows, AI order-read runtime/eval, production readiness or release signoff.
 
 This M4 directory is an evidence index, not a runtime implementation or release gate approval.

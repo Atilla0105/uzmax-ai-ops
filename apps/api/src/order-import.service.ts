@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import {
   assertPermission,
@@ -6,7 +6,10 @@ import {
 } from "../../../packages/authz/src/index.ts";
 import { evaluateOrderSnapshotForRead } from "../../../packages/capabilities/order-read/src/index.ts";
 
-import { InMemoryOrderImportRepository } from "./order-import.repository.ts";
+import {
+  ORDER_IMPORT_REPOSITORY,
+  type OrderImportRepositoryPort
+} from "./order-import.repository.ts";
 import {
   OrderImportApiError,
   type OrderImportQueryKind
@@ -14,7 +17,10 @@ import {
 
 @Injectable()
 export class OrderImportService {
-  constructor(private readonly repository: InMemoryOrderImportRepository) {}
+  constructor(
+    @Inject(ORDER_IMPORT_REPOSITORY)
+    private readonly repository: OrderImportRepositoryPort
+  ) {}
 
   async listImportJobs(accessContext: AccessContext) {
     assertPermission(accessContext, "order:read");
@@ -37,7 +43,10 @@ export class OrderImportService {
       now: input.now,
       queryKind: input.queryKind,
       queryRef: input.queryRef,
-      snapshot: this.repository.findSnapshot(accessContext, input.queryRef)
+      snapshot: this.repository.findSnapshot(accessContext, {
+        queryKind: input.queryKind,
+        queryRef: input.queryRef
+      })
     });
   }
 }

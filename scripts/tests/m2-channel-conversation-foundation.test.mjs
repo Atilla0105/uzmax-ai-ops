@@ -47,9 +47,11 @@ describe("M2-01 channel conversation DB foundation", () => {
     }
 
     assert.doesNotMatch(schema, /model BusinessConnection/);
-    assert.doesNotMatch(schema, /model Customer(?:\s|\{)/);
-    assert.doesNotMatch(schema, /model CustomerIdentity/);
     assert.doesNotMatch(schema, /model OrderSnapshot/);
+    assert.doesNotMatch(
+      migration,
+      /create table if not exists (customer|customer_identity|order_snapshot)/i
+    );
   });
 
   it("keeps all new tenant tables RLS scoped and least-privileged", () => {

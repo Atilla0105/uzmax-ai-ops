@@ -291,11 +291,9 @@ describe("M3-01 AI capability data contracts foundation", () => {
     assert.match(m3Evidence, /owner-input blockers/);
   });
 
-  it("does not introduce Business, customer asset, order connector, or distill tables", () => {
+  it("does not introduce Business, order connector, distill, or M4 customer tables in the M3 slice", () => {
     for (const forbidden of [
       /model BusinessConnection/,
-      /model Customer(?:\s|\{)/,
-      /model CustomerIdentity/,
       /model CustomerAsset/,
       /model OrderConnector/,
       /model OrderSnapshot/,
@@ -309,6 +307,17 @@ describe("M3-01 AI capability data contracts foundation", () => {
     ]) {
       assert.doesNotMatch(schema, forbidden);
       assert.doesNotMatch(migration, forbidden);
+    }
+
+    for (const m3ForbiddenTable of [
+      /create table if not exists customer\b/,
+      /create table if not exists customer_identity/,
+      /create table if not exists custom_field_definition/,
+      /create table if not exists customer_field_value/,
+      /create table if not exists tag_definition/,
+      /create table if not exists tag_assignment/
+    ]) {
+      assert.doesNotMatch(migration, m3ForbiddenTable);
     }
   });
 });

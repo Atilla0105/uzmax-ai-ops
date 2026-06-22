@@ -38,7 +38,11 @@ Current KB material candidate pack: `M3-16-kb-material-candidates.md`.
 
 Current owner-input intake pack: `M3-17-owner-input-intake-packs.md`.
 
-M3 current status: `foundation_queue_complete__owner_inputs_block_closeout`. This means M3-01 through M3-09 foundation PRs are complete and merged, M3-11 through M3-15 have added signoff-before governance follow-ups, M3-16 has generated an owner-reviewed candidate tutorial/KB material pack from owner-local controlled sources, and M3-17 has prepared controlled intake evidence shells for the remaining screenshot and language blind-review blockers. M3 closeout remains no-go until future import/eval evidence exists, and until the remaining screenshot and language blind-review blockers are resolved or the project owner explicitly decides the branch path. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
+Current CI cost stopgap: `M3-18-ci-cost-stopgap.md`.
+
+Current test-phase AI materials branch: `M3-19-test-phase-ai-materials.md`.
+
+M3 current status: `foundation_queue_complete__owner_inputs_block_closeout`. This means M3-01 through M3-09 foundation PRs are complete and merged, M3-11 through M3-15 have added signoff-before governance follow-ups, M3-16 has generated an owner-reviewed candidate tutorial/KB material pack from owner-local controlled sources, M3-17 has prepared controlled intake evidence shells for the remaining screenshot and language blind-review blockers, M3-18 has reduced CI cost exposure, and M3-19 has recorded the owner-approved test-phase source branch with KB structure and language sample-selection evidence. M3 closeout remains no-go until future import/eval/publish evidence exists, and until screenshot samples and production owner blind-review evidence are resolved or explicitly branched by the project owner. It does not mean production, GA-0, real customer traffic, customer LLM, prompt/model route release, knowledge publish, AI persona release, Business release, M4 start or 1.0 release approval.
 
 M2 prior state: `owner_accepted_m2_milestone_evidence` only. Project owner accepted M2 milestone evidence, but M2 evidence explicitly did not approve production, GA-0, real customer traffic, customer LLM, Telegram Business feasibility, Business auto-reply or 1.0 release.
 
@@ -46,9 +50,9 @@ M3 owner-input blockers from the v1.1 root docs:
 
 - phase-one tutorial material pack is required before M3/tutorial closeout; M3-16 now provides owner-reviewed candidate materials in `docs/evidence/M3/tutorial/tutorial-materials-manifest.md`, `docs/evidence/M3/tutorial/journey-import-report.md` and `docs/evidence/M3/tutorial/kb-candidate-pack.md`, but future import/eval evidence and publish gates are still pending;
 - screenshot diagnostic samples >=20 are required before F-02 closeout; M3-17 creates `docs/evidence/M3/vision/screenshot-cases-manifest.md` and `docs/evidence/M3/vision/eval-run-report.md` as intake/eval shells, but current usable screenshot case count is 0 and eval status is not run;
-- Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04; M3-17 creates `docs/evidence/M3/language-blind-review/blind-review-report.md` as an intake shell, but current reviewed counts are 0/0/0 and strong-model decision is pending.
+- Uzbek Latin/Cyrillic/Russian blind review is required inside M3 for G-04; M3-17 creates `docs/evidence/M3/language-blind-review/blind-review-report.md` as an intake shell, and M3-19 adds `docs/evidence/M3/language-blind-review/test-stage-ai-assisted-review.md` sample-selection evidence, but production reviewed counts remain 0/0/0 and strong-model decision is pending.
 
-Current repo evidence includes an owner-reviewed candidate tutorial/KB material pack and controlled intake shells for screenshot/language owner inputs. M3 closeout remains blocked until the candidate pack is carried through future import/eval/publish gates, and until screenshot samples and language blind review are provided in controlled form or explicitly branched by the project owner.
+Current repo evidence includes an owner-reviewed candidate tutorial/KB material pack, a test-stage KB structure, controlled intake shells for screenshot/language owner inputs and language sample-selection evidence. M3 closeout remains blocked until the candidate pack is carried through future import/eval/publish gates, and until screenshot samples and production blind review are provided in controlled form or explicitly branched by the project owner.
 
 M3-01 records the first `packages/db` global serial point for M3. It adds minimal schema/contracts/eval persistence/LLM accounting foundation only; F-01/F-02/F-04/F-05/G-01/G-02/G-03/G-05/G-06/H-01 remain foundation/queued and not closed. The owner-input blockers above remain in force.
 
@@ -81,6 +85,10 @@ M3-15 records a follow-up that fixes the prettier-ignore guard CLI entrypoint un
 M3-16 records a docs-only owner-reviewed candidate tutorial/KB material pack derived from the owner-local FAQ file and redacted Telegram sample manifests. It stores source hashes, aggregate counts, QA ids, sample ids, draft journey stages and candidate fact boundaries only; it does not copy raw source files, publish knowledge, close M3 or start M4.
 
 M3-17 records docs-only intake shells for the remaining owner-input blockers. It creates screenshot sample manifest, screenshot eval report and language blind-review report destinations with required fields, current counts and no-go boundaries; it does not add samples, run evals, complete blind review, close M3 or start M4.
+
+M3-18 records a CI cost stopgap. It keeps the required `checks` job while making docs-only PRs run lightweight governance gates and leaving heavy gates conditional on relevant paths or manual full CI. It does not close M3 or start M4.
+
+M3-19 records the project owner test-phase material branch decision. It allows AI agent to use local FAQ, redacted chat samples and future citable public references for test-stage KB structure and AI-assisted review preparation, while keeping production knowledge publish, screenshot closure, owner blind review, M3 closeout, GA-0 and 1.0 release blocked.
 
 M3-07 records incident `docs/incidents/INC-2026-06-19-m3-07-root-main-worktree-pollution.md`: a relative edit operation wrote M3-07 files into root/main before commit. The polluted diff was sealed, root/main was cleaned and rechecked, changes were restored only into the assigned worktree, and M3-07 required absolute-path edits plus root/worktree dual status checks for the rest of that slice. After PR #45 merged, this incident is `institutionalized_in_docs`.
 

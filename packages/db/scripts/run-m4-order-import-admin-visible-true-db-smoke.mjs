@@ -71,22 +71,17 @@ try {
   );
   await page.route("**/order-import/**", async (route, request) => {
     const sourceUrl = new URL(request.url());
-    const response = await globalThis.fetch(
-      `${apiBaseUrl}${sourceUrl.pathname}${sourceUrl.search}`,
-      {
-        headers: {
-          authorization: "Bearer m4-order-import-synthetic-token",
-          "x-tenant-id": fixture.tenantAId,
-          "x-uzmax-smoke-permissions": "order:read"
-        },
-        method: request.method()
-      }
-    );
-    await route.fulfill({
-      body: await response.text(),
-      contentType: response.headers.get("content-type") ?? "application/json",
-      status: response.status
+    const response = await route.fetch({
+      headers: {
+        authorization: "Bearer m4-order-import-synthetic-token",
+        "x-tenant-id": fixture.tenantAId,
+        "x-uzmax-smoke-permissions": "order:read"
+      },
+      method: request.method(),
+      timeout: 10_000,
+      url: `${apiBaseUrl}${sourceUrl.pathname}${sourceUrl.search}`
     });
+    await route.fulfill({ response });
   });
 
   await page.goto(`${adminBaseUrl}/design`);

@@ -37,6 +37,7 @@ describe("M4-38 order import admin visible true DB smoke", () => {
     assert.match(smokeSource, /import\("@playwright\/test"\)/);
     assert.match(smokeSource, /import\("vite"\)/);
     assert.match(smokeSource, /page\.route\("\*\*\/order-import\/\*\*"/);
+    assert.match(smokeSource, /route\.fetch/);
     assert.match(smokeSource, /x-tenant-id/);
     assert.match(smokeSource, /residue=0/);
     assert.match(smokeSource, /storage:\/\/order-imports\/m4-38-admin-visible/);

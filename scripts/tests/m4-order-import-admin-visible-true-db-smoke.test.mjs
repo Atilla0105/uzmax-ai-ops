@@ -49,7 +49,13 @@ describe("M4-38 order import admin visible true DB smoke", () => {
     assert.match(ciSource, /npx playwright install --with-deps chromium/);
     assert.match(ciSource, /run-m4-order-import-admin-visible-true-db-smoke\.mjs/);
     assert.match(m4Index, /M4-38 order import admin visible true DB smoke/);
-    assert.match(evidence, /pending CI results/);
+    assert.ok(
+      /pending CI results/.test(evidence) ||
+        (/GitHub Actions CI `\d+`/.test(evidence) &&
+          /m4-order-import-admin-visible-true-db-smoke: passed browser admin visible true DB synthetic path; residue=0/.test(
+            evidence
+          ))
+    );
     assert.match(evidence, /does not close full E-02/);
     assert.doesNotMatch(
       `${smokeSource}\n${visibleSmokeSource}`,

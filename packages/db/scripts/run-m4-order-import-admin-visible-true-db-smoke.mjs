@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, URL } from "node:url";
 
 import { PrismaClient } from "@prisma/client";
@@ -133,8 +134,15 @@ function readViteBaseUrl(server) {
 
 async function assertVisibleText(locator, text) {
   await locator.waitFor({ state: "visible", timeout: 10_000 });
-  const content = await locator.textContent();
-  assert.match(content ?? "", new RegExp(escapeRegExp(text)));
+  const expected = new RegExp(escapeRegExp(text));
+  const deadline = Date.now() + 10_000;
+  let content = "";
+  while (Date.now() <= deadline) {
+    content = (await locator.textContent()) ?? "";
+    if (expected.test(content)) return;
+    await delay(250);
+  }
+  assert.match(content, expected);
 }
 
 function escapeRegExp(value) {

@@ -85,6 +85,16 @@ M1-04 只关闭 schema/API/admin contract 地基：默认 API 仍使用 contract
 - `access_context.denied` remains a pre-audit event and is not directly persisted unless a later scoped contract can supply the full `AuditLogContract` shape.
 - Default `AppModule` still provides `api.InMemoryAuditSink`; M4-20 does not instantiate PrismaClient, read env, connect to DB, or close production audit readiness.
 
+### M4 Order Import Runtime Warning Contract
+
+`M4-21-order-import-runtime-warning-contract` adds an API/admin client warning envelope for the ADR-B02 no-API import snapshot path:
+
+- `apps/api/src/order-import.service.ts` keeps `packages/capabilities/order-read` as the decision source and wraps only `handoff_required` snapshot search results with `runtimeWarning`.
+- `runtimeWarning.code` must match the order-read `reasonCode`, `handoffRequired` must be `true`, `staleSnapshotUsed` must match `queryLogDraft.staleSnapshotUsed`, and `expiresAt` / `sourceUpdatedAt` must match `customerVisible` when present.
+- Fresh `snapshot_ready` results must not include `runtimeWarning`.
+- `apps/admin/src/orderImportApiClient.ts` rejects handoff payloads that omit the warning, mismatch warning metadata, expose `orderStatusRef`, or attach warning metadata to fresh results.
+- The contract does not instantiate DB clients, call external order APIs, read env, wire admin visible runtime, add queue consumers, persist warning storage or close E2E stale sample evidence.
+
 ## M2 Channel Conversation Foundation
 
 `M2-01-channel-conversation-db-contracts-foundation` 引入 M2 渠道/对话/消息/工单 DB contracts foundation：

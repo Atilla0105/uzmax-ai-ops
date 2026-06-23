@@ -109,19 +109,94 @@ function snapshotResult(value: unknown) {
   }
   const customerVisible = recordPayload(record.customerVisible, "customerVisible");
   const handoff = recordPayload(record.handoff, "handoff") as { required?: unknown };
+  const queryLogDraft = recordPayload(record.queryLogDraft, "queryLogDraft");
   if (status !== "snapshot_ready") {
     if (handoff.required !== true)
       throw new Error("handoff result must require handoff");
     if ("orderStatusRef" in customerVisible) {
       throw new Error("handoff result must not expose orderStatusRef");
     }
+    const runtimeWarning = runtimeWarningPayload(
+      record.runtimeWarning,
+      requiredText(record.reasonCode, "reasonCode"),
+      customerVisible,
+      queryLogDraft
+    );
+    return {
+      customerVisible,
+      handoff: { required: true },
+      queryLogDraft,
+      reasonCode: requiredText(record.reasonCode, "reasonCode"),
+      runtimeWarning,
+      status
+    };
+  }
+  if (record.runtimeWarning !== undefined) {
+    throw new Error("snapshot_ready result must not include runtimeWarning");
   }
   return {
     customerVisible,
     handoff: { required: handoff.required === true },
-    queryLogDraft: recordPayload(record.queryLogDraft, "queryLogDraft"),
+    queryLogDraft,
     reasonCode: optionalText(record.reasonCode, "reasonCode"),
     status
+  };
+}
+
+function runtimeWarningPayload(
+  value: unknown,
+  reasonCode: string,
+  customerVisible: Record<string, unknown>,
+  queryLogDraft: Record<string, unknown>
+) {
+  const warning = recordPayload(value, "runtimeWarning");
+  const code = requiredText(warning.code, "runtimeWarning.code");
+  if (code !== reasonCode) {
+    throw new Error("runtimeWarning code must match reasonCode");
+  }
+  if (code !== requiredText(customerVisible.warningCode, "warningCode")) {
+    throw new Error("runtimeWarning code must match customerVisible warningCode");
+  }
+  if (warning.handoffRequired !== true) {
+    throw new Error("runtimeWarning must require handoff");
+  }
+  if (booleanValue(queryLogDraft.handoffRequired, "handoffRequired") !== true) {
+    throw new Error("handoff queryLogDraft must require handoff");
+  }
+  const messageRef = requiredText(warning.messageRef, "runtimeWarning.messageRef");
+  if (messageRef !== requiredText(queryLogDraft.reasonRef, "reasonRef")) {
+    throw new Error("runtimeWarning messageRef must match queryLogDraft reasonRef");
+  }
+  const staleSnapshotUsed = booleanValue(
+    warning.staleSnapshotUsed,
+    "runtimeWarning.staleSnapshotUsed"
+  );
+  if (
+    staleSnapshotUsed !==
+    booleanValue(queryLogDraft.staleSnapshotUsed, "staleSnapshotUsed")
+  ) {
+    throw new Error("runtimeWarning staleSnapshotUsed must match queryLogDraft");
+  }
+  const expiresAt = optionalText(warning.expiresAt, "runtimeWarning.expiresAt");
+  if (expiresAt !== optionalText(customerVisible.expiresAt, "expiresAt")) {
+    throw new Error("runtimeWarning expiresAt must match customerVisible");
+  }
+  const sourceUpdatedAt = optionalText(
+    warning.sourceUpdatedAt,
+    "runtimeWarning.sourceUpdatedAt"
+  );
+  if (
+    sourceUpdatedAt !== optionalText(customerVisible.sourceUpdatedAt, "sourceUpdatedAt")
+  ) {
+    throw new Error("runtimeWarning sourceUpdatedAt must match customerVisible");
+  }
+  return {
+    code,
+    expiresAt,
+    handoffRequired: true,
+    messageRef,
+    sourceUpdatedAt,
+    staleSnapshotUsed
   };
 }
 
@@ -135,6 +210,11 @@ function recordPayload(value: unknown, name: string): Record<string, unknown> {
 function integerValue(value: unknown, name: string): number {
   if (!Number.isInteger(value)) throw new Error(`${name} must be an integer`);
   return value as number;
+}
+
+function booleanValue(value: unknown, name: string): boolean {
+  if (typeof value !== "boolean") throw new Error(`${name} must be a boolean`);
+  return value;
 }
 
 function optionalText(value: unknown, name: string): string | undefined {

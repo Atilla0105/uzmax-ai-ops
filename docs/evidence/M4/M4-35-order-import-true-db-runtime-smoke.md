@@ -51,13 +51,7 @@ node --test scripts/tests/m4-order-import-worker-prisma-persistence-contract.tes
 CI true DB validation target:
 
 ```bash
-npm run smoke:m4-order-import:true-db
-```
-
-The root script delegates to `@uzmax/db`:
-
-```bash
-npm run -w @uzmax/db smoke:m4-order-import:true-db
+node packages/db/scripts/run-m4-order-import-true-db-smoke.mjs
 ```
 
 The CI step must receive `UZMAX_RLS_DATABASE_URL` from GitHub Actions secrets. The local shell does not need to store or print that secret.
@@ -108,7 +102,7 @@ Local true DB smoke:
 
 | Command | Result |
 |---|---|
-| `npm run smoke:m4-order-import:true-db` | fail-closed locally with `UZMAX_RLS_DATABASE_URL is required`; the local shell does not have the secret and no secret value was printed |
+| `node packages/db/scripts/run-m4-order-import-true-db-smoke.mjs` | fail-closed locally with `UZMAX_RLS_DATABASE_URL is required`; the local shell does not have the secret and no secret value was printed |
 
 Local worker-boundary full mode:
 

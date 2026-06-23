@@ -27,8 +27,6 @@ feature
   - `docs/evidence/M4/M4-35-order-import-true-db-runtime-smoke.md`
   - `docs/evidence/M4/README.md`
   - `.github/workflows/ci.yml`
-  - `package.json`
-  - `packages/db/package.json`
   - `packages/db/scripts/run-m4-order-import-true-db-smoke.mjs`
   - `apps/worker/src/order-import-prisma-persistence.ts`
   - `scripts/tests/m4-order-import-worker-prisma-persistence-contract.test.mjs`
@@ -37,7 +35,7 @@ feature
 ## 变更预算与路径分类
 
 - source 预算：changed source files <= 2，net source LOC <= 220，new source files <= 1。
-- test/generated/lock/config/docs 预计变更：新增 1 个 smoke script；更新 1 个 focused test；更新 CI workflow/package script/spec/evidence/M4 README；不改 lockfile/generated/schema/migration。
+- test/generated/lock/config/docs 预计变更：新增 1 个 smoke script；更新 1 个 focused test；更新 CI workflow/spec/evidence/M4 README；不改 package manifest/lockfile/generated/schema/migration。
 - 新增 source 文件前的 `rg` 搜索结论和归属理由：已检索 `PrismaOrderImportWorkerPersistenceGateway`, `createOrderImportWorkerPrismaPersistenceGateway`, `createOrderImportRlsBatchTransactionRunner`, `createOrderImportRepositoryProviderFromEnv`, `ImportJobStatus`, `OrderSnapshotSourceKind`, `scripts/smokes`, `UZMAX_RLS_DATABASE_URL`。现有 worker adapter 有 Prisma-shaped write contract，但没有 Prisma enum value mapping or true DB smoke; CI 只跑 SPK-03/04 真库 spike，不跑 M4 order import runtime smoke。因此新增 `scripts/smokes/m4-order-import-true-db-runtime-smoke.mjs` 并就地修正 worker adapter mapping。
 - 外部 API/SDK/provider/connector/adapter 依据：不新增外部 order API、provider、connector 或 adapter；使用 repo 已声明的 Prisma Client 与 GitHub Actions secret `UZMAX_RLS_DATABASE_URL` 指向 Supabase dev main。
 - 是否需要例外：无。
@@ -61,7 +59,7 @@ feature
 
 1. 修正 worker Prisma persistence adapter，把 contract snake_case enum values 映射为 Prisma Client enum names，并用 focused test 锁住 mapping。
 2. 新增 true DB smoke：生成 synthetic org/tenant 与 worker CSV drafts；在 `set local role "uzmax_app_runtime"` + `app.org_id/app.tenant_id` 的事务中写入 import job、snapshot、row error；用 API repository RLS runtime 读回；验证 tenant A 可见、tenant B 不可见；finally 删除 synthetic org 并复查 residue 0。
-3. 在 package script 和 CI 中加入 `smoke:m4-order-import:true-db`，只在相关 runtime paths 或 workflow_dispatch full 时运行，并使用 GitHub Actions secret `UZMAX_RLS_DATABASE_URL`。
+3. 在 CI 中加入 `node packages/db/scripts/run-m4-order-import-true-db-smoke.mjs`，只在相关 runtime paths 或 workflow_dispatch full 时运行，并使用 GitHub Actions secret `UZMAX_RLS_DATABASE_URL`。
 4. 更新 M4 evidence，不把该 smoke 误报为完整 E-02/J-02/I-01 关闭。
 
 ## 通过条件

@@ -84,7 +84,7 @@ jobs:
             esac
 
             case "$file" in
-              packages/db/*|packages/db/**|packages/authz/*|packages/authz/**|package.json|package-lock.json)
+              packages/db/migrations/*|packages/db/migrations/**|packages/db/prisma/*|packages/db/prisma/**|packages/db/src/*|packages/db/src/**|packages/db/scripts/run-rls-prisma-pool-spike.mjs|packages/db/package.json|packages/authz/*|packages/authz/**|package.json|package-lock.json)
                 spike_changed=true
                 ;;
             esac
@@ -176,7 +176,7 @@ jobs:
         env:
           UZMAX_RLS_DATABASE_URL: >-
             ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
-        run: npm run smoke:m4-order-import:true-db
+        run: node packages/db/scripts/run-m4-order-import-true-db-smoke.mjs
       - if: steps.path-scope.outputs.run_spikes == 'true'
         name: SPK-03 RLS Prisma pool spike
         env:

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import ts from "typescript";
 
@@ -48,6 +49,29 @@ export async function importWorkerPrismaPersistenceEntrypoint() {
   return { module: await import(moduleUrl), moduleUrl };
 }
 
+export async function importWorkerBullmqRuntimeEntrypoint() {
+  const mainUrl = compileWorkerEntrypointUrl();
+  const dispatchUrl = compileTsModuleUrl(
+    readRepoText("apps/worker/src/order-import-dispatch.ts").replaceAll(
+      "./main.ts",
+      mainUrl
+    )
+  );
+  const moduleUrl = compileTsModuleUrl(
+    readRepoText("apps/worker/src/order-import-bullmq-runtime.ts")
+      .replaceAll("./order-import-dispatch.ts", dispatchUrl)
+      .replaceAll("./main.ts", mainUrl)
+      .replaceAll('"bullmq"', JSON.stringify(bullmqModuleUrl()))
+  );
+
+  return { module: await import(moduleUrl), moduleUrl };
+}
+
+function bullmqModuleUrl() {
+  return pathToFileURL(path.join(repoRoot, "node_modules/bullmq/dist/cjs/index.js"))
+    .href;
+}
+
 function compileWorkerEntrypointUrl() {
   const orderReadUrl = compileTsModuleUrl(
     readRepoText("packages/capabilities/order-read/src/index.ts")
@@ -60,6 +84,7 @@ function compileWorkerEntrypointUrl() {
       .replaceAll('export * from "./order-import-dispatch.ts";', "")
       .replaceAll('export * from "./order-import-file-intake.ts";', "")
       .replaceAll('export * from "./order-import-prisma-persistence.ts";', "")
+      .replaceAll('export * from "./order-import-bullmq-runtime.ts";', "")
       .replaceAll(
         "../../../packages/capabilities/order-read/src/index.ts",
         orderReadUrl

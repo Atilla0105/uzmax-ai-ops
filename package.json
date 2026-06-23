@@ -31,7 +31,7 @@
     "guard:worker-boundary": "node scripts/guards/worker-write-boundary.mjs",
     "guard:pr-shape": "node scripts/guards/pr-shape.mjs",
     "jscpd": "node node_modules/jscpd/run-jscpd.js apps packages scripts --config jscpd.config.json --workers 1 --no-tips",
-    "knip": "node node_modules/knip/bin/knip.js --no-progress --duration --no-config-hints --no-tag-hints",
+    "knip": "node node_modules/knip/bin/knip.js -c package.json#knip --no-progress --duration --no-config-hints --no-tag-hints",
     "lint": "find apps packages scripts -path '*/node_modules' -prune -o -type f \\( -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.mjs\" -o -name \"*.cjs\" \\) -print0 | xargs -0 node node_modules/eslint/bin/eslint.js eslint.config.mjs dependency-cruiser.config.cjs playwright.config.ts",
     "playwright": "playwright test",
     "size": "npm run build:admin && size-limit",
@@ -45,6 +45,50 @@
       "limit": "250 KB"
     }
   ],
+  "knip": {
+    "entry": [
+      "dependency-cruiser.config.cjs",
+      "apps/*/src/main.ts",
+      "apps/admin/src/main.tsx",
+      "packages/*/src/index.ts",
+      "packages/capabilities/*/src/index.ts",
+      "scripts/guards/*.mjs"
+    ],
+    "ignoreBinaries": [
+      "gh"
+    ],
+    "ignore": [
+      "apps/admin/dist/**"
+    ],
+    "project": [
+      "**/*.{ts,tsx,mjs,cjs}"
+    ],
+    "workspaces": {
+      ".": {
+        "entry": [
+          "dependency-cruiser.config.cjs",
+          "apps/*/src/main.ts",
+          "apps/admin/src/main.tsx",
+          "packages/*/src/index.ts",
+          "packages/capabilities/*/src/index.ts",
+          "scripts/guards/*.mjs"
+        ],
+        "project": [
+          "**/*.{ts,tsx,mjs,cjs}"
+        ]
+      },
+      "apps/worker": {
+        "entry": [
+          "src/main.ts",
+          "src/order-import-bullmq-runtime.ts",
+          "scripts/run-m4-order-import-bullmq-redis-smoke.mjs"
+        ],
+        "project": [
+          "**/*.{ts,mjs}"
+        ]
+      }
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",

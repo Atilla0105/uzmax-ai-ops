@@ -156,7 +156,9 @@ describe("M4-41 order import Storage-backed true DB smoke", () => {
 
   it("runs real Supabase Storage download through worker intake before DB/RLS readback", () => {
     const payloadBlock = blockFrom(smokeSource, "const storageSubmitPayload = {");
+    assert.match(smokeSource, /import WebSocket from "ws"/);
     assert.match(smokeSource, /createClient\(supabaseUrl, supabaseSecretKey/);
+    assert.match(smokeSource, /realtime: \{ transport: WebSocket \}/);
     assert.match(smokeSource, /storage\.createBucket/);
     assert.match(smokeSource, /\.upload\(input\.objectPath/);
     assert.match(smokeSource, /\.download\(input\.objectPath\)/);
@@ -188,7 +190,10 @@ describe("M4-41 order import Storage-backed true DB smoke", () => {
     assert.match(ciSource, /https:\/\/enyocaykcgcfcswycujg\.supabase\.co/);
     assert.match(m4Index, /M4-41 order import Storage-backed true DB smoke/);
     assert.match(spec, /不关闭完整 E-02\/E-03\/E-04\/I-01\/J-02\/B-01/);
-    assert.match(evidence, /pending/);
+    assert.match(
+      evidence,
+      /CI true DB\/Storage validation pending|GitHub Actions CI run `\d+`/
+    );
     assert.match(evidence, /No raw customer\/order/);
     assert.match(evidence, /Browser\/API POST body must not contain `csvText`/);
   });

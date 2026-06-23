@@ -54,7 +54,7 @@ This evidence does not close full E-02/E-03/E-04/I-01/J-02/B-01. It does not add
 | `npm run guard:doc-triggers` | passed |
 | `npm run guard:workspace` | passed |
 | `UZMAX_ASSIGNED_WORKTREE=/Users/atilla/Documents/uzmax-m4-41-order-import-storage-backed-true-db-smoke npm run guard:worker-boundary` | passed |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-41-order-import-storage-backed-true-db-smoke.md --include-worktree` | passed; changed files 23, source files 12, net source LOC 0 |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-41-order-import-storage-backed-true-db-smoke.md --include-worktree` | passed; changed files 23, source files 12, net source LOC 494 |
 | `npm run test` | passed; 295 tests |
 | `npm run build` | passed |
 | `npm run size` | passed; 59.55 kB brotli under 250 kB |

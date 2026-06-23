@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 
 import {
   assertVisibleText,
@@ -49,7 +50,8 @@ const prisma = new PrismaClient({
   datasources: { db: { url: databaseUrl } }
 });
 const supabase = createClient(supabaseUrl, supabaseSecretKey, {
-  auth: { autoRefreshToken: false, persistSession: false }
+  auth: { autoRefreshToken: false, persistSession: false },
+  realtime: { transport: WebSocket }
 });
 const submitDispatcher = await createWorkerStorageObjectSubmitDispatcher({
   fixture,

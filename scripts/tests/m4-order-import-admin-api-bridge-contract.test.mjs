@@ -258,10 +258,14 @@ async function importOrderImportRuntime() {
       "./order-import.types.ts": typesUrl
     }
   );
+  const submitUrl = compileApiModule(writeRuntimeModule, "order-import.submit", {
+    "./order-import.types.ts": typesUrl
+  });
   const serviceUrl = compileApiModule(writeRuntimeModule, "order-import.service", {
     "../../../packages/authz/src/index.ts": authzUrl,
     "../../../packages/capabilities/order-read/src/index.ts": orderReadUrl,
     "./order-import.repository.ts": repositoryUrl,
+    "./order-import.submit.ts": submitUrl,
     "./order-import.types.ts": typesUrl,
     "@nestjs/common": nestCommonUrl
   });
@@ -282,7 +286,7 @@ async function importOrderImportRuntime() {
     import(repositoryUrl),
     import(serviceUrl)
   ]);
-  return { ...controller, ...repository, ...service };
+  return { ...controller, ...repository, ...service, ...(await import(submitUrl)) };
 }
 
 function createRuntimeModuleWriter() {

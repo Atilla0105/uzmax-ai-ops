@@ -8,14 +8,21 @@ import ts from "typescript";
 const repoRoot = process.cwd();
 const adminClientSource = read("apps/admin/src/orderImportApiClient.ts");
 const visibleSmokeSource = read("apps/admin/src/M4OrderImportVisibleSmokeState.tsx");
+const visibleSmokeSubmitSource = read(
+  "apps/admin/src/orderImportVisibleSmokeSubmit.ts"
+);
 const apiControllerSource = read("apps/api/src/order-import.controller.ts");
 const apiServiceSource = read("apps/api/src/order-import.service.ts");
+const apiSubmitSource = read("apps/api/src/order-import.submit.ts");
 const httpHarnessSource = read("apps/api/scripts/order-import-http-smoke-harness.mjs");
 const visibleHarnessSource = read(
   "packages/db/scripts/order-import-admin-visible-smoke-harness.mjs"
 );
 const smokeSource = read(
   "packages/db/scripts/run-m4-order-import-admin-submit-true-db-worker-dispatch-smoke.mjs"
+);
+const workerSubmitSupportSource = read(
+  "packages/db/scripts/order-import-worker-submit-smoke-support.mjs"
 );
 const ciSource = read(".github/workflows/ci.yml");
 const spec = read(
@@ -104,18 +111,19 @@ describe("M4-40 order import admin submit true DB worker dispatch smoke", () => 
   });
 
   it("keeps submit smoke opt-in and fail-closed behind the API dispatcher port", () => {
-    assert.match(visibleSmokeSource, /submit\?: OrderImportCsvTextSubmitInput/);
-    assert.match(visibleSmokeSource, /client\s*\.submitImportCsvTextJob/);
+    assert.match(visibleSmokeSubmitSource, /submit\?: OrderImportCsvTextSubmitInput/);
+    assert.match(visibleSmokeSource, /submitVisibleSmokeJobOnce/);
+    assert.match(visibleSmokeSubmitSource, /client\s*\.submitImportCsvTextJob/);
     assert.match(
-      visibleSmokeSource,
+      visibleSmokeSubmitSource,
       /submittedSmokeJobs = new Map<string, Promise<string>>\(\)/
     );
-    assert.match(visibleSmokeSource, /submittedSmokeJobs\.get\(submitKey\)/);
+    assert.match(visibleSmokeSubmitSource, /submittedSmokeJobs\.get\(submitKey\)/);
     assert.match(
-      visibleSmokeSource,
+      visibleSmokeSubmitSource,
       /submittedSmokeJobs\.set\(submitKey, nextSubmit\)/
     );
-    assert.match(visibleSmokeSource, /submitResult\.importJobId/);
+    assert.match(visibleSmokeSubmitSource, /submitResult\.importJobId/);
     assert.match(
       visibleSmokeSource,
       /jobs\.find\(\(item\) => item\.id === submittedImportJobId\)/
@@ -129,12 +137,12 @@ describe("M4-40 order import admin submit true DB worker dispatch smoke", () => 
       apiServiceSource,
       /idempotencyKey: `controlled:\/\/order-import\/\$\{input\.importJobId\}`/
     );
-    assert.match(apiServiceSource, /rowErrorIds: uuidArray\(record\.rowErrorIds/);
-    assert.match(apiServiceSource, /snapshotIds: uuidArray\(record\.snapshotIds/);
+    assert.match(apiSubmitSource, /rowErrorIds: uuidArray\(record\.rowErrorIds/);
+    assert.match(apiSubmitSource, /snapshotIds: uuidArray\(record\.snapshotIds/);
     assert.match(adminClientSource, /rowErrorIds: uuidArray\(input\.rowErrorIds/);
     assert.match(adminClientSource, /snapshotIds: uuidArray\(input\.snapshotIds/);
     assert.doesNotMatch(
-      `${apiControllerSource}\n${apiServiceSource}`,
+      `${apiControllerSource}\n${apiServiceSource}\n${apiSubmitSource}`,
       /BullMQ|Redis|PrismaClient|process\.env|order_connector/i
     );
   });
@@ -143,22 +151,23 @@ describe("M4-40 order import admin submit true DB worker dispatch smoke", () => 
     assert.match(httpHarnessSource, /submitDispatcher/);
     assert.match(httpHarnessSource, /ORDER_IMPORT_SUBMIT_DISPATCHER/);
     assert.match(visibleHarnessSource, /seedRows = true/);
-    assert.match(
-      visibleHarnessSource,
-      /postData: request\.postData\(\) \?\? undefined/
-    );
+    assert.match(visibleHarnessSource, /postData,\n\s*timeout: visibleStateTimeoutMs/);
     assert.match(visibleHarnessSource, /"x-uzmax-smoke-permissions": permissions/);
     assert.match(smokeSource, /seedRows: false/);
     assert.match(smokeSource, /permissions: "order:read,order:write"/);
-    assert.match(smokeSource, /runOrderImportCsvTextDispatchContract/);
-    assert.match(smokeSource, /createOrderImportWorkerPrismaPersistenceGateway/);
-    assert.match(smokeSource, /runOrderImportCsvTextPersistenceJob/);
-    assert.match(smokeSource, /set local role "uzmax_app_runtime"/);
-    assert.match(smokeSource, /select set_config\('app\.org_id'/);
-    assert.match(smokeSource, /assertTenantBIsolation/);
+    assert.match(smokeSource, /createWorkerCsvTextSubmitDispatcher/);
+    assert.match(smokeSource, /assertTenantBOrderImportIsolation/);
+    assert.match(workerSubmitSupportSource, /runOrderImportCsvTextDispatchContract/);
+    assert.match(
+      workerSubmitSupportSource,
+      /createOrderImportWorkerPrismaPersistenceGateway/
+    );
+    assert.match(workerSubmitSupportSource, /runOrderImportCsvTextPersistenceJob/);
+    assert.match(workerSubmitSupportSource, /set local role "uzmax_app_runtime"/);
+    assert.match(workerSubmitSupportSource, /select set_config\('app\.org_id'/);
     assert.match(smokeSource, /residue=0/);
     assert.doesNotMatch(
-      `${smokeSource}\n${visibleHarnessSource}`,
+      `${smokeSource}\n${visibleHarnessSource}\n${workerSubmitSupportSource}`,
       /SUPABASE_SECRET_KEY|service_role|customer_phone|phone_number|\+998|sk-/i
     );
   });

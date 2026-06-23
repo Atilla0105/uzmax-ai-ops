@@ -53,24 +53,36 @@ export async function runAdminVisibleOrderImportSmoke({
 
 export async function withVisibleSmokePage(
   runtime,
-  { now, permissions = "order:read", queryRef, submit },
+  { now, onApiRequest, permissions = "order:read", queryRef, storageSubmit, submit },
   callback
 ) {
   const page = await runtime.browser.newPage();
   try {
     await page.addInitScript(
-      ({ injectedNow, injectedQueryRef, injectedSubmit }) => {
+      ({ injectedNow, injectedQueryRef, injectedStorageSubmit, injectedSubmit }) => {
         globalThis.__UZMAX_M4_ORDER_IMPORT_VISIBLE_SMOKE__ = {
           enabled: true,
           now: injectedNow,
           queryRef: injectedQueryRef,
+          storageSubmit: injectedStorageSubmit,
           submit: injectedSubmit
         };
       },
-      { injectedNow: now, injectedQueryRef: queryRef, injectedSubmit: submit }
+      {
+        injectedNow: now,
+        injectedQueryRef: queryRef,
+        injectedStorageSubmit: storageSubmit,
+        injectedSubmit: submit
+      }
     );
     await page.route("**/order-import/**", async (route, request) => {
       const sourceUrl = new URL(request.url());
+      const postData = request.postData() ?? undefined;
+      await onApiRequest?.({
+        method: request.method(),
+        path: sourceUrl.pathname,
+        postData
+      });
       const response = await route.fetch({
         headers: {
           authorization: "Bearer m4-order-import-synthetic-token",
@@ -79,7 +91,7 @@ export async function withVisibleSmokePage(
           "x-uzmax-smoke-permissions": permissions
         },
         method: request.method(),
-        postData: request.postData() ?? undefined,
+        postData,
         timeout: visibleStateTimeoutMs,
         url: `${runtime.apiBaseUrl}${sourceUrl.pathname}${sourceUrl.search}`
       });

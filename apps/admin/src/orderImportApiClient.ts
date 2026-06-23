@@ -25,6 +25,17 @@ export type OrderImportCsvTextSubmitInput = {
   sourceRef: string;
 };
 
+export type OrderImportStorageObjectSubmitInput = {
+  bucketId: string;
+  importedAt: string;
+  importJobId: string;
+  maxRows?: number;
+  mediaType?: string;
+  objectPath: string;
+  rowErrorIds: string[];
+  snapshotIds: string[];
+};
+
 export function createOrderImportApiClient({
   basePath = "/order-import",
   fetcher
@@ -43,6 +54,15 @@ export function createOrderImportApiClient({
       return submitJobResult(
         await readJson(fetcher, `${root}/jobs`, {
           body: JSON.stringify(submitJobPayload(input)),
+          headers: { "content-type": "application/json" },
+          method: "POST"
+        })
+      );
+    },
+    async submitImportStorageObjectJob(input: OrderImportStorageObjectSubmitInput) {
+      return submitJobResult(
+        await readJson(fetcher, `${root}/storage-jobs`, {
+          body: JSON.stringify(submitStorageJobPayload(input)),
           headers: { "content-type": "application/json" },
           method: "POST"
         })
@@ -139,6 +159,22 @@ function submitJobPayload(input: OrderImportCsvTextSubmitInput) {
     rowErrorIds: uuidArray(input.rowErrorIds, "rowErrorIds"),
     snapshotIds: uuidArray(input.snapshotIds, "snapshotIds"),
     sourceRef: requiredText(input.sourceRef, "sourceRef")
+  };
+}
+
+function submitStorageJobPayload(input: OrderImportStorageObjectSubmitInput) {
+  return {
+    bucketId: storageBucketId(input.bucketId),
+    importedAt: requiredText(input.importedAt, "importedAt"),
+    importJobId: uuidText(input.importJobId, "importJobId"),
+    maxRows: input.maxRows,
+    mediaType:
+      input.mediaType === undefined
+        ? undefined
+        : requiredText(input.mediaType, "mediaType"),
+    objectPath: storageObjectPath(input.objectPath),
+    rowErrorIds: uuidArray(input.rowErrorIds, "rowErrorIds"),
+    snapshotIds: uuidArray(input.snapshotIds, "snapshotIds")
   };
 }
 
@@ -287,6 +323,28 @@ function uuidText(value: unknown, name: string): string {
     )
   ) {
     throw new Error(`${name} must be a UUID`);
+  }
+  return text;
+}
+
+function storageBucketId(value: unknown): string {
+  const text = requiredText(value, "bucketId");
+  if (!/^[a-z0-9][a-z0-9._-]{1,62}$/i.test(text)) {
+    throw new Error("bucketId is invalid");
+  }
+  return text;
+}
+
+function storageObjectPath(value: unknown): string {
+  const text = requiredText(value, "objectPath");
+  const hasUnsafeSegment = ["/", "//", ".."].some((segment) =>
+    segment === "/"
+      ? text.startsWith("/") || text.endsWith("/")
+      : text.includes(segment)
+  );
+  const hasSafeShape = /^[a-z0-9][a-z0-9/._:-]*$/i.test(text);
+  if (text.length > 150 || hasUnsafeSegment || /[\\\0]/.test(text) || !hasSafeShape) {
+    throw new Error("objectPath is invalid");
   }
   return text;
 }

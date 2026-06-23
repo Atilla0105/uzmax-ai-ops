@@ -116,6 +116,10 @@ describe("minimal eval gate", () => {
 });
 
 async function importTypescriptModule(relativePath) {
+  return import(transpiledModuleUrl(relativePath));
+}
+
+function transpiledModuleUrl(relativePath) {
   const source = readFileSync(relativePath, "utf8");
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: {
@@ -124,7 +128,28 @@ async function importTypescriptModule(relativePath) {
     },
     fileName: relativePath
   });
-  const encoded = Buffer.from(outputText).toString("base64");
+  const localM4Url = transpiledLeafUrl(
+    "packages/evals/src/m4-order-read-no-fabrication.ts"
+  );
+  const resolvedOutput = outputText.replaceAll(
+    '"./m4-order-read-no-fabrication.ts"',
+    JSON.stringify(localM4Url)
+  );
+  return dataUrl(resolvedOutput);
+}
 
-  return import(`data:text/javascript;base64,${encoded}`);
+function transpiledLeafUrl(relativePath) {
+  const source = readFileSync(relativePath, "utf8");
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2023
+    },
+    fileName: relativePath
+  });
+  return dataUrl(outputText);
+}
+
+function dataUrl(outputText) {
+  return `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
 }

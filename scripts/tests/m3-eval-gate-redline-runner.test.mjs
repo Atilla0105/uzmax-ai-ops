@@ -398,11 +398,32 @@ function read(relativePath) {
 }
 
 async function loadTs(relativePath) {
+  return import(transpiledModuleUrl(relativePath));
+}
+
+function transpiledModuleUrl(relativePath) {
   const outputText = ts.transpile(read(relativePath), {
     module: ts.ModuleKind.ES2022,
     target: ts.ScriptTarget.ES2023
   });
-  return import(
-    `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`
+  const localM4Url = transpiledLeafUrl(
+    "packages/evals/src/m4-order-read-no-fabrication.ts"
   );
+  const resolvedOutput = outputText.replaceAll(
+    '"./m4-order-read-no-fabrication.ts"',
+    JSON.stringify(localM4Url)
+  );
+  return dataUrl(resolvedOutput);
+}
+
+function transpiledLeafUrl(relativePath) {
+  const outputText = ts.transpile(read(relativePath), {
+    module: ts.ModuleKind.ES2022,
+    target: ts.ScriptTarget.ES2023
+  });
+  return dataUrl(outputText);
+}
+
+function dataUrl(outputText) {
+  return `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
 }

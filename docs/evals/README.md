@@ -84,3 +84,17 @@ Gateway accounting drafts may include eval summary refs in later integrations, b
 This is foundation only. It does not implement production publish APIs, admin eval center, provider calls, persistence, real eval fixtures, raw samples, prompt/model/persona release, knowledge publish, M3-08 breaker radius/output guard, GA-0, customer LLM or real customer traffic.
 
 M3-03 keeps G-06 as `partial_foundation_not_closed`: the runner enforces quotas against supplied synthetic/redacted case refs, but the full 1.0 >=200 eval target and owner-input blind review remain future closure paths.
+
+## M4 Order-Read No-Fabrication Eval Contract
+
+`M4-22-order-read-no-fabrication-eval-contract` adds pure `packages/evals` exports for the ADR-B02 no-API order-read branch:
+
+- `evaluateM4OrderReadNoFabrication` accepts only controlled refs and a bounded candidate shape.
+- Missing, stale or degraded order-read cases must be `handoff` with `handoffRequired: true`.
+- Handoff-required cases fail when a candidate exposes order or logistics status refs.
+- Fresh snapshot cases pass only when the candidate is `order_snapshot_summary`, `handoffRequired: false`, and carries a controlled order status ref.
+- The returned summaries use the existing M3-safe eval payload keys: `manifestRef`, `checkedRef`, `outputRef`, `shape` and `passed`.
+
+This is an eval contract only. It does not implement AI runtime, engine/API/admin/worker integration, provider judge calls, production eval gates, persistence, real fixtures, external order API connectors, customer LLM, production traffic or M4 closeout.
+
+No raw eval fixtures, raw prompts, raw completions, customer plaintext, order IDs, phone numbers, addresses, payment data, CSV/XLSX exports, screenshots, credentials or env files may be committed for this contract.

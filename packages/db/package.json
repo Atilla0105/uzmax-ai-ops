@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "smoke:m4-order-import:true-db": "node scripts/run-m4-order-import-true-db-smoke.mjs",
     "spike:rls-prisma-pool": "node scripts/run-rls-prisma-pool-spike.mjs"
   },
   "dependencies": {

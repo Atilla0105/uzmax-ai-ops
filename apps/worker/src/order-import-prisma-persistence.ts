@@ -25,7 +25,7 @@ export class PrismaOrderImportWorkerPersistenceGateway implements OrderImportWor
   async persistImportJob(draft: Record<string, unknown>) {
     assertOrderImportWorkerPrismaPersistenceClientPort(this.prisma);
     await this.prisma.importJob.create({
-      data: recordValue(draft, "import job draft")
+      data: toPrismaImportJobCreateData(draft)
     });
   }
 
@@ -35,7 +35,7 @@ export class PrismaOrderImportWorkerPersistenceGateway implements OrderImportWor
     if (data.length === 0) return;
 
     await this.prisma.importRowError.createMany({
-      data,
+      data: toPrismaImportRowErrorCreateManyData(data),
       skipDuplicates: true
     });
   }
@@ -46,7 +46,7 @@ export class PrismaOrderImportWorkerPersistenceGateway implements OrderImportWor
     if (data.length === 0) return;
 
     await this.prisma.orderSnapshot.createMany({
-      data,
+      data: toPrismaOrderSnapshotCreateManyData(data),
       skipDuplicates: true
     });
   }
@@ -56,6 +56,37 @@ export function createOrderImportWorkerPrismaPersistenceGateway(
   prisma: OrderImportWorkerPrismaPersistenceClientPort
 ) {
   return new PrismaOrderImportWorkerPersistenceGateway(prisma);
+}
+
+export function toPrismaImportJobCreateData(draft: Record<string, unknown>) {
+  const data = recordValue(draft, "import job draft");
+  return {
+    ...data,
+    status: prismaEnum(data.status, importJobStatusMap, "import job status")
+  };
+}
+
+export function toPrismaOrderSnapshotCreateManyData(
+  drafts: readonly Record<string, unknown>[]
+) {
+  return recordList(drafts, "order snapshot draft").map((data) => ({
+    ...data,
+    sourceKind: prismaEnum(
+      data.sourceKind,
+      orderSnapshotSourceKindMap,
+      "order snapshot sourceKind"
+    ),
+    status: prismaEnum(data.status, orderSnapshotStatusMap, "order snapshot status")
+  }));
+}
+
+export function toPrismaImportRowErrorCreateManyData(
+  drafts: readonly Record<string, unknown>[]
+) {
+  return recordList(drafts, "import row error draft").map((data) => ({
+    ...data,
+    severity: prismaEnum(data.severity, importRowErrorSeverityMap, "row error severity")
+  }));
 }
 
 function assertOrderImportWorkerPrismaPersistenceClientPort(
@@ -85,4 +116,38 @@ function recordValue(value: unknown, name: string): AnyRecord {
     return value as AnyRecord;
   }
   throw new Error(`${name} must be a record`);
+}
+
+const importJobStatusMap = {
+  completed: "COMPLETED",
+  completed_with_errors: "COMPLETED_WITH_ERRORS",
+  failed: "FAILED",
+  queued: "QUEUED",
+  rolled_back: "ROLLED_BACK",
+  running: "RUNNING"
+} as const;
+
+const orderSnapshotSourceKindMap = {
+  import_snapshot: "IMPORT_SNAPSHOT"
+} as const;
+
+const orderSnapshotStatusMap = {
+  active: "ACTIVE",
+  archived: "ARCHIVED"
+} as const;
+
+const importRowErrorSeverityMap = {
+  error: "ERROR",
+  warning: "WARNING"
+} as const;
+
+function prismaEnum<T extends Record<string, string>>(
+  value: unknown,
+  mapping: T,
+  name: string
+): T[keyof T] {
+  if (typeof value !== "string") throw new Error(`${name} is required`);
+  const mapped = mapping[value.trim().toLowerCase() as keyof T];
+  if (!mapped) throw new Error(`${name} is invalid for Prisma`);
+  return mapped;
 }

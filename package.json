@@ -35,6 +35,7 @@
     "lint": "find apps packages scripts -path '*/node_modules' -prune -o -type f \\( -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.mjs\" -o -name \"*.cjs\" \\) -print0 | xargs -0 node node_modules/eslint/bin/eslint.js eslint.config.mjs dependency-cruiser.config.cjs playwright.config.ts",
     "playwright": "playwright test",
     "size": "npm run build:admin && size-limit",
+    "smoke:m4-order-import:true-db": "npm run -w @uzmax/db smoke:m4-order-import:true-db",
     "test": "node --test scripts/tests/*.test.mjs",
     "typecheck": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json"
   },

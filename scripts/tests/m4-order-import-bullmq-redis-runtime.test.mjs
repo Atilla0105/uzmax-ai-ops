@@ -242,7 +242,7 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
     assert.equal(fromQueue.status, "ok");
   });
 
-  it("keeps the runtime opt-in and records unresolved audit honestly", () => {
+  it("keeps the runtime opt-in and records audit closeout honestly", () => {
     assert.match(packageJson, /"bullmq": "\^5\.79\.1"/);
     assert.match(packageJson, /"ioredis": "\^5\.11\.1"/);
     assert.match(runtimeSource, /createOrderImportBullmqQueue/);
@@ -256,12 +256,14 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
       /process\.env|new PrismaClient|@prisma\/client|fetch\(|download|order_connector|UZMAX_/i
     );
     assert.match(spec, /queue security closeout/i);
-    assert.match(evidence, /unresolved_security_blocker/);
+    assert.match(evidence, /audit_high_cleared_ready_for_owner_closeout_review/);
+    assert.doesNotMatch(evidence, /security_blocker_open/);
     assert.match(m4Index, /M4-45 order import queue security closeout/);
     assert.match(
       m4Index,
       /queue_security_closeout_supported_not_production_deployment/
     );
+    assert.match(m4Index, /m4_ready_for_owner_closeout_review/);
   });
 });
 

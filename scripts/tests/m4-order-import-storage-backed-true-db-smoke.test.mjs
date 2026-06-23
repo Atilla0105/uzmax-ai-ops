@@ -193,7 +193,7 @@ describe("M4-41 order import Storage-backed true DB smoke", () => {
     assert.match(spec, /不关闭完整 E-02\/E-03\/E-04\/I-01\/J-02\/B-01/);
     assert.match(
       evidence,
-      /CI true DB\/Storage validation pending|GitHub Actions CI run `\d+`/
+      /CI true DB\/Storage validation pending|GitHub Actions run `\d+`/
     );
     assert.match(evidence, /No raw customer\/order/);
     assert.match(evidence, /Browser\/API POST body must not contain `csvText`/);

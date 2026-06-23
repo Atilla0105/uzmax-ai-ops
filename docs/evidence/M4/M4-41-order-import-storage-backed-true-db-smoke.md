@@ -4,7 +4,7 @@
 > branch: `codex/m4-41-order-import-storage-backed-true-db-smoke`
 > worktree: `/Users/atilla/Documents/uzmax-m4-41-order-import-storage-backed-true-db-smoke`
 > target: Supabase `uzmax-dev` dev main through `UZMAX_RLS_DATABASE_URL` and Supabase Storage through `UZMAX_SUPABASE_URL` / `UZMAX_SUPABASE_SECRET_KEY`
-> status: local validation passed; CI true DB/Storage validation pending
+> status: local validation passed; CI true DB/Storage validation passed in GitHub Actions run `28031828404`, job `82974312886`
 
 ## Scope
 
@@ -41,7 +41,7 @@ This evidence does not close full E-02/E-03/E-04/I-01/J-02/B-01. It does not add
 | `node --test scripts/tests/m4-order-import-storage-backed-true-db-smoke.test.mjs` | passed; 6 tests |
 | `node --test scripts/tests/m4-order-import-api-shell.test.mjs scripts/tests/m4-order-import-admin-api-bridge-contract.test.mjs scripts/tests/m4-order-import-runtime-warning-contract.test.mjs scripts/tests/m4-order-import-admin-submit-true-db-worker-dispatch-smoke.test.mjs scripts/tests/m4-order-import-storage-backed-true-db-smoke.test.mjs` | passed; 24 tests |
 | `env -u UZMAX_RLS_DATABASE_URL node packages/db/scripts/run-m4-order-import-storage-backed-true-db-smoke.mjs` | passed fail-closed with `UZMAX_RLS_DATABASE_URL is required` |
-| GitHub Actions CI true DB Storage smoke | pending |
+| GitHub Actions CI true DB Storage smoke | passed in run `28031828404`, job `82974312886`; printed `m4-order-import-storage-backed-true-db-smoke: passed browser metadata submit->Storage download->worker dispatch->DB/RLS readback synthetic path; db_residue=0` and `m4-order-import-storage-backed-true-db-smoke: storage_object_residue=0` |
 | `npm run format:check` | passed |
 | `npm run guard:prettier-ignore` | passed |
 | `npm run typecheck` | passed |
@@ -54,7 +54,7 @@ This evidence does not close full E-02/E-03/E-04/I-01/J-02/B-01. It does not add
 | `npm run guard:doc-triggers` | passed |
 | `npm run guard:workspace` | passed |
 | `UZMAX_ASSIGNED_WORKTREE=/Users/atilla/Documents/uzmax-m4-41-order-import-storage-backed-true-db-smoke npm run guard:worker-boundary` | passed |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-41-order-import-storage-backed-true-db-smoke.md --include-worktree` | passed; changed files 23, source files 12, net source LOC 496 |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-41-order-import-storage-backed-true-db-smoke.md --include-worktree` | passed; changed files 23, source files 12, net source LOC 506 |
 | `npm run test` | passed; 295 tests |
 | `npm run build` | passed |
 | `npm run size` | passed; 59.55 kB brotli under 250 kB |
@@ -71,9 +71,9 @@ This evidence does not close full E-02/E-03/E-04/I-01/J-02/B-01. It does not add
 
 | Item | Status | Notes |
 |---|---|---|
-| B-01 | `storage_backed_true_db_smoke_supported_not_closed` | Local structural and fail-closed evidence passed; CI true DB/Storage evidence pending. |
-| E-02 | `storage_backed_true_db_smoke_supported_not_closed` | Local structure proves the path is wired for real Supabase Storage upload/download into worker Storage intake and DB/RLS readback; CI true DB/Storage evidence pending. Full workflow remains open. |
+| B-01 | `storage_backed_true_db_smoke_supported_not_closed` | CI proves the synthetic Storage metadata submit, worker Storage intake, DB/RLS readback and cleanup path in run `28031828404`; full durable SQL/RLS matrix remains future scope. |
+| E-02 | `storage_backed_true_db_smoke_supported_not_closed` | CI proves real Supabase Storage upload/download into worker Storage intake and DB/RLS readback with `db_residue=0` and `storage_object_residue=0`; full workflow remains open. |
 | E-03 | `admin_visible_stale_missing_true_db_smoke_supported_not_closed` | No new stale sample; M4-39 remains the stale/missing evidence. |
 | E-04 | `eval_contract_supported_not_closed` | No eval/runtime change. |
-| I-01 | `partial_storage_backed_admin_submit_true_db_smoke_not_closed` | Local structure proves smoke-only Admin Storage metadata submit/readback wiring; CI browser true DB/Storage evidence pending. |
-| J-02 | `worker_storage_intake_dispatch_smoke_supported_not_closed` | Local structure proves worker Storage intake plus dispatch/persistence wiring; CI true DB/Storage evidence pending. Real queue runtime remains open. |
+| I-01 | `partial_storage_backed_admin_submit_true_db_smoke_not_closed` | CI browser smoke proves Admin sends Storage metadata only and reads back the synthetic true DB result; full desktop core workflow remains future scope. |
+| J-02 | `worker_storage_intake_dispatch_smoke_supported_not_closed` | CI proves worker Storage intake plus dispatch/persistence from real Supabase Storage download; real queue runtime remains open. |

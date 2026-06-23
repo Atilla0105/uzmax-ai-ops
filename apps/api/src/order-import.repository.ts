@@ -77,6 +77,36 @@ export type OrderImportPrismaClientPort = {
   orderSnapshot: PrismaOrderImportFindFirstDelegate;
 };
 
+export const ORDER_IMPORT_PRISMA_CLIENT = Symbol("ORDER_IMPORT_PRISMA_CLIENT");
+export const orderImportRepositoryRuntimeModes = {
+  inMemory: "in_memory",
+  prismaGateway: "prisma_gateway"
+} as const;
+export type OrderImportRepositoryRuntimeMode = "in_memory" | "prisma_gateway";
+export type OrderImportRepositoryProviderInput = {
+  inMemoryRepository?: OrderImportRepositoryPort;
+  mode?: OrderImportRepositoryRuntimeMode;
+  prismaClient?: OrderImportPrismaClientPort;
+};
+
+export function createOrderImportRepositoryProvider(
+  input: OrderImportRepositoryProviderInput = {}
+): OrderImportRepositoryPort {
+  const mode = input.mode ?? orderImportRepositoryRuntimeModes.inMemory;
+  if (mode === orderImportRepositoryRuntimeModes.inMemory) {
+    return input.inMemoryRepository ?? new InMemoryOrderImportRepository();
+  }
+  if (mode === orderImportRepositoryRuntimeModes.prismaGateway) {
+    if (!isOrderImportPrismaClientPort(input.prismaClient)) {
+      throw new Error("order import Prisma client port is required");
+    }
+    return new PersistenceOrderImportRepository(
+      new PrismaOrderImportPersistenceGateway(input.prismaClient)
+    );
+  }
+  throw new Error(`unsupported order import repository runtime mode: ${String(mode)}`);
+}
+
 export class InMemoryOrderImportRepository implements OrderImportRepositoryPort {
   private jobs: OrderImportJobSummary[];
   private rowErrors: OrderImportRowErrorItem[];
@@ -355,6 +385,18 @@ function nullableRow(
   row: M4OrderImportContractInput | null
 ): M4OrderImportContractInput | undefined {
   return row ?? undefined;
+}
+
+function isOrderImportPrismaClientPort(
+  value?: OrderImportPrismaClientPort
+): value is OrderImportPrismaClientPort {
+  return Boolean(
+    value &&
+    typeof value.importJob?.findFirst === "function" &&
+    typeof value.importJob?.findMany === "function" &&
+    typeof value.importRowError?.findMany === "function" &&
+    typeof value.orderSnapshot?.findFirst === "function"
+  );
 }
 
 function snapshotWhere(

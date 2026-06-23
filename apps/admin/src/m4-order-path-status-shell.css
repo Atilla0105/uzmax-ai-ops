@@ -123,6 +123,8 @@
 .m4-import-summary,
 .m4-ref-list,
 .m4-query-tabs,
+.m4-operator-grid,
+.m4-operator-submit,
 .m4-snapshot-detail,
 .m4-remaining-gates {
   display: grid;
@@ -220,6 +222,45 @@
   box-shadow: var(--uzmax-shadow-focus);
 }
 
+.m4-operator-workflow {
+  border-left: 4px solid var(--uzmax-color-accent);
+}
+
+.m4-operator-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.45fr);
+  align-items: stretch;
+}
+
+.m4-operator-submit {
+  align-content: start;
+  min-width: 0;
+  border: 1px solid var(--uzmax-color-border);
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-2);
+  background: var(--uzmax-color-surface);
+}
+
+.m4-operator-submit span {
+  color: var(--uzmax-color-muted);
+  font-size: 13px;
+}
+
+.m4-operator-submit button {
+  min-width: 0;
+  border: 1px solid var(--uzmax-color-accent);
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-2) var(--uzmax-space-3);
+  color: var(--uzmax-color-surface);
+  background: var(--uzmax-color-accent);
+  overflow-wrap: anywhere;
+}
+
+.m4-operator-submit button:disabled {
+  border-color: var(--uzmax-color-border);
+  color: var(--uzmax-color-muted);
+  background: var(--uzmax-color-surface-muted);
+}
+
 .m4-snapshot-detail {
   grid-template-columns: minmax(82px, auto) minmax(150px, 0.8fr) repeat(
       4,
@@ -275,6 +316,7 @@
   .m4-ref-list,
   .m4-row-error,
   .m4-query-tabs,
+  .m4-operator-grid,
   .m4-snapshot-detail,
   .m4-remaining-gates,
   .m4-action-row {
@@ -294,6 +336,10 @@
   .m4-action-row button {
     width: 100%;
   }
+
+  .m4-operator-submit button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -305,6 +351,7 @@
   .m4-row-error-table,
   .m4-row-error,
   .m4-gate,
+  .m4-operator-submit,
   .m4-snapshot-detail {
     max-width: 100%;
     overflow-wrap: anywhere;

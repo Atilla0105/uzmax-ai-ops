@@ -5,6 +5,7 @@ import {
 } from "./orderImportApiClient";
 
 export type M4VisibleSmokeConfig = {
+  autoSubmit?: boolean;
   enabled?: boolean;
   now?: string;
   queryRef?: string;

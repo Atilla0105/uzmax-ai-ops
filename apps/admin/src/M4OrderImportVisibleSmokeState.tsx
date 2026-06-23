@@ -42,12 +42,13 @@ type HandoffSnapshotResult = SnapshotResult & {
 
 export function M4OrderImportVisibleSmokeState() {
   const smokeConfig = readSmokeConfig();
+  const autoSubmit = shouldAutoSubmitSmoke(smokeConfig);
   const [state, setState] = useState<RuntimeState>(
-    smokeConfig?.enabled ? { mode: "loading" } : { mode: "local" }
+    autoSubmit ? { mode: "loading" } : { mode: "local" }
   );
 
   useEffect(() => {
-    if (!smokeConfig?.enabled) return;
+    if (!autoSubmit || !smokeConfig) return;
     let active = true;
     void loadRuntimeState(smokeConfig)
       .then((nextState) => {
@@ -62,6 +63,9 @@ export function M4OrderImportVisibleSmokeState() {
       active = false;
     };
   }, [
+    autoSubmit,
+    smokeConfig,
+    smokeConfig?.autoSubmit,
     smokeConfig?.enabled,
     smokeConfig?.now,
     smokeConfig?.queryRef,
@@ -86,6 +90,11 @@ function readSmokeConfig() {
   return typeof window === "undefined"
     ? undefined
     : window.__UZMAX_M4_ORDER_IMPORT_VISIBLE_SMOKE__;
+}
+
+function shouldAutoSubmitSmoke(smokeConfig: M4VisibleSmokeConfig | undefined) {
+  if (!smokeConfig?.enabled) return false;
+  return smokeConfig.autoSubmit !== false;
 }
 
 async function loadRuntimeState(smokeConfig: M4VisibleSmokeConfig) {

@@ -152,18 +152,19 @@ describe("M4-41 order import Storage-backed true DB smoke", () => {
     assert.match(visibleHarnessSource, /storageSubmit/);
     assert.match(visibleHarnessSource, /onApiRequest/);
     assert.match(visibleHarnessSource, /postData/);
+    assert.match(visibleHarnessSource, /waitForCapturedApiPostBody/);
   });
 
   it("runs real Supabase Storage download through worker intake before DB/RLS readback", () => {
     const payloadBlock = blockFrom(smokeSource, "const storageSubmitPayload = {");
-    assert.match(smokeSource, /import WebSocket from "ws"/);
-    assert.match(smokeSource, /createClient\(supabaseUrl, supabaseSecretKey/);
-    assert.match(smokeSource, /realtime: \{ transport: WebSocket \}/);
-    assert.match(smokeSource, /waitForStoragePostBody\(storagePostBodies\)/);
-    assert.match(smokeSource, /storage\.createBucket/);
-    assert.match(smokeSource, /\.upload\(input\.objectPath/);
-    assert.match(smokeSource, /\.download\(input\.objectPath\)/);
-    assert.match(smokeSource, /\.remove\(\[input\.objectPath\]\)/);
+    assert.match(visibleHarnessSource, /import WebSocket from "ws"/);
+    assert.match(visibleHarnessSource, /createClient\(url, secretKey/);
+    assert.match(visibleHarnessSource, /realtime: \{ transport: WebSocket \}/);
+    assert.match(smokeSource, /waitForCapturedApiPostBody\(storagePostBodies\)/);
+    assert.match(visibleHarnessSource, /storage\.createBucket/);
+    assert.match(visibleHarnessSource, /\.upload\(input\.objectPath/);
+    assert.match(visibleHarnessSource, /\.download\(input\.objectPath\)/);
+    assert.match(visibleHarnessSource, /\.remove\(\[/);
     assert.match(smokeSource, /storage_object_residue=0/);
     assert.match(smokeSource, /createWorkerStorageObjectSubmitDispatcher/);
     assert.match(

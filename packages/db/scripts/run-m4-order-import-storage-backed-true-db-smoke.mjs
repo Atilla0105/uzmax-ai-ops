@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
-import { setTimeout as delay } from "node:timers/promises";
 
 import { PrismaClient } from "@prisma/client";
-import { createClient } from "@supabase/supabase-js";
-import WebSocket from "ws";
 
 import {
   assertVisibleText,
+  cleanupSupabaseStorageObject,
+  createSupabaseStorageSmokeClient,
+  downloadSupabaseStorageObject,
+  prepareSupabaseStorageObject,
   runAdminVisibleOrderImportSmoke,
+  supabaseStorageObjectResidueCount,
+  waitForCapturedApiPostBody,
   withVisibleSmokePage
 } from "./order-import-admin-visible-smoke-harness.mjs";
 import {
@@ -50,17 +53,17 @@ const supabaseSecretKey = requireSmokeEnv("UZMAX_SUPABASE_SECRET_KEY");
 const prisma = new PrismaClient({
   datasources: { db: { url: databaseUrl } }
 });
-const supabase = createClient(supabaseUrl, supabaseSecretKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-  realtime: { transport: WebSocket }
+const supabase = createSupabaseStorageSmokeClient({
+  secretKey: supabaseSecretKey,
+  url: supabaseUrl
 });
 const submitDispatcher = await createWorkerStorageObjectSubmitDispatcher({
   fixture,
   prismaClient: prisma,
-  storageObjectDownloader: (input) => downloadStorageObject(supabase, input)
+  storageObjectDownloader: (input) => downloadSupabaseStorageObject(supabase, input)
 });
 
-await prepareStorageObject(supabase, {
+await prepareSupabaseStorageObject(supabase, {
   bucketId: storageBucketId,
   content: storageCsvText,
   contentType: "text/csv",
@@ -85,7 +88,7 @@ try {
       "m4-order-import-storage-backed-true-db-smoke: passed browser metadata submit->Storage download->worker dispatch->DB/RLS readback synthetic path; db_residue=0"
   });
 } finally {
-  await cleanupStorageObject(supabase, {
+  await cleanupSupabaseStorageObject(supabase, {
     bucketId: storageBucketId,
     objectPath: storageObjectPath
   }).catch((error) => {
@@ -96,7 +99,7 @@ try {
 }
 
 assert.equal(
-  await storageObjectResidueCount(supabase, {
+  await supabaseStorageObjectResidueCount(supabase, {
     bucketId: storageBucketId,
     objectPath: storageObjectPath
   }),
@@ -120,7 +123,7 @@ async function assertBrowserStorageSubmitAndReadback(runtime) {
       storageSubmit: storageSubmitPayload
     },
     async (runtimeState) => {
-      await waitForStoragePostBody(storagePostBodies);
+      await waitForCapturedApiPostBody(storagePostBodies);
       assert.equal(storagePostBodies.length, 1);
       assert.deepEqual(Object.keys(storagePostBodies[0]).sort(), [
         "bucketId",
@@ -144,60 +147,4 @@ async function assertBrowserStorageSubmitAndReadback(runtime) {
       await assertVisibleText(runtimeState, "Handoff: not required");
     }
   );
-}
-
-async function waitForStoragePostBody(storagePostBodies) {
-  const deadline = Date.now() + 10_000;
-  while (Date.now() <= deadline) {
-    if (storagePostBodies.length > 0) return;
-    await delay(100);
-  }
-}
-
-async function prepareStorageObject(storageClient, input) {
-  const createResult = await storageClient.storage.createBucket(input.bucketId, {
-    public: false
-  });
-  if (createResult.error && !/already exists/i.test(createResult.error.message)) {
-    throw new Error(`create storage bucket: ${createResult.error.message}`);
-  }
-
-  await ensureNoStorageError(
-    `upload ${input.objectPath}`,
-    await storageClient.storage
-      .from(input.bucketId)
-      .upload(input.objectPath, Buffer.from(input.content, "utf8"), {
-        contentType: input.contentType,
-        upsert: true
-      })
-  );
-}
-
-async function downloadStorageObject(storageClient, input) {
-  const result = await storageClient.storage
-    .from(input.bucketId)
-    .download(input.objectPath);
-  await ensureNoStorageError(`download ${input.objectPath}`, result);
-  return new Uint8Array(await result.data.arrayBuffer());
-}
-
-async function cleanupStorageObject(storageClient, input) {
-  const result = await storageClient.storage
-    .from(input.bucketId)
-    .remove([input.objectPath]);
-  if (result.error && !/not found|does not exist/i.test(result.error.message)) {
-    throw new Error(`remove ${input.objectPath}: ${result.error.message}`);
-  }
-}
-
-async function storageObjectResidueCount(storageClient, input) {
-  const prefix = input.objectPath.split("/").slice(0, -1).join("/");
-  const fileName = input.objectPath.split("/").at(-1);
-  const result = await storageClient.storage.from(input.bucketId).list(prefix);
-  await ensureNoStorageError(`list ${prefix}`, result);
-  return result.data.filter((item) => item.name === fileName).length;
-}
-
-async function ensureNoStorageError(action, result) {
-  if (result.error) throw new Error(`${action}: ${result.error.message}`);
 }

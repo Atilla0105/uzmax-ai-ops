@@ -227,6 +227,21 @@ test("renders the M4-01 order path status shell truthfully", async ({ page }) =>
   await expect(page.getByTestId("m4-order-snapshot-search")).toContainText(
     "Snapshot-backed order search"
   );
+  await expect(page.getByTestId("m4-order-import-operator-workflow")).toContainText(
+    "Operator import workflow"
+  );
+  await expect(page.getByTestId("m4-operator-storage-metadata")).toContainText(
+    "POST /order-import/storage-jobs"
+  );
+  await expect(page.getByTestId("m4-operator-storage-metadata")).toContainText(
+    "text/csv or text/tab-separated-values"
+  );
+  await expect(
+    page.getByRole("button", { name: "Submit storage metadata" })
+  ).toBeDisabled();
+  await expect(page.getByTestId("m4-operator-result")).toContainText(
+    "Status ref hidden unless fresh"
+  );
   await expect(page.getByTestId("m4-order-runtime-state")).toHaveCount(0);
   await expect(page.getByTestId("m4-remaining-gates")).toContainText("Runtime parser");
   await expect(page.getByTestId("m4-remaining-gates")).toContainText(
@@ -247,6 +262,12 @@ test("covers the M4-06 import snapshot admin shell states", async ({ page }) => 
   );
   await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
     "snapshot_expiry_not_after_source_update"
+  );
+  await expect(page.getByTestId("m4-order-import-operator-workflow")).toContainText(
+    "Storage metadata only"
+  );
+  await expect(page.getByTestId("m4-order-import-operator-workflow")).toContainText(
+    "No inline file body, source ref, external API, or customer data."
   );
   await expect(detail).toContainText("snapshot_ready");
   await expect(detail).toContainText("Status ref: status://order/in-transit");

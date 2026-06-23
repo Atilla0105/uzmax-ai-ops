@@ -215,7 +215,7 @@ function restoreResult(value: unknown) {
       action: exactText(auditDraft.action, "customer_restore_flags", "audit action"),
       actorUserId: readRequiredString(auditDraft.actorUserId, "actorUserId"),
       customerId: readRequiredString(auditDraft.customerId, "customerId"),
-      eventType: optionalExactText(
+      eventType: exactText(
         auditDraft.eventType,
         "customer.flags_restored",
         "audit eventType"
@@ -285,11 +285,6 @@ function exactText(value: unknown, expected: string, name: string): string {
   const text = readRequiredString(value, name);
   if (text !== expected) throw new Error(`${name} is invalid`);
   return text;
-}
-
-function optionalExactText(value: unknown, expected: string, name: string): string {
-  if (value === undefined) return expected;
-  return exactText(value, expected, name);
 }
 
 function restoredFlag(value: unknown): "blacklisted" | "unreachable" {

@@ -4,7 +4,7 @@
 > branch: `codex/m4-43-customer-asset-runtime-workflow`
 > worktree: `/Users/atilla/Documents/uzmax-m4-43-customer-asset-runtime-workflow`
 > target: Supabase `uzmax-dev` dev main through `UZMAX_RLS_DATABASE_URL`
-> status: implementation complete; local validation passed; CI true DB smoke passed in run `28043155935`, job `83014373403`; `large_change_exception` requested for source LOC budget
+> status: implementation complete; local validation passed; latest archived CI true DB smoke at evidence update time passed in run `28043835289`, job `83016709755`; merge still requires current-head CI green and `large_change_exception` owner approval
 
 ## Scope
 
@@ -54,8 +54,8 @@ This evidence does not close M4 as a whole. M4-44 remains open for AI order-read
 | `node --test scripts/tests/m4-customer-asset-runtime-workflow.test.mjs` | passed locally, 7 tests |
 | `node --test scripts/tests/m4-customer-asset-api-shell.test.mjs scripts/tests/m4-admin-customer-asset-api-client-contract.test.mjs scripts/tests/m4-customer-asset-prisma-gateway.test.mjs scripts/tests/m4-api-audit-prisma-sink-contract.test.mjs scripts/tests/m4-customer-asset-runtime-workflow.test.mjs` | passed locally, 23 tests |
 | `env -u UZMAX_RLS_DATABASE_URL node packages/db/scripts/run-m4-customer-asset-runtime-workflow-smoke.mjs` | passed fail-closed expectation with `UZMAX_RLS_DATABASE_URL is required` |
-| CI true DB smoke | passed in GitHub Actions run `28043155935`, job `83014373403`; log includes `m4-customer-asset-runtime-workflow-smoke: passed customer asset API/admin/browser->DB/RLS restore audit synthetic workflow; residue=0` |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-43-customer-asset-runtime-workflow.md --include-worktree` | passed locally; CI `npm run guard:pr-shape -- --base "origin/main"` passed in run `28043155935` |
+| CI true DB smoke | latest archived full PR run at evidence update time passed in GitHub Actions run `28043835289`, job `83016709755`; log includes `m4-customer-asset-runtime-workflow-smoke: passed customer asset API/admin/browser->DB/RLS restore audit synthetic workflow; residue=0`; after any later commit, PR checks are the current-head merge gate |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-43-customer-asset-runtime-workflow.md --include-worktree` | passed locally; CI `npm run guard:pr-shape -- --base "origin/main"` passed in run `28043835289` |
 | `npm run format:check` | passed locally |
 | `npm run guard:prettier-ignore` | passed locally |
 | `npm run typecheck` | passed locally |
@@ -70,18 +70,18 @@ This evidence does not close M4 as a whole. M4-44 remains open for AI order-read
 | `UZMAX_ASSIGNED_WORKTREE=/Users/atilla/Documents/uzmax-m4-43-customer-asset-runtime-workflow UZMAX_PRIMARY_ROOT=/Users/atilla/Documents/UZMAX智能运营 npm run guard:worker-boundary` | passed locally |
 | `npm test` | passed locally, 309 tests |
 | `npm run build` | passed locally |
-| `npm run size` | passed locally, 61.78 kB brotli under 250 kB; CI run `28043155935` reported 61.83 kB brotli |
+| `npm run size` | passed locally, 61.78 kB brotli under 250 kB; CI run `28043835289` reported 61.83 kB brotli |
 | `npm run playwright` | passed locally, 11 tests |
 
 ## PR Hygiene
 
 | Metric | Result |
 |---|---|
-| Path categories | config 1; source 10; test 2; docs 3; no generated or lock changes |
+| Path categories | config 1; source 10; test 3; docs 3; no generated or lock changes |
 | Changed source files | 10, within <= 12 |
 | Net source LOC | about +1242 by `git diff --numstat origin/main` path classification; exceeds <= 750 budget |
 | New source files | 6, at the <= 6 limit |
-| Gross churn | about +1683 / -24 |
+| Gross churn | about +1704 / -25 |
 | Test weakening | none intended |
 | External API/provider/connector evidence | none added; uses existing Prisma/Supabase dev DB runtime foundation only |
 | Exceptions | `large_change_exception` requested for source LOC budget; merge requires owner approval / equivalent review record |

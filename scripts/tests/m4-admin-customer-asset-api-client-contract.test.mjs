@@ -90,6 +90,24 @@ describe("M4-15 admin customer asset API client contract", () => {
         }),
       /restored flag is invalid/
     );
+    await assert.rejects(
+      () =>
+        clientModule
+          .createCustomerAssetApiClient({
+            fetcher: scriptedCustomerFetcher([
+              {
+                payload: restorePayload(["blacklisted"], {
+                  includeEventType: false
+                })
+              }
+            ]).fetcher
+          })
+          .restoreCustomer("customer/a", {
+            reasonRef: "reason://customer/manual-review",
+            restoreBlacklisted: true
+          }),
+      /audit eventType is required/
+    );
   });
 
   it("rejects bad HTTP responses, malformed payloads and unsafe base paths", async () => {
@@ -247,12 +265,15 @@ function tagDefinition() {
   };
 }
 
-function restorePayload(restoredFlags = ["blacklisted"]) {
+function restorePayload(restoredFlags = ["blacklisted"], options = {}) {
   return {
     auditDraft: {
       action: "customer_restore_flags",
       actorUserId: "user-a",
       customerId: "customer-a",
+      ...(options.includeEventType === false
+        ? {}
+        : { eventType: "customer.flags_restored" }),
       reasonRef: "reason://customer/manual-review",
       restoredFlags
     },

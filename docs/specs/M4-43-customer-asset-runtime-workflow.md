@@ -46,6 +46,7 @@ feature
   - `apps/admin/src/M4CustomerAssetShell.tsx`
   - `apps/admin/src/customerAssetApiClient.ts`
   - `apps/admin/tests/design.spec.ts`
+  - `scripts/tests/m4-admin-customer-asset-api-client-contract.test.mjs`
   - `packages/db/scripts/customer-asset-true-db-http-smoke-fixture.mjs`
   - `packages/db/scripts/customer-asset-admin-visible-smoke-harness.mjs`
   - `packages/db/scripts/run-m4-customer-asset-runtime-workflow-smoke.mjs`
@@ -57,7 +58,7 @@ feature
 - source 预算：changed source files <= 12，net source LOC <= 750，new source files <= 6。
 - path classification:
   - source: `apps/api/scripts/runtime-compiler.mjs`, `apps/api/scripts/customer-asset-http-smoke-harness.mjs`, `apps/api/src/app.module.ts`, `apps/api/src/audit-log.prisma-sink.ts`, `apps/api/src/customer-asset.controller.ts`, `apps/api/src/customer-asset.prisma-gateway.ts`, `apps/api/src/customer-asset.runtime.ts`, `apps/api/src/customer-asset.service.ts`, `apps/api/src/customer-asset.types.ts`, `apps/admin/src/M4CustomerAssetRuntimeState.tsx`, `apps/admin/src/M4CustomerAssetShell.tsx`, `apps/admin/src/customerAssetApiClient.ts`, `packages/db/scripts/customer-asset-true-db-http-smoke-fixture.mjs`, `packages/db/scripts/customer-asset-admin-visible-smoke-harness.mjs`, `packages/db/scripts/run-m4-customer-asset-runtime-workflow-smoke.mjs`
-  - test: `apps/admin/tests/design.spec.ts`, `scripts/tests/m4-customer-asset-runtime-workflow.test.mjs`
+  - test: `apps/admin/tests/design.spec.ts`, `scripts/tests/m4-admin-customer-asset-api-client-contract.test.mjs`, `scripts/tests/m4-customer-asset-runtime-workflow.test.mjs`
   - config: `.github/workflows/ci.yml`
   - docs: `docs/specs/M4-43-customer-asset-runtime-workflow.md`, `docs/evidence/M4/M4-43-customer-asset-runtime-workflow.md`, `docs/evidence/M4/README.md`
   - generated: none

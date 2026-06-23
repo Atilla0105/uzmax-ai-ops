@@ -88,7 +88,9 @@ function M4CustomerAssetRuntimeReadyState({
   runtimeState: RuntimeReadyState;
 }) {
   const { customerDetail: detail, restoreResult: restore } = runtimeState;
-  const fieldValue = detail.fields[0]?.value as { controlledValueRef?: string };
+  const fieldValue = detail.fields[0]?.value as
+    | { controlledValueRef?: string }
+    | undefined;
   return (
     <>
       <strong>{detail.customer.displayLabelRef}</strong>
@@ -104,7 +106,7 @@ function M4CustomerAssetRuntimeReadyState({
         {relatedRef(detail.relatedRefs, "ticketRefs")}
       </small>
       <small>
-        {fieldValue.controlledValueRef} / {detail.tags[0]?.definition.label}
+        {fieldValue?.controlledValueRef} / {detail.tags[0]?.definition.label}
       </small>
       {restore ? (
         <small>

@@ -59,6 +59,7 @@ jobs:
 
           docs_only=true
           frontend_changed=false
+          redis_smoke_changed=false
           spike_changed=false
           true_db_smoke_changed=false
 
@@ -84,6 +85,12 @@ jobs:
             esac
 
             case "$file" in
+              .github/workflows/ci.yml|apps/worker/*|apps/worker/**|docs/evidence/M4/M4-45-order-import-queue-security-closeout.md|docs/specs/M4-45-order-import-queue-security-closeout.md|scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs|package.json|package-lock.json)
+                redis_smoke_changed=true
+                ;;
+            esac
+
+            case "$file" in
               packages/db/migrations/*|packages/db/migrations/**|packages/db/prisma/*|packages/db/prisma/**|packages/db/src/*|packages/db/src/**|packages/db/scripts/run-rls-prisma-pool-spike.mjs|packages/db/package.json|packages/authz/*|packages/authz/**|package.json|package-lock.json)
                 spike_changed=true
                 ;;
@@ -98,12 +105,16 @@ jobs:
 
           force_full="${{ github.event_name == 'workflow_dispatch' && inputs.full }}"
           run_core=false
+          run_redis_smoke=false
           run_spikes=false
           run_playwright=false
           run_true_db_smoke=false
 
           if [ "$docs_only" != "true" ] || [ "$force_full" = "true" ]; then
             run_core=true
+          fi
+          if [ "$redis_smoke_changed" = "true" ] || [ "$force_full" = "true" ]; then
+            run_redis_smoke=true
           fi
           if [ "$spike_changed" = "true" ] || [ "$force_full" = "true" ]; then
             run_spikes=true
@@ -118,9 +129,11 @@ jobs:
           {
             echo "docs_only=$docs_only"
             echo "frontend_changed=$frontend_changed"
+            echo "redis_smoke_changed=$redis_smoke_changed"
             echo "spike_changed=$spike_changed"
             echo "true_db_smoke_changed=$true_db_smoke_changed"
             echo "run_core=$run_core"
+            echo "run_redis_smoke=$run_redis_smoke"
             echo "run_spikes=$run_spikes"
             echo "run_playwright=$run_playwright"
             echo "run_true_db_smoke=$run_true_db_smoke"
@@ -135,9 +148,11 @@ jobs:
         run: |
           echo "docs_only=${{ steps.path-scope.outputs.docs_only }}"
           echo "frontend_changed=${{ steps.path-scope.outputs.frontend_changed }}"
+          echo "redis_smoke_changed=${{ steps.path-scope.outputs.redis_smoke_changed }}"
           echo "spike_changed=${{ steps.path-scope.outputs.spike_changed }}"
           echo "true_db_smoke_changed=${{ steps.path-scope.outputs.true_db_smoke_changed }}"
           echo "run_core=${{ steps.path-scope.outputs.run_core }}"
+          echo "run_redis_smoke=${{ steps.path-scope.outputs.run_redis_smoke }}"
           echo "run_spikes=${{ steps.path-scope.outputs.run_spikes }}"
           echo "run_playwright=${{ steps.path-scope.outputs.run_playwright }}"
           echo "run_true_db_smoke=${{ steps.path-scope.outputs.run_true_db_smoke }}"
@@ -148,6 +163,26 @@ jobs:
           cache: npm
           node-version: 20
       - run: npm ci
+      - if: steps.path-scope.outputs.run_redis_smoke == 'true'
+        name: Start M4 BullMQ Redis smoke container
+        run: |
+          docker run -d --name uzmax-m4-45-redis -p 6379:6379 redis:7-alpine
+          for attempt in $(seq 1 30); do
+            if docker exec uzmax-m4-45-redis redis-cli ping | grep -q PONG; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs uzmax-m4-45-redis
+          exit 1
+      - if: steps.path-scope.outputs.run_redis_smoke == 'true'
+        name: M4 order import BullMQ Redis smoke
+        env:
+          UZMAX_REDIS_URL: redis://127.0.0.1:6379
+        run: node apps/worker/scripts/run-m4-order-import-bullmq-redis-smoke.mjs
+      - if: always() && steps.path-scope.outputs.run_redis_smoke == 'true'
+        name: Stop M4 BullMQ Redis smoke container
+        run: docker rm -f uzmax-m4-45-redis
       - run: npm run format:check
       - run:
           npm run guard:prettier-ignore -- --base "${{ steps.guard-base.outputs.base }}"

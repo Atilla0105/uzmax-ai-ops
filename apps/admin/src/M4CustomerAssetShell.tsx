@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { M4CustomerAssetRuntimeState } from "./M4CustomerAssetRuntimeState";
 import "./m4-order-path-status-shell.css";
 
 const filters = [
@@ -73,11 +74,10 @@ const secondaryCards = [
 
 type FilterKey = (typeof filters)[number][0];
 type CustomerRow = (typeof customerRows)[number];
-type CustomerRef = CustomerRow[0];
 
 export function M4CustomerAssetShell({ tenantName }: { tenantName: string }) {
   const [selectedFilter, setSelectedFilter] = useState<FilterKey>("all");
-  const [selectedCustomerRef, setSelectedCustomerRef] = useState<CustomerRef>(
+  const [selectedCustomerRef, setSelectedCustomerRef] = useState<CustomerRow[0]>(
     customerRows[0][0]
   );
   const [restoreDraftVisible, setRestoreDraftVisible] = useState(false);
@@ -88,7 +88,7 @@ export function M4CustomerAssetShell({ tenantName }: { tenantName: string }) {
     customerMatchesFilter(customer, selectedFilter)
   );
   const filterLabel =
-    filters.find(([key]) => key === selectedFilter)?.[1] ?? filters[0][1];
+    filters.find(([key]) => key === selectedFilter)?.[1] ?? "All customers";
 
   return (
     <section className="panel m4-shell" data-testid="m4-customer-asset-shell">
@@ -108,6 +108,7 @@ export function M4CustomerAssetShell({ tenantName }: { tenantName: string }) {
         <strong>No real customer data rendered</strong>
         <small>API client contract exists; runtime fetch remains future scope</small>
       </div>
+      <M4CustomerAssetRuntimeState />
 
       <section className="m4-query-shell" data-testid="m4-customer-filters">
         <div className="m4-section-heading">
@@ -225,17 +226,15 @@ export function M4CustomerAssetShell({ tenantName }: { tenantName: string }) {
       </div>
 
       <section className="m4-remaining-gates" data-testid="m4-customer-secondary">
-        {secondaryCards.map(([title, state, scope]) => {
-          return (
-            <article className="m4-gate" key={title}>
-              <div>
-                <strong>{title}</strong>
-                <span>{state}</span>
-              </div>
-              <small>{scope}</small>
-            </article>
-          );
-        })}
+        {secondaryCards.map(([title, state, scope]) => (
+          <article className="m4-gate" key={title}>
+            <div>
+              <strong>{title}</strong>
+              <span>{state}</span>
+            </div>
+            <small>{scope}</small>
+          </article>
+        ))}
       </section>
     </section>
   );

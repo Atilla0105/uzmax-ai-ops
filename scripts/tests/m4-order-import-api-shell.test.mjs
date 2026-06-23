@@ -249,10 +249,14 @@ async function importOrderImportApiSource() {
   const rlsRunnerModuleUrl = writeSource(writeTempModule, "order-import.rls-runner", {
     "./order-import.repository.ts": repositoryModuleUrl
   });
+  const submitModuleUrl = writeSource(writeTempModule, "order-import.submit", {
+    "./order-import.types.ts": typesModuleUrl
+  });
   const serviceModuleUrl = writeSource(writeTempModule, "order-import.service", {
     "../../../packages/authz/src/index.ts": authz.moduleUrl,
     "../../../packages/capabilities/order-read/src/index.ts": orderRead.moduleUrl,
     "./order-import.repository.ts": repositoryModuleUrl,
+    "./order-import.submit.ts": submitModuleUrl,
     "./order-import.types.ts": typesModuleUrl,
     "@nestjs/common": nestCommon
   });
@@ -268,6 +272,7 @@ async function importOrderImportApiSource() {
     "./order-import.repository.ts": repositoryModuleUrl,
     "./order-import.rls-runner.ts": rlsRunnerModuleUrl,
     "./order-import.service.ts": serviceModuleUrl,
+    "./order-import.submit.ts": submitModuleUrl,
     "./order-import.types.ts": typesModuleUrl
   });
   const moduleUrl = writeTempModule("order-import.mjs", transpileSource(barrelSource));

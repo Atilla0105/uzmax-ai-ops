@@ -43,6 +43,16 @@ export class OrderImportController {
     );
   }
 
+  @Post("storage-jobs")
+  submitImportStorageObjectJob(
+    @Req() request: ApiRequestWithContext,
+    @Body() body: unknown = {}
+  ) {
+    return this.handle(() =>
+      this.service.submitImportStorageObjectJob(requireAccessContext(request), body)
+    );
+  }
+
   @Get("jobs/:jobId/errors")
   listImportRowErrors(
     @Req() request: ApiRequestWithContext,

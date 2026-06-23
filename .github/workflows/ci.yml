@@ -178,6 +178,8 @@ jobs:
         env:
           UZMAX_RLS_DATABASE_URL: >-
             ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
+          UZMAX_SUPABASE_SECRET_KEY: ${{ secrets.UZMAX_SUPABASE_SECRET_KEY }}
+          UZMAX_SUPABASE_URL: https://enyocaykcgcfcswycujg.supabase.co
         run: |
           node packages/db/scripts/run-m4-order-import-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-api-true-db-http-smoke.mjs
@@ -185,6 +187,7 @@ jobs:
           node packages/db/scripts/run-m4-order-import-admin-visible-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-admin-visible-stale-missing-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-admin-submit-true-db-worker-dispatch-smoke.mjs
+          node packages/db/scripts/run-m4-order-import-storage-backed-true-db-smoke.mjs
       - if: steps.path-scope.outputs.run_spikes == 'true'
         name: SPK-03 RLS Prisma pool spike
         env:

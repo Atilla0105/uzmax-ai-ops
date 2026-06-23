@@ -327,11 +327,17 @@ async function importOrderImportApiSource() {
       "./order-import.types.ts": typesModuleUrl
     })
   );
+  const submitModuleUrl = moduleUrlFromTs(
+    rewriteImports(read("apps/api/src/order-import.submit.ts"), {
+      "./order-import.types.ts": typesModuleUrl
+    })
+  );
   const serviceModuleUrl = moduleUrlFromTs(
     rewriteImports(read("apps/api/src/order-import.service.ts"), {
       "../../../packages/authz/src/index.ts": authzUrl,
       "../../../packages/capabilities/order-read/src/index.ts": orderReadUrl,
       "./order-import.repository.ts": repositoryModuleUrl,
+      "./order-import.submit.ts": submitModuleUrl,
       "./order-import.types.ts": typesModuleUrl,
       "@nestjs/common": nestCommonStubUrl()
     })

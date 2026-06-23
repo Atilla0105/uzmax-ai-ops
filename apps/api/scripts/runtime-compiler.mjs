@@ -196,6 +196,14 @@ export async function compileApiRuntime(options = {}) {
   );
   await writeModule(
     outDir,
+    "apps/api/src/order-import.submit.ts",
+    "order-import.submit.mjs",
+    {
+      "./order-import.types.ts": "./order-import.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
     "apps/api/src/order-import.service.ts",
     "order-import.service.mjs",
     {
@@ -203,6 +211,7 @@ export async function compileApiRuntime(options = {}) {
       "../../../packages/capabilities/order-read/src/index.ts":
         "./order-read-index.mjs",
       "./order-import.repository.ts": "./order-import.repository.mjs",
+      "./order-import.submit.ts": "./order-import.submit.mjs",
       "./order-import.types.ts": "./order-import.types.mjs"
     }
   );
@@ -222,6 +231,7 @@ export async function compileApiRuntime(options = {}) {
     "./order-import.repository.ts": "./order-import.repository.mjs",
     "./order-import.rls-runner.ts": "./order-import.rls-runner.mjs",
     "./order-import.service.ts": "./order-import.service.mjs",
+    "./order-import.submit.ts": "./order-import.submit.mjs",
     "./order-import.types.ts": "./order-import.types.mjs"
   });
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {

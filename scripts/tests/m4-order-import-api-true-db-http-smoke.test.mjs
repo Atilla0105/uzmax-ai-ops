@@ -11,6 +11,9 @@ const runtimeCompiler = await import(
 const smokeSource = read(
   "packages/db/scripts/run-m4-order-import-api-true-db-http-smoke.mjs"
 );
+const fixtureSource = read(
+  "packages/db/scripts/order-import-true-db-http-smoke-fixture.mjs"
+);
 const harnessSource = read("apps/api/scripts/order-import-http-smoke-harness.mjs");
 const spec = read("docs/specs/M4-36-order-import-api-true-db-http-smoke.md");
 
@@ -47,8 +50,9 @@ describe("M4-36 order import API true DB HTTP smoke", () => {
     assert.match(harnessSource, /createOrderImportRlsBatchTransactionRunner\(prisma\)/);
     assert.match(harnessSource, /orderImportRepositoryRuntimeModes\.rlsPrismaGateway/);
     assert.match(smokeSource, /startOrderImportHttpSmoke/);
-    assert.match(smokeSource, /"x-tenant-id": tenantId/);
-    assert.match(smokeSource, /fetchApi\(`\$\{baseUrl\}\$\{apiPath\}`/);
+    assert.match(smokeSource, /createOrderImportHttpFetcher/);
+    assert.match(fixtureSource, /"x-tenant-id": tenantId/);
+    assert.match(fixtureSource, /globalThis\.fetch\(`\$\{baseUrl\}\$\{apiPath\}`/);
     assert.doesNotMatch(
       `${harnessSource}\n${smokeSource}`,
       /new OrderImportController|new OrderImportService/
@@ -57,13 +61,16 @@ describe("M4-36 order import API true DB HTTP smoke", () => {
   });
 
   it("fails closed on missing DB secret and keeps synthetic cleanup explicit", () => {
-    assert.match(smokeSource, /requireEnv\("UZMAX_RLS_DATABASE_URL"\)/);
-    assert.match(smokeSource, /metadata: \{ synthetic_spec: SYNTHETIC_SPEC \}/);
+    assert.match(smokeSource, /requireSmokeEnv\("UZMAX_RLS_DATABASE_URL"\)/);
+    assert.match(
+      fixtureSource,
+      /metadata: \{ synthetic_spec: fixture\.syntheticSpec \}/
+    );
     assert.match(smokeSource, /cleanupSyntheticRows/);
-    assert.match(smokeSource, /syntheticResidueCount/);
+    assert.match(fixtureSource, /syntheticResidueCount/);
     assert.match(smokeSource, /residue=0/);
     assert.doesNotMatch(
-      smokeSource,
+      `${fixtureSource}\n${smokeSource}`,
       /SUPABASE_SECRET_KEY|service_role|customer.*phone|payment|address|sk-/
     );
   });

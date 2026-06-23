@@ -35,6 +35,7 @@ feature
   - `docs/evidence/M4/README.md`
   - `.github/workflows/ci.yml`
   - `apps/admin/src/App.tsx`
+  - `apps/admin/src/M4OrderImportOperatorWorkflow.tsx`
   - `apps/admin/src/M4OrderPathStatusShell.tsx`
   - `apps/admin/src/M4OrderImportVisibleSmokeState.tsx`
   - `apps/admin/src/orderImportApiClient.ts`
@@ -48,6 +49,7 @@ feature
   - `apps/api/scripts/order-import-http-smoke-harness.mjs`
   - `packages/db/scripts/order-import-admin-visible-smoke-harness.mjs`
   - `packages/db/scripts/order-import-worker-submit-smoke-support.mjs`
+  - `packages/db/scripts/run-m4-order-import-storage-backed-true-db-smoke.mjs`
   - `packages/db/scripts/run-m4-order-import-operator-workflow-smoke.mjs`
   - `packages/db/package.json`
   - `scripts/tests/m4-order-import-operator-workflow.test.mjs`
@@ -60,13 +62,13 @@ feature
 
 - source 预算：changed source files <= 12，net source LOC <= 650，new source files <= 3。
 - path classification:
-  - source: `apps/admin/src/App.tsx`, `apps/admin/src/M4OrderPathStatusShell.tsx`, `apps/admin/src/M4OrderImportVisibleSmokeState.tsx`, `apps/admin/src/orderImportApiClient.ts`, `apps/admin/src/orderImportVisibleSmokeSubmit.ts`, `apps/admin/src/m4-order-path-status-shell.css`, `apps/api/src/order-import.submit.ts`, `apps/api/src/order-import.service.ts`, `apps/api/src/order-import.controller.ts`, `apps/api/src/order-import.runtime.ts`, `apps/api/scripts/order-import-http-smoke-harness.mjs`, `packages/db/scripts/order-import-admin-visible-smoke-harness.mjs`, `packages/db/scripts/order-import-worker-submit-smoke-support.mjs`, `packages/db/scripts/run-m4-order-import-operator-workflow-smoke.mjs`
+  - source: `apps/admin/src/App.tsx`, `apps/admin/src/M4OrderImportOperatorWorkflow.tsx`, `apps/admin/src/M4OrderPathStatusShell.tsx`, `apps/admin/src/M4OrderImportVisibleSmokeState.tsx`, `apps/admin/src/orderImportApiClient.ts`, `apps/admin/src/orderImportVisibleSmokeSubmit.ts`, `apps/admin/src/m4-order-path-status-shell.css`, `apps/api/src/order-import.submit.ts`, `apps/api/src/order-import.service.ts`, `apps/api/src/order-import.controller.ts`, `apps/api/src/order-import.runtime.ts`, `apps/api/scripts/order-import-http-smoke-harness.mjs`, `packages/db/scripts/order-import-admin-visible-smoke-harness.mjs`, `packages/db/scripts/order-import-worker-submit-smoke-support.mjs`, `packages/db/scripts/run-m4-order-import-storage-backed-true-db-smoke.mjs`, `packages/db/scripts/run-m4-order-import-operator-workflow-smoke.mjs`
   - test: `apps/admin/tests/design.spec.ts`, `scripts/tests/m4-order-import-operator-workflow.test.mjs`, `scripts/tests/m4-order-import-storage-backed-true-db-smoke.test.mjs`, `scripts/tests/m4-order-import-admin-api-bridge-contract.test.mjs`, `scripts/tests/m4-order-import-runtime-warning-contract.test.mjs`
   - config: `.github/workflows/ci.yml`, `packages/db/package.json`
   - docs: `docs/specs/M4-42-order-import-operator-workflow.md`, `docs/evidence/M4/M4-42-order-import-operator-workflow.md`, `docs/evidence/M4/README.md`
   - generated: none
   - lock: optional only if package metadata changes force it
-- 新增 source 文件前的 `rg` 搜索结论和归属理由：已检索 `M4OrderPathStatusShell`, `M4OrderImportVisibleSmokeState`, `orderImportApiClient`, `orderImportVisibleSmokeSubmit`, `submitImportStorageObjectJob`, `run-m4-order-import-storage-backed-true-db-smoke`, `order-import-admin-visible-smoke-harness`, `createOrderImportCsvTextInputFromStorageObject`, `storage-jobs`, `Runtime smoke`, `Import snapshot batch`, `input type="file"`, `upload`。现有实现已经有 Storage-backed smoke path，但 `/design` 默认仍显示 synthetic/local states，正式 operator-facing file submit/readback 仍不存在；因此优先就地扩展 M4 order admin shell 和既有 smoke harness，只新增一个 focused true DB runner/test 作为 M4-42 验收锚点。
+- 新增 source 文件前的 `rg` 搜索结论和归属理由：已检索 `M4OrderPathStatusShell`, `M4OrderImportVisibleSmokeState`, `orderImportApiClient`, `orderImportVisibleSmokeSubmit`, `submitImportStorageObjectJob`, `run-m4-order-import-storage-backed-true-db-smoke`, `order-import-admin-visible-smoke-harness`, `createOrderImportCsvTextInputFromStorageObject`, `storage-jobs`, `Runtime smoke`, `Import snapshot batch`, `input type="file"`, `upload`。现有实现已经有 Storage-backed smoke path，但 `/design` 默认仍显示 synthetic/local states，正式 operator-facing metadata submit/readback 仍不存在；`M4OrderPathStatusShell.tsx` 已到 React 组件 250 行边界，因此新增 `M4OrderImportOperatorWorkflow.tsx` 承载 operator workflow，主 shell 只做接入。新增 `run-m4-order-import-operator-workflow-smoke.mjs` 只作为 M4-42 focused 验收锚点，不新增平行导入实现；`run-m4-order-import-storage-backed-true-db-smoke.mjs` 仅为复用 harness Storage helper 做无行为收敛，避免 M4-42 runner 复制 M4-41 的 Storage upload/download/cleanup 代码。
 - 外部 API/SDK/provider/connector/adapter 依据：不新增外部订单 API/provider/connector/adapter；沿用 ADR-B02 no-API branch 和 M4-41 已验证的 Supabase Storage + DB/RLS direct path。
 - 是否需要例外：默认无。若实现证明必须触碰 `package-lock.json` 或超过 source 预算，必须拆分或在 PR Hygiene 中提出 owner approval 所需例外；AI agent 不得自批。
 

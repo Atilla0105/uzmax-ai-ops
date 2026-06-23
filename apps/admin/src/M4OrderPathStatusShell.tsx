@@ -1,23 +1,11 @@
 import { useState } from "react";
 
 import "./m4-order-path-status-shell.css";
+import { M4OrderImportOperatorWorkflow } from "./M4OrderImportOperatorWorkflow";
 import { M4OrderImportVisibleSmokeState } from "./M4OrderImportVisibleSmokeState";
-import {
-  createOrderImportApiClient,
-  type OrderImportApiClient
-} from "./orderImportApiClient";
+import { createOrderImportApiClient } from "./orderImportApiClient";
 
-type OrderImportApiClientContractAnchor = {
-  client: typeof createOrderImportApiClient;
-  instance: OrderImportApiClient;
-};
-const orderImportApiClientContractAnchor: Pick<
-  OrderImportApiClientContractAnchor,
-  "client"
-> = {
-  client: createOrderImportApiClient
-};
-void orderImportApiClientContractAnchor;
+void createOrderImportApiClient;
 
 const pathSignals = [
   ["ADR-B02", "no_api_for_m4", "API not configured"],
@@ -216,6 +204,8 @@ export function M4OrderPathStatusShell({ tenantName }: { tenantName: string }) {
           )}
         </div>
       </section>
+
+      <M4OrderImportOperatorWorkflow />
 
       <M4OrderImportVisibleSmokeState />
 

@@ -12,6 +12,23 @@ export function readRepoText(relativePath) {
 }
 
 export async function importWorkerEntrypoint() {
+  const moduleUrl = compileWorkerEntrypointUrl();
+  return { module: await import(moduleUrl), moduleUrl };
+}
+
+export async function importWorkerDispatchEntrypoint() {
+  const mainUrl = compileWorkerEntrypointUrl();
+  const moduleUrl = compileTsModuleUrl(
+    readRepoText("apps/worker/src/order-import-dispatch.ts").replaceAll(
+      "./main.ts",
+      mainUrl
+    )
+  );
+
+  return { module: await import(moduleUrl), moduleUrl };
+}
+
+function compileWorkerEntrypointUrl() {
   const orderReadUrl = compileTsModuleUrl(
     readRepoText("packages/capabilities/order-read/src/index.ts")
   );
@@ -20,6 +37,7 @@ export async function importWorkerEntrypoint() {
   );
   const moduleUrl = compileTsModuleUrl(
     readRepoText("apps/worker/src/main.ts")
+      .replaceAll('export * from "./order-import-dispatch.ts";', "")
       .replaceAll(
         "../../../packages/capabilities/order-read/src/index.ts",
         orderReadUrl
@@ -27,7 +45,7 @@ export async function importWorkerEntrypoint() {
       .replaceAll("../../../packages/db/src/m4-order-import-contracts.ts", dbUrl)
   );
 
-  return { module: await import(moduleUrl), moduleUrl };
+  return moduleUrl;
 }
 
 function compileTsModuleUrl(sourceText) {

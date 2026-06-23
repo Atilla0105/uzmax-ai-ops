@@ -6,6 +6,8 @@ import {
 } from "../../../packages/capabilities/order-read/src/index.ts";
 import { m4OrderImportContracts } from "../../../packages/db/src/m4-order-import-contracts.ts";
 
+export * from "./order-import-dispatch.ts";
+
 export const processName = "worker";
 
 type AnyRecord = Record<string, unknown>;

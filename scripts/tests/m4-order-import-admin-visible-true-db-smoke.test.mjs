@@ -7,6 +7,9 @@ const repoRoot = process.cwd();
 const smokeSource = read(
   "packages/db/scripts/run-m4-order-import-admin-visible-true-db-smoke.mjs"
 );
+const visibleHarnessSource = read(
+  "packages/db/scripts/order-import-admin-visible-smoke-harness.mjs"
+);
 const visibleSmokeSource = read("apps/admin/src/M4OrderImportVisibleSmokeState.tsx");
 const shellSource = read("apps/admin/src/M4OrderPathStatusShell.tsx");
 const ciSource = read(".github/workflows/ci.yml");
@@ -32,15 +35,16 @@ describe("M4-38 order import admin visible true DB smoke", () => {
 
   it("runs browser-visible true DB smoke through Vite, Playwright and HTTP proxy", () => {
     assert.match(smokeSource, /requireSmokeEnv\("UZMAX_RLS_DATABASE_URL"\)/);
-    assert.match(smokeSource, /startOrderImportHttpSmoke/);
     assert.match(smokeSource, /createOrderImportHttpSmokeFixture/);
-    assert.match(smokeSource, /seedOrderImportRowsInRlsTransaction/);
-    assert.match(smokeSource, /import\("@playwright\/test"\)/);
-    assert.match(smokeSource, /import\("vite"\)/);
-    assert.match(smokeSource, /page\.route\("\*\*\/order-import\/\*\*"/);
-    assert.match(smokeSource, /route\.fetch/);
-    assert.match(smokeSource, /visibleStateTimeoutMs = 65_000/);
-    assert.match(smokeSource, /x-tenant-id/);
+    assert.match(smokeSource, /runAdminVisibleOrderImportSmoke/);
+    assert.match(visibleHarnessSource, /startOrderImportHttpSmoke/);
+    assert.match(visibleHarnessSource, /seedOrderImportRowsInRlsTransaction/);
+    assert.match(visibleHarnessSource, /import\("@playwright\/test"\)/);
+    assert.match(visibleHarnessSource, /import\("vite"\)/);
+    assert.match(visibleHarnessSource, /page\.route\("\*\*\/order-import\/\*\*"/);
+    assert.match(visibleHarnessSource, /route\.fetch/);
+    assert.match(visibleHarnessSource, /visibleStateTimeoutMs = 65_000/);
+    assert.match(visibleHarnessSource, /x-tenant-id/);
     assert.match(smokeSource, /residue=0/);
     assert.match(smokeSource, /storage:\/\/order-imports\/m4-38-admin-visible/);
   });
@@ -58,7 +62,7 @@ describe("M4-38 order import admin visible true DB smoke", () => {
     );
     assert.match(evidence, /does not close full E-02/);
     assert.doesNotMatch(
-      `${smokeSource}\n${visibleSmokeSource}`,
+      `${smokeSource}\n${visibleHarnessSource}\n${visibleSmokeSource}`,
       /SUPABASE_SECRET_KEY|service_role|customer.*phone|sk-/
     );
   });

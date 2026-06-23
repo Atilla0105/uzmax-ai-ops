@@ -15,6 +15,7 @@ import type { OrderImportWorkerPersistenceGateway } from "./main.ts";
 
 export const orderImportBullmqQueueDefaults = {
   healthThresholds: { backlog: 25, delayed: 10, failed: 1, waiting: 20 },
+  jobRetention: { removeOnComplete: 1_000, removeOnFail: 1_000 },
   lockPrefix: "uzmax:m4:order-import:storage-lock",
   lockTtlMs: 900_000,
   queueName: "order-import"
@@ -22,12 +23,9 @@ export const orderImportBullmqQueueDefaults = {
 
 type RuntimeJobData = OrderImportCsvTextDispatchContract["payload"];
 type RuntimeJobName = typeof orderImportWorkerJobNames.csvText;
-type RuntimeJob = Job<RuntimeJobData, OrderImportCsvTextDispatchResult, RuntimeJobName>;
-type RuntimeQueue = Queue<
-  RuntimeJobData,
-  OrderImportCsvTextDispatchResult,
-  RuntimeJobName
->;
+type RuntimeJobResult = OrderImportCsvTextDispatchResult;
+type RuntimeJob = Job<RuntimeJobData, RuntimeJobResult, RuntimeJobName>;
+type RuntimeQueue = Queue<RuntimeJobData, RuntimeJobResult, RuntimeJobName>;
 type QueueRuntimeOptions = {
   connection: QueueOptions["connection"];
   prefix?: string;
@@ -47,35 +45,43 @@ type RedisLockPort = {
 };
 type QueueHealthCounts = { delayed: number; failed: number; waiting: number };
 type QueueHealthThresholds = Partial<QueueHealthCounts & { backlog: number }>;
+type JobRetention = Pick<JobsOptions, "removeOnComplete" | "removeOnFail">;
+const lockKeyPattern = /^[a-z0-9][a-z0-9:._-]{1,220}:[a-f0-9]{64}$/i;
+const lockPrefixPattern = /^[a-z0-9][a-z0-9:._-]{1,180}$/i;
+const sourceRefPattern = /^storage:\/\/[a-z0-9][a-z0-9/._:-]{0,180}$/i;
+const tokenPattern = /^[a-z0-9][a-z0-9._:-]{7,120}$/i;
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function createOrderImportBullmqQueue(
   options: QueueRuntimeOptions
 ): RuntimeQueue {
-  return new Queue<RuntimeJobData, OrderImportCsvTextDispatchResult, RuntimeJobName>(
+  return new Queue<RuntimeJobData, RuntimeJobResult, RuntimeJobName>(
     options.queueName ?? orderImportBullmqQueueDefaults.queueName,
     { connection: options.connection, prefix: options.prefix }
   );
 }
 
 export function createOrderImportBullmqCsvTextJobPlan(
-  input: OrderImportCsvTextDispatchInput
+  input: OrderImportCsvTextDispatchInput,
+  retention: JobRetention = orderImportBullmqQueueDefaults.jobRetention
 ) {
   const contract = createOrderImportCsvTextDispatchContract(input);
   const options: JobsOptions = {
     attempts: contract.retry.attempts,
     backoff: { delay: contract.retry.backoffMs, type: "fixed" },
     jobId: contract.jobId,
-    removeOnComplete: 25,
-    removeOnFail: 25
+    ...retention
   };
   return { contract, jobName: contract.jobName, options, payload: contract.payload };
 }
 
 export async function enqueueOrderImportBullmqCsvTextJob(
   queue: RuntimeQueue,
-  input: OrderImportCsvTextDispatchInput
+  input: OrderImportCsvTextDispatchInput,
+  retention?: JobRetention
 ) {
-  const plan = createOrderImportBullmqCsvTextJobPlan(input);
+  const plan = createOrderImportBullmqCsvTextJobPlan(input, retention);
   const job = await queue.add(plan.jobName, plan.payload, plan.options);
   return { ...plan, job };
 }
@@ -85,6 +91,7 @@ export function createOrderImportCsvTextBullmqProcessor(options: ProcessorOption
     if (job.name !== orderImportWorkerJobNames.csvText) {
       throw new Error("order import BullMQ jobName is unsupported");
     }
+    assertRuntimeJobData(job.data);
     return runOrderImportCsvTextDispatchContract(
       {
         ...job.data,
@@ -105,7 +112,7 @@ export function createOrderImportCsvTextBullmqProcessor(options: ProcessorOption
 export function createOrderImportCsvTextBullmqWorker(
   options: QueueRuntimeOptions & ProcessorOptions
 ) {
-  return new Worker<RuntimeJobData, OrderImportCsvTextDispatchResult, RuntimeJobName>(
+  return new Worker<RuntimeJobData, RuntimeJobResult, RuntimeJobName>(
     options.queueName ?? orderImportBullmqQueueDefaults.queueName,
     createOrderImportCsvTextBullmqProcessor(options),
     { connection: options.connection, prefix: options.prefix }
@@ -154,7 +161,7 @@ export function orderImportStorageSourceLockKey(
   lockPrefix: string = orderImportBullmqQueueDefaults.lockPrefix
 ) {
   const digest = createHash("sha256").update(storageSourceRef(sourceRef)).digest("hex");
-  return `${lockPrefix}:${digest}`;
+  return `${lockPrefixValue(lockPrefix)}:${digest}`;
 }
 
 export async function getOrderImportBullmqQueueHealthSnapshot(
@@ -207,37 +214,55 @@ function boundedInteger(
   maximum: number
 ) {
   const numeric = Number.isInteger(value) ? (value as number) : Number.NaN;
-  if (numeric < minimum || numeric > maximum) {
+  if (!Number.isFinite(numeric) || numeric < minimum || numeric > maximum) {
     throw new Error(`${name} must be an integer from ${minimum} to ${maximum}`);
   }
   return numeric;
+}
+
+function assertRuntimeJobData(payload: RuntimeJobData) {
+  textValue(payload.csvText, "csvText");
+  storageSourceRef(payload.sourceRef);
+  if (!Number.isFinite(Date.parse(textValue(payload.importedAt, "importedAt")))) {
+    throw new Error("importedAt must be parseable");
+  }
+  for (const name of ["createdByUserId", "importJobId", "orgId", "tenantId"] as const) {
+    uuidText(payload[name], name);
+  }
+  for (const name of ["rowErrorIds", "snapshotIds"] as const) {
+    if (!Array.isArray(payload[name])) throw new Error(`${name} must be an array`);
+    payload[name].forEach((id, index) => uuidText(id, `${name}[${index}]`));
+  }
 }
 
 function storageSourceRef(value: unknown) {
   return patternValue(
     value,
     "sourceRef",
-    /^storage:\/\/[a-z0-9][a-z0-9/._:-]{0,180}$/i,
-    "sourceRef must be a controlled Storage ref"
+    sourceRefPattern,
+    "sourceRef must be controlled"
   );
 }
 
 function lockKey(value: unknown) {
+  return patternValue(value, "lockKey", lockKeyPattern, "lockKey must be controlled");
+}
+
+function lockPrefixValue(value: unknown) {
   return patternValue(
     value,
-    "lockKey",
-    /^[a-z0-9][a-z0-9:._-]{1,220}:[a-f0-9]{64}$/i,
-    "lockKey must be controlled"
+    "lockPrefix",
+    lockPrefixPattern,
+    "lockPrefix must be controlled"
   );
 }
 
 function lockToken(value: unknown) {
-  return patternValue(
-    value,
-    "token",
-    /^[a-z0-9][a-z0-9._:-]{7,120}$/i,
-    "token must be a controlled lock token"
-  );
+  return patternValue(value, "token", tokenPattern, "token must be controlled");
+}
+
+function uuidText(value: unknown, name: string) {
+  return patternValue(value, name, uuidPattern, `${name} must be a UUID`);
 }
 
 function patternValue(value: unknown, name: string, pattern: RegExp, message: string) {

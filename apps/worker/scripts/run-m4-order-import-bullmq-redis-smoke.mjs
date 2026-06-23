@@ -15,7 +15,6 @@ if (!redisUrl) {
   process.exit(1);
 }
 
-const repoRoot = process.cwd();
 const queuePrefix = "uzmax-m4-45";
 const queueName = `order-import-${Date.now()}-${randomUUID().slice(0, 8)}`;
 const connection = { maxRetriesPerRequest: null, url: redisUrl };
@@ -24,6 +23,7 @@ await runSmoke();
 
 async function runSmoke() {
   const runtime = await importWorkerBullmqRuntime();
+  const { enqueueOrderImportBullmqCsvTextJob: enqueueJob } = runtime;
   const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
   const queue = runtime.createOrderImportBullmqQueue({
     connection,
@@ -34,26 +34,43 @@ async function runSmoke() {
 
   try {
     await queue.obliterate({ force: true }).catch(() => undefined);
-    const dispatch = dispatchRecorder();
+    const attempts = new Map();
+    let successes = 0;
+    const handler = async (input) => {
+      attempts.set(input.jobId, (attempts.get(input.jobId) ?? 0) + 1);
+      if (input.sourceRef.includes("permanent-fail")) {
+        throw new Error("m4-45 permanent health failure");
+      }
+      if (input.sourceRef.includes("main") && attempts.get(input.jobId) === 1) {
+        throw new Error("m4-45 first-attempt fault injection");
+      }
+      successes += 1;
+      return {
+        importJobDraft: { id: input.importJobId },
+        persisted: { importJobs: 1, rowErrors: 0, snapshots: 1 }
+      };
+    };
     const mainInput = jobInput({
       backoffMs: 50,
       jobId: "44444444-4444-4444-8444-444444444145",
       maxAttempts: 2,
       sourceRef: "storage://order-imports/m4-45-main.csv"
     });
-    const first = await enqueueJob(runtime, queue, mainInput);
-    const duplicate = await enqueueJob(runtime, queue, mainInput);
+    const first = await enqueueJob(queue, mainInput);
+    const duplicate = await enqueueJob(queue, mainInput);
     assert.equal(first.job.id, duplicate.job.id);
     assert.equal((await queue.getJobCounts("waiting")).waiting, 1);
 
     const lockInput = { sourceRef: mainInput.sourceRef, ttlMs: 30000 };
     const lock = await runtime.acquireOrderImportStorageSourceLock(redis, {
+      lockPrefix: `${queuePrefix}:locks:${queueName}`,
       ...lockInput,
       token: "m4-45-lock-token-main"
     });
     await assert.rejects(
       () =>
         runtime.acquireOrderImportStorageSourceLock(redis, {
+          lockPrefix: `${queuePrefix}:locks:${queueName}`,
           ...lockInput,
           token: "m4-45-lock-token-dupe"
         }),
@@ -63,22 +80,26 @@ async function runSmoke() {
 
     worker = runtime.createOrderImportCsvTextBullmqWorker({
       connection,
-      gateway: noopGateway(),
-      handler: dispatch.handler,
+      gateway: {
+        persistImportJob() {},
+        persistImportRowErrors() {},
+        persistOrderSnapshots() {}
+      },
+      handler,
       prefix: queuePrefix,
       queueName
     });
     await worker.waitUntilReady();
     await waitForJobState(queue, mainInput.jobId, "completed");
-    assert.equal(dispatch.attemptsFor(mainInput.jobId), 2);
-    assert.equal(dispatch.successes, 1);
+    assert.equal(attempts.get(mainInput.jobId), 2);
+    assert.equal(successes, 1);
 
     const failedInput = jobInput({
       jobId: "44444444-4444-4444-8444-444444444245",
       maxAttempts: 1,
       sourceRef: "storage://order-imports/m4-45-permanent-fail.csv"
     });
-    await enqueueJob(runtime, queue, failedInput);
+    await enqueueJob(queue, failedInput);
     await waitForJobState(queue, failedInput.jobId, "failed");
     await worker.close();
     worker = undefined;
@@ -93,7 +114,7 @@ async function runSmoke() {
         "storage://order-imports/m4-45-backlog-b.csv"
       ]
     ]) {
-      await enqueueJob(runtime, queue, jobInput({ jobId, sourceRef }));
+      await enqueueJob(queue, jobInput({ jobId, sourceRef }));
     }
     const health = await runtime.getOrderImportBullmqQueueHealthSnapshot(queue, {
       backlog: 2,
@@ -108,47 +129,19 @@ async function runSmoke() {
 
     await queue.obliterate({ force: true });
     await queue.close();
-    const residue = await redis.keys(`${queuePrefix}:${queueName}:*`);
+    const residue = await redis.keys(`${queuePrefix}:*${queueName}*`);
     assert.deepEqual(residue, []);
     console.log(
-      `m4-order-import-bullmq-redis-smoke: passed duplicate enqueue, retry, lock and health checks; residue 0`
+      `m4-order-import-bullmq-redis-smoke: passed duplicate enqueue, retry, run-scoped lock and health checks; run residue 0`
     );
   } finally {
     if (worker) await worker.close().catch(() => undefined);
     await queue.obliterate({ force: true }).catch(() => undefined);
     await queue.close().catch(() => undefined);
-    const keys = await redis.keys(`${queuePrefix}:${queueName}:*`);
+    const keys = await redis.keys(`${queuePrefix}:*${queueName}*`);
     if (keys.length > 0) await redis.del(...keys);
     await redis.quit();
   }
-}
-
-function dispatchRecorder() {
-  const attempts = new Map();
-  let successes = 0;
-  return {
-    get successes() {
-      return successes;
-    },
-    attemptsFor(jobId) {
-      return attempts.get(jobId) ?? 0;
-    },
-    async handler(input) {
-      attempts.set(input.jobId, (attempts.get(input.jobId) ?? 0) + 1);
-      if (input.sourceRef.includes("permanent-fail")) {
-        throw new Error("m4-45 permanent health failure");
-      }
-      if (input.sourceRef.includes("main") && attempts.get(input.jobId) === 1) {
-        throw new Error("m4-45 first-attempt fault injection");
-      }
-      successes += 1;
-      return persistenceResult(input);
-    }
-  };
-}
-
-function enqueueJob(runtime, queue, input) {
-  return runtime.enqueueOrderImportBullmqCsvTextJob(queue, input);
 }
 
 async function waitForJobState(queue, jobId, expectedState) {
@@ -191,21 +184,6 @@ function jobInput(overrides) {
   };
 }
 
-function persistenceResult(input) {
-  return {
-    importJobDraft: { id: input.importJobId },
-    persisted: { importJobs: 1, rowErrors: 0, snapshots: 1 }
-  };
-}
-
-function noopGateway() {
-  return {
-    persistImportJob() {},
-    persistImportRowErrors() {},
-    persistOrderSnapshots() {}
-  };
-}
-
 async function importWorkerBullmqRuntime() {
   const dispatchUrl = compileTsModuleUrl(
     readRepoText("apps/worker/src/order-import-dispatch.ts")
@@ -219,12 +197,13 @@ async function importWorkerBullmqRuntime() {
 }
 
 function bullmqModuleUrl() {
-  return pathToFileURL(path.join(repoRoot, "node_modules/bullmq/dist/cjs/index.js"))
-    .href;
+  return pathToFileURL(
+    path.join(process.cwd(), "node_modules/bullmq/dist/cjs/index.js")
+  ).href;
 }
 
 function readRepoText(relativePath) {
-  return readFileSync(path.join(repoRoot, relativePath), "utf8");
+  return readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
 function compileTsModuleUrl(sourceText) {

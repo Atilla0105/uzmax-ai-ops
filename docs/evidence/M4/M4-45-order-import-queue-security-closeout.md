@@ -9,7 +9,7 @@
 
 M4-45 adds an opt-in BullMQ/Redis runtime adapter for the existing M4-24 `order_import_csv_text` dispatch contract. It maps the existing dispatch payload into BullMQ job options, supports explicit enqueue/worker construction, validates jobs before calling an injected handler, adds a Redis-backed Storage source lock with token-checked release, and exposes backlog/failed queue health alerts.
 
-The Redis smoke is synthetic and Redis-only. It requires `UZMAX_REDIS_URL`, enqueues duplicate jobs with deterministic `jobId`, injects a first-attempt failure, proves BullMQ retry succeeds, proves duplicate enqueue does not create a second dispatch success, exercises Storage source lock duplicate/release behavior, verifies backlog/failed health alerts, obliterates queue keys and reports `residue 0`.
+The Redis smoke is synthetic and Redis-only. It requires `UZMAX_REDIS_URL`, enqueues duplicate jobs with deterministic `jobId`, injects a first-attempt failure, proves BullMQ retry succeeds, proves duplicate enqueue does not create a second dispatch success, exercises run-scoped Storage source lock duplicate/release behavior, verifies backlog/failed health alerts, cleans queue and run-specific lock keys, and reports `run residue 0`.
 
 This is not production worker deployment, Render Redis creation, formal alert routing, real customer/order data evidence, M4 final owner signoff, GA-0 or 1.0 release approval.
 
@@ -64,7 +64,7 @@ Current audit decision: `unresolved_security_blocker`.
 | Duplicate evidence | duplicate deterministic `jobId` enqueue does not produce duplicate successful dispatch |
 | Storage lock | duplicate source lock fails closed; release requires matching token |
 | Health alert | waiting/delayed backlog and failed counts produce alert snapshots |
-| Cleanup | Redis queue keys are removed; smoke reports `residue 0` |
+| Cleanup | Redis queue and run-specific lock keys are removed; smoke reports `run residue 0` |
 
 ## Acceptance Mapping
 

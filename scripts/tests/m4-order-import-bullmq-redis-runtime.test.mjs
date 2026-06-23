@@ -36,11 +36,20 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
     assert.equal(plan.options.jobId, JOB_ID);
     assert.equal(plan.options.attempts, 3);
     assert.deepEqual(plan.options.backoff, { delay: 30000, type: "fixed" });
+    assert.equal(plan.options.removeOnComplete, 1000);
+    assert.equal(plan.options.removeOnFail, 1000);
     assert.equal(
       plan.payload.idempotencyKey,
       "import://order-import/idempotency/m4-45"
     );
     assert.equal(plan.payload.sourceRef, "storage://order-imports/m4-45-orders.csv");
+
+    const customRetention = runtime.module.createOrderImportBullmqCsvTextJobPlan(
+      jobInput(),
+      { removeOnComplete: { count: 5 }, removeOnFail: { count: 10 } }
+    );
+    assert.deepEqual(customRetention.options.removeOnComplete, { count: 5 });
+    assert.deepEqual(customRetention.options.removeOnFail, { count: 10 });
   });
 
   it("validates BullMQ jobs before calling the injected dispatch handler", async () => {
@@ -74,6 +83,93 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
     );
   });
 
+  it("fails closed for malformed queued persistence payload before dispatch", async () => {
+    const plan = runtime.module.createOrderImportBullmqCsvTextJobPlan(jobInput());
+    for (const [field, value] of [
+      ["createdByUserId", "bad-user-id"],
+      ["csvText", ""],
+      ["importJobId", "bad-import-job-id"],
+      ["importedAt", "not-a-date"],
+      ["orgId", "bad-org-id"],
+      ["rowErrorIds", ["bad-row-error-id"]],
+      ["snapshotIds", ["bad-snapshot-id"]],
+      ["sourceRef", "https://example.invalid/raw.csv"],
+      ["tenantId", "bad-tenant-id"]
+    ]) {
+      const calls = [];
+      const processor = runtime.module.createOrderImportCsvTextBullmqProcessor({
+        gateway: persistenceRecorder(calls),
+        handler: async (input) => {
+          calls.push(`handler:${input.jobId}`);
+          return persistenceResult(input);
+        }
+      });
+      await assert.rejects(
+        () =>
+          processor({
+            attemptsMade: 0,
+            data: { ...plan.payload, [field]: value },
+            name: "order_import_csv_text",
+            opts: { attempts: 3 }
+          }),
+        /required|controlled|UUID|parseable|array/
+      );
+      assert.deepEqual(calls, []);
+    }
+  });
+
+  it("fails closed for invalid BullMQ runtime numeric inputs", async () => {
+    const calls = [];
+    const plan = runtime.module.createOrderImportBullmqCsvTextJobPlan(jobInput());
+    const processor = runtime.module.createOrderImportCsvTextBullmqProcessor({
+      gateway: persistenceRecorder(calls),
+      handler: async (input) => {
+        calls.push(`handler:${input.jobId}`);
+        return persistenceResult(input);
+      }
+    });
+
+    await assert.rejects(
+      () =>
+        processor({
+          attemptsMade: Number.NaN,
+          data: plan.payload,
+          name: "order_import_csv_text",
+          opts: { attempts: 3 }
+        }),
+      /attempt must be an integer/
+    );
+    await assert.rejects(
+      () =>
+        processor({
+          attemptsMade: 0,
+          data: plan.payload,
+          name: "order_import_csv_text",
+          opts: { attempts: Number.NaN }
+        }),
+      /maxAttempts must be an integer/
+    );
+    await assert.rejects(
+      () =>
+        runtime.module.acquireOrderImportStorageSourceLock(fakeRedis(), {
+          sourceRef: "storage://order-imports/m4-45-orders.csv",
+          token: "m4-45-lock-token-a",
+          ttlMs: Number.NaN
+        }),
+      /ttlMs must be an integer/
+    );
+    await assert.rejects(
+      () =>
+        runtime.module.getOrderImportBullmqQueueHealthSnapshot({
+          async getJobCounts() {
+            return { delayed: 0, failed: 0, waiting: Number.NaN };
+          }
+        }),
+      /waiting must be an integer/
+    );
+    assert.deepEqual(calls, []);
+  });
+
   it("uses token-checked Redis Storage source locks and blocks duplicates", async () => {
     const redis = fakeRedis();
     const lock = await runtime.module.acquireOrderImportStorageSourceLock(redis, {
@@ -101,6 +197,16 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
     );
     assert.equal(await lock.release(), true);
     assert.equal(await lock.release(), false);
+    await assert.rejects(
+      () =>
+        runtime.module.acquireOrderImportStorageSourceLock(redis, {
+          lockPrefix: "not controlled",
+          sourceRef: "storage://order-imports/m4-45-other.csv",
+          token: "m4-45-lock-token-c",
+          ttlMs: 30000
+        }),
+      /lockPrefix must be controlled/
+    );
   });
 
   it("reports backlog and failed queue health alerts from counts", async () => {
@@ -133,7 +239,7 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
     assert.match(runtimeSource, /createOrderImportCsvTextBullmqWorker/);
     assert.match(runtimeSource, /acquireOrderImportStorageSourceLock/);
     assert.match(smokeSource, /UZMAX_REDIS_URL is required/);
-    assert.match(smokeSource, /residue 0/);
+    assert.match(smokeSource, /run residue 0/);
     assert.doesNotMatch(workerSource, /BullMQ|ioredis|Redis/i);
     assert.doesNotMatch(
       runtimeSource,

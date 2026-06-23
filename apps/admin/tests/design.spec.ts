@@ -227,6 +227,7 @@ test("renders the M4-01 order path status shell truthfully", async ({ page }) =>
   await expect(page.getByTestId("m4-order-snapshot-search")).toContainText(
     "Snapshot-backed order search"
   );
+  await expect(page.getByTestId("m4-order-runtime-state")).toHaveCount(0);
   await expect(page.getByTestId("m4-remaining-gates")).toContainText("Runtime parser");
   await expect(page.getByTestId("m4-remaining-gates")).toContainText(
     "Customer linkage"

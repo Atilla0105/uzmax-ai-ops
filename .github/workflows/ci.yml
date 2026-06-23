@@ -172,6 +172,8 @@ jobs:
       - if: steps.path-scope.outputs.run_core == 'true'
         run: npm run -w @uzmax/db prisma:generate
       - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
         name: M4 order import true DB runtime smokes
         env:
           UZMAX_RLS_DATABASE_URL: >-
@@ -180,6 +182,7 @@ jobs:
           node packages/db/scripts/run-m4-order-import-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-api-true-db-http-smoke.mjs
           node packages/db/scripts/run-m4-order-import-admin-true-db-http-smoke.mjs
+          node packages/db/scripts/run-m4-order-import-admin-visible-true-db-smoke.mjs
       - if: steps.path-scope.outputs.run_spikes == 'true'
         name: SPK-03 RLS Prisma pool spike
         env:

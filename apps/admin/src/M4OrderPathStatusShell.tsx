@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import "./m4-order-path-status-shell.css";
+import { M4OrderImportVisibleSmokeState } from "./M4OrderImportVisibleSmokeState";
 import {
   createOrderImportApiClient,
   type OrderImportApiClient
@@ -215,6 +216,8 @@ export function M4OrderPathStatusShell({ tenantName }: { tenantName: string }) {
           )}
         </div>
       </section>
+
+      <M4OrderImportVisibleSmokeState />
 
       <section className="m4-remaining-gates" data-testid="m4-remaining-gates">
         {remainingGates.map(([title, state, scope]) => (

@@ -3,7 +3,7 @@
 > spec: `docs/specs/M4-44-order-read-runtime-eval-gate.md`
 > branch: `codex/m4-44-order-read-runtime-eval-gate`
 > worktree: `/Users/atilla/Documents/uzmax-m4-44-order-read-runtime-eval-gate`
-> status: implementation complete; local validation passed
+> status: implementation complete; local validation passed; PR CI run `28047187051`, job `83028183462`, passed for implementation head `9485f79`; later commits still require current-head PR checks before merge
 
 ## Scope
 
@@ -48,11 +48,12 @@ This is not a production eval gate. Real eval fixtures, provider judge calls, pr
 | `npm run guard:workspace` | passed |
 | `UZMAX_ASSIGNED_WORKTREE=/Users/atilla/Documents/uzmax-m4-44-order-read-runtime-eval-gate UZMAX_PRIMARY_ROOT=/Users/atilla/Documents/UZMAX智能运营 npm run guard:worker-boundary` | passed |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-44-order-read-runtime-eval-gate.md --include-worktree` | passed; changed files 6, categories docs 4/source 1/test 1, source within budget, new source files 0 |
+| GitHub Actions CI | passed in PR run `28047187051`, job `83028183462`; path scope `run_core=true`, `true_db_smoke_changed=false`, `frontend_changed=false`; `guard:pr-shape` reported docs 4/source 1/test 1, source net LOC 3, new source files 0; `npm test` passed 314 tests; `npm run build` passed |
 | `git diff --check` | passed |
 | `npm test` | passed; 314 tests |
 | `npm run build` | passed |
-| `npm run size` | passed; 61.78 kB brotlied under 250 kB limit |
-| `npm run playwright` | passed; 11 tests |
+| `npm run size` | passed locally; 61.78 kB brotlied under 250 kB limit; CI skipped because no frontend path changed |
+| `npm run playwright` | passed locally; 11 tests; CI skipped because no frontend path changed |
 
 ## Acceptance Mapping
 

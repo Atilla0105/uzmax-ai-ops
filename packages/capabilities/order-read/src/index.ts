@@ -68,9 +68,8 @@ export type OrderImportBatchResult = {
   importedAt: string;
   sourceRef: string;
   successfulRows: readonly OrderSnapshotDraft[];
-  summary: Record<"failedRows" | "successfulRows" | "totalRows", number> & {
-    status: ImportBatchStatus;
-  };
+  summary: Record<"failedRows" | "successfulRows" | "totalRows", number> &
+    Readonly<{ status: ImportBatchStatus }>;
 };
 
 export type OrderReadResult =
@@ -114,13 +113,8 @@ type OrderReadInput = {
 };
 const controlledRefPattern =
   /^(controlled|storage|import|summary|status|query|reason):\/\/[a-z0-9][a-z0-9/._:-]{0,180}$/i;
-const unsafeRefPatterns = [
-  /^data:/i,
-  /^https?:\/\//i,
-  /^(?:\/|\.\/|\.\.\/|[a-z]:\\)/i,
-  /^blob:/i,
-  /^[a-z0-9+/]{24,}={0,2}$/i
-];
+const unsafeRefPattern =
+  /^(?:data:|https?:\/\/|\/|\.\/|\.\.\/|[a-z]:\\|blob:|[a-z0-9+/]{24,}={0,2}$)/i;
 const unsafeFieldPattern =
   /^(raw.*|.*plaintext.*|rawPayload|payloadRaw|.*bytes.*|.*blob.*|phone.*|address.*|payment.*|secret.*|token.*|prompt|completion|telegramPayload|publicUrl|csv|xlsx|export)$/i;
 const rowKeys = new Set(
@@ -249,6 +243,15 @@ export function evaluateOrderSnapshotForRead(input: OrderReadInput): OrderReadRe
     reasonCode: "snapshot_fresh",
     status: orderReadResultStatuses.snapshotReady
   };
+}
+export function createOrderReadRuntimeEvalCandidate(result: OrderReadResult) {
+  return result.status === orderReadResultStatuses.snapshotReady
+    ? {
+        answerKind: "order_snapshot_summary",
+        handoffRequired: false,
+        orderStatusRef: result.customerVisible.orderStatusRef
+      }
+    : { answerKind: "handoff", handoffRequired: true };
 }
 function normalizeSnapshot(snapshot: OrderSnapshotDraft): OrderSnapshotDraft {
   assertNoRawOrderCarrier(snapshot);
@@ -404,7 +407,7 @@ function isPlainRecord(value: unknown): value is AnyRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 function isUnsafeString(value: string): boolean {
-  return unsafeRefPatterns.some((pattern) => pattern.test(value));
+  return unsafeRefPattern.test(value);
 }
 function rowPrefix(rowNumber?: number): string {
   return rowNumber ? `row ${rowNumber} ` : "";

@@ -72,7 +72,7 @@ This M4-23 worker did not write those files. Because they may be user-retained l
 |---|---|
 | Path categories | source 2, docs 3, test 2 |
 | Changed source files | 2 |
-| Net source LOC | 0 by `guard:pr-shape` source budget output; source text +72/-3 by git numstat, within spec budget |
+| Net source LOC | 69 by `guard:pr-shape` source budget output; source text +72/-3 by git numstat, within spec budget |
 | New source files | 0 |
 | Source gross churn | 75 |
 | Test weakening | none |
@@ -95,6 +95,6 @@ This M4-23 worker did not write those files. Because they may be user-retained l
 | `npm run guard:doc-triggers` | passed |
 | `git diff --check` | passed |
 | `CI=true npm run check` | passed; 232 Node tests, build, size 57.17 kB brotlied, 11 Playwright tests |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-23-order-import-runtime-provider-contract.md --include-worktree` | passed pre-commit; 7 changed files, categories source 2/docs 3/test 2, source netLoc 0/new source files 0 |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M4-23-order-import-runtime-provider-contract.md` | passed post-PR; 7 changed files, categories source 2/docs 3/test 2, source netLoc 69/new source files 0 |
 | assigned worktree final status | pending |
 | root/main final status | pending; root tracked/index clean expected, existing untracked duplicate docs remain unless owner authorizes cleanup |

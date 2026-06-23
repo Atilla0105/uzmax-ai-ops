@@ -35,12 +35,18 @@ import type {
 } from "./customer-asset.persistence.ts";
 import { CustomerAssetService } from "./customer-asset.service.ts";
 import {
+  ORDER_IMPORT_PRISMA_CLIENT,
   ORDER_IMPORT_REPOSITORY,
   InMemoryOrderImportRepository,
   OrderImportController,
   OrderImportService,
   PrismaOrderImportPersistenceGateway,
   PersistenceOrderImportRepository,
+  createOrderImportRepositoryProvider,
+  orderImportRepositoryRuntimeModes,
+  type OrderImportPrismaClientPort,
+  type OrderImportRepositoryProviderInput,
+  type OrderImportRepositoryRuntimeMode,
   type OrderImportPersistenceGateway,
   type OrderImportPersistenceScope
 } from "./order-import.ts";
@@ -78,7 +84,13 @@ type TelegramBotWebhookBody = TelegramBotContractAnchor["input"]["body"];
 type OrderImportRepositoryContractAnchor = {
   gateway: OrderImportPersistenceGateway;
   persistenceAdapter: typeof PersistenceOrderImportRepository;
+  prismaClient: OrderImportPrismaClientPort;
+  prismaClientToken: typeof ORDER_IMPORT_PRISMA_CLIENT;
   prismaGateway: typeof PrismaOrderImportPersistenceGateway;
+  runtimeMode: OrderImportRepositoryRuntimeMode;
+  runtimeModes: typeof orderImportRepositoryRuntimeModes;
+  runtimeProvider: typeof createOrderImportRepositoryProvider;
+  runtimeProviderInput: OrderImportRepositoryProviderInput;
   scope: OrderImportPersistenceScope;
 };
 type CustomerAssetPersistenceContractAnchor = {
@@ -96,10 +108,17 @@ type ApiAuditPersistenceContractAnchor = {
 };
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
-  "persistenceAdapter" | "prismaGateway"
+  | "persistenceAdapter"
+  | "prismaClientToken"
+  | "prismaGateway"
+  | "runtimeModes"
+  | "runtimeProvider"
 > = {
   persistenceAdapter: PersistenceOrderImportRepository,
-  prismaGateway: PrismaOrderImportPersistenceGateway
+  prismaClientToken: ORDER_IMPORT_PRISMA_CLIENT,
+  prismaGateway: PrismaOrderImportPersistenceGateway,
+  runtimeModes: orderImportRepositoryRuntimeModes,
+  runtimeProvider: createOrderImportRepositoryProvider
 };
 void orderImportRepositoryContractAnchor;
 function customerAssetPersistenceContractAnchor(
@@ -168,7 +187,15 @@ class TelegramBotWebhookController {
       useExisting: InMemoryCustomerAssetRepository
     },
     InMemoryOrderImportRepository,
-    { provide: ORDER_IMPORT_REPOSITORY, useExisting: InMemoryOrderImportRepository },
+    {
+      inject: [InMemoryOrderImportRepository],
+      provide: ORDER_IMPORT_REPOSITORY,
+      useFactory: (repository: InMemoryOrderImportRepository) =>
+        createOrderImportRepositoryProvider({
+          inMemoryRepository: repository,
+          mode: orderImportRepositoryRuntimeModes.inMemory
+        })
+    },
     { provide: api.API_AUDIT_SINK, useClass: api.InMemoryAuditSink },
     { provide: api.API_AUTHZ_REPOSITORY, useClass: api.DisabledAuthzRepository },
     {

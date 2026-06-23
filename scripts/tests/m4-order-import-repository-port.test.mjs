@@ -33,7 +33,9 @@ describe("M4-08 order import repository port", () => {
       /private readonly repository: OrderImportRepositoryPort/
     );
     assert.match(appModule, /provide: ORDER_IMPORT_REPOSITORY/);
-    assert.match(appModule, /useExisting: InMemoryOrderImportRepository/);
+    assert.match(appModule, /useFactory/);
+    assert.match(appModule, /createOrderImportRepositoryProvider/);
+    assert.match(appModule, /orderImportRepositoryRuntimeModes\.inMemory/);
 
     const inMemory = new repository.module.InMemoryOrderImportRepository();
     const fresh = inMemory.findSnapshot(contextFor(TENANT_A), {
@@ -285,7 +287,8 @@ describe("M4-11 order import Prisma gateway", () => {
     assert.match(repositorySource, /type OrderImportPrismaClientPort/);
     assert.match(repositorySource, /class PrismaOrderImportPersistenceGateway/);
     assert.match(appModule, /PrismaOrderImportPersistenceGateway/);
-    assert.match(appModule, /useExisting: InMemoryOrderImportRepository/);
+    assert.match(appModule, /createOrderImportRepositoryProvider/);
+    assert.match(appModule, /orderImportRepositoryRuntimeModes\.inMemory/);
     assert.doesNotMatch(
       `${repositorySource}\n${appModule}`,
       /@prisma\/client|new PrismaClient|process\.env|order_connector|fetch\(|https?:\/\//i

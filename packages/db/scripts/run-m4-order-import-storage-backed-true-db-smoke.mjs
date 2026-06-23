@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
@@ -119,6 +120,7 @@ async function assertBrowserStorageSubmitAndReadback(runtime) {
       storageSubmit: storageSubmitPayload
     },
     async (runtimeState) => {
+      await waitForStoragePostBody(storagePostBodies);
       assert.equal(storagePostBodies.length, 1);
       assert.deepEqual(Object.keys(storagePostBodies[0]).sort(), [
         "bucketId",
@@ -142,6 +144,14 @@ async function assertBrowserStorageSubmitAndReadback(runtime) {
       await assertVisibleText(runtimeState, "Handoff: not required");
     }
   );
+}
+
+async function waitForStoragePostBody(storagePostBodies) {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() <= deadline) {
+    if (storagePostBodies.length > 0) return;
+    await delay(100);
+  }
 }
 
 async function prepareStorageObject(storageClient, input) {

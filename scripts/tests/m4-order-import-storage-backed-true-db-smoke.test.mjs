@@ -159,6 +159,7 @@ describe("M4-41 order import Storage-backed true DB smoke", () => {
     assert.match(smokeSource, /import WebSocket from "ws"/);
     assert.match(smokeSource, /createClient\(supabaseUrl, supabaseSecretKey/);
     assert.match(smokeSource, /realtime: \{ transport: WebSocket \}/);
+    assert.match(smokeSource, /waitForStoragePostBody\(storagePostBodies\)/);
     assert.match(smokeSource, /storage\.createBucket/);
     assert.match(smokeSource, /\.upload\(input\.objectPath/);
     assert.match(smokeSource, /\.download\(input\.objectPath\)/);

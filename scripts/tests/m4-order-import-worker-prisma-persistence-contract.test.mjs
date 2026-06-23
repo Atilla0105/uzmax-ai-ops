@@ -49,15 +49,18 @@ describe("M4-27 order import worker Prisma persistence gateway contract", () => 
       ["importJob.create", "orderSnapshot.createMany", "importRowError.createMany"]
     );
     assert.equal(calls[0].args.data.id, IMPORT_JOB_ID);
-    assert.equal(calls[0].args.data.status, "completed_with_errors");
+    assert.equal(calls[0].args.data.status, "COMPLETED_WITH_ERRORS");
     assert.equal(calls[1].args.skipDuplicates, true);
     assert.equal(calls[1].args.data.length, 1);
     assert.equal(calls[1].args.data[0].id, SNAPSHOT_ID);
     assert.equal(calls[1].args.data[0].externalOrderRef, "controlled://order/ref-a");
+    assert.equal(calls[1].args.data[0].sourceKind, "IMPORT_SNAPSHOT");
+    assert.equal(calls[1].args.data[0].status, "ACTIVE");
     assert.equal(calls[2].args.skipDuplicates, true);
     assert.equal(calls[2].args.data.length, 1);
     assert.equal(calls[2].args.data[0].id, ROW_ERROR_ID);
     assert.equal(calls[2].args.data[0].rowNumber, 2);
+    assert.equal(calls[2].args.data[0].severity, "ERROR");
   });
 
   it("skips empty createMany batches while keeping the import job write explicit", async () => {
@@ -110,6 +113,9 @@ describe("M4-27 order import worker Prisma persistence gateway contract", () => 
       /OrderImportWorkerPrismaPersistenceClientPort/
     );
     assert.match(prismaPersistenceSource, /PrismaOrderImportWorkerPersistenceGateway/);
+    assert.match(prismaPersistenceSource, /toPrismaImportJobCreateData/);
+    assert.match(prismaPersistenceSource, /COMPLETED_WITH_ERRORS/);
+    assert.match(prismaPersistenceSource, /IMPORT_SNAPSHOT/);
     assert.match(prismaPersistenceSource, /createMany/);
     assert.doesNotMatch(
       `${workerSource}\n${prismaPersistenceSource}`,

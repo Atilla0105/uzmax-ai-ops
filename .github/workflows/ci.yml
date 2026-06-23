@@ -60,6 +60,7 @@ jobs:
           docs_only=true
           frontend_changed=false
           spike_changed=false
+          true_db_smoke_changed=false
 
           if [ -z "$changed_files" ]; then
             docs_only=false
@@ -83,8 +84,14 @@ jobs:
             esac
 
             case "$file" in
-              packages/db/*|packages/db/**|packages/authz/*|packages/authz/**|package.json|package-lock.json)
+              packages/db/migrations/*|packages/db/migrations/**|packages/db/prisma/*|packages/db/prisma/**|packages/db/src/*|packages/db/src/**|packages/db/scripts/run-rls-prisma-pool-spike.mjs|packages/db/package.json|packages/authz/*|packages/authz/**|package.json|package-lock.json)
                 spike_changed=true
+                ;;
+            esac
+
+            case "$file" in
+              .github/workflows/ci.yml|apps/api/*|apps/api/**|apps/worker/*|apps/worker/**|packages/db/*|packages/db/**|scripts/tests/m4-order-import-*|package.json|package-lock.json)
+                true_db_smoke_changed=true
                 ;;
             esac
           done <<< "$changed_files"
@@ -93,6 +100,7 @@ jobs:
           run_core=false
           run_spikes=false
           run_playwright=false
+          run_true_db_smoke=false
 
           if [ "$docs_only" != "true" ] || [ "$force_full" = "true" ]; then
             run_core=true
@@ -103,14 +111,19 @@ jobs:
           if [ "$frontend_changed" = "true" ] || [ "$force_full" = "true" ]; then
             run_playwright=true
           fi
+          if [ "$true_db_smoke_changed" = "true" ] || [ "$force_full" = "true" ]; then
+            run_true_db_smoke=true
+          fi
 
           {
             echo "docs_only=$docs_only"
             echo "frontend_changed=$frontend_changed"
             echo "spike_changed=$spike_changed"
+            echo "true_db_smoke_changed=$true_db_smoke_changed"
             echo "run_core=$run_core"
             echo "run_spikes=$run_spikes"
             echo "run_playwright=$run_playwright"
+            echo "run_true_db_smoke=$run_true_db_smoke"
             echo "changed_files<<EOF"
             printf '%s\n' "$changed_files"
             echo "EOF"
@@ -123,9 +136,11 @@ jobs:
           echo "docs_only=${{ steps.path-scope.outputs.docs_only }}"
           echo "frontend_changed=${{ steps.path-scope.outputs.frontend_changed }}"
           echo "spike_changed=${{ steps.path-scope.outputs.spike_changed }}"
+          echo "true_db_smoke_changed=${{ steps.path-scope.outputs.true_db_smoke_changed }}"
           echo "run_core=${{ steps.path-scope.outputs.run_core }}"
           echo "run_spikes=${{ steps.path-scope.outputs.run_spikes }}"
           echo "run_playwright=${{ steps.path-scope.outputs.run_playwright }}"
+          echo "run_true_db_smoke=${{ steps.path-scope.outputs.run_true_db_smoke }}"
           echo "changed_files:"
           printf '%s\n' "$UZMAX_CI_CHANGED_FILES"
       - uses: actions/setup-node@v4
@@ -156,6 +171,12 @@ jobs:
         run: npm run guard:pr-shape -- --base "${{ steps.guard-base.outputs.base }}"
       - if: steps.path-scope.outputs.run_core == 'true'
         run: npm run -w @uzmax/db prisma:generate
+      - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
+        name: M4 order import true DB runtime smoke
+        env:
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
+        run: node packages/db/scripts/run-m4-order-import-true-db-smoke.mjs
       - if: steps.path-scope.outputs.run_spikes == 'true'
         name: SPK-03 RLS Prisma pool spike
         env:

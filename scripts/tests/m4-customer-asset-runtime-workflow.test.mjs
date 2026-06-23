@@ -119,7 +119,8 @@ describe("M4-43 customer asset runtime workflow", () => {
   it("wires CI and evidence while leaving later M4 slices open", () => {
     assert.match(ciSource, /run-m4-customer-asset-runtime-workflow-smoke\.mjs/);
     assert.match(evidence, /CI true DB smoke/);
-    assert.match(evidence, /pending/);
+    assert.match(evidence, /28043155935/);
+    assert.match(evidence, /residue=0/);
     assert.match(evidence, /M4-44/);
     assert.match(evidence, /M4-45/);
     assert.match(m4Index, /customer_asset_runtime_workflow_supported_not_full/);

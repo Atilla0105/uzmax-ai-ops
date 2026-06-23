@@ -116,15 +116,19 @@ Local worker-boundary full mode:
 |---|---|
 | `npm run guard:worker-boundary` | blocked by pre-existing root/main untracked duplicate docs outside this spec: `docs/adr/ADR-B02-order-api 2.md`, `docs/adr/README 2.md`, `docs/evidence/M4/README 2.md`, `docs/evidence/M4/spikes 2/SPK-02-order-saas-api/manifest.md`, `docs/specs/SPK-02-order-api 2.md` |
 
-GitHub CI true DB smoke result: pending.
+GitHub CI true DB smoke:
+
+| Run | Result |
+|---|---|
+| PR #96 pull_request run `28010542196`, step `M4 order import true DB runtime smoke` | pass; step completed successfully before the remaining SPK-03/SPK-04 and general CI steps continued |
 
 ## Acceptance Mapping
 
 | Item | Status | Notes |
 |---|---|---|
-| B-01 | `true_db_runtime_smoke_pending_not_closed` | Adds an automated dev DB RLS read/write smoke for M4 order import rows once CI passes. Full durable SQL/RLS matrix remains future scope. |
+| B-01 | `true_db_runtime_smoke_supported_not_closed` | Adds an automated dev DB RLS read/write smoke for M4 order import rows. Full durable SQL/RLS matrix remains future scope. |
 | E-01 | `not_current_blocker__no_api_for_m4` | No external order API connector was added or called. |
-| E-02 | `worker_api_true_db_smoke_pending_not_closed` | Worker CSV draft -> DB/RLS -> API repository read path is being made executable against dev main. Admin visible E2E, queue runtime, Storage runtime and real import sample remain open. |
+| E-02 | `worker_api_true_db_smoke_supported_not_closed` | Worker CSV draft -> DB/RLS -> API repository read path is executable against dev main. Admin visible E2E, queue runtime, Storage runtime and real import sample remain open. |
 | E-03 | `not_closed` | Stale snapshot warning E2E is not covered here. |
 | E-04 | `not_closed` | AI order-read runtime, eval fixtures and redline gate are not covered here. |
 | J-02 | `not_closed` | BullMQ/Redis retry/idempotency/backlog/fault-injection evidence is not present. |

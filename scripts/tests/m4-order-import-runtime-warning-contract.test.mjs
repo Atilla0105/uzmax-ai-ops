@@ -371,6 +371,6 @@ function moduleUrlFromTs(sourceText) {
 
 function nestCommonStubUrl() {
   return `data:text/javascript,${encodeURIComponent(
-    "const d=()=>()=>undefined;export const Inject=d;export const Injectable=d;"
+    "const d=()=>()=>undefined;export const Inject=d;export const Injectable=d;export const Optional=d;"
   )}`;
 }

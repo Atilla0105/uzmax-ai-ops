@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 
 import {
   createOrderImportApiClient,
-  type OrderImportApiClient
+  type OrderImportApiClient,
+  type OrderImportCsvTextSubmitInput
 } from "./orderImportApiClient";
 
 type M4VisibleSmokeConfig = {
   enabled?: boolean;
   now?: string;
   queryRef?: string;
+  submit?: OrderImportCsvTextSubmitInput;
 };
 
 declare global {
@@ -42,6 +44,8 @@ type HandoffSnapshotResult = SnapshotResult & {
   runtimeWarning?: { code?: string };
 };
 
+const submittedSmokeJobs = new Map<string, Promise<string>>();
+
 export function M4OrderImportVisibleSmokeState() {
   const smokeConfig = readSmokeConfig();
   const [state, setState] = useState<RuntimeState>(
@@ -63,7 +67,12 @@ export function M4OrderImportVisibleSmokeState() {
     return () => {
       active = false;
     };
-  }, [smokeConfig?.enabled, smokeConfig?.now, smokeConfig?.queryRef]);
+  }, [
+    smokeConfig?.enabled,
+    smokeConfig?.now,
+    smokeConfig?.queryRef,
+    smokeConfig?.submit
+  ]);
 
   if (state.mode === "local") return null;
 
@@ -88,8 +97,14 @@ async function loadRuntimeState(smokeConfig: M4VisibleSmokeConfig) {
   const client = createOrderImportApiClient({
     fetcher: (input, init) => fetch(input, init)
   });
+  let submittedImportJobId: string | undefined;
+  if (smokeConfig.submit) {
+    submittedImportJobId = await submitSmokeJobOnce(client, smokeConfig.submit);
+  }
   const jobs = await client.listImportJobs();
-  const job = jobs[0];
+  const job = submittedImportJobId
+    ? jobs.find((item) => item.id === submittedImportJobId)
+    : jobs[0];
   if (!job) throw new Error("order import smoke job missing");
   const [errors, snapshot] = await Promise.all([
     client.listImportRowErrors(job.id),
@@ -99,6 +114,24 @@ async function loadRuntimeState(smokeConfig: M4VisibleSmokeConfig) {
     })
   ]);
   return runtimeStateFromResponse({ errors, job, snapshot });
+}
+
+function smokeSubmitKey(submit: OrderImportCsvTextSubmitInput) {
+  return `${submit.importJobId}:${submit.sourceRef}`;
+}
+
+async function submitSmokeJobOnce(
+  client: OrderImportApiClient,
+  submit: OrderImportCsvTextSubmitInput
+) {
+  const submitKey = smokeSubmitKey(submit);
+  const existingSubmit = submittedSmokeJobs.get(submitKey);
+  if (existingSubmit) return existingSubmit;
+  const nextSubmit = client
+    .submitImportCsvTextJob(submit)
+    .then((submitResult) => submitResult.importJobId);
+  submittedSmokeJobs.set(submitKey, nextSubmit);
+  return nextSubmit;
 }
 
 function RuntimeStateDetail({

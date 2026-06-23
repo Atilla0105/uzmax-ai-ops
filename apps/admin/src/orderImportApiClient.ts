@@ -4,10 +4,26 @@ type ApiResponseLike = {
   status: number;
 };
 
+type ApiRequestInit = {
+  body?: string;
+  headers?: Record<string, string>;
+  method?: "GET" | "POST";
+};
+
 export type OrderImportApiFetcher = (
   input: string,
-  init?: { method?: "GET" }
+  init?: ApiRequestInit
 ) => Promise<ApiResponseLike>;
+
+export type OrderImportCsvTextSubmitInput = {
+  csvText: string;
+  importedAt: string;
+  importJobId: string;
+  maxRows?: number;
+  rowErrorIds: string[];
+  snapshotIds: string[];
+  sourceRef: string;
+};
 
 export function createOrderImportApiClient({
   basePath = "/order-import",
@@ -22,6 +38,15 @@ export function createOrderImportApiClient({
     async listImportJobs() {
       const payload = await readJson(fetcher, `${root}/jobs`);
       return arrayPayload(payload, "items").map(jobItem);
+    },
+    async submitImportCsvTextJob(input: OrderImportCsvTextSubmitInput) {
+      return submitJobResult(
+        await readJson(fetcher, `${root}/jobs`, {
+          body: JSON.stringify(submitJobPayload(input)),
+          headers: { "content-type": "application/json" },
+          method: "POST"
+        })
+      );
     },
     async listImportRowErrors(jobId: string) {
       const payload = await readJson(
@@ -54,8 +79,12 @@ export function createOrderImportApiClient({
 
 export type OrderImportApiClient = ReturnType<typeof createOrderImportApiClient>;
 
-async function readJson(fetcher: OrderImportApiFetcher, path: string) {
-  const response = await fetcher(path, { method: "GET" });
+async function readJson(
+  fetcher: OrderImportApiFetcher,
+  path: string,
+  init: ApiRequestInit = { method: "GET" }
+) {
+  const response = await fetcher(path, init);
   if (!response.ok) {
     throw new Error(`order import API request failed with status ${response.status}`);
   }
@@ -98,6 +127,39 @@ function rowErrorItem(value: unknown) {
     importJobId: requiredText(record.importJobId, "importJobId"),
     messageRef: requiredText(record.messageRef, "messageRef"),
     rowNumber: integerValue(record.rowNumber, "rowNumber")
+  };
+}
+
+function submitJobPayload(input: OrderImportCsvTextSubmitInput) {
+  return {
+    csvText: requiredText(input.csvText, "csvText"),
+    importedAt: requiredText(input.importedAt, "importedAt"),
+    importJobId: uuidText(input.importJobId, "importJobId"),
+    maxRows: input.maxRows,
+    rowErrorIds: uuidArray(input.rowErrorIds, "rowErrorIds"),
+    snapshotIds: uuidArray(input.snapshotIds, "snapshotIds"),
+    sourceRef: requiredText(input.sourceRef, "sourceRef")
+  };
+}
+
+function submitJobResult(value: unknown) {
+  const record = recordPayload(value, "order import submit result");
+  const persisted = recordPayload(record.persisted, "persisted");
+  const dispatch = recordPayload(record.dispatch, "dispatch");
+  return {
+    dispatch: {
+      idempotencyKey: requiredText(dispatch.idempotencyKey, "idempotencyKey"),
+      jobId: requiredText(dispatch.jobId, "jobId"),
+      jobName: requiredText(dispatch.jobName, "jobName")
+    },
+    importJobId: requiredText(record.importJobId, "importJobId"),
+    persisted: {
+      importJobs: integerValue(persisted.importJobs, "importJobs"),
+      rowErrors: integerValue(persisted.rowErrors, "rowErrors"),
+      snapshots: integerValue(persisted.snapshots, "snapshots")
+    },
+    sourceRef: requiredText(record.sourceRef, "sourceRef"),
+    status: requiredText(record.status, "status")
   };
 }
 
@@ -210,6 +272,23 @@ function recordPayload(value: unknown, name: string): Record<string, unknown> {
 function integerValue(value: unknown, name: string): number {
   if (!Number.isInteger(value)) throw new Error(`${name} must be an integer`);
   return value as number;
+}
+
+function uuidArray(value: unknown, name: string): string[] {
+  if (!Array.isArray(value)) throw new Error(`${name} must be an array`);
+  return value.map((item, index) => uuidText(item, `${name}.${index}`));
+}
+
+function uuidText(value: unknown, name: string): string {
+  const text = requiredText(value, name);
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      text
+    )
+  ) {
+    throw new Error(`${name} must be a UUID`);
+  }
+  return text;
 }
 
 function booleanValue(value: unknown, name: string): boolean {

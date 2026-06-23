@@ -125,10 +125,20 @@ export async function importApiRuntime() {
   );
   await writeModule(
     outDir,
+    "apps/api/src/order-import.defaults.ts",
+    "order-import.defaults.mjs",
+    {
+      "./order-import.types.ts": "./order-import.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
     "apps/api/src/order-import.repository.ts",
     "order-import.repository.mjs",
     {
       "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "./order-import.defaults.ts": "./order-import.defaults.mjs",
       "./order-import.types.ts": "./order-import.types.mjs"
     }
   );

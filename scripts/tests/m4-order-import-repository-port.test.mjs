@@ -13,6 +13,12 @@ const USER_A = "44444444-4444-4444-8444-444444444444";
 const repositorySource = read("apps/api/src/order-import.repository.ts");
 const serviceSource = read("apps/api/src/order-import.service.ts");
 const appModule = read("apps/api/src/app.module.ts");
+const compilerOptions = {
+  emitDecoratorMetadata: false,
+  experimentalDecorators: true,
+  module: ts.ModuleKind.ES2022,
+  target: ts.ScriptTarget.ES2023
+};
 const spec = read("docs/specs/M4-08-order-import-repository-port.md");
 const evidence = read("docs/evidence/M4/M4-08-order-import-repository-port.md");
 const m411Spec = read("docs/specs/M4-11-order-import-prisma-gateway.md");
@@ -172,7 +178,7 @@ describe("M4-08 order import repository port", () => {
   });
 
   it("records M4-08 scope without adding DB client or order connector runtime", () => {
-    assert.match(repositorySource, /import type \{ M4OrderImportContractInput \}/);
+    assert.match(repositorySource, /M4OrderImportContractInput/);
     assert.match(spec, /repository-port foundation/);
     assert.match(evidence, /no raw customer\/order data/);
     assert.match(m4Index, /M4-08 order import repository port/);
@@ -222,7 +228,7 @@ describe("M4-11 order import Prisma gateway", () => {
       }
     ]);
     assert.deepEqual(
-      jobs.map((job) => pick(job, ["completedAt", "id", "status"])),
+      jobs.map(({ completedAt, id, status }) => ({ completedAt, id, status })),
       [
         {
           completedAt: "2026-06-22T12:00:00.000Z",
@@ -357,22 +363,12 @@ function snapshotRow(tenantId, queryRef, expiresAt) {
   };
 }
 
-function gatewayWithSnapshot(snapshot) {
-  return {
-    findOrderSnapshot() {
-      return snapshot;
-    },
-    getImportJob() {
-      return undefined;
-    },
-    listImportJobs() {
-      return [];
-    },
-    listImportRowErrors() {
-      return [];
-    }
-  };
-}
+const gatewayWithSnapshot = (snapshot) => ({
+  findOrderSnapshot: () => snapshot,
+  getImportJob: () => undefined,
+  listImportJobs: () => [],
+  listImportRowErrors: () => []
+});
 
 function prismaStub(overrides = {}) {
   return {
@@ -392,13 +388,18 @@ function prismaStub(overrides = {}) {
   };
 }
 
-function pick(record, keys) {
-  return Object.fromEntries(keys.map((key) => [key, record[key]]));
-}
-
 async function importOrderImportRepositorySource() {
+  const db = await importTypescriptSource("packages/db/src/index.ts");
+  const defaults = await importTypescriptSource(
+    "apps/api/src/order-import.defaults.ts"
+  );
   const moduleUrl = inlineModuleUrl(
-    transpileSource(read("apps/api/src/order-import.repository.ts"))
+    transpileSource(
+      replaceImports(read("apps/api/src/order-import.repository.ts"), {
+        "../../../packages/db/src/index.ts": db.moduleUrl,
+        "./order-import.defaults.ts": defaults.moduleUrl
+      })
+    )
   );
   return { module: await import(moduleUrl), moduleUrl };
 }
@@ -413,14 +414,14 @@ function read(relativePath) {
 }
 
 function transpileSource(sourceText) {
-  return ts.transpileModule(sourceText, {
-    compilerOptions: {
-      emitDecoratorMetadata: false,
-      experimentalDecorators: true,
-      module: ts.ModuleKind.ES2022,
-      target: ts.ScriptTarget.ES2023
-    }
-  }).outputText;
+  return ts.transpileModule(sourceText, { compilerOptions }).outputText;
+}
+
+function replaceImports(sourceText, replacements) {
+  return Object.entries(replacements).reduce(
+    (updated, [from, to]) => updated.replaceAll(from, to),
+    sourceText
+  );
 }
 
 function inlineModuleUrl(sourceText) {

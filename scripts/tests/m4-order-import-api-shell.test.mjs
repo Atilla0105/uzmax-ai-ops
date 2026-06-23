@@ -216,6 +216,7 @@ async function importOrderImportApiSource() {
     return destination.href;
   };
   const authz = await importTypescriptSource("packages/authz/src/index.ts");
+  const db = await importTypescriptSource("packages/db/src/index.ts");
   const orderRead = await importTypescriptSource(
     "packages/capabilities/order-read/src/index.ts"
   );
@@ -228,8 +229,13 @@ async function importOrderImportApiSource() {
     "../../../packages/authz/src/index.ts": authz.moduleUrl,
     "../../../packages/capabilities/order-read/src/index.ts": orderRead.moduleUrl
   });
+  const defaultsModuleUrl = writeSource(writeTempModule, "order-import.defaults", {
+    "./order-import.types.ts": typesModuleUrl
+  });
   const repositoryModuleUrl = writeSource(writeTempModule, "order-import.repository", {
     "../../../packages/authz/src/index.ts": authz.moduleUrl,
+    "../../../packages/db/src/index.ts": db.moduleUrl,
+    "./order-import.defaults.ts": defaultsModuleUrl,
     "./order-import.types.ts": typesModuleUrl
   });
   const serviceModuleUrl = writeSource(writeTempModule, "order-import.service", {

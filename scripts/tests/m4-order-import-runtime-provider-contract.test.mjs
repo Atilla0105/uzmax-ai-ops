@@ -16,8 +16,14 @@ const evidence = read(
   "docs/evidence/M4/M4-23-order-import-runtime-provider-contract.md"
 );
 const m4Index = read("docs/evidence/M4/README.md");
+const db = await importTypescriptSource("packages/db/src/index.ts");
+const defaults = await importTypescriptSource("apps/api/src/order-import.defaults.ts");
 const repository = await importTypescriptSource(
-  "apps/api/src/order-import.repository.ts"
+  "apps/api/src/order-import.repository.ts",
+  {
+    "../../../packages/db/src/index.ts": db.moduleUrl,
+    "./order-import.defaults.ts": defaults.moduleUrl
+  }
 );
 
 describe("M4-23 order import runtime provider contract", () => {
@@ -214,9 +220,9 @@ function prismaDelegate(methods) {
   );
 }
 
-async function importTypescriptSource(relativePath) {
+async function importTypescriptSource(relativePath, replacements = {}) {
   const moduleUrl = inlineModuleUrl(
-    ts.transpileModule(read(relativePath), {
+    ts.transpileModule(replaceImports(read(relativePath), replacements), {
       compilerOptions: {
         module: ts.ModuleKind.ES2022,
         target: ts.ScriptTarget.ES2023
@@ -225,6 +231,13 @@ async function importTypescriptSource(relativePath) {
     }).outputText
   );
   return { module: await import(moduleUrl), moduleUrl };
+}
+
+function replaceImports(sourceText, replacements) {
+  return Object.entries(replacements).reduce(
+    (updated, [from, to]) => updated.replaceAll(from, to),
+    sourceText
+  );
 }
 
 function read(relativePath) {

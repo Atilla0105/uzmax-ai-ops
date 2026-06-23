@@ -159,6 +159,17 @@ export async function importApiRuntime() {
       "./order-import.repository.ts": "./order-import.repository.mjs"
     }
   );
+  await writeModule(outDir, "packages/db/src/prisma-runtime.ts", "prisma-runtime.mjs");
+  await writeModule(
+    outDir,
+    "apps/api/src/order-import.runtime.ts",
+    "order-import.runtime.mjs",
+    {
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+      "./order-import.repository.ts": "./order-import.repository.mjs",
+      "./order-import.rls-runner.ts": "./order-import.rls-runner.mjs"
+    }
+  );
   await writeModule(
     outDir,
     "apps/api/src/order-import.service.ts",
@@ -195,7 +206,8 @@ export async function importApiRuntime() {
     "./customer-asset.controller.ts": "./customer-asset.controller.mjs",
     "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
     "./customer-asset.service.ts": "./customer-asset.service.mjs",
-    "./order-import.ts": "./order-import.mjs"
+    "./order-import.ts": "./order-import.mjs",
+    "./order-import.runtime.ts": "./order-import.runtime.mjs"
   });
   await writeModule(outDir, "apps/api/src/main.ts", "main.mjs", {
     "./app.module.ts": "./app.module.mjs"

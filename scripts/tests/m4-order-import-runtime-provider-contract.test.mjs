@@ -10,6 +10,7 @@ const ORG_ID = "11111111-1111-4111-8111-111111111111";
 const TENANT_A = "22222222-2222-4222-8222-222222222222";
 const USER_A = "44444444-4444-4444-8444-444444444444";
 const repositorySource = read("apps/api/src/order-import.repository.ts");
+const runtimeSource = read("apps/api/src/order-import.runtime.ts");
 const appModule = read("apps/api/src/app.module.ts");
 const spec = read("docs/specs/M4-23-order-import-runtime-provider-contract.md");
 const evidence = read(
@@ -142,14 +143,16 @@ describe("M4-23 order import runtime provider contract", () => {
       appModule,
       /useFactory: \(repository: InMemoryOrderImportRepository\)/
     );
-    assert.match(appModule, /orderImportRepositoryRuntimeModes\.inMemory/);
+    assert.match(appModule, /createOrderImportRepositoryProviderFromEnv/);
+    assert.doesNotMatch(appModule, /process\.env/);
+    assert.match(runtimeSource, /process\.env/);
     assert.doesNotMatch(
       appModule,
       /useClass: PrismaOrderImportPersistenceGateway|useExisting: PrismaOrderImportPersistenceGateway/
     );
     assert.doesNotMatch(
       `${repositorySource}\n${appModule}`,
-      /@prisma\/client|new PrismaClient|process\.env|order_connector|fetch\(|https?:\/\//i
+      /@prisma\/client|new PrismaClient|order_connector|fetch\(|https?:\/\//i
     );
   });
 

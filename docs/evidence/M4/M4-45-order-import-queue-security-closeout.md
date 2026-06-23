@@ -33,7 +33,7 @@ Current audit decision: `unresolved_security_blocker`.
 | `node --test scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs` | passed; 5/5 tests |
 | `env -u UZMAX_REDIS_URL node apps/worker/scripts/run-m4-order-import-bullmq-redis-smoke.mjs` | passed fail-closed check; printed `UZMAX_REDIS_URL is required`, exit `1` |
 | Real Redis smoke | passed in PR CI run `28051367752`, job `83042547806`, step `M4 order import BullMQ Redis smoke`; local Docker failed with `failed to connect to the docker API at unix:///Users/atilla/.docker/run/docker.sock` |
-| CI Redis smoke wiring | passed in PR CI run `28051367752`, job `83042547806`; wiring covers applicable worker/package/CI/test changes and this M4-45 spec/evidence path using disposable `redis:7-alpine` and `UZMAX_REDIS_URL=redis://127.0.0.1:6379` |
+| CI Redis smoke wiring | previous Redis smoke passed in PR CI run `28051367752`, job `83042547806`; current path scope covers worker/package/CI/test changes (`apps/worker/**`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `scripts/tests/m4-worker-test-loader.mjs`, `scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs`), the M4-45 spec/evidence files and `docs/evidence/M4/README.md`, using disposable `redis:7-alpine` and `UZMAX_REDIS_URL=redis://127.0.0.1:6379` |
 | `npm audit --json` | exit `1`; high `3`, total `3`; names `@nestjs/core`, `@nestjs/platform-express`, `multer` |
 | `npm run format:check` | passed |
 | `npm run guard:prettier-ignore` | passed |

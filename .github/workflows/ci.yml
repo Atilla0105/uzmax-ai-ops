@@ -85,7 +85,7 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/ci.yml|apps/worker/*|apps/worker/**|docs/evidence/M4/M4-45-order-import-queue-security-closeout.md|docs/specs/M4-45-order-import-queue-security-closeout.md|scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs|package.json|package-lock.json)
+              .github/workflows/ci.yml|apps/worker/*|apps/worker/**|docs/evidence/M4/M4-45-order-import-queue-security-closeout.md|docs/evidence/M4/README.md|docs/specs/M4-45-order-import-queue-security-closeout.md|scripts/tests/m4-worker-test-loader.mjs|scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs|package.json|package-lock.json)
                 redis_smoke_changed=true
                 ;;
             esac

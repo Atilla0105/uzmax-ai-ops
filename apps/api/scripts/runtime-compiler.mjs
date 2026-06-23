@@ -37,6 +37,34 @@ export async function importApiOrderImportRuntimeModules(options = {}) {
   };
 }
 
+export async function importApiCustomerAssetRuntimeModules(options = {}) {
+  const outDir = await compileApiRuntime(options);
+  const importModule = (fileName) =>
+    import(pathToFileURL(path.join(outDir, fileName)).href);
+  const [
+    accessContext,
+    customerAssetController,
+    customerAssetRepository,
+    customerAssetRuntime,
+    customerAssetService
+  ] = await Promise.all([
+    importModule("access-context.mjs"),
+    importModule("customer-asset.controller.mjs"),
+    importModule("customer-asset.repository.mjs"),
+    importModule("customer-asset.runtime.mjs"),
+    importModule("customer-asset.service.mjs")
+  ]);
+
+  return {
+    accessContext,
+    customerAssetController,
+    customerAssetRepository,
+    customerAssetRuntime,
+    customerAssetService,
+    outDir
+  };
+}
+
 export async function compileApiRuntime(options = {}) {
   const outDir = options.outDir ?? defaultOutDir;
   await rm(outDir, { force: true, recursive: true });
@@ -124,6 +152,15 @@ export async function compileApiRuntime(options = {}) {
     outDir,
     "packages/capabilities/handoff/src/index.ts",
     "handoff-index.mjs"
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/audit-log.prisma-sink.ts",
+    "audit-log.prisma-sink.mjs",
+    {
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "./access-context-core.ts": "./access-context-core.mjs"
+    }
   );
   for (const [name, replacements] of customerAssetRuntimeModules()) {
     await writeModule(
@@ -239,6 +276,7 @@ export async function compileApiRuntime(options = {}) {
     "./conversation-ticket.ts": "./conversation-ticket.mjs",
     "./customer-asset.controller.ts": "./customer-asset.controller.mjs",
     "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
+    "./customer-asset.runtime.ts": "./customer-asset.runtime.mjs",
     "./customer-asset.service.ts": "./customer-asset.service.mjs",
     "./order-import.ts": "./order-import.mjs",
     "./order-import.runtime.ts": "./order-import.runtime.mjs"
@@ -268,6 +306,34 @@ function customerAssetRuntimeModules() {
       "repository",
       {
         "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+        "./customer-asset.types.ts": "./customer-asset.types.mjs"
+      }
+    ],
+    [
+      "persistence",
+      {
+        "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+        "../../../packages/db/src/m4-customer-asset-contracts.ts": "./db-index.mjs",
+        "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
+        "./customer-asset.types.ts": "./customer-asset.types.mjs"
+      }
+    ],
+    [
+      "prisma-gateway",
+      {
+        "../../../packages/db/src/m4-customer-asset-contracts.ts": "./db-index.mjs",
+        "./customer-asset.persistence.ts": "./customer-asset.persistence.mjs"
+      }
+    ],
+    [
+      "runtime",
+      {
+        "../../../packages/db/src/index.ts": "./db-index.mjs",
+        "./access-context-core.ts": "./access-context-core.mjs",
+        "./audit-log.prisma-sink.ts": "./audit-log.prisma-sink.mjs",
+        "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
+        "./customer-asset.prisma-gateway.ts": "./customer-asset.prisma-gateway.mjs",
+        "./customer-asset.persistence.ts": "./customer-asset.persistence.mjs",
         "./customer-asset.types.ts": "./customer-asset.types.mjs"
       }
     ],

@@ -215,6 +215,11 @@ function restoreResult(value: unknown) {
       action: exactText(auditDraft.action, "customer_restore_flags", "audit action"),
       actorUserId: readRequiredString(auditDraft.actorUserId, "actorUserId"),
       customerId: readRequiredString(auditDraft.customerId, "customerId"),
+      eventType: exactText(
+        auditDraft.eventType,
+        "customer.flags_restored",
+        "audit eventType"
+      ),
       reasonRef: readRequiredString(auditDraft.reasonRef, "reasonRef"),
       restoredFlags: readArrayField(auditDraft, "restoredFlags").map(restoredFlag)
     },

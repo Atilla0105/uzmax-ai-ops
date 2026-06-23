@@ -90,7 +90,7 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/ci.yml|apps/api/*|apps/api/**|apps/worker/*|apps/worker/**|packages/db/*|packages/db/**|scripts/tests/m4-order-import-*|package.json|package-lock.json)
+              .github/workflows/ci.yml|apps/api/*|apps/api/**|apps/worker/*|apps/worker/**|packages/db/*|packages/db/**|scripts/tests/m4-order-import-*|scripts/tests/m4-customer-asset-*|package.json|package-lock.json)
                 true_db_smoke_changed=true
                 ;;
             esac
@@ -189,6 +189,7 @@ jobs:
           node packages/db/scripts/run-m4-order-import-admin-submit-true-db-worker-dispatch-smoke.mjs
           node packages/db/scripts/run-m4-order-import-storage-backed-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-operator-workflow-smoke.mjs
+          node packages/db/scripts/run-m4-customer-asset-runtime-workflow-smoke.mjs
       - if: steps.path-scope.outputs.run_spikes == 'true'
         name: SPK-03 RLS Prisma pool spike
         env:

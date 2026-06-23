@@ -24,6 +24,16 @@ import {
   InMemoryCustomerAssetRepository
 } from "./customer-asset.repository.ts";
 import { CustomerAssetController } from "./customer-asset.controller.ts";
+import {
+  createCustomerAssetAuditSinkProvider,
+  createCustomerAssetRepositoryProvider,
+  createCustomerAssetRlsBatchTransactionRunner,
+  customerAssetRuntimeModes,
+  RlsCustomerAssetPersistenceGateway,
+  RlsPrismaAuditSink,
+  type CustomerAssetRuntimePrismaClientPort,
+  type CustomerAssetRlsTransactionRunner
+} from "./customer-asset.runtime.ts";
 import type {
   CustomerAssetPrismaClientPort,
   PrismaCustomerAssetPersistenceGateway
@@ -106,10 +116,18 @@ type OrderImportRepositoryContractAnchor = {
   scope: OrderImportPersistenceScope;
 };
 type CustomerAssetPersistenceContractAnchor = {
+  auditSinkProvider: typeof createCustomerAssetAuditSinkProvider;
   gateway: CustomerAssetPersistenceGateway;
   persistenceAdapter: typeof PersistenceCustomerAssetRepository;
   prismaClient: CustomerAssetPrismaClientPort;
   prismaGateway: typeof PrismaCustomerAssetPersistenceGateway;
+  rlsAuditSink: typeof RlsPrismaAuditSink;
+  rlsGateway: typeof RlsCustomerAssetPersistenceGateway;
+  rlsPrismaClient: CustomerAssetRuntimePrismaClientPort;
+  rlsRunner: CustomerAssetRlsTransactionRunner;
+  rlsRunnerFactory: typeof createCustomerAssetRlsBatchTransactionRunner;
+  runtimeModes: typeof customerAssetRuntimeModes;
+  runtimeProvider: typeof createCustomerAssetRepositoryProvider;
   scope: CustomerAssetPersistenceScope;
 };
 type ApiAuditPersistenceContractAnchor = {
@@ -146,7 +164,24 @@ function customerAssetPersistenceContractAnchor(
 ) {
   void contract;
 }
+const customerAssetRuntimeProviderContractAnchor: Pick<
+  CustomerAssetPersistenceContractAnchor,
+  | "auditSinkProvider"
+  | "rlsAuditSink"
+  | "rlsGateway"
+  | "rlsRunnerFactory"
+  | "runtimeModes"
+  | "runtimeProvider"
+> = {
+  auditSinkProvider: createCustomerAssetAuditSinkProvider,
+  rlsAuditSink: RlsPrismaAuditSink,
+  rlsGateway: RlsCustomerAssetPersistenceGateway,
+  rlsRunnerFactory: createCustomerAssetRlsBatchTransactionRunner,
+  runtimeModes: customerAssetRuntimeModes,
+  runtimeProvider: createCustomerAssetRepositoryProvider
+};
 void customerAssetPersistenceContractAnchor;
+void customerAssetRuntimeProviderContractAnchor;
 function apiAuditPersistenceContractAnchor(
   contract: ApiAuditPersistenceContractAnchor
 ) {

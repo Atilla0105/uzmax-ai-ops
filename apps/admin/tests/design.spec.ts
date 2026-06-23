@@ -293,6 +293,7 @@ test("renders the M4-16 customer asset admin shell", async ({ page }) => {
   await expect(page.getByTestId("m4-customer-asset-shell")).toBeVisible();
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
   await expect(page.getByTestId("m4-customer-shell-mode")).toContainText("Tenant B");
+  await expect(page.getByTestId("m4-customer-runtime-state")).toHaveCount(0);
 
   await expect(page.getByTestId("m4-customer-filters")).toContainText("Language");
   await expect(page.getByTestId("m4-customer-filters")).toContainText("Script");

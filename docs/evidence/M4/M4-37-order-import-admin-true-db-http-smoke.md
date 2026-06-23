@@ -108,7 +108,7 @@ GitHub CI true DB smoke:
 
 | Run | Result |
 |---|---|
-| PR pull_request run | pending |
+| PR #98 pull_request run `28015934849`, job `82920127613`, head `6f6c5bc` | pass; `checks` completed successfully. The `M4 order import true DB runtime smokes` step ran M4-35, M4-36 and M4-37 smoke scripts against masked `UZMAX_RLS_DATABASE_URL`; the log printed `m4-order-import-admin-true-db-http-smoke: passed admin client->Nest HTTP->API->DB/RLS synthetic path; residue=0`. |
 
 ## Review Notes
 

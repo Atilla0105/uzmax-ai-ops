@@ -28,6 +28,18 @@ export async function importWorkerDispatchEntrypoint() {
   return { module: await import(moduleUrl), moduleUrl };
 }
 
+export async function importWorkerPrismaPersistenceEntrypoint() {
+  const mainUrl = compileWorkerEntrypointUrl();
+  const moduleUrl = compileTsModuleUrl(
+    readRepoText("apps/worker/src/order-import-prisma-persistence.ts").replaceAll(
+      "./main.ts",
+      mainUrl
+    )
+  );
+
+  return { module: await import(moduleUrl), moduleUrl };
+}
+
 function compileWorkerEntrypointUrl() {
   const orderReadUrl = compileTsModuleUrl(
     readRepoText("packages/capabilities/order-read/src/index.ts")
@@ -38,6 +50,7 @@ function compileWorkerEntrypointUrl() {
   const moduleUrl = compileTsModuleUrl(
     readRepoText("apps/worker/src/main.ts")
       .replaceAll('export * from "./order-import-dispatch.ts";', "")
+      .replaceAll('export * from "./order-import-prisma-persistence.ts";', "")
       .replaceAll(
         "../../../packages/capabilities/order-read/src/index.ts",
         orderReadUrl

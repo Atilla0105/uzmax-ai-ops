@@ -14,7 +14,31 @@ const compilerOptions = {
 };
 
 export async function importApiRuntime() {
-  const outDir = defaultOutDir;
+  const outDir = await compileApiRuntime();
+  const entry = pathToFileURL(path.join(outDir, "main.mjs")).href;
+  return import(`${entry}?t=${Date.now()}`);
+}
+
+export async function importApiOrderImportRuntimeModules(options = {}) {
+  const outDir = await compileApiRuntime(options);
+  const importModule = (fileName) =>
+    import(pathToFileURL(path.join(outDir, fileName)).href);
+  const [accessContext, orderImport, orderImportRuntime] = await Promise.all([
+    importModule("access-context.mjs"),
+    importModule("order-import.mjs"),
+    importModule("order-import.runtime.mjs")
+  ]);
+
+  return {
+    accessContext,
+    orderImport,
+    orderImportRuntime,
+    outDir
+  };
+}
+
+export async function compileApiRuntime(options = {}) {
+  const outDir = options.outDir ?? defaultOutDir;
   await rm(outDir, { force: true, recursive: true });
   await mkdir(outDir, { recursive: true });
 
@@ -212,8 +236,7 @@ export async function importApiRuntime() {
   await writeModule(outDir, "apps/api/src/main.ts", "main.mjs", {
     "./app.module.ts": "./app.module.mjs"
   });
-  const entry = pathToFileURL(path.join(outDir, "main.mjs")).href;
-  return import(`${entry}?t=${Date.now()}`);
+  return outDir;
 }
 
 async function writeModule(outDir, sourcePath, outputName, replacements = {}) {

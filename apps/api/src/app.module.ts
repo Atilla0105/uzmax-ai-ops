@@ -55,6 +55,7 @@ import {
   type OrderImportPersistenceGateway,
   type OrderImportPersistenceScope
 } from "./order-import.ts";
+import { createOrderImportRepositoryProviderFromEnv } from "./order-import.runtime.ts";
 import type {
   DisabledTelegramBotIngressQueue as ContractDisabledTelegramBotIngressQueue,
   InMemoryTelegramBotIngressQueue,
@@ -87,6 +88,7 @@ type TelegramBotContractAnchor = {
 
 type TelegramBotWebhookBody = TelegramBotContractAnchor["input"]["body"];
 type OrderImportRepositoryContractAnchor = {
+  defaultRuntimeMode: (typeof orderImportRepositoryRuntimeModes)["inMemory"];
   gateway: OrderImportPersistenceGateway;
   persistenceAdapter: typeof PersistenceOrderImportRepository;
   prismaClient: OrderImportPrismaClientPort;
@@ -118,6 +120,7 @@ type ApiAuditPersistenceContractAnchor = {
 };
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
+  | "defaultRuntimeMode"
   | "persistenceAdapter"
   | "prismaClientToken"
   | "prismaGateway"
@@ -127,6 +130,7 @@ const orderImportRepositoryContractAnchor: Pick<
   | "runtimeModes"
   | "runtimeProvider"
 > = {
+  defaultRuntimeMode: orderImportRepositoryRuntimeModes.inMemory,
   persistenceAdapter: PersistenceOrderImportRepository,
   prismaClientToken: ORDER_IMPORT_PRISMA_CLIENT,
   prismaGateway: PrismaOrderImportPersistenceGateway,
@@ -207,9 +211,8 @@ class TelegramBotWebhookController {
       inject: [InMemoryOrderImportRepository],
       provide: ORDER_IMPORT_REPOSITORY,
       useFactory: (repository: InMemoryOrderImportRepository) =>
-        createOrderImportRepositoryProvider({
-          inMemoryRepository: repository,
-          mode: orderImportRepositoryRuntimeModes.inMemory
+        createOrderImportRepositoryProviderFromEnv({
+          inMemoryRepository: repository
         })
     },
     { provide: api.API_AUDIT_SINK, useClass: api.InMemoryAuditSink },

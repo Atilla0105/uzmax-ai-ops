@@ -183,7 +183,7 @@ describe("M4-26 order import RLS batch runner contract", () => {
     assert.match(orderImportBarrel, /order-import\.rls-runner/);
     assert.match(appModule, /createOrderImportRlsBatchTransactionRunner/);
     assert.match(appModule, /rlsBatchRunnerFactory/);
-    assert.match(appModule, /orderImportRepositoryRuntimeModes\.inMemory/);
+    assert.match(appModule, /createOrderImportRepositoryProviderFromEnv/);
     assert.match(runtimeCompiler, /order-import\.rls-runner\.mjs/);
     assert.doesNotMatch(
       appModule,
@@ -191,7 +191,7 @@ describe("M4-26 order import RLS batch runner contract", () => {
     );
     assert.doesNotMatch(
       `${runnerSource}\n${persistenceGatewaySource}\n${appModule}`,
-      /@prisma\/client|new PrismaClient|process\.env|order_connector|BullMQ|Redis|fetch\(|https?:\/\//i
+      /@prisma\/client|new PrismaClient|order_connector|BullMQ|Redis|fetch\(|https?:\/\//i
     );
   });
 
@@ -200,7 +200,7 @@ describe("M4-26 order import RLS batch runner contract", () => {
     assert.match(evidence, /no raw customer\/order data/);
     assert.match(incident, /root\/main checkout/);
     assert.match(m4Index, /M4-26 order import RLS batch runner contract/);
-    assert.match(m4Index, /production RLS batch runner integration/);
+    assert.match(m4Index, /explicit API RLS Prisma runtime/);
     assert.match(m4Index, /real BullMQ\/Redis runtime/);
   });
 });

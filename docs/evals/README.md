@@ -98,3 +98,14 @@ M3-03 keeps G-06 as `partial_foundation_not_closed`: the runner enforces quotas 
 This is an eval contract only. It does not implement AI runtime, engine/API/admin/worker integration, provider judge calls, production eval gates, persistence, real fixtures, external order API connectors, customer LLM, production traffic or M4 closeout.
 
 No raw eval fixtures, raw prompts, raw completions, customer plaintext, order IDs, phone numbers, addresses, payment data, CSV/XLSX exports, screenshots, credentials or env files may be committed for this contract.
+
+## M4 Order-Read Runtime Eval Bridge
+
+`M4-44-order-read-runtime-eval-gate` adds a controlled runtime-to-eval bridge without importing `packages/evals` into production runtime code:
+
+- `packages/capabilities/order-read` converts real `evaluateOrderSnapshotForRead` outputs into the bounded M4-22 candidate shape.
+- Fresh snapshot runtime outputs become `order_snapshot_summary` candidates with `handoffRequired: false` and only a controlled `orderStatusRef`.
+- Missing, stale and degraded runtime outputs become `handoff` candidates with `handoffRequired: true` and no order/logistics status refs.
+- Focused tests call `evaluateM4OrderReadNoFabrication` from the test harness only, proving the runtime candidates pass and fabricated handoff status refs still fail.
+
+This is a controlled bridge only. Real eval fixtures, provider judge calls, production eval gate, AI engine integration, external order API connectors, customer LLM, production traffic and M4 closeout remain future scope.

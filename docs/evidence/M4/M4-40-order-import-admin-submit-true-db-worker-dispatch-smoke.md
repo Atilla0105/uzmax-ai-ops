@@ -131,19 +131,19 @@ CI true DB visible submit/readback smoke:
 
 | Run | Result |
 |---|---|
-| pending CI results | pending |
+| GitHub Actions CI run `28027188523`, job `82957843969`, step `M4 order import true DB runtime smokes` | passed: `m4-order-import-admin-submit-true-db-worker-dispatch-smoke: passed browser admin submit->API->worker dispatch->DB/RLS readback synthetic path; residue=0` |
 
 ## Acceptance Mapping
 
 | Item | Status | Notes |
 |---|---|---|
-| B-01 | `admin_submit_worker_dispatch_true_db_smoke_ci_pending_not_closed` | Synthetic submit rows are expected to write/read under Supabase dev main RLS. Full durable SQL/RLS matrix remains future scope. |
+| B-01 | `admin_submit_worker_dispatch_true_db_smoke_supported_not_closed` | Synthetic submit rows write/read under Supabase dev main RLS in CI. Full durable SQL/RLS matrix remains future scope. |
 | E-01 | `not_current_blocker__no_api_for_m4` | No external order API connector was added or called. |
-| E-02 | `admin_submit_worker_dispatch_true_db_smoke_ci_pending_not_closed` | Browser-originated synthetic CSV submit is expected to reach API POST, worker dispatch/persistence and true DB Admin readback. Formal auth runtime, real Storage/file upload, real sample and full E2E remain open. |
+| E-02 | `admin_submit_worker_dispatch_true_db_smoke_supported_not_closed` | Browser-originated synthetic CSV submit reaches API POST, worker dispatch/persistence and true DB Admin readback in CI. Formal auth runtime, real Storage/file upload, real sample and full E2E remain open. |
 | E-03 | `admin_visible_stale_missing_true_db_smoke_supported_not_closed` | No new stale sample beyond M4-39; submit path writes a fresh snapshot only. Persisted warning storage and full E2E stale samples remain future scope. |
 | E-04 | `eval_contract_supported_not_closed` | No AI order-read runtime/eval gate changes; M4-40 does not alter redlines. |
-| I-01 | `partial_admin_submit_true_db_smoke_ci_pending_not_closed` | `/design` smoke-only Admin shell is expected to submit and read back a synthetic import path. Full desktop core order/customer workflow remains future scope. |
-| J-02 | `worker_dispatch_smoke_ci_pending_not_closed` | Uses existing worker dispatch contract and persistence gateway directly in smoke. Real BullMQ/Redis retry/idempotency/backlog/fault-injection evidence remains future scope. |
+| I-01 | `partial_admin_submit_true_db_smoke_supported_not_closed` | `/design` smoke-only Admin shell submits and reads back a synthetic import path in CI. Full desktop core order/customer workflow remains future scope. |
+| J-02 | `worker_dispatch_smoke_supported_not_closed` | Uses existing worker dispatch contract and persistence gateway directly in smoke. Real BullMQ/Redis retry/idempotency/backlog/fault-injection evidence remains future scope. |
 
 ## Boundary Notes
 

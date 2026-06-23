@@ -17,12 +17,19 @@ export async function runAdminVisibleOrderImportSmoke({
   assertRuntime,
   fixture,
   prisma,
+  seedRows = true,
   smokeName,
+  submitDispatcher,
   successMessage
 }) {
   let runtime;
   try {
-    runtime = await startAdminVisibleOrderImportRuntime({ fixture, prisma });
+    runtime = await startAdminVisibleOrderImportRuntime({
+      fixture,
+      prisma,
+      seedRows,
+      submitDispatcher
+    });
     await assertRuntime(runtime);
     await closeAdminVisibleOrderImportRuntime(runtime, { bestEffort: false });
     runtime = undefined;
@@ -44,28 +51,35 @@ export async function runAdminVisibleOrderImportSmoke({
   }
 }
 
-export async function withVisibleSmokePage(runtime, { now, queryRef }, callback) {
+export async function withVisibleSmokePage(
+  runtime,
+  { now, permissions = "order:read", queryRef, submit },
+  callback
+) {
   const page = await runtime.browser.newPage();
   try {
     await page.addInitScript(
-      ({ injectedNow, injectedQueryRef }) => {
+      ({ injectedNow, injectedQueryRef, injectedSubmit }) => {
         globalThis.__UZMAX_M4_ORDER_IMPORT_VISIBLE_SMOKE__ = {
           enabled: true,
           now: injectedNow,
-          queryRef: injectedQueryRef
+          queryRef: injectedQueryRef,
+          submit: injectedSubmit
         };
       },
-      { injectedNow: now, injectedQueryRef: queryRef }
+      { injectedNow: now, injectedQueryRef: queryRef, injectedSubmit: submit }
     );
     await page.route("**/order-import/**", async (route, request) => {
       const sourceUrl = new URL(request.url());
       const response = await route.fetch({
         headers: {
           authorization: "Bearer m4-order-import-synthetic-token",
+          "content-type": request.headers()["content-type"] ?? "application/json",
           "x-tenant-id": runtime.fixture.tenantAId,
-          "x-uzmax-smoke-permissions": "order:read"
+          "x-uzmax-smoke-permissions": permissions
         },
         method: request.method(),
+        postData: request.postData() ?? undefined,
         timeout: visibleStateTimeoutMs,
         url: `${runtime.apiBaseUrl}${sourceUrl.pathname}${sourceUrl.search}`
       });
@@ -99,7 +113,12 @@ export async function assertNoVisibleText(locator, pattern) {
   assert.doesNotMatch(content, pattern);
 }
 
-async function startAdminVisibleOrderImportRuntime({ fixture, prisma }) {
+async function startAdminVisibleOrderImportRuntime({
+  fixture,
+  prisma,
+  seedRows,
+  submitDispatcher
+}) {
   let apiApp;
   let browser;
   let viteServer;
@@ -111,12 +130,15 @@ async function startAdminVisibleOrderImportRuntime({ fixture, prisma }) {
 
     await cleanupSyntheticRows(prisma, fixture);
     await seedSyntheticTenant(prisma, fixture);
-    await seedOrderImportRowsInRlsTransaction(prisma, fixture);
+    if (seedRows) {
+      await seedOrderImportRowsInRlsTransaction(prisma, fixture);
+    }
 
     apiApp = await startOrderImportHttpSmoke({
       createAccessContext: (selectedTenantId, permissions) =>
         createSyntheticAccessContext(fixture, selectedTenantId, permissions),
-      prisma
+      prisma,
+      submitDispatcher
     });
     const apiBaseUrl = await apiApp.getUrl();
 

@@ -184,6 +184,7 @@ jobs:
           node packages/db/scripts/run-m4-order-import-admin-true-db-http-smoke.mjs
           node packages/db/scripts/run-m4-order-import-admin-visible-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-admin-visible-stale-missing-true-db-smoke.mjs
+          node packages/db/scripts/run-m4-order-import-admin-submit-true-db-worker-dispatch-smoke.mjs
       - if: steps.path-scope.outputs.run_spikes == 'true'
         name: SPK-03 RLS Prisma pool spike
         env:

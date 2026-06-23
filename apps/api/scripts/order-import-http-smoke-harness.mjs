@@ -5,19 +5,27 @@ import { NestFactory } from "@nestjs/core";
 
 import { importApiOrderImportRuntimeModules } from "./runtime-compiler.mjs";
 
-export async function startOrderImportHttpSmoke({ createAccessContext, prisma }) {
+const orderImportSubmitDispatcherToken = "ORDER_IMPORT_SUBMIT_DISPATCHER";
+
+export async function startOrderImportHttpSmoke({
+  createAccessContext,
+  prisma,
+  submitDispatcher
+}) {
   const runtimeModules = await importApiOrderImportRuntimeModules();
   return startOrderImportHttpSmokeFromModules({
     createAccessContext,
     prisma,
-    runtimeModules
+    runtimeModules,
+    submitDispatcher
   });
 }
 
 async function startOrderImportHttpSmokeFromModules({
   createAccessContext,
   prisma,
-  runtimeModules
+  runtimeModules,
+  submitDispatcher
 }) {
   const { accessContext, orderImport } = runtimeModules;
   const repository = orderImport.createOrderImportRepositoryProvider({
@@ -43,18 +51,26 @@ async function startOrderImportHttpSmokeFromModules({
     }
   };
 
+  const providers = [
+    orderImport.OrderImportService,
+    { provide: orderImport.ORDER_IMPORT_REPOSITORY, useValue: repository },
+    {
+      provide: accessContext.ApiAccessContextService,
+      useValue: syntheticAccessContextService
+    },
+    accessContext.ApiAccessContextGuard
+  ];
+  if (submitDispatcher) {
+    providers.push({
+      provide: orderImportSubmitDispatcherToken,
+      useValue: submitDispatcher
+    });
+  }
+
   class OrderImportHttpSmokeModule {}
   Module({
     controllers: [orderImport.OrderImportController],
-    providers: [
-      orderImport.OrderImportService,
-      { provide: orderImport.ORDER_IMPORT_REPOSITORY, useValue: repository },
-      {
-        provide: accessContext.ApiAccessContextService,
-        useValue: syntheticAccessContextService
-      },
-      accessContext.ApiAccessContextGuard
-    ]
+    providers
   })(OrderImportHttpSmokeModule);
 
   const smokeApp = await NestFactory.create(OrderImportHttpSmokeModule, {

@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   ForbiddenException,
   Get,
   NotFoundException,
   Param,
+  Post,
   Query,
   Req,
   UseGuards
@@ -28,6 +30,16 @@ export class OrderImportController {
   listImportJobs(@Req() request: ApiRequestWithContext) {
     return this.handle(() =>
       this.service.listImportJobs(requireAccessContext(request))
+    );
+  }
+
+  @Post("jobs")
+  submitImportCsvTextJob(
+    @Req() request: ApiRequestWithContext,
+    @Body() body: unknown = {}
+  ) {
+    return this.handle(() =>
+      this.service.submitImportCsvTextJob(requireAccessContext(request), body)
     );
   }
 

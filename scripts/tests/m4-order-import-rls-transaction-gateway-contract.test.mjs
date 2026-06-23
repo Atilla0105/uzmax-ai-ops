@@ -13,6 +13,9 @@ const compilerOptions = {
   module: ts.ModuleKind.ES2022,
   target: ts.ScriptTarget.ES2023
 };
+const persistenceGatewaySource = read(
+  "apps/api/src/order-import.persistence-gateway.ts"
+);
 const repositorySource = read("apps/api/src/order-import.repository.ts");
 const appModule = read("apps/api/src/app.module.ts");
 const spec = read("docs/specs/M4-25-order-import-rls-transaction-gateway-contract.md");
@@ -22,11 +25,18 @@ const evidence = read(
 const m4Index = read("docs/evidence/M4/README.md");
 const db = await importTypescriptSource("packages/db/src/index.ts");
 const defaults = await importTypescriptSource("apps/api/src/order-import.defaults.ts");
+const persistenceGateway = await importTypescriptSource(
+  "apps/api/src/order-import.persistence-gateway.ts",
+  {
+    "../../../packages/db/src/index.ts": db.moduleUrl
+  }
+);
 const repository = await importTypescriptSource(
   "apps/api/src/order-import.repository.ts",
   {
     "../../../packages/db/src/index.ts": db.moduleUrl,
-    "./order-import.defaults.ts": defaults.moduleUrl
+    "./order-import.defaults.ts": defaults.moduleUrl,
+    "./order-import.persistence-gateway.ts": persistenceGateway.moduleUrl
   }
 );
 
@@ -152,8 +162,8 @@ describe("M4-25 order import RLS transaction gateway contract", () => {
   });
 
   it("anchors the contract without default DB runtime side effects", () => {
-    assert.match(repositorySource, /createRlsTransactionContext/);
-    assert.match(repositorySource, /RlsOrderImportPersistenceGateway/);
+    assert.match(persistenceGatewaySource, /createRlsTransactionContext/);
+    assert.match(persistenceGatewaySource, /RlsOrderImportPersistenceGateway/);
     assert.match(repositorySource, /ORDER_IMPORT_RLS_TRANSACTION_RUNNER/);
     assert.match(repositorySource, /rls_prisma_gateway/);
     assert.match(appModule, /RlsOrderImportPersistenceGateway/);
@@ -164,7 +174,7 @@ describe("M4-25 order import RLS transaction gateway contract", () => {
       /useClass: RlsOrderImportPersistenceGateway|useExisting: RlsOrderImportPersistenceGateway/
     );
     assert.doesNotMatch(
-      `${repositorySource}\n${appModule}`,
+      `${repositorySource}\n${persistenceGatewaySource}\n${appModule}`,
       /@prisma\/client|new PrismaClient|process\.env|order_connector|fetch\(|https?:\/\//i
     );
   });

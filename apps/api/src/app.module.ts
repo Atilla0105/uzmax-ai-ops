@@ -45,7 +45,9 @@ import {
   PersistenceOrderImportRepository,
   RlsOrderImportPersistenceGateway,
   createOrderImportRepositoryProvider,
+  createOrderImportRlsBatchTransactionRunner,
   orderImportRepositoryRuntimeModes,
+  type OrderImportRlsBatchPrismaClientPort,
   type OrderImportPrismaClientPort,
   type OrderImportRepositoryProviderInput,
   type OrderImportRepositoryRuntimeMode,
@@ -91,6 +93,8 @@ type OrderImportRepositoryContractAnchor = {
   prismaClientToken: typeof ORDER_IMPORT_PRISMA_CLIENT;
   prismaGateway: typeof PrismaOrderImportPersistenceGateway;
   rlsPrismaGateway: typeof RlsOrderImportPersistenceGateway;
+  rlsBatchPrismaClient: OrderImportRlsBatchPrismaClientPort;
+  rlsBatchRunnerFactory: typeof createOrderImportRlsBatchTransactionRunner;
   rlsTransactionRunner: OrderImportRlsTransactionRunner;
   rlsTransactionRunnerToken: typeof ORDER_IMPORT_RLS_TRANSACTION_RUNNER;
   runtimeMode: OrderImportRepositoryRuntimeMode;
@@ -117,6 +121,7 @@ const orderImportRepositoryContractAnchor: Pick<
   | "persistenceAdapter"
   | "prismaClientToken"
   | "prismaGateway"
+  | "rlsBatchRunnerFactory"
   | "rlsPrismaGateway"
   | "rlsTransactionRunnerToken"
   | "runtimeModes"
@@ -125,6 +130,7 @@ const orderImportRepositoryContractAnchor: Pick<
   persistenceAdapter: PersistenceOrderImportRepository,
   prismaClientToken: ORDER_IMPORT_PRISMA_CLIENT,
   prismaGateway: PrismaOrderImportPersistenceGateway,
+  rlsBatchRunnerFactory: createOrderImportRlsBatchTransactionRunner,
   rlsPrismaGateway: RlsOrderImportPersistenceGateway,
   rlsTransactionRunnerToken: ORDER_IMPORT_RLS_TRANSACTION_RUNNER,
   runtimeModes: orderImportRepositoryRuntimeModes,

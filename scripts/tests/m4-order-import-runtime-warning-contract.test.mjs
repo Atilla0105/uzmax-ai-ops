@@ -313,11 +313,17 @@ async function importOrderImportApiSource() {
       "./order-import.types.ts": typesModuleUrl
     })
   );
+  const persistenceGatewayModuleUrl = moduleUrlFromTs(
+    rewriteImports(read("apps/api/src/order-import.persistence-gateway.ts"), {
+      "../../../packages/db/src/index.ts": dbUrl
+    })
+  );
   const repositoryModuleUrl = moduleUrlFromTs(
     rewriteImports(read("apps/api/src/order-import.repository.ts"), {
       "../../../packages/authz/src/index.ts": authzUrl,
       "../../../packages/db/src/index.ts": dbUrl,
       "./order-import.defaults.ts": defaultsModuleUrl,
+      "./order-import.persistence-gateway.ts": persistenceGatewayModuleUrl,
       "./order-import.types.ts": typesModuleUrl
     })
   );

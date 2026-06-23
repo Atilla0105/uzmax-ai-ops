@@ -3,7 +3,7 @@
 > spec: `docs/specs/M4-45-order-import-queue-security-closeout.md`
 > branch: `codex/m4-45-order-import-queue-security-closeout`
 > worktree: `/Users/atilla/Documents/uzmax-m4-45-order-import-queue-security-closeout`
-> status: local validation passed except local Docker Redis unavailable; PR CI passed including Redis smoke; npm audit remains `unresolved_security_blocker`
+> status: local validation passed except local Docker Redis unavailable; PR CI passed including Redis smoke; audit high blocker is cleared by M4-46
 
 ## Scope
 
@@ -15,15 +15,15 @@ This is not production worker deployment, Render Redis creation, formal alert ro
 
 ## Audit Status
 
-`npm audit --json` still reports 3 high vulnerabilities:
+M4-45 initially left `npm audit --json` at 3 high vulnerabilities:
 
 - `@nestjs/core`
 - `@nestjs/platform-express`
 - `multer`
 
-The concrete path is `@uzmax/api -> @nestjs/platform-express@11.1.27 -> multer@2.1.1`. A bounded root npm override was attempted before implementation status reporting and did not change the resolved `multer` version or the audit result, so the ineffective override was removed. M4-45 must not claim final security closeout while this remains high.
+The concrete path was `@uzmax/api -> @nestjs/platform-express@11.1.27 -> multer@2.1.1`. A bounded root npm override was attempted during M4-45 and did not change the resolved `multer` version or the audit result, so the ineffective override was removed.
 
-Current audit decision: `unresolved_security_blocker`.
+M4-46 replaces that failed simple override with a nested `@nestjs/platform-express -> multer@2.2.0` override. Current audit decision after M4-46 local validation: `audit_high_cleared_ready_for_owner_closeout_review`.
 
 ## Validation
 
@@ -34,7 +34,7 @@ Current audit decision: `unresolved_security_blocker`.
 | `env -u UZMAX_REDIS_URL node apps/worker/scripts/run-m4-order-import-bullmq-redis-smoke.mjs` | passed fail-closed check; printed `UZMAX_REDIS_URL is required`, exit `1` |
 | Real Redis smoke | passed in PR CI run `28056312343`, job `83059437609`, step `M4 order import BullMQ Redis smoke`; local Docker failed with `failed to connect to the docker API at unix:///Users/atilla/.docker/run/docker.sock` |
 | CI Redis smoke wiring | passed in PR CI run `28056312343`, job `83059437609`; current path scope covers worker/package/CI/test changes (`apps/worker/**`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `scripts/tests/m4-worker-test-loader.mjs`, `scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs`), the M4-45 spec/evidence files and `docs/evidence/M4/README.md`, using disposable `redis:7-alpine` and `UZMAX_REDIS_URL=redis://127.0.0.1:6379` |
-| `npm audit --json` | exit `1`; high `3`, total `3`; names `@nestjs/core`, `@nestjs/platform-express`, `multer` |
+| `npm audit --json` | M4-45 baseline exit `1`, high `3`; M4-46 local validation exits `0`, high `0`, total `0` after nested `@nestjs/platform-express -> multer@2.2.0` override |
 | `npm run format:check` | passed |
 | `npm run guard:prettier-ignore` | passed |
 | `npm run typecheck` | passed |
@@ -75,14 +75,14 @@ Current audit decision: `unresolved_security_blocker`.
 | E-03 | `order_import_stale_missing_warning_closed_for_m4_no_api_branch` | M4-45 does not change warning shape; it preserves existing dispatch/persistence path boundaries. |
 | E-04 | `order_read_runtime_eval_gate_supported_not_production_gate` | No AI eval/runtime change. |
 | I-01 | `order_import_operator_and_queue_supported_not_full_desktop_core` | Queue support backs the order import path; broader desktop core and production auth remain future scope. |
-| J-02 | `queue_security_closeout_supported_not_production_deployment__unresolved_security_blocker` | BullMQ/Redis runtime, retry/fault, duplicate enqueue, Storage lock and backlog/failed alert evidence are added. Final security closeout is not accepted because npm audit high remains unresolved. |
+| J-02 | `queue_security_closeout_supported_not_production_deployment` | BullMQ/Redis runtime, retry/fault, duplicate enqueue, Storage lock and backlog/failed alert evidence are added. M4-46 clears the npm audit high blocker; production worker/Redis deployment, formal alert routing and owner release signoff remain future scope. |
 
 ## Boundary Notes
 
 - No raw CSV/XLSX export, raw customer/order payload, screenshot, real order ID, phone number, address, payment data, credential, token value or env file is committed.
 - No external order API, fake connector, LLM/provider, Telegram runtime, production Redis/Render service or real worker deployment is added.
 - CI Redis smoke uses a disposable Redis container and `UZMAX_REDIS_URL=redis://127.0.0.1:6379`; it must not print secrets.
-- Final M4/security closeout remains blocked until audit high is resolved or explicitly accepted as a tracked blocker by the project owner.
+- Final M4 owner closeout/release signoff remains a project-owner decision; M4-46 clears the npm audit high blocker but does not approve production deployment.
 
 ## PR Hygiene
 
@@ -98,4 +98,4 @@ Current audit decision: `unresolved_security_blocker`.
 | Test weakening | none |
 | Config rationale | root `package.json#knip` mirrors existing Knip config and adds a worker workspace entry for the opt-in runtime/smoke so static analysis does not require importing BullMQ from `main.ts` |
 | External API/provider/connector evidence | none added; BullMQ/ioredis package versions verified through npm registry and local installed types |
-| Exceptions | none; audit blocker remains unresolved rather than using an ineffective override |
+| Exceptions | none; M4-46 records a bounded nested npm override for the transitive `@nestjs/platform-express -> multer` audit blocker |

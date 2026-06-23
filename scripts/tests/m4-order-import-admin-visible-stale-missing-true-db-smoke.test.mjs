@@ -71,7 +71,9 @@ describe("M4-39 order import admin visible stale/missing true DB smoke", () => {
       /run-m4-order-import-admin-visible-stale-missing-true-db-smoke\.mjs/
     );
     assert.match(m4Index, /M4-39 order import admin visible stale\/missing/);
-    assert.match(evidence, /pending/);
+    assert.match(evidence, /GitHub Actions CI run `28022935767`/);
+    assert.match(evidence, /passed browser admin visible stale\/missing true DB/);
+    assert.match(evidence, /not_closed/);
     assert.match(evidence, /does not close full E-02\/E-03\/E-04\/I-01\/J-02\/B-01/);
     assert.match(spec, /does not close full E-02\/E-03\/E-04\/I-01\/J-02\/B-01/);
     assert.match(

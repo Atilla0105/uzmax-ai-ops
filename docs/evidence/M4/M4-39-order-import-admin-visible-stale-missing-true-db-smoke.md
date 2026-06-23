@@ -122,18 +122,24 @@ CI true DB visible stale/missing smoke:
 
 | Run | Result |
 |---|---|
-| GitHub Actions CI | pending; no CI pass claimed in this local evidence |
+| GitHub Actions CI run `28022935767`, job `82943502853`, head `5fc897294ae2b927b13b42e539804deed85a3871` | passed: M4-35/M4-36/M4-37/M4-38/M4-39 true DB smokes passed with residue `0`; `npm run test` passed 284/284; `npm run build` passed; `npm run size` passed at 58.8 kB brotlied; `npm run playwright` passed 11/11 |
+
+Key CI smoke log:
+
+```text
+m4-order-import-admin-visible-stale-missing-true-db-smoke: passed browser admin visible stale/missing true DB synthetic path; residue=0
+```
 
 ## Acceptance Mapping
 
 | Item | Status | Notes |
 |---|---|---|
-| B-01 | `admin_visible_stale_missing_true_db_smoke_pending_ci_not_closed` | Browser-visible stale/missing CI target is wired to traverse Admin client -> Nest HTTP -> API -> DB/RLS against dev main synthetic tenant A rows. CI pass is still pending in this pre-PR evidence. Full durable SQL/RLS matrix remains future scope. |
+| B-01 | `admin_visible_stale_missing_true_db_smoke_supported_not_closed` | Browser-visible stale/missing CI target traversed Admin client -> Nest HTTP -> API -> DB/RLS against dev main synthetic tenant A rows. Full durable SQL/RLS matrix remains future scope. |
 | E-01 | `not_current_blocker__no_api_for_m4` | No external order API connector was added or called. |
-| E-02 | `admin_visible_stale_missing_true_db_smoke_pending_ci_not_closed` | Visible Admin shell has M4-38 fresh true DB smoke evidence, and M4-39 wires the stale/missing true DB browser smoke target. M4-39 CI pass is still pending. Formal auth runtime, full worker queue execution, real import sample, Storage runtime and full E2E remain open. |
-| E-03 | `admin_visible_stale_missing_true_db_smoke_pending_ci_not_closed` | M4-39 wires the stale true DB browser smoke target to show handoff-required warning without order status refs; CI true DB validation is still pending. Persisted warning storage and full E2E stale samples remain future scope. |
-| E-04 | `visible_handoff_smoke_pending_ci_not_closed` | M4-39 wires visible stale/missing handoff assertions without status ref exposure; CI true DB validation is still pending. AI order-read runtime, eval fixtures and redline gate are not covered here. |
-| I-01 | `partial_admin_visible_true_db_smoke_pending_ci_not_closed` | `/design` Admin shell is wired to render stale/missing handoff runtime data through true DB HTTP smoke in CI. Full desktop core order/customer workflow remains future scope. |
+| E-02 | `admin_visible_stale_missing_true_db_smoke_supported_not_closed` | Visible Admin shell has M4-38 fresh true DB smoke evidence, and M4-39 CI proved the stale/missing true DB browser smoke target. Formal auth runtime, full worker queue execution, real import sample, Storage runtime and full E2E remain open. |
+| E-03 | `admin_visible_stale_missing_true_db_smoke_supported_not_closed` | M4-39 CI proved the stale true DB browser smoke target shows handoff-required warning without order status refs. Persisted warning storage and full E2E stale samples remain future scope. |
+| E-04 | `visible_handoff_smoke_supported_not_closed` | M4-39 CI proved visible stale/missing handoff assertions without status ref exposure. AI order-read runtime, eval fixtures and redline gate are not covered here. |
+| I-01 | `partial_admin_visible_true_db_smoke_not_closed` | `/design` Admin shell rendered stale/missing handoff runtime data through true DB HTTP smoke in CI. Full desktop core order/customer workflow remains future scope. |
 | J-02 | `not_closed` | BullMQ/Redis retry/idempotency/backlog/fault-injection evidence is not present. |
 
 ## Boundary Notes

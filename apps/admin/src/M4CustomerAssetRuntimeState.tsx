@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 
 import { createCustomerAssetApiClient } from "./customerAssetApiClient";
 
+type CustomerAssetRuntimeRestoreResult = Awaited<
+  ReturnType<ReturnType<typeof createCustomerAssetApiClient>["restoreCustomer"]>
+>;
 type CustomerAssetRuntimeSmoke = {
   autoRestore?: boolean;
   customerId: string;
   enabled: boolean;
+  restorePromise?: Promise<CustomerAssetRuntimeRestoreResult>;
   restoreReasonRef: string;
 };
 
@@ -130,11 +134,7 @@ async function loadCustomerAssetRuntimeState(smoke: CustomerAssetRuntimeSmoke) {
       client.listTagDefinitions()
     ]);
   const restoreResult = smoke.autoRestore
-    ? await client.restoreCustomer(smoke.customerId, {
-        reasonRef: smoke.restoreReasonRef,
-        restoreBlacklisted: true,
-        restoreUnreachable: true
-      })
+    ? await restoreCustomerOnce(smoke, client)
     : undefined;
   const nextDetail = smoke.autoRestore
     ? await client.getCustomerDetail(smoke.customerId)
@@ -147,6 +147,18 @@ async function loadCustomerAssetRuntimeState(smoke: CustomerAssetRuntimeSmoke) {
     status: "ready" as const,
     tagDefinitions
   };
+}
+
+function restoreCustomerOnce(
+  smoke: CustomerAssetRuntimeSmoke,
+  client: ReturnType<typeof createCustomerAssetApiClient>
+) {
+  smoke.restorePromise ??= client.restoreCustomer(smoke.customerId, {
+    reasonRef: smoke.restoreReasonRef,
+    restoreBlacklisted: true,
+    restoreUnreachable: true
+  });
+  return smoke.restorePromise;
 }
 
 function readRuntimeSmoke(): CustomerAssetRuntimeSmoke | undefined {

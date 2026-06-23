@@ -79,9 +79,9 @@ This evidence does not close M4 as a whole. M4-44 remains open for AI order-read
 |---|---|
 | Path categories | config 1; source 10; test 2; docs 3; no generated or lock changes |
 | Changed source files | 10, within <= 12 |
-| Net source LOC | about +1230 by `git diff --numstat origin/main` path classification; exceeds <= 750 budget |
+| Net source LOC | about +1242 by `git diff --numstat origin/main` path classification; exceeds <= 750 budget |
 | New source files | 6, at the <= 6 limit |
-| Gross churn | about +1671 / -24 |
+| Gross churn | about +1683 / -24 |
 | Test weakening | none intended |
 | External API/provider/connector evidence | none added; uses existing Prisma/Supabase dev DB runtime foundation only |
 | Exceptions | `large_change_exception` requested for source LOC budget; merge requires owner approval / equivalent review record |

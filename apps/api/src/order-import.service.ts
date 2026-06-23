@@ -4,7 +4,10 @@ import {
   assertPermission,
   type AccessContext
 } from "../../../packages/authz/src/index.ts";
-import { evaluateOrderSnapshotForRead } from "../../../packages/capabilities/order-read/src/index.ts";
+import {
+  evaluateOrderSnapshotForRead,
+  type OrderReadResult
+} from "../../../packages/capabilities/order-read/src/index.ts";
 
 import {
   ORDER_IMPORT_REPOSITORY,
@@ -39,7 +42,7 @@ export class OrderImportService {
     input: { now?: string; queryKind: OrderImportQueryKind; queryRef: string }
   ) {
     assertPermission(accessContext, "order:read");
-    return evaluateOrderSnapshotForRead({
+    const result = evaluateOrderSnapshotForRead({
       now: input.now,
       queryKind: input.queryKind,
       queryRef: input.queryRef,
@@ -48,5 +51,24 @@ export class OrderImportService {
         queryRef: input.queryRef
       })
     });
+    return withOrderSnapshotRuntimeWarning(result);
   }
+}
+
+function withOrderSnapshotRuntimeWarning(result: OrderReadResult) {
+  if (result.status === "snapshot_ready") return result;
+
+  return {
+    ...result,
+    runtimeWarning: {
+      code: result.reasonCode,
+      expiresAt: result.customerVisible.expiresAt,
+      handoffRequired: true,
+      messageRef:
+        result.queryLogDraft.reasonRef ??
+        `reason://order-read/${result.reasonCode.replaceAll("_", "-")}`,
+      sourceUpdatedAt: result.customerVisible.sourceUpdatedAt,
+      staleSnapshotUsed: result.queryLogDraft.staleSnapshotUsed
+    }
+  };
 }

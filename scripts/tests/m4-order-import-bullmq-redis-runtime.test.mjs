@@ -46,8 +46,17 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
 
     const customRetention = runtime.module.createOrderImportBullmqCsvTextJobPlan(
       jobInput(),
-      { removeOnComplete: { count: 5 }, removeOnFail: { count: 10 } }
+      {
+        attempts: 1,
+        backoff: { delay: 1, type: "fixed" },
+        jobId: "99999999-9999-4999-8999-999999999999",
+        removeOnComplete: { count: 5 },
+        removeOnFail: { count: 10 }
+      }
     );
+    assert.equal(customRetention.options.jobId, JOB_ID);
+    assert.equal(customRetention.options.attempts, 3);
+    assert.deepEqual(customRetention.options.backoff, { delay: 30000, type: "fixed" });
     assert.deepEqual(customRetention.options.removeOnComplete, { count: 5 });
     assert.deepEqual(customRetention.options.removeOnFail, { count: 10 });
   });
@@ -90,6 +99,7 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
       ["csvText", ""],
       ["importJobId", "bad-import-job-id"],
       ["importedAt", "not-a-date"],
+      ["maxRows", Number.NaN],
       ["orgId", "bad-org-id"],
       ["rowErrorIds", ["bad-row-error-id"]],
       ["snapshotIds", ["bad-snapshot-id"]],
@@ -112,7 +122,7 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
             name: "order_import_csv_text",
             opts: { attempts: 3 }
           }),
-        /required|controlled|UUID|parseable|array/
+        /required|controlled|UUID|parseable|array|integer/
       );
       assert.deepEqual(calls, []);
     }

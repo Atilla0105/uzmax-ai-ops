@@ -71,7 +71,8 @@ export function createOrderImportBullmqCsvTextJobPlan(
     attempts: contract.retry.attempts,
     backoff: { delay: contract.retry.backoffMs, type: "fixed" },
     jobId: contract.jobId,
-    ...retention
+    removeOnComplete: retention.removeOnComplete,
+    removeOnFail: retention.removeOnFail
   };
   return { contract, jobName: contract.jobName, options, payload: contract.payload };
 }
@@ -183,11 +184,10 @@ export function evaluateOrderImportBullmqQueueHealth(
   counts: QueueHealthCounts,
   thresholds: QueueHealthThresholds = {}
 ) {
-  const resolved = Object.assign(
-    {},
-    orderImportBullmqQueueDefaults.healthThresholds,
-    thresholds
-  );
+  const resolved = {
+    ...orderImportBullmqQueueDefaults.healthThresholds,
+    ...thresholds
+  };
   const backlog = counts.waiting + counts.delayed;
   const alerts = [
     queueAlert("order_import_queue_waiting_high", counts.waiting, resolved.waiting),
@@ -233,6 +233,8 @@ function assertRuntimeJobData(payload: RuntimeJobData) {
     if (!Array.isArray(payload[name])) throw new Error(`${name} must be an array`);
     payload[name].forEach((id, index) => uuidText(id, `${name}[${index}]`));
   }
+  if (payload.maxRows !== undefined)
+    boundedInteger(payload.maxRows, "maxRows", 1, 5_000);
 }
 
 function storageSourceRef(value: unknown) {

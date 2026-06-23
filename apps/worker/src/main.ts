@@ -96,6 +96,7 @@ export function parseOrderImportCsvText(
   input: OrderImportCsvParseInput
 ): OrderImportCsvParseResult {
   const maxRows = maxImportRows(input.maxRows);
+  const sourceRef = orderImportSourceRef(input.sourceRef);
   const records = parseCsvRecords(input.csvText);
   const headers = normalizeCsvHeaders(records[0]);
   assertCsvHeaders(headers);
@@ -106,10 +107,10 @@ export function parseOrderImportCsvText(
     if (rows.length >= maxRows) {
       throw new Error("order import CSV row count exceeds maxRows");
     }
-    rows.push(csvRecordToOrderRow(record, headers, rows.length + 1, input.sourceRef));
+    rows.push(csvRecordToOrderRow(record, headers, rows.length + 1, sourceRef));
   }
 
-  return { headers, rows, sourceRef: input.sourceRef };
+  return { headers, rows, sourceRef };
 }
 
 export function createOrderImportWorkerDrafts(
@@ -279,6 +280,9 @@ function parseCsvRecords(csvText: string): string[][] {
   if (typeof csvText !== "string" || !csvText.trim()) {
     throw new Error("csvText is required");
   }
+  if (csvText.includes("\0")) {
+    throw new Error("order import CSV text must not contain null bytes");
+  }
   const state: CsvParseState = {
     field: "",
     quoted: false,
@@ -368,4 +372,19 @@ function maxImportRows(value: number | undefined): number {
     throw new Error("maxRows must be an integer from 1 to 5000");
   }
   return value;
+}
+
+function orderImportSourceRef(value: string): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error("sourceRef is required");
+  }
+  const sourceRef = value.trim();
+  if (
+    !/^(controlled|import|storage|upload):\/\/[a-z0-9][a-z0-9/._:-]{0,220}$/i.test(
+      sourceRef
+    )
+  ) {
+    throw new Error("sourceRef must be a controlled import ref");
+  }
+  return sourceRef;
 }

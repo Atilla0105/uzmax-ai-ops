@@ -3,7 +3,7 @@
 > spec: `docs/specs/M4-45-order-import-queue-security-closeout.md`
 > branch: `codex/m4-45-order-import-queue-security-closeout`
 > worktree: `/Users/atilla/Documents/uzmax-m4-45-order-import-queue-security-closeout`
-> status: local validation passed except local Docker Redis unavailable; PR CI Redis smoke pending; npm audit remains `unresolved_security_blocker`
+> status: local validation passed except local Docker Redis unavailable; PR CI passed including Redis smoke; npm audit remains `unresolved_security_blocker`
 
 ## Scope
 
@@ -32,8 +32,8 @@ Current audit decision: `unresolved_security_blocker`.
 | `npm ci` | passed on 2026-06-24; installed 360 packages, audited 381 packages, reported 3 high |
 | `node --test scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs` | passed; 5/5 tests |
 | `env -u UZMAX_REDIS_URL node apps/worker/scripts/run-m4-order-import-bullmq-redis-smoke.mjs` | passed fail-closed check; printed `UZMAX_REDIS_URL is required`, exit `1` |
-| Real Redis smoke | not run locally; Docker failed with `failed to connect to the docker API at unix:///Users/atilla/.docker/run/docker.sock`; PR CI Redis smoke pending |
-| CI Redis smoke wiring | added for applicable worker/package/CI/test changes and this M4-45 spec/evidence path using disposable `redis:7-alpine` and `UZMAX_REDIS_URL=redis://127.0.0.1:6379` |
+| Real Redis smoke | passed in PR CI run `28051367752`, job `83042547806`, step `M4 order import BullMQ Redis smoke`; local Docker failed with `failed to connect to the docker API at unix:///Users/atilla/.docker/run/docker.sock` |
+| CI Redis smoke wiring | passed in PR CI run `28051367752`, job `83042547806`; wiring covers applicable worker/package/CI/test changes and this M4-45 spec/evidence path using disposable `redis:7-alpine` and `UZMAX_REDIS_URL=redis://127.0.0.1:6379` |
 | `npm audit --json` | exit `1`; high `3`, total `3`; names `@nestjs/core`, `@nestjs/platform-express`, `multer` |
 | `npm run format:check` | passed |
 | `npm run guard:prettier-ignore` | passed |
@@ -47,9 +47,10 @@ Current audit decision: `unresolved_security_blocker`.
 | `npm run guard:doc-triggers` | passed |
 | `npm run guard:workspace` | passed |
 | `UZMAX_ASSIGNED_WORKTREE=/Users/atilla/Documents/uzmax-m4-45-order-import-queue-security-closeout UZMAX_PRIMARY_ROOT=/Users/atilla/Documents/UZMAX智能运营 npm run guard:worker-boundary` | passed |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-45-order-import-queue-security-closeout.md` | passed post-commit; changedFiles=11; categories config=3/source=2/docs=3/lock=1/test=2; source netLoc=494 |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M4-45-order-import-queue-security-closeout.md` | passed post-commit; changedFiles=11; categories config=3/source=2/docs=3/lock=1/test=2; source netLoc=496 |
 | `npm test` | passed; 319/319 tests |
 | `npm run build` | passed |
+| PR CI `28051367752` / job `83042547806` | passed in 11m38s; Redis smoke, true DB runtime smokes, SPK-03, SPK-04, tests and build all passed |
 
 ## Runtime Assertions
 
@@ -90,7 +91,7 @@ Current audit decision: `unresolved_security_blocker`.
 | Path categories | docs 3, source 2, test 2, config 3, lock 1 |
 | Changed files | 11 total |
 | Changed source files | 2: `apps/worker/src/order-import-bullmq-runtime.ts`, `apps/worker/scripts/run-m4-order-import-bullmq-redis-smoke.mjs` |
-| Net source LOC | 494 added lines by raw staged numstat (`254` runtime + `240` smoke), within the 500 LOC budget |
+| Net source LOC | 496 added lines by raw staged numstat (`254` runtime + `242` smoke), within the 500 LOC budget |
 | New source files | 2 |
 | Gross churn | 1365 total added+deleted lines |
 | Test changes | added focused M4-45 runtime test and extended the existing M4 worker test loader |

@@ -1,5 +1,9 @@
 import type { AccessContext } from "../../../packages/authz/src/index.ts";
-import type { M4OrderImportContractInput } from "../../../packages/db/src/m4-order-import-contracts.ts";
+import {
+  createRlsTransactionContext,
+  type M4OrderImportContractInput,
+  type RlsTransactionContext
+} from "../../../packages/db/src/index.ts";
 
 import type {
   OrderImportJobSummary,
@@ -8,6 +12,11 @@ import type {
   OrderImportSeed,
   OrderSnapshotRecord
 } from "./order-import.types.ts";
+import {
+  defaultOrderImportJobs,
+  defaultOrderImportRowErrors,
+  defaultOrderImportSnapshots
+} from "./order-import.defaults.ts";
 
 export const ORDER_IMPORT_REPOSITORY = Symbol("ORDER_IMPORT_REPOSITORY");
 
@@ -76,17 +85,33 @@ export type OrderImportPrismaClientPort = {
   importRowError: PrismaOrderImportFindManyDelegate;
   orderSnapshot: PrismaOrderImportFindFirstDelegate;
 };
+type OrderImportRlsTransactionInput<T> = {
+  context: RlsTransactionContext;
+  query(client: OrderImportPrismaClientPort): MaybePromise<T>;
+  scope: OrderImportPersistenceScope;
+};
+export type OrderImportRlsTransactionRunner = <T>(
+  input: OrderImportRlsTransactionInput<T>
+) => MaybePromise<T>;
 
 export const ORDER_IMPORT_PRISMA_CLIENT = Symbol("ORDER_IMPORT_PRISMA_CLIENT");
+export const ORDER_IMPORT_RLS_TRANSACTION_RUNNER = Symbol(
+  "ORDER_IMPORT_RLS_TRANSACTION_RUNNER"
+);
 export const orderImportRepositoryRuntimeModes = {
   inMemory: "in_memory",
-  prismaGateway: "prisma_gateway"
+  prismaGateway: "prisma_gateway",
+  rlsPrismaGateway: "rls_prisma_gateway"
 } as const;
-export type OrderImportRepositoryRuntimeMode = "in_memory" | "prisma_gateway";
+export type OrderImportRepositoryRuntimeMode =
+  | "in_memory"
+  | "prisma_gateway"
+  | "rls_prisma_gateway";
 export type OrderImportRepositoryProviderInput = {
   inMemoryRepository?: OrderImportRepositoryPort;
   mode?: OrderImportRepositoryRuntimeMode;
   prismaClient?: OrderImportPrismaClientPort;
+  rlsTransactionRunner?: OrderImportRlsTransactionRunner;
 };
 
 export function createOrderImportRepositoryProvider(
@@ -104,6 +129,14 @@ export function createOrderImportRepositoryProvider(
       new PrismaOrderImportPersistenceGateway(input.prismaClient)
     );
   }
+  if (mode === orderImportRepositoryRuntimeModes.rlsPrismaGateway) {
+    if (!isOrderImportRlsTransactionRunner(input.rlsTransactionRunner)) {
+      throw new Error("order import RLS transaction runner is required");
+    }
+    return new PersistenceOrderImportRepository(
+      new RlsOrderImportPersistenceGateway(input.rlsTransactionRunner)
+    );
+  }
   throw new Error(`unsupported order import repository runtime mode: ${String(mode)}`);
 }
 
@@ -113,27 +146,29 @@ export class InMemoryOrderImportRepository implements OrderImportRepositoryPort 
   private snapshots: OrderSnapshotRecord[];
 
   constructor(seed: OrderImportSeed = {}) {
-    this.jobs = [...(seed.jobs ?? defaultJobs)];
-    this.rowErrors = [...(seed.rowErrors ?? defaultRowErrors)];
-    this.snapshots = [...(seed.snapshots ?? defaultSnapshots)];
+    this.jobs = [...(seed.jobs ?? defaultOrderImportJobs)];
+    this.rowErrors = [...(seed.rowErrors ?? defaultOrderImportRowErrors)];
+    this.snapshots = [...(seed.snapshots ?? defaultOrderImportSnapshots)];
   }
 
   listJobs(accessContext: AccessContext) {
-    return scoped(this.jobs, accessContext).map(clone);
+    return scoped(this.jobs, accessContext).map((job) => structuredClone(job));
   }
 
   getJob(accessContext: AccessContext, jobId: string) {
-    return clone(scoped(this.jobs, accessContext).find((job) => job.id === jobId));
+    return structuredClone(
+      scoped(this.jobs, accessContext).find((job) => job.id === jobId)
+    );
   }
 
   listRowErrors(accessContext: AccessContext, jobId: string) {
     return scoped(this.rowErrors, accessContext)
       .filter((rowError) => rowError.importJobId === jobId)
-      .map(clone);
+      .map((rowError) => structuredClone(rowError));
   }
 
   findSnapshot(accessContext: AccessContext, lookup: OrderSnapshotLookup) {
-    return clone(
+    return structuredClone(
       scoped(this.snapshots, accessContext).find((snapshot) =>
         snapshot.queryRefs.includes(lookup.queryRef)
       )
@@ -207,59 +242,36 @@ export class PrismaOrderImportPersistenceGateway implements OrderImportPersisten
   }
 }
 
-const orgId = "11111111-1111-4111-8111-111111111111";
-const tenantId = "22222222-2222-4222-8222-222222222222";
-const defaultJobs: readonly OrderImportJobSummary[] = [
-  {
-    failedRows: 1,
-    id: "job-a",
-    orgId,
-    sourceRef: "storage://order-imports/snapshot-a",
-    status: "completed_with_errors",
-    successfulRows: 2,
-    tenantId,
-    totalRows: 3
+export class RlsOrderImportPersistenceGateway implements OrderImportPersistenceGateway {
+  constructor(private readonly runInRlsTransaction: OrderImportRlsTransactionRunner) {}
+
+  listImportJobs(scope: OrderImportPersistenceScope) {
+    return this.query(scope, (gateway) => gateway.listImportJobs(scope));
   }
-];
-const defaultRowErrors: readonly OrderImportRowErrorItem[] = [
-  {
-    columnKey: "orderStatusRef",
-    errorCode: "order_status_ref_required",
-    id: "row-error-a",
-    importJobId: "job-a",
-    messageRef: "reason://order-import/order-status-ref-required",
-    orgId,
-    rowNumber: 3,
-    severity: "error",
-    tenantId
+
+  getImportJob(scope: OrderImportPersistenceScope, jobId: string) {
+    return this.query(scope, (gateway) => gateway.getImportJob(scope, jobId));
   }
-];
-const defaultSnapshots: readonly OrderSnapshotRecord[] = [
-  {
-    expiresAt: "2026-06-23T00:00:00.000Z",
-    externalOrderRef: "controlled://order/ref-a",
-    orderStatusRef: "status://order/in-transit",
-    orgId,
-    payloadSummary: { statusRef: "status://order/in-transit" },
-    queryRefs: ["query://order/fresh-a"],
-    sourceKind: "import_snapshot",
-    sourceRef: "storage://order-imports/snapshot-a",
-    sourceUpdatedAt: "2026-06-22T00:00:00.000Z",
-    tenantId
-  },
-  {
-    expiresAt: "2026-06-21T00:00:00.000Z",
-    externalOrderRef: "controlled://order/ref-stale",
-    orderStatusRef: "status://order/stale-hidden",
-    orgId,
-    payloadSummary: { statusRef: "status://order/stale-hidden" },
-    queryRefs: ["query://order/stale-a"],
-    sourceKind: "import_snapshot",
-    sourceRef: "storage://order-imports/snapshot-stale-a",
-    sourceUpdatedAt: "2026-06-20T00:00:00.000Z",
-    tenantId
+
+  listImportRowErrors(scope: OrderImportPersistenceScope, jobId: string) {
+    return this.query(scope, (gateway) => gateway.listImportRowErrors(scope, jobId));
   }
-];
+
+  findOrderSnapshot(scope: OrderImportPersistenceScope, lookup: OrderSnapshotLookup) {
+    return this.query(scope, (gateway) => gateway.findOrderSnapshot(scope, lookup));
+  }
+
+  private query<T>(
+    scope: OrderImportPersistenceScope,
+    operation: (gateway: PrismaOrderImportPersistenceGateway) => MaybePromise<T>
+  ) {
+    return this.runInRlsTransaction({
+      context: createRlsTransactionContext(scope),
+      query: (client) => operation(new PrismaOrderImportPersistenceGateway(client)),
+      scope
+    });
+  }
+}
 
 function scoped<T extends { orgId: string; tenantId: string }>(
   items: readonly T[],
@@ -270,10 +282,6 @@ function scoped<T extends { orgId: string; tenantId: string }>(
       item.orgId === accessContext.orgId &&
       item.tenantId === accessContext.selectedTenantId
   );
-}
-
-function clone<T>(value: T): T {
-  return structuredClone(value);
 }
 
 function scopeFor(accessContext: AccessContext): OrderImportPersistenceScope {
@@ -397,6 +405,12 @@ function isOrderImportPrismaClientPort(
     typeof value.importRowError?.findMany === "function" &&
     typeof value.orderSnapshot?.findFirst === "function"
   );
+}
+
+function isOrderImportRlsTransactionRunner(
+  value?: OrderImportRlsTransactionRunner
+): value is OrderImportRlsTransactionRunner {
+  return typeof value === "function";
 }
 
 function snapshotWhere(

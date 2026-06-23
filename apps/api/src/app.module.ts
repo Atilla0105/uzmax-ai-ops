@@ -36,17 +36,20 @@ import type {
 import { CustomerAssetService } from "./customer-asset.service.ts";
 import {
   ORDER_IMPORT_PRISMA_CLIENT,
+  ORDER_IMPORT_RLS_TRANSACTION_RUNNER,
   ORDER_IMPORT_REPOSITORY,
   InMemoryOrderImportRepository,
   OrderImportController,
   OrderImportService,
   PrismaOrderImportPersistenceGateway,
   PersistenceOrderImportRepository,
+  RlsOrderImportPersistenceGateway,
   createOrderImportRepositoryProvider,
   orderImportRepositoryRuntimeModes,
   type OrderImportPrismaClientPort,
   type OrderImportRepositoryProviderInput,
   type OrderImportRepositoryRuntimeMode,
+  type OrderImportRlsTransactionRunner,
   type OrderImportPersistenceGateway,
   type OrderImportPersistenceScope
 } from "./order-import.ts";
@@ -87,6 +90,9 @@ type OrderImportRepositoryContractAnchor = {
   prismaClient: OrderImportPrismaClientPort;
   prismaClientToken: typeof ORDER_IMPORT_PRISMA_CLIENT;
   prismaGateway: typeof PrismaOrderImportPersistenceGateway;
+  rlsPrismaGateway: typeof RlsOrderImportPersistenceGateway;
+  rlsTransactionRunner: OrderImportRlsTransactionRunner;
+  rlsTransactionRunnerToken: typeof ORDER_IMPORT_RLS_TRANSACTION_RUNNER;
   runtimeMode: OrderImportRepositoryRuntimeMode;
   runtimeModes: typeof orderImportRepositoryRuntimeModes;
   runtimeProvider: typeof createOrderImportRepositoryProvider;
@@ -111,12 +117,16 @@ const orderImportRepositoryContractAnchor: Pick<
   | "persistenceAdapter"
   | "prismaClientToken"
   | "prismaGateway"
+  | "rlsPrismaGateway"
+  | "rlsTransactionRunnerToken"
   | "runtimeModes"
   | "runtimeProvider"
 > = {
   persistenceAdapter: PersistenceOrderImportRepository,
   prismaClientToken: ORDER_IMPORT_PRISMA_CLIENT,
   prismaGateway: PrismaOrderImportPersistenceGateway,
+  rlsPrismaGateway: RlsOrderImportPersistenceGateway,
+  rlsTransactionRunnerToken: ORDER_IMPORT_RLS_TRANSACTION_RUNNER,
   runtimeModes: orderImportRepositoryRuntimeModes,
   runtimeProvider: createOrderImportRepositoryProvider
 };

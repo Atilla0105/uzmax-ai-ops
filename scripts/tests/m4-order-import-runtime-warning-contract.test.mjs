@@ -298,6 +298,7 @@ function fetcherFrom(responses) {
 
 async function importOrderImportApiSource() {
   const authzUrl = moduleUrlFromTs(read("packages/authz/src/index.ts"));
+  const dbUrl = moduleUrlFromTs(read("packages/db/src/index.ts"));
   const orderReadUrl = moduleUrlFromTs(
     read("packages/capabilities/order-read/src/index.ts")
   );
@@ -307,9 +308,16 @@ async function importOrderImportApiSource() {
       "../../../packages/capabilities/order-read/src/index.ts": orderReadUrl
     })
   );
+  const defaultsModuleUrl = moduleUrlFromTs(
+    rewriteImports(read("apps/api/src/order-import.defaults.ts"), {
+      "./order-import.types.ts": typesModuleUrl
+    })
+  );
   const repositoryModuleUrl = moduleUrlFromTs(
     rewriteImports(read("apps/api/src/order-import.repository.ts"), {
       "../../../packages/authz/src/index.ts": authzUrl,
+      "../../../packages/db/src/index.ts": dbUrl,
+      "./order-import.defaults.ts": defaultsModuleUrl,
       "./order-import.types.ts": typesModuleUrl
     })
   );

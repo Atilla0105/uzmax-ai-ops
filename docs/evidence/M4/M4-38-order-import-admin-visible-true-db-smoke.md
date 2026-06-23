@@ -95,7 +95,16 @@ CI true DB visible smoke:
 
 | Run | Result |
 |---|---|
-| pending CI results | pending |
+| GitHub Actions CI `28019553207` (`checks`, job `82932152200`) | pass; `m4-order-import-admin-visible-true-db-smoke: passed browser admin visible true DB synthetic path; residue=0` |
+
+The same CI run also kept the previous true DB chain green:
+
+| Smoke | CI Result |
+|---|---|
+| `m4-order-import-true-db-runtime-smoke` | pass; `worker->DB/RLS->API synthetic path; residue=0` |
+| `m4-order-import-api-true-db-http-smoke` | pass; `Nest HTTP->API->DB/RLS synthetic path; residue=0` |
+| `m4-order-import-admin-true-db-http-smoke` | pass; `admin client->Nest HTTP->API->DB/RLS synthetic path; residue=0` |
+| `m4-order-import-admin-visible-true-db-smoke` | pass; `browser admin visible true DB synthetic path; residue=0` |
 
 ## Acceptance Mapping
 

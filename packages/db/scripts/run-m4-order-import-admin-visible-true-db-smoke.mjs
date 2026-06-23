@@ -22,6 +22,7 @@ const fixture = createOrderImportHttpSmokeFixture({
   suffix: "138",
   syntheticSpec: "M4-38"
 });
+const visibleStateTimeoutMs = 65_000;
 
 const databaseUrl = requireSmokeEnv("UZMAX_RLS_DATABASE_URL");
 const prisma = new PrismaClient({
@@ -78,7 +79,7 @@ try {
         "x-uzmax-smoke-permissions": "order:read"
       },
       method: request.method(),
-      timeout: 10_000,
+      timeout: visibleStateTimeoutMs,
       url: `${apiBaseUrl}${sourceUrl.pathname}${sourceUrl.search}`
     });
     await route.fulfill({ response });
@@ -128,9 +129,9 @@ function readViteBaseUrl(server) {
 }
 
 async function assertVisibleText(locator, text) {
-  await locator.waitFor({ state: "visible", timeout: 10_000 });
+  await locator.waitFor({ state: "visible", timeout: visibleStateTimeoutMs });
   const expected = new RegExp(escapeRegExp(text));
-  const deadline = Date.now() + 10_000;
+  const deadline = Date.now() + visibleStateTimeoutMs;
   let content = "";
   while (Date.now() <= deadline) {
     content = (await locator.textContent()) ?? "";

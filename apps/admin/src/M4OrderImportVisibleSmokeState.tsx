@@ -87,11 +87,13 @@ async function loadRuntimeState(smokeConfig: M4VisibleSmokeConfig) {
   const jobs = await client.listImportJobs();
   const job = jobs[0];
   if (!job) throw new Error("order import smoke job missing");
-  const errors = await client.listImportRowErrors(job.id);
-  const snapshot = await client.searchSnapshot({
-    now: smokeConfig.now,
-    queryRef: smokeConfig.queryRef ?? "controlled://order/m4-38-ref-a"
-  });
+  const [errors, snapshot] = await Promise.all([
+    client.listImportRowErrors(job.id),
+    client.searchSnapshot({
+      now: smokeConfig.now,
+      queryRef: smokeConfig.queryRef ?? "controlled://order/m4-38-ref-a"
+    })
+  ]);
   if (snapshot.status !== "snapshot_ready") {
     throw new Error(`unexpected smoke snapshot status ${snapshot.status}`);
   }

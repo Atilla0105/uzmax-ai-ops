@@ -133,13 +133,30 @@ export async function importApiRuntime() {
   );
   await writeModule(
     outDir,
+    "apps/api/src/order-import.persistence-gateway.ts",
+    "order-import.persistence-gateway.mjs",
+    {
+      "../../../packages/db/src/index.ts": "./db-index.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
     "apps/api/src/order-import.repository.ts",
     "order-import.repository.mjs",
     {
       "../../../packages/authz/src/index.ts": "./authz-index.mjs",
       "../../../packages/db/src/index.ts": "./db-index.mjs",
       "./order-import.defaults.ts": "./order-import.defaults.mjs",
+      "./order-import.persistence-gateway.ts": "./order-import.persistence-gateway.mjs",
       "./order-import.types.ts": "./order-import.types.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/order-import.rls-runner.ts",
+    "order-import.rls-runner.mjs",
+    {
+      "./order-import.repository.ts": "./order-import.repository.mjs"
     }
   );
   await writeModule(
@@ -168,6 +185,7 @@ export async function importApiRuntime() {
   await writeModule(outDir, "apps/api/src/order-import.ts", "order-import.mjs", {
     "./order-import.controller.ts": "./order-import.controller.mjs",
     "./order-import.repository.ts": "./order-import.repository.mjs",
+    "./order-import.rls-runner.ts": "./order-import.rls-runner.mjs",
     "./order-import.service.ts": "./order-import.service.mjs",
     "./order-import.types.ts": "./order-import.types.mjs"
   });

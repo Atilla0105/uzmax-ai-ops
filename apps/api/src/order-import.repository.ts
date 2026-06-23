@@ -1,9 +1,12 @@
 import type { AccessContext } from "../../../packages/authz/src/index.ts";
 import {
-  createRlsTransactionContext,
   type M4OrderImportContractInput,
   type RlsTransactionContext
 } from "../../../packages/db/src/index.ts";
+import {
+  PrismaOrderImportPersistenceGateway,
+  RlsOrderImportPersistenceGateway
+} from "./order-import.persistence-gateway.ts";
 
 import type {
   OrderImportJobSummary,
@@ -17,6 +20,11 @@ import {
   defaultOrderImportRowErrors,
   defaultOrderImportSnapshots
 } from "./order-import.defaults.ts";
+
+export {
+  PrismaOrderImportPersistenceGateway,
+  RlsOrderImportPersistenceGateway
+} from "./order-import.persistence-gateway.ts";
 
 export const ORDER_IMPORT_REPOSITORY = Symbol("ORDER_IMPORT_REPOSITORY");
 
@@ -85,13 +93,14 @@ export type OrderImportPrismaClientPort = {
   importRowError: PrismaOrderImportFindManyDelegate;
   orderSnapshot: PrismaOrderImportFindFirstDelegate;
 };
-type OrderImportRlsTransactionInput<T> = {
+export type OrderImportRlsTransactionInput<T, Operation = MaybePromise<T>> = {
   context: RlsTransactionContext;
-  query(client: OrderImportPrismaClientPort): MaybePromise<T>;
+  mapResult?(result: Awaited<Operation>): T;
+  query(client: OrderImportPrismaClientPort): Operation;
   scope: OrderImportPersistenceScope;
 };
-export type OrderImportRlsTransactionRunner = <T>(
-  input: OrderImportRlsTransactionInput<T>
+export type OrderImportRlsTransactionRunner = <T, Operation = MaybePromise<T>>(
+  input: OrderImportRlsTransactionInput<T, Operation>
 ) => MaybePromise<T>;
 
 export const ORDER_IMPORT_PRISMA_CLIENT = Symbol("ORDER_IMPORT_PRISMA_CLIENT");
@@ -197,79 +206,6 @@ export class PersistenceOrderImportRepository implements OrderImportRepositoryPo
   async findSnapshot(accessContext: AccessContext, lookup: OrderSnapshotLookup) {
     const row = await this.gateway.findOrderSnapshot(scopeFor(accessContext), lookup);
     return row ? mapSnapshot(row, accessContext, lookup.queryRef)[0] : undefined;
-  }
-}
-
-export class PrismaOrderImportPersistenceGateway implements OrderImportPersistenceGateway {
-  constructor(private readonly prisma: OrderImportPrismaClientPort) {}
-
-  listImportJobs(scope: OrderImportPersistenceScope) {
-    return this.prisma.importJob.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      where: scope
-    }) as Promise<readonly M4OrderImportContractInput[]>;
-  }
-
-  async getImportJob(scope: OrderImportPersistenceScope, jobId: string) {
-    return nullableRow(
-      (await this.prisma.importJob.findFirst({
-        where: { ...scope, id: jobId }
-      })) as M4OrderImportContractInput | null
-    );
-  }
-
-  listImportRowErrors(scope: OrderImportPersistenceScope, jobId: string) {
-    return this.prisma.importRowError.findMany({
-      orderBy: [{ rowNumber: "asc" }, { createdAt: "asc" }],
-      take: 500,
-      where: { ...scope, importJobId: jobId }
-    }) as Promise<readonly M4OrderImportContractInput[]>;
-  }
-
-  async findOrderSnapshot(
-    scope: OrderImportPersistenceScope,
-    lookup: OrderSnapshotLookup
-  ) {
-    const where = snapshotWhere(scope, lookup);
-    if (!where) return undefined;
-    return nullableRow(
-      (await this.prisma.orderSnapshot.findFirst({
-        orderBy: { sourceUpdatedAt: "desc" },
-        where
-      })) as M4OrderImportContractInput | null
-    );
-  }
-}
-
-export class RlsOrderImportPersistenceGateway implements OrderImportPersistenceGateway {
-  constructor(private readonly runInRlsTransaction: OrderImportRlsTransactionRunner) {}
-
-  listImportJobs(scope: OrderImportPersistenceScope) {
-    return this.query(scope, (gateway) => gateway.listImportJobs(scope));
-  }
-
-  getImportJob(scope: OrderImportPersistenceScope, jobId: string) {
-    return this.query(scope, (gateway) => gateway.getImportJob(scope, jobId));
-  }
-
-  listImportRowErrors(scope: OrderImportPersistenceScope, jobId: string) {
-    return this.query(scope, (gateway) => gateway.listImportRowErrors(scope, jobId));
-  }
-
-  findOrderSnapshot(scope: OrderImportPersistenceScope, lookup: OrderSnapshotLookup) {
-    return this.query(scope, (gateway) => gateway.findOrderSnapshot(scope, lookup));
-  }
-
-  private query<T>(
-    scope: OrderImportPersistenceScope,
-    operation: (gateway: PrismaOrderImportPersistenceGateway) => MaybePromise<T>
-  ) {
-    return this.runInRlsTransaction({
-      context: createRlsTransactionContext(scope),
-      query: (client) => operation(new PrismaOrderImportPersistenceGateway(client)),
-      scope
-    });
   }
 }
 
@@ -389,12 +325,6 @@ function recordValue(value: unknown): Record<string, unknown> {
   throw new Error("row record value required");
 }
 
-function nullableRow(
-  row: M4OrderImportContractInput | null
-): M4OrderImportContractInput | undefined {
-  return row ?? undefined;
-}
-
 function isOrderImportPrismaClientPort(
   value?: OrderImportPrismaClientPort
 ): value is OrderImportPrismaClientPort {
@@ -411,18 +341,4 @@ function isOrderImportRlsTransactionRunner(
   value?: OrderImportRlsTransactionRunner
 ): value is OrderImportRlsTransactionRunner {
   return typeof value === "function";
-}
-
-function snapshotWhere(
-  scope: OrderImportPersistenceScope,
-  lookup: OrderSnapshotLookup
-): Record<string, unknown> | undefined {
-  const activeScope = { ...scope, status: "ACTIVE" };
-  if (lookup.queryKind === "batch_ref") {
-    return { ...activeScope, externalBatchRef: lookup.queryRef };
-  }
-  if (lookup.queryKind === "external_ref" || lookup.queryKind === "order_ref") {
-    return { ...activeScope, externalOrderRef: lookup.queryRef };
-  }
-  return undefined;
 }

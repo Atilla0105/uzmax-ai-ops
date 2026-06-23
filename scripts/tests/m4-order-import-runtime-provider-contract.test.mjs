@@ -18,11 +18,18 @@ const evidence = read(
 const m4Index = read("docs/evidence/M4/README.md");
 const db = await importTypescriptSource("packages/db/src/index.ts");
 const defaults = await importTypescriptSource("apps/api/src/order-import.defaults.ts");
+const persistenceGateway = await importTypescriptSource(
+  "apps/api/src/order-import.persistence-gateway.ts",
+  {
+    "../../../packages/db/src/index.ts": db.moduleUrl
+  }
+);
 const repository = await importTypescriptSource(
   "apps/api/src/order-import.repository.ts",
   {
     "../../../packages/db/src/index.ts": db.moduleUrl,
-    "./order-import.defaults.ts": defaults.moduleUrl
+    "./order-import.defaults.ts": defaults.moduleUrl,
+    "./order-import.persistence-gateway.ts": persistenceGateway.moduleUrl
   }
 );
 

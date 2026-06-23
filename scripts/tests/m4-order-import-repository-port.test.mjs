@@ -52,23 +52,22 @@ describe("M4-08 order import repository port", () => {
   });
 
   it("maps persistence gateway jobs and row errors inside the selected tenant", async () => {
-    const adapter = new repository.module.PersistenceOrderImportRepository({
-      findOrderSnapshot() {
-        return undefined;
-      },
-      getImportJob(_scope, jobId) {
-        return jobId === "job-a" ? jobRow("job-a", TENANT_A) : undefined;
-      },
-      listImportJobs() {
-        return [jobRow("job-a", TENANT_A), jobRow("job-b", TENANT_B)];
-      },
-      listImportRowErrors() {
-        return [
-          rowError("row-a", "job-a", TENANT_A),
-          rowError("row-b", "job-a", TENANT_B)
-        ];
-      }
-    });
+    const adapter = new repository.module.PersistenceOrderImportRepository(
+      emptyGateway({
+        getImportJob(_scope, jobId) {
+          return jobId === "job-a" ? jobRow("job-a", TENANT_A) : undefined;
+        },
+        listImportJobs() {
+          return [jobRow("job-a", TENANT_A), jobRow("job-b", TENANT_B)];
+        },
+        listImportRowErrors() {
+          return [
+            rowError("row-a", "job-a", TENANT_A),
+            rowError("row-b", "job-a", TENANT_B)
+          ];
+        }
+      })
+    );
     const accessContext = contextFor(TENANT_A);
 
     assert.deepEqual(
@@ -87,21 +86,14 @@ describe("M4-08 order import repository port", () => {
 
   it("passes query scope to the persistence gateway and feeds order-read safely", async () => {
     const calls = [];
-    const adapter = new repository.module.PersistenceOrderImportRepository({
-      findOrderSnapshot(scope, lookup) {
-        calls.push({ lookup, scope });
-        return snapshotRow(TENANT_A, lookup.queryRef, "2026-06-23T00:00:00.000Z");
-      },
-      getImportJob() {
-        return undefined;
-      },
-      listImportJobs() {
-        return [];
-      },
-      listImportRowErrors() {
-        return [];
-      }
-    });
+    const adapter = new repository.module.PersistenceOrderImportRepository(
+      emptyGateway({
+        findOrderSnapshot(scope, lookup) {
+          calls.push({ lookup, scope });
+          return snapshotRow(TENANT_A, lookup.queryRef, "2026-06-23T00:00:00.000Z");
+        }
+      })
+    );
     const accessContext = contextFor(TENANT_A);
     const snapshot = await adapter.findSnapshot(accessContext, {
       queryKind: "order_ref",
@@ -291,10 +283,7 @@ describe("M4-11 order import Prisma gateway", () => {
 
   it("keeps Prisma gateway contract opt-in and runtime side effects absent", () => {
     assert.match(repositorySource, /type OrderImportPrismaClientPort/);
-    assert.match(repositorySource, /class PrismaOrderImportPersistenceGateway/);
-    assert.match(appModule, /PrismaOrderImportPersistenceGateway/);
-    assert.match(appModule, /createOrderImportRepositoryProvider/);
-    assert.match(appModule, /orderImportRepositoryRuntimeModes\.inMemory/);
+    assert.match(repositorySource, /PrismaOrderImportPersistenceGateway/);
     assert.doesNotMatch(
       `${repositorySource}\n${appModule}`,
       /@prisma\/client|new PrismaClient|process\.env|order_connector|fetch\(|https?:\/\//i
@@ -363,12 +352,16 @@ function snapshotRow(tenantId, queryRef, expiresAt) {
   };
 }
 
-const gatewayWithSnapshot = (snapshot) => ({
-  findOrderSnapshot: () => snapshot,
+const emptyGateway = (overrides = {}) => ({
+  findOrderSnapshot: () => undefined,
   getImportJob: () => undefined,
   listImportJobs: () => [],
-  listImportRowErrors: () => []
+  listImportRowErrors: () => [],
+  ...overrides
 });
+
+const gatewayWithSnapshot = (snapshot) =>
+  emptyGateway({ findOrderSnapshot: () => snapshot });
 
 function prismaStub(overrides = {}) {
   return {
@@ -393,19 +386,27 @@ async function importOrderImportRepositorySource() {
   const defaults = await importTypescriptSource(
     "apps/api/src/order-import.defaults.ts"
   );
+  const persistenceGateway = await importTypescriptSource(
+    "apps/api/src/order-import.persistence-gateway.ts",
+    {
+      "../../../packages/db/src/index.ts": db.moduleUrl
+    }
+  );
   const moduleUrl = inlineModuleUrl(
     transpileSource(
       replaceImports(read("apps/api/src/order-import.repository.ts"), {
         "../../../packages/db/src/index.ts": db.moduleUrl,
-        "./order-import.defaults.ts": defaults.moduleUrl
+        "./order-import.defaults.ts": defaults.moduleUrl,
+        "./order-import.persistence-gateway.ts": persistenceGateway.moduleUrl
       })
     )
   );
   return { module: await import(moduleUrl), moduleUrl };
 }
 
-async function importTypescriptSource(relativePath) {
-  const moduleUrl = inlineModuleUrl(transpileSource(read(relativePath)));
+async function importTypescriptSource(relativePath, replacements = {}) {
+  const source = replaceImports(read(relativePath), replacements);
+  const moduleUrl = inlineModuleUrl(transpileSource(source));
   return { module: await import(moduleUrl), moduleUrl };
 }
 

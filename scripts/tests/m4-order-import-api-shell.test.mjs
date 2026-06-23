@@ -232,11 +232,22 @@ async function importOrderImportApiSource() {
   const defaultsModuleUrl = writeSource(writeTempModule, "order-import.defaults", {
     "./order-import.types.ts": typesModuleUrl
   });
+  const persistenceGatewayModuleUrl = writeSource(
+    writeTempModule,
+    "order-import.persistence-gateway",
+    {
+      "../../../packages/db/src/index.ts": db.moduleUrl
+    }
+  );
   const repositoryModuleUrl = writeSource(writeTempModule, "order-import.repository", {
     "../../../packages/authz/src/index.ts": authz.moduleUrl,
     "../../../packages/db/src/index.ts": db.moduleUrl,
     "./order-import.defaults.ts": defaultsModuleUrl,
+    "./order-import.persistence-gateway.ts": persistenceGatewayModuleUrl,
     "./order-import.types.ts": typesModuleUrl
+  });
+  const rlsRunnerModuleUrl = writeSource(writeTempModule, "order-import.rls-runner", {
+    "./order-import.repository.ts": repositoryModuleUrl
   });
   const serviceModuleUrl = writeSource(writeTempModule, "order-import.service", {
     "../../../packages/authz/src/index.ts": authz.moduleUrl,
@@ -255,6 +266,7 @@ async function importOrderImportApiSource() {
   const barrelSource = replaceImports(read("apps/api/src/order-import.ts"), {
     "./order-import.controller.ts": controllerModuleUrl,
     "./order-import.repository.ts": repositoryModuleUrl,
+    "./order-import.rls-runner.ts": rlsRunnerModuleUrl,
     "./order-import.service.ts": serviceModuleUrl,
     "./order-import.types.ts": typesModuleUrl
   });

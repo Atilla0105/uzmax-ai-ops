@@ -96,6 +96,26 @@ describe("M4-10 order import parser contract", () => {
         }),
       /unterminated quoted CSV field/
     );
+    assert.throws(
+      () =>
+        worker.module.parseOrderImportCsvText({
+          csvText: controlledCsv([
+            "external_order_ref,order_status_ref,source_updated_at,expires_at",
+            "controlled://order/ref-a,status://order/in-transit,2026-06-22T00:00:00.000Z,2026-06-23T00:00:00.000Z"
+          ]),
+          sourceRef: "https://example.invalid/raw.csv"
+        }),
+      /sourceRef must be a controlled import ref/
+    );
+    assert.throws(
+      () =>
+        worker.module.parseOrderImportCsvText({
+          csvText:
+            "external_order_ref,order_status_ref,source_updated_at,expires_at\n\0",
+          sourceRef: SOURCE_REF
+        }),
+      /order import CSV text must not contain null bytes/
+    );
   });
 
   it("skips blank rows and enforces a bounded row budget", () => {
@@ -129,6 +149,7 @@ describe("M4-10 order import parser contract", () => {
     assert.match(spec, /parser-contract foundation/);
     assert.match(evidence, /no raw customer\/order data/);
     assert.match(m4Index, /M4-10 order import parser contract/);
+    assert.match(m4Index, /M4-32 order import parser input boundary contract/);
     assert.match(m4Index, /DB client wiring, queue runtime/);
     assert.doesNotMatch(
       workerSource,

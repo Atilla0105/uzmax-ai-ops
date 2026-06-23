@@ -24,6 +24,27 @@ export type OrderImportTableFileIntakeResult = OrderImportCsvFileIntakeResult & 
   delimiter: "tab";
 };
 
+export type OrderImportStorageObjectIntakeInput = {
+  bucketId: string;
+  content: CsvFileContent;
+  maxBytes?: number;
+  maxRows?: number;
+  mediaType?: string;
+  objectPath: string;
+};
+
+export type OrderImportStorageObjectIntakeResult =
+  | (OrderImportCsvFileIntakeResult & {
+      bucketId: string;
+      objectPath: string;
+      storageKind: "csv";
+    })
+  | (OrderImportTableFileIntakeResult & {
+      bucketId: string;
+      objectPath: string;
+      storageKind: "table";
+    });
+
 const defaultMaxCsvFileBytes = 2_000_000;
 const maxCsvFileBytesLimit = 10_000_000;
 const csvMediaTypes = new Set([
@@ -79,6 +100,44 @@ export function createOrderImportCsvTextInputFromTableFile(
     mediaType,
     sourceRef
   };
+}
+
+export function createOrderImportCsvTextInputFromStorageObject(
+  input: OrderImportStorageObjectIntakeInput
+): OrderImportStorageObjectIntakeResult {
+  const bucketId = storageBucketId(input.bucketId);
+  const objectPath = storageObjectPath(input.objectPath);
+  const fileName = objectPathFileName(objectPath);
+  const sourceRef = controlledFileRef(
+    `storage://${bucketId}/${objectPath}`,
+    "sourceRef"
+  );
+  const common = {
+    content: input.content,
+    fileName,
+    maxBytes: input.maxBytes,
+    maxRows: input.maxRows,
+    mediaType: input.mediaType,
+    sourceRef
+  };
+
+  if (fileName.toLowerCase().endsWith(".csv")) {
+    return {
+      ...createOrderImportCsvTextInputFromFile(common),
+      bucketId,
+      objectPath,
+      storageKind: "csv"
+    };
+  }
+  if (fileName.toLowerCase().endsWith(".tsv")) {
+    return {
+      ...createOrderImportCsvTextInputFromTableFile(common),
+      bucketId,
+      objectPath,
+      storageKind: "table"
+    };
+  }
+  throw new Error("order import storage object must be CSV or TSV");
 }
 
 function csvFileName(value: unknown): string {
@@ -168,6 +227,36 @@ function textValue(value: unknown, name: string): string {
   if (typeof value !== "string" || !value.trim())
     throw new Error(`${name} is required`);
   return value.trim();
+}
+
+function storageBucketId(value: unknown): string {
+  const text = textValue(value, "bucketId");
+  if (!/^[a-z0-9][a-z0-9._-]{1,62}$/i.test(text)) {
+    throw new Error("order import storage bucketId is invalid");
+  }
+  return text;
+}
+
+function storageObjectPath(value: unknown): string {
+  const text = textValue(value, "objectPath");
+  if (
+    text.length > 150 ||
+    text.startsWith("/") ||
+    text.endsWith("/") ||
+    text.includes("//") ||
+    text.includes("..") ||
+    /[\\\0]/.test(text) ||
+    !/^[a-z0-9][a-z0-9/._:-]*$/i.test(text)
+  ) {
+    throw new Error("order import storage objectPath is invalid");
+  }
+  return text;
+}
+
+function objectPathFileName(objectPath: string): string {
+  const fileName = objectPath.split("/").at(-1);
+  if (!fileName) throw new Error("order import storage object fileName is required");
+  return fileName;
 }
 
 function tableTextToCsvText(value: string): string {

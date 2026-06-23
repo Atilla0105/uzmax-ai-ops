@@ -162,7 +162,13 @@ export function orderImportStorageSourceLockKey(
   lockPrefix: string = orderImportBullmqQueueDefaults.lockPrefix
 ) {
   const digest = createHash("sha256").update(storageSourceRef(sourceRef)).digest("hex");
-  return `${lockPrefixValue(lockPrefix)}:${digest}`;
+  const prefix = patternValue(
+    lockPrefix,
+    "lockPrefix",
+    lockPrefixPattern,
+    "lockPrefix must be controlled"
+  );
+  return `${prefix}:${digest}`;
 }
 
 export async function getOrderImportBullmqQueueHealthSnapshot(
@@ -238,25 +244,11 @@ function assertRuntimeJobData(payload: RuntimeJobData) {
 }
 
 function storageSourceRef(value: unknown) {
-  return patternValue(
-    value,
-    "sourceRef",
-    sourceRefPattern,
-    "sourceRef must be controlled"
-  );
+  return patternValue(value, "sourceRef", sourceRefPattern, "controlled sourceRef");
 }
 
 function lockKey(value: unknown) {
   return patternValue(value, "lockKey", lockKeyPattern, "lockKey must be controlled");
-}
-
-function lockPrefixValue(value: unknown) {
-  return patternValue(
-    value,
-    "lockPrefix",
-    lockPrefixPattern,
-    "lockPrefix must be controlled"
-  );
 }
 
 function lockToken(value: unknown) {

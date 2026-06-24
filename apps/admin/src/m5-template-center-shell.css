@@ -1,0 +1,55 @@
+.m5-template-shell {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.m5-template-heading,
+.m5-template-tabs,
+.m5-template-layout,
+.m5-template-cards,
+.m5-template-copy,
+.m5-template-copy div {
+  display: grid;
+  gap: var(--uzmax-space-3);
+}
+
+.m5-template-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.m5-template-tabs,
+.m5-template-cards {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.m5-template-layout {
+  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.7fr);
+}
+
+.m5-template-shell
+  :is(.m5-template-mode, .m5-template-card, .m5-template-copy, button) {
+  min-width: 0;
+  border: 1px solid var(--uzmax-color-border);
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-2);
+  background: var(--uzmax-color-surface);
+  overflow-wrap: anywhere;
+}
+
+.m5-template-card,
+.m5-template-card div {
+  display: grid;
+  gap: var(--uzmax-space-1);
+}
+
+.m5-template-tabs button[aria-pressed="true"],
+.m5-template-copy {
+  border-left: 4px solid var(--uzmax-color-accent);
+}
+
+@media (max-width: 480px) {
+  .m5-template-heading,
+  .m5-template-layout {
+    grid-template-columns: 1fr;
+  }
+}

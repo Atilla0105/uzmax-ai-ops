@@ -42,7 +42,7 @@ export class ConfirmationQueueService {
     const item = this.requireItem(accessContext, input.itemId);
     validateDecision(item, input);
 
-    const reviewedAt = input.now ?? new Date().toISOString();
+    const reviewedAt = new Date().toISOString();
     const auditDraft = createAuditDraft(accessContext, item, input, reviewedAt);
     const updated = this.repository.saveItem({
       ...item,
@@ -90,11 +90,9 @@ export function parseConfirmationDecisionBody(
   }
   return {
     action,
-    auditRef: optionalRef(input, "auditRef"),
     editedPayload,
     editedPayloadRef,
     itemId,
-    now: optionalDateText(input, "now"),
     reasonRef: optionalRef(input, "reasonRef")
   };
 }
@@ -109,6 +107,7 @@ function validateDecision(
   if (input.action === "edit" && !input.editedPayload && !input.editedPayloadRef) {
     throw badRequest("edit decision requires editedPayload or editedPayloadRef");
   }
+  if (input.editedPayload) assertEditedPayload(input.editedPayload, "editedPayload");
   if (
     item.kind === "conflict_candidate" &&
     (input.action === "approve" || input.action === "edit") &&
@@ -126,9 +125,7 @@ function createAuditDraft(
 ) {
   return {
     action: input.action,
-    auditRef:
-      input.auditRef ??
-      `controlled://confirmation-queue/audit/${item.id}/${input.action}`,
+    auditRef: `controlled://confirmation-queue/audit/${item.id}/${input.action}`,
     editedPayloadRef: input.editedPayloadRef,
     formalWrite: false,
     itemId: item.id,
@@ -156,18 +153,6 @@ function hasSideBySideDiffPayload(value: unknown): boolean {
   );
 }
 
-function optionalDateText(
-  source: Record<string, unknown>,
-  key: string
-): string | undefined {
-  if (source[key] === undefined) return undefined;
-  const text = readText(source[key], key);
-  if (!Number.isFinite(Date.parse(text))) {
-    throw badRequest(`${key} must be a date`);
-  }
-  return text;
-}
-
 function optionalRecord(
   source: Record<string, unknown>,
   key: string
@@ -177,6 +162,7 @@ function optionalRecord(
   if (Object.keys(record).length === 0) {
     throw badRequest(`${key} must not be empty`);
   }
+  assertEditedPayload(record, key);
   return record;
 }
 
@@ -234,6 +220,16 @@ function assertSafePayload(value: unknown, path = "decision") {
       throw badRequest(`${childPath} is a forbidden raw payload key`);
     }
     assertSafePayload(child, childPath);
+  }
+}
+
+function assertEditedPayload(record: Record<string, unknown>, path: string) {
+  for (const [key, child] of Object.entries(record)) {
+    const childPath = `${path}.${key}`;
+    if (!key.endsWith("Ref")) {
+      throw badRequest(`${childPath} must be a controlled ref field`);
+    }
+    readRef(child, childPath);
   }
 }
 

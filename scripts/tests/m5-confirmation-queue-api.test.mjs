@@ -26,7 +26,6 @@ const ITEM_CONFLICT_NO_DIFF = "77777777-7777-4777-8777-777777777777";
 const ITEM_EVAL_A = "88888888-8888-4888-8888-888888888888";
 const ITEM_PROFILE_A = "99999999-9999-4999-8999-999999999999";
 const ITEM_TENANT_B = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-const NOW = "2026-06-24T12:00:00.000Z";
 
 const controllerSource = read("apps/api/src/confirmation-queue.controller.ts");
 const serviceSource = read("apps/api/src/confirmation-queue.service.ts");
@@ -91,6 +90,9 @@ describe("M5-03 confirmation queue API", () => {
 
   it("applies approve, edit, discard and block decisions without formal writes", async () => {
     const service = createService([
+      item(ITEM_KNOWLEDGE_A, TENANT_B, "knowledge_candidate", "pending", {
+        metadata: { marker: "tenant-b-duplicate" }
+      }),
       item(ITEM_KNOWLEDGE_A, TENANT_A, "knowledge_candidate", "pending"),
       item(ITEM_CONFLICT_A, TENANT_A, "conflict_candidate", "pending", {
         diffPayload: sideBySideDiff()
@@ -101,54 +103,57 @@ describe("M5-03 confirmation queue API", () => {
     ]);
     const tenantAWrite = contextFor(TENANT_A, ["confirmation:write"]);
 
-    const approved = await service.applyDecision(
-      tenantAWrite,
-      decision("approve", ITEM_CONFLICT_A, {
-        reasonRef: "controlled://confirmation/reason/approve"
-      })
-    );
+    const approved = await decide(service, tenantAWrite, "approve", ITEM_CONFLICT_A, {
+      auditRef: "controlled://request/ignored-audit",
+      now: "2020-01-01T00:00:00.000Z",
+      reasonRef: "controlled://confirmation/reason/approve"
+    });
     assert.equal(approved.item.status, "approved");
     assert.equal(approved.item.reviewedByUserId, USER_A);
-    assert.equal(approved.item.reviewedAt, NOW);
+    assert.notEqual(approved.item.reviewedAt, "2020-01-01T00:00:00.000Z");
+    assert.ok(Number.isFinite(Date.parse(approved.item.reviewedAt)));
     assert.equal(approved.formalWrite, false);
     assert.equal(approved.auditDraft.formalWrite, false);
+    assert.notEqual(approved.auditDraft.auditRef, "controlled://request/ignored-audit");
     assert.match(approved.auditDraft.auditRef, /^controlled:\/\/confirmation-queue/);
 
-    const edited = await service.applyDecision(
-      tenantAWrite,
-      decision("edit", ITEM_KNOWLEDGE_A, {
-        editedPayload: { summaryRef: "controlled://candidate/edited-summary" }
-      })
-    );
+    const edited = await decide(service, tenantAWrite, "edit", ITEM_KNOWLEDGE_A, {
+      editedPayload: { summaryRef: "controlled://candidate/edited-summary" }
+    });
     assert.equal(edited.item.status, "edited");
     assert.equal(
       edited.item.metadata.editedPayload.summaryRef,
       "controlled://candidate/edited-summary"
     );
     assert.equal(edited.formalWrite, false);
-
-    const discarded = await service.applyDecision(
-      tenantAWrite,
-      decision("discard", ITEM_EVAL_A)
+    const tenantBDuplicate = await service.getItemDetail(
+      contextFor(TENANT_B, ["confirmation:read"]),
+      ITEM_KNOWLEDGE_A
     );
+    assert.equal(tenantBDuplicate.item.status, "pending");
+    assert.equal(tenantBDuplicate.item.metadata.marker, "tenant-b-duplicate");
+
+    const discarded = await decide(service, tenantAWrite, "discard", ITEM_EVAL_A);
     assert.equal(discarded.item.status, "discarded");
 
-    const blocked = await service.applyDecision(
-      tenantAWrite,
-      decision("block", ITEM_PROFILE_A, {
-        reasonRef: "controlled://confirmation/reason/block"
-      })
+    await assert.rejects(
+      () =>
+        decide(service, tenantAWrite, "edit", ITEM_PROFILE_A, {
+          editedPayload: { summary: "customer private text" }
+        }),
+      /editedPayload\.summary must be a controlled ref field/
     );
+    const blocked = await decide(service, tenantAWrite, "block", ITEM_PROFILE_A, {
+      reasonRef: "controlled://confirmation/reason/block"
+    });
     assert.equal(blocked.item.status, "blocked");
 
     await assert.rejects(
-      () =>
-        service.applyDecision(tenantAWrite, decision("approve", ITEM_CONFLICT_NO_DIFF)),
+      () => decide(service, tenantAWrite, "approve", ITEM_CONFLICT_NO_DIFF),
       /conflict candidate requires side-by-side diff payload/
     );
     await assert.rejects(
-      () =>
-        service.applyDecision(tenantAWrite, decision("edit", ITEM_CONFLICT_NO_DIFF)),
+      () => decide(service, tenantAWrite, "edit", ITEM_CONFLICT_NO_DIFF),
       /edit decision requires editedPayload or editedPayloadRef/
     );
     await assert.rejects(
@@ -176,6 +181,22 @@ describe("M5-03 confirmation queue API", () => {
       },
       /decision\.editedPayload\.prompt is a forbidden raw payload key/
     );
+    assertDecisionBodyRejects(
+      { action: "edit", editedPayload: { summary: "customer private text" } },
+      /editedPayload\.summary must be a controlled ref field/
+    );
+    const parsedEdit = api.module.parseConfirmationDecisionBody(ITEM_KNOWLEDGE_A, {
+      action: "edit",
+      auditRef: "controlled://request/ignored-audit",
+      editedPayload: { summaryRef: "controlled://candidate/edited-summary" },
+      now: "2020-01-01T00:00:00.000Z"
+    });
+    assert.equal(
+      parsedEdit.editedPayload.summaryRef,
+      "controlled://candidate/edited-summary"
+    );
+    assert.equal(Object.hasOwn(parsedEdit, "auditRef"), false);
+    assert.equal(Object.hasOwn(parsedEdit, "now"), false);
     for (const rawKey of "http https data blob file".split(" ")) {
       assertDecisionBodyRejects(
         {
@@ -211,46 +232,42 @@ describe("M5-03 confirmation queue API", () => {
       accessContext: contextFor(TENANT_A, ["confirmation:write"])
     };
 
-    await assertRejectsHttp(
-      () => controller.listItems({}, {}),
-      403,
-      /access context is required/
-    );
-    await assertRejectsHttp(
-      () => controller.listItems({ accessContext: contextFor(TENANT_A, []) }, {}),
-      403,
-      /permission is not granted/
-    );
-    await assertRejectsHttp(
-      () => controller.listItems(readRequest, { status: "not-a-status" }),
-      400,
-      /confirmation item status is invalid/
-    );
-    await assertRejectsHttp(
-      () => controller.getItemDetail(readRequest, ITEM_TENANT_B),
-      404,
-      /confirmation item not found/
-    );
-    await assertRejectsHttp(
-      () =>
-        controller.applyDecision(writeRequest, ITEM_KNOWLEDGE_A, {
-          action: "approve",
-          reasonRef: "https://example.test/ref"
-        }),
-      400,
-      /reasonRef must be a controlled ref/
-    );
+    for (const [action, status, message] of [
+      [() => controller.listItems({}, {}), 403, /access context is required/],
+      [
+        () => controller.listItems({ accessContext: contextFor(TENANT_A, []) }, {}),
+        403,
+        /permission is not granted/
+      ],
+      [
+        () => controller.listItems(readRequest, { status: "not-a-status" }),
+        400,
+        /confirmation item status is invalid/
+      ],
+      [
+        () => controller.getItemDetail(readRequest, ITEM_TENANT_B),
+        404,
+        /confirmation item not found/
+      ],
+      [
+        () =>
+          controller.applyDecision(writeRequest, ITEM_KNOWLEDGE_A, {
+            action: "approve",
+            reasonRef: "https://example.test/ref"
+          }),
+        400,
+        /reasonRef must be a controlled ref/
+      ]
+    ]) {
+      await assertRejectsHttp(action, status, message);
+    }
   });
 
   it("records M5-03 scope, evidence and not-accepted status", () => {
-    assert.match(spec, /M5-03 Confirmation Queue API/);
-    assert.match(spec, /changed source files <= 6, net source LOC <= 550/);
-    assert.match(spec, /api_contract_supported_not_closed/);
-    assert.match(evidence, /M5-03 Confirmation Queue API Evidence/);
-    assert.match(evidence, /No Sensitive Data Statement/);
-    assert.match(evidence, /formal knowledge\/profile\/eval writes/);
-    assert.match(m5Readme, /M5-03 confirmation queue API/);
-    assert.match(m5Readme, /m5_03_confirmation_queue_api_recorded__not_accepted/);
+    assert.match(
+      `${spec}\n${evidence}\n${m5Readme}`,
+      /(?=.*M5-03 Confirmation Queue API)(?=.*changed source files <= 6, net source LOC <= 550)(?=.*api_contract_supported_not_closed)(?=.*M5-03 Confirmation Queue API Evidence)(?=.*No Sensitive Data Statement)(?=.*formal knowledge\/profile\/eval writes)(?=.*M5-03 confirmation queue API)(?=.*m5_03_confirmation_queue_api_recorded__not_accepted)/s
+    );
   });
 });
 
@@ -260,8 +277,8 @@ function createService(items) {
   );
 }
 
-function decision(action, itemId, overrides = {}) {
-  return { action, itemId, now: NOW, ...overrides };
+function decide(service, accessContext, action, itemId, overrides = {}) {
+  return service.applyDecision(accessContext, { action, itemId, ...overrides });
 }
 
 function ids(response) {

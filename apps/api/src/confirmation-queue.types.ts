@@ -38,11 +38,9 @@ export type ConfirmationQueueListFilters = {
 
 export type ConfirmationDecisionInput = {
   action: ConfirmationDecisionAction;
-  auditRef?: string;
   editedPayload?: Record<string, unknown>;
   editedPayloadRef?: string;
   itemId: string;
-  now?: string;
   reasonRef?: string;
 };
 

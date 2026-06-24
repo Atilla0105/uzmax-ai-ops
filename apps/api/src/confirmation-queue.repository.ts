@@ -28,7 +28,12 @@ export class InMemoryConfirmationQueueRepository {
 
   saveItem(item: ConfirmationQueueItem) {
     const nextItem = structuredClone(item);
-    const itemIndex = this.items.findIndex((candidate) => candidate.id === item.id);
+    const itemIndex = this.items.findIndex(
+      (candidate) =>
+        candidate.orgId === item.orgId &&
+        candidate.tenantId === item.tenantId &&
+        candidate.id === item.id
+    );
     if (itemIndex === -1) {
       this.items = [...this.items, nextItem];
     } else {

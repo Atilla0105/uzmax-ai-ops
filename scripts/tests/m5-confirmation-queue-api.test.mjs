@@ -1,21 +1,12 @@
 import { strict as assert } from "node:assert";
 import * as fs from "node:fs";
-import * as os from "node:os";
 import path from "node:path";
-import * as url from "node:url";
+import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
 
-import ts from "typescript";
+import { compileApiRuntime } from "../../apps/api/scripts/runtime-compiler.mjs";
 
 const repoRoot = process.cwd();
-const testTranspileOptions = {
-  compilerOptions: {
-    emitDecoratorMetadata: false,
-    experimentalDecorators: true,
-    module: ts.ModuleKind.ES2022,
-    target: ts.ScriptTarget.ES2023
-  }
-};
 const ORG_ID = "11111111-1111-4111-8111-111111111111";
 const TENANT_A = "22222222-2222-4222-8222-222222222222";
 const TENANT_B = "33333333-3333-4333-8333-333333333333";
@@ -344,92 +335,16 @@ function read(relativePath) {
 }
 
 async function importConfirmationQueueApiSource() {
-  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "uzmax-m5-03-"));
-  const writeTempModule = (fileName, sourceText) => {
-    const destination = path.join(tmpRoot, fileName);
-    fs.writeFileSync(destination, sourceText, "utf8");
-    return url.pathToFileURL(destination).href;
-  };
-  const authz = await importTypescriptSource("packages/authz/src/index.ts");
-  const nestCommon = createNestCommonStub(writeTempModule);
-  const accessContext = writeTempModule(
-    "access-context-stub.mjs",
-    "export class ApiAccessContextGuard {}"
-  );
-  const typesModuleUrl = writeSource(writeTempModule, "confirmation-queue.types");
-  const repositoryModuleUrl = writeSource(
-    writeTempModule,
-    "confirmation-queue.repository",
-    {
-      "../../../packages/authz/src/index.ts": authz.moduleUrl,
-      "./confirmation-queue.types.ts": typesModuleUrl
-    }
-  );
-  const serviceModuleUrl = writeSource(writeTempModule, "confirmation-queue.service", {
-    "../../../packages/authz/src/index.ts": authz.moduleUrl,
-    "./confirmation-queue.repository.ts": repositoryModuleUrl,
-    "./confirmation-queue.types.ts": typesModuleUrl,
-    "@nestjs/common": nestCommon
-  });
-  const controllerModuleUrl = writeSource(
-    writeTempModule,
-    "confirmation-queue.controller",
-    {
-      "../../../packages/authz/src/index.ts": authz.moduleUrl,
-      "./access-context.ts": accessContext,
-      "./confirmation-queue.service.ts": serviceModuleUrl,
-      "./confirmation-queue.types.ts": typesModuleUrl,
-      "@nestjs/common": nestCommon
-    }
-  );
-  const moduleUrl = writeTempModule(
-    "confirmation-queue.mjs",
+  const outDir = await compileApiRuntime();
+  const baseUrl = `${pathToFileURL(outDir).href}/`;
+  const importModule = (fileName) => import(`${baseUrl}${fileName}.mjs`);
+  const modules = await Promise.all(
     [
-      `export * from "${controllerModuleUrl}";`,
-      `export * from "${repositoryModuleUrl}";`,
-      `export * from "${serviceModuleUrl}";`,
-      `export * from "${typesModuleUrl}";`
-    ].join("\n")
+      "confirmation-queue.controller",
+      "confirmation-queue.repository",
+      "confirmation-queue.service",
+      "confirmation-queue.types"
+    ].map(importModule)
   );
-  return { module: await import(moduleUrl), moduleUrl };
-}
-
-function writeSource(writeTempModule, stem, replacements = {}) {
-  const source = replaceImports(read(`apps/api/src/${stem}.ts`), replacements);
-  return writeTempModule(`${stem}.mjs`, transpileSource(source));
-}
-
-async function importTypescriptSource(relativePath) {
-  const moduleUrl = moduleDataUrl(transpileSource(read(relativePath)));
-  return { module: await import(moduleUrl), moduleUrl };
-}
-
-function createNestCommonStub(writeTempModule) {
-  return writeTempModule(
-    "nestjs-common-stub.mjs",
-    [
-      "const decorator = () => () => undefined;",
-      "const exception = (statusCode) => class extends Error { constructor(message) { super(typeof message === 'string' ? message : JSON.stringify(message)); this.status = statusCode; this.statusCode = statusCode; } };",
-      "export const BadRequestException = exception(400);",
-      "export const ForbiddenException = exception(403);",
-      "export const NotFoundException = exception(404);",
-      "export const Body = decorator, Controller = decorator, Get = decorator, Injectable = decorator, Param = decorator, Post = decorator, Query = decorator, Req = decorator, UseGuards = decorator;"
-    ].join("\n")
-  );
-}
-
-function replaceImports(sourceText, replacements) {
-  return Object.entries(replacements).reduce(
-    (source, [from, to]) => source.replaceAll(from, to),
-    sourceText
-  );
-}
-
-function transpileSource(sourceText) {
-  return ts.transpileModule(sourceText, testTranspileOptions).outputText;
-}
-
-function moduleDataUrl(sourceText) {
-  const encoded = Buffer.from(sourceText, "utf8").toString("base64");
-  return `data:text/javascript;base64,${encoded}`;
+  return { module: Object.assign({}, ...modules), moduleUrl: baseUrl };
 }

@@ -21,6 +21,11 @@ import {
 } from "./conversation-ticket.ts";
 import { ConfirmationQueueController } from "./confirmation-queue.controller.ts";
 import {
+  CONFIRMATION_FORMAL_WRITE_PIPELINE,
+  createConfirmationFormalWritePipelineProviderFromEnv,
+  type ConfirmationFormalWritePipelinePort
+} from "./confirmation-queue.formal-write.ts";
+import {
   CONFIRMATION_QUEUE_REPOSITORY,
   InMemoryConfirmationQueueRepository,
   type ConfirmationQueueRepositoryPort
@@ -240,10 +245,12 @@ class TelegramBotWebhookController {
     api.ApiAccessContextGuard,
     api.ApiAccessContextService,
     {
-      inject: [CONFIRMATION_QUEUE_REPOSITORY],
+      inject: [CONFIRMATION_QUEUE_REPOSITORY, CONFIRMATION_FORMAL_WRITE_PIPELINE],
       provide: ConfirmationQueueService,
-      useFactory: (repository: ConfirmationQueueRepositoryPort) =>
-        new ConfirmationQueueService(repository)
+      useFactory: (
+        repository: ConfirmationQueueRepositoryPort,
+        formalWritePipeline: ConfirmationFormalWritePipelinePort
+      ) => new ConfirmationQueueService(repository, formalWritePipeline)
     },
     ConversationTicketService,
     CustomerAssetService,
@@ -258,6 +265,10 @@ class TelegramBotWebhookController {
         createConfirmationQueueRepositoryProviderFromEnv({
           inMemoryRepository: repository
         })
+    },
+    {
+      provide: CONFIRMATION_FORMAL_WRITE_PIPELINE,
+      useFactory: () => createConfirmationFormalWritePipelineProviderFromEnv()
     },
     InMemoryConversationTicketRepository,
     InMemoryCustomerAssetRepository,

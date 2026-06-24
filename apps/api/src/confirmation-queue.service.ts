@@ -5,6 +5,10 @@ import {
   type AccessContext
 } from "../../../packages/authz/src/index.ts";
 
+import {
+  DisabledConfirmationFormalWritePipeline,
+  type ConfirmationFormalWritePipelinePort
+} from "./confirmation-queue.formal-write.ts";
 import type { ConfirmationQueueRepositoryPort } from "./confirmation-queue.repository.ts";
 import {
   ConfirmationQueueApiError,
@@ -25,7 +29,10 @@ const FORBIDDEN_KEYS = new Set(
 
 @Injectable()
 export class ConfirmationQueueService {
-  constructor(private readonly repository: ConfirmationQueueRepositoryPort) {}
+  constructor(
+    private readonly repository: ConfirmationQueueRepositoryPort,
+    private readonly formalWritePipeline: ConfirmationFormalWritePipelinePort = new DisabledConfirmationFormalWritePipeline()
+  ) {}
 
   async listItems(accessContext: AccessContext, filters: ConfirmationQueueListFilters) {
     assertPermission(accessContext, "confirmation:read");
@@ -44,7 +51,7 @@ export class ConfirmationQueueService {
 
     const reviewedAt = new Date().toISOString();
     const auditDraft = createAuditDraft(accessContext, item, input, reviewedAt);
-    const updated = await this.repository.saveItem({
+    const updated = {
       ...item,
       metadata: {
         ...(item.metadata ?? {}),
@@ -60,13 +67,23 @@ export class ConfirmationQueueService {
       reviewedAt,
       reviewedByUserId: accessContext.userId,
       status: statusForDecision(input.action)
-    });
-
-    return {
-      auditDraft,
-      formalWrite: false,
-      item: updated
     };
+    const formalWriteResult = await this.formalWritePipeline.commitDecision?.({
+      accessContext,
+      auditDraft,
+      decision: input,
+      item,
+      updatedItem: updated
+    });
+    if (formalWriteResult) return formalWriteResult;
+
+    const saved = await this.repository.saveItem(updated);
+    return this.formalWritePipeline.apply({
+      accessContext,
+      auditDraft,
+      decision: input,
+      item: saved
+    });
   }
 
   private async requireItem(accessContext: AccessContext, itemId: string) {

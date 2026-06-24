@@ -19,6 +19,7 @@ export type ConfirmationQueueItem = Record<
   "createdAt" | "id" | "orgId" | "sourceRef" | "tenantId",
   string
 > & {
+  auditLogId?: string;
   candidatePayload: Record<string, unknown>;
   confidenceBps?: number;
   diffPayload?: Record<string, unknown>;

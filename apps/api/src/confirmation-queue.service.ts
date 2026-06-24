@@ -51,7 +51,7 @@ export class ConfirmationQueueService {
 
     const reviewedAt = new Date().toISOString();
     const auditDraft = createAuditDraft(accessContext, item, input, reviewedAt);
-    const updated = await this.repository.saveItem({
+    const updated = {
       ...item,
       metadata: {
         ...(item.metadata ?? {}),
@@ -67,13 +67,22 @@ export class ConfirmationQueueService {
       reviewedAt,
       reviewedByUserId: accessContext.userId,
       status: statusForDecision(input.action)
+    };
+    const formalWriteResult = await this.formalWritePipeline.commitDecision?.({
+      accessContext,
+      auditDraft,
+      decision: input,
+      item,
+      updatedItem: updated
     });
+    if (formalWriteResult) return formalWriteResult;
 
+    const saved = await this.repository.saveItem(updated);
     return this.formalWritePipeline.apply({
       accessContext,
       auditDraft,
       decision: input,
-      item: updated
+      item: saved
     });
   }
 

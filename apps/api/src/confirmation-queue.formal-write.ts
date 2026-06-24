@@ -76,6 +76,9 @@ export type ConfirmationFormalWriteInput = {
   decision: ConfirmationDecisionInput;
   item: ConfirmationQueueItem;
 };
+type ConfirmationFormalWriteDecisionInput = ConfirmationFormalWriteInput & {
+  updatedItem: ConfirmationQueueItem;
+};
 type ConfirmationFormalWriteResult = {
   auditDraft: Record<string, unknown>;
   formalWrite: boolean;
@@ -85,6 +88,9 @@ export type ConfirmationFormalWritePipelinePort = {
   apply(
     input: ConfirmationFormalWriteInput
   ): MaybePromise<ConfirmationFormalWriteResult>;
+  commitDecision?(
+    input: ConfirmationFormalWriteDecisionInput
+  ): MaybePromise<ConfirmationFormalWriteResult | undefined>;
 };
 
 export const CONFIRMATION_FORMAL_WRITE_PIPELINE = Symbol(
@@ -149,6 +155,13 @@ class RlsPrismaConfirmationFormalWritePipeline implements ConfirmationFormalWrit
   constructor(
     private readonly runInRlsTransaction: ConfirmationFormalWriteRlsTransactionRunner
   ) {}
+
+  async commitDecision(input: ConfirmationFormalWriteDecisionInput) {
+    if (!isFormalWriteDecision({ ...input, item: input.updatedItem })) {
+      return undefined;
+    }
+    return this.apply({ ...input, item: input.updatedItem });
+  }
 
   async apply(input: ConfirmationFormalWriteInput) {
     if (!isFormalWriteDecision(input)) {

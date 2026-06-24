@@ -103,7 +103,7 @@ M5R-02 is the only writer for this branch/worktree/spec. The assigned physical p
 1. Record start audit and baseline M5-03/M5R-01 focused test evidence.
 2. Create this M5R-02 spec and evidence file, and add an M5R README index/status entry for M5R-02 only.
 3. Add a confirmation formal-write pipeline port behind `ConfirmationQueueService`, defaulting to disabled/no formal writes so in-memory/no-RLS runtime still needs no DB env.
-4. Add an explicit RLS Prisma formal-write pipeline for the named `config_version` + `audit_log` target path, using `createRlsTransactionContext`, restricted app runtime role and transaction-scoped `app.org_id` / `app.tenant_id`.
+4. Add an explicit RLS Prisma formal-write pipeline for the named `config_version` + `audit_log` target path, using `createRlsTransactionContext`, restricted app runtime role and transaction-scoped `app.org_id` / `app.tenant_id`; approved/edited RLS decisions must commit status, config version, audit log and confirmation metadata atomically, or leave the item pending/unmodified.
 5. Preserve M5-03/M5R-01 behavior for pending/discarded/blocked and default in-memory runtime.
 6. Require `targetKind: "config_version"` and controlled `targetRef` before formal write; reject bare non-RLS Prisma mode.
 7. Require side-by-side diff for conflict candidate approve/edit before decision and again before formal write.
@@ -123,6 +123,7 @@ M5R-02 is the only writer for this branch/worktree/spec. The assigned physical p
 - Existing M5-03 list/detail/approve/edit/discard/block API semantics remain intact in default runtime.
 - Pending/discarded/blocked candidates never create `config_version` or `audit_log` rows.
 - Approved/edited candidates write only the named `config_version` + `audit_log` target path and only when `targetKind` / `targetRef` name that path.
+- Approved/edited RLS formal-write failures do not commit an approved/edited confirmation half-state without `auditLogId`.
 - Conflict candidates require side-by-side diff before approve/edit and before formal write.
 - Audit entry includes confirmer, diff and target ref.
 - Confirmation item records `auditLogId`, `targetKind`, `targetRef` and formal-write status metadata where the current schema supports it.

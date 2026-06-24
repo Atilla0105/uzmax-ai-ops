@@ -44,6 +44,7 @@ describe("M5R-02 formal write pipeline", () => {
     assert.match(source.compiler, /confirmation-queue\.formal-write/);
     assert.match(source.compiler, /confirmation-queue\.formal-write-contracts/);
     assert.match(source.service, /formalWritePipeline\.apply/);
+    assert.match(source.service, /formalWritePipeline\.commitDecision/);
     assert.match(source.mapper, /auditLogId/);
     assert.match(
       source.formalWrite,
@@ -183,6 +184,43 @@ describe("M5R-02 formal write pipeline", () => {
     assert.equal(fake.createdAudits.length, 0);
   });
 
+  it("does not commit approved half-state when formal write validation fails", async () => {
+    const fake = fakePrisma();
+    const item = queueItem(ITEM_APPROVE, "knowledge_candidate", {
+      targetRef: "controlled://config-version/business_config"
+    });
+    const repository = new runtime.repository.InMemoryConfirmationQueueRepository({
+      items: [item]
+    });
+    seedPrismaConfirmationRow(fake, item);
+    const formalWrite =
+      runtime.formalWrite.createConfirmationFormalWritePipelineProviderFromEnv({
+        mode: "rls_prisma_gateway",
+        prismaClient: fake
+      });
+    const service = new runtime.service.ConfirmationQueueService(
+      repository,
+      formalWrite
+    );
+
+    await assert.rejects(
+      () =>
+        service.applyDecision(context(), {
+          action: "approve",
+          itemId: ITEM_APPROVE,
+          reasonRef: "controlled://confirmation/m5r-02/invalid-target"
+        }),
+      /formal write targetRef must be a controlled config-version ref/
+    );
+
+    const { item: afterFailure } = await service.getItemDetail(context(), ITEM_APPROVE);
+    assert.equal(afterFailure.status, "pending");
+    assert.equal(afterFailure.auditLogId, undefined);
+    assert.equal(fake.createdConfigs.length, 0);
+    assert.equal(fake.createdAudits.length, 0);
+    assert.equal(fake.updatedItems.length, 0);
+  });
+
   it("fails closed without RLS env and rejects bare Prisma bypass mode", async () => {
     assert.throws(
       () =>
@@ -209,7 +247,9 @@ describe("M5R-02 formal write pipeline", () => {
 });
 
 async function importConfirmationQueueModules() {
-  const outDir = await compileApiRuntime();
+  const outDir = await compileApiRuntime({
+    outDir: path.join(repoRoot, "node_modules/.cache/uzmax-api-runtime-m5r-02")
+  });
   const baseUrl = `${pathToFileURL(outDir).href}/`;
   const importModule = (fileName) => import(`${baseUrl}${fileName}.mjs`);
   const [formalWrite, repository, service] = await Promise.all([

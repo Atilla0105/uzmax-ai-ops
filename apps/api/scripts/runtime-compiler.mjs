@@ -148,6 +148,14 @@ export async function compileApiRuntime(options = {}) {
       "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
     }
   );
+  for (const [name, replacements] of confirmationQueueRuntimeModules()) {
+    await writeModule(
+      outDir,
+      `apps/api/src/confirmation-queue.${name}.ts`,
+      `confirmation-queue.${name}.mjs`,
+      replacements
+    );
+  }
   await writeModule(
     outDir,
     "packages/capabilities/handoff/src/index.ts",
@@ -273,6 +281,9 @@ export async function compileApiRuntime(options = {}) {
   });
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
     "./access-context.ts": "./access-context.mjs",
+    "./confirmation-queue.controller.ts": "./confirmation-queue.controller.mjs",
+    "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs",
+    "./confirmation-queue.service.ts": "./confirmation-queue.service.mjs",
     "./conversation-ticket.ts": "./conversation-ticket.mjs",
     "./customer-asset.controller.ts": "./customer-asset.controller.mjs",
     "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
@@ -297,6 +308,32 @@ async function writeModule(outDir, sourcePath, outputName, replacements = {}) {
     fileName: sourcePath
   });
   await writeFile(path.join(outDir, outputName), outputText);
+}
+
+function confirmationQueueRuntimeModules() {
+  const authz = { "../../../packages/authz/src/index.ts": "./authz-index.mjs" };
+  const types = { "./confirmation-queue.types.ts": "./confirmation-queue.types.mjs" };
+  return [
+    ["types", authz],
+    ["repository", { ...authz, ...types }],
+    [
+      "service",
+      {
+        ...authz,
+        ...types,
+        "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs"
+      }
+    ],
+    [
+      "controller",
+      {
+        ...authz,
+        ...types,
+        "./access-context.ts": "./access-context.mjs",
+        "./confirmation-queue.service.ts": "./confirmation-queue.service.mjs"
+      }
+    ]
+  ];
 }
 
 function customerAssetRuntimeModules() {

@@ -19,6 +19,9 @@ import {
   ConversationTicketService,
   InMemoryConversationTicketRepository
 } from "./conversation-ticket.ts";
+import { ConfirmationQueueController } from "./confirmation-queue.controller.ts";
+import { InMemoryConfirmationQueueRepository } from "./confirmation-queue.repository.ts";
+import { ConfirmationQueueService } from "./confirmation-queue.service.ts";
 import {
   CUSTOMER_ASSET_REPOSITORY,
   InMemoryCustomerAssetRepository
@@ -222,6 +225,7 @@ class TelegramBotWebhookController {
   controllers: [
     api.ApiAccessContextController,
     api.ApiHealthController,
+    ConfirmationQueueController,
     ConversationTicketController,
     CustomerAssetController,
     OrderImportController,
@@ -230,11 +234,13 @@ class TelegramBotWebhookController {
   providers: [
     api.ApiAccessContextGuard,
     api.ApiAccessContextService,
+    ConfirmationQueueService,
     ConversationTicketService,
     CustomerAssetService,
     OrderImportService,
     TelegramBotWebhookService,
     DisabledTelegramBotIngressQueue,
+    InMemoryConfirmationQueueRepository,
     InMemoryConversationTicketRepository,
     InMemoryCustomerAssetRepository,
     {

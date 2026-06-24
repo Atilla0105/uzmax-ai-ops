@@ -176,6 +176,20 @@ describe("M5-03 confirmation queue API", () => {
       },
       /decision\.editedPayload\.prompt is a forbidden raw payload key/
     );
+    for (const rawKey of "http https data blob file".split(" ")) {
+      assertDecisionBodyRejects(
+        {
+          action: "edit",
+          editedPayload: {
+            [rawKey]: "controlled://candidate/raw-carrier",
+            summaryRef: "controlled://candidate/edited-summary"
+          }
+        },
+        new RegExp(
+          `decision\\.editedPayload\\.${rawKey} is a forbidden raw payload key`
+        )
+      );
+    }
     const unsafeRefs =
       "http://example.test/ref https://example.test/ref data:text/plain;base64,SGVsbG8= blob://local/ref file:///tmp/ref QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo1234567890abcd";
     for (const unsafeRef of unsafeRefs.split(" ")) {

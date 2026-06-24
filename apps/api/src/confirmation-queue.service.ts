@@ -18,7 +18,7 @@ import {
 const REF_PATTERN = /^(controlled|manifest|storage):\/\/[^\s]+$/i;
 const BASE64_INLINE_REF_PATTERN = /^[A-Za-z0-9+/_-]{40,}={0,2}$/;
 const FORBIDDEN_KEYS = new Set(
-  "address body completion content customerplaintext orderid payment phone prompt raw secret telegrampayload".split(
+  "address blob body completion content customerplaintext data file http https orderid payment phone prompt raw secret telegrampayload".split(
     " "
   )
 );

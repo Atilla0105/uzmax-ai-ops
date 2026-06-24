@@ -16,12 +16,6 @@ export const distillRuntimeModes = {
 } as const;
 
 type Frequency = "daily" | "paused" | "weekly";
-type CandidateKind =
-  | "conflict_candidate"
-  | "eval_candidate"
-  | "knowledge_candidate"
-  | "profile_candidate";
-type DistillDailyRuntimeInput = any;
 export type DistillRuntimePlan = ReturnType<typeof createDistillRuntimePlan>;
 
 const prismaFrequencyByRuntime = {
@@ -38,8 +32,11 @@ const prismaKindByRuntime = {
 const controlledRefPattern = /^(controlled|manifest|storage):\/\/[^\s]+$/i;
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const runtimeInputKeyPattern =
+  /^(actorUserId|auditRef|businessDate|candidates|currentFrequency|dailyCounts|downshiftReasonRef|healthSummaryRef|orgId|ownerAlertRef|runId|sourceWindowEnd|sourceWindowStart|summaryRef|tenantId)$/;
 
-export function createDistillRuntimePlan(input: DistillDailyRuntimeInput) {
+export function createDistillRuntimePlan(input: any) {
+  input = sanitizeDistillDailyRuntimeInput(input);
   const sourceWindowStart = timestampText(input.sourceWindowStart, "sourceWindowStart");
   const sourceWindowEnd = timestampText(input.sourceWindowEnd, "sourceWindowEnd");
   if (Date.parse(sourceWindowEnd) < Date.parse(sourceWindowStart)) {
@@ -117,6 +114,16 @@ export function createDistillRuntimePlan(input: DistillDailyRuntimeInput) {
   };
 }
 
+export function sanitizeDistillDailyRuntimeInput(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("distill runtime payload must be an object");
+  const input = value as Record<string, unknown>;
+  for (const key of Object.keys(input))
+    if (!runtimeInputKeyPattern.test(key))
+      throw new Error(`unsupported distill runtime payload key: ${key}`);
+  return input;
+}
+
 export function toPrismaDistillRun(run: any) {
   const sourceWindowStart = new Date(run.sourceWindowStart);
   const sourceWindowEnd = new Date(run.sourceWindowEnd);
@@ -135,7 +142,7 @@ export function toPrismaConfirmationItem(item: any) {
   return {
     ...item,
     diffPayload: {},
-    kind: prismaKindByRuntime[item.kind as CandidateKind],
+    kind: prismaKindByRuntime[item.kind as keyof typeof prismaKindByRuntime],
     status: "PENDING"
   };
 }
@@ -211,7 +218,7 @@ function confirmationItemFor(input: any, distillRunId: string, candidate: any) {
     id: source.confirmationItemId
       ? uuidText(source.confirmationItemId, "confirmationItemId")
       : randomUUID(),
-    kind: candidate.kind as CandidateKind,
+    kind: candidate.kind as keyof typeof prismaKindByRuntime,
     metadata: {
       confidenceBps: candidate.confidenceBps,
       distillRunId,
@@ -224,7 +231,7 @@ function confirmationItemFor(input: any, distillRunId: string, candidate: any) {
   };
 }
 
-function createOwnerAlertDraft(input: DistillDailyRuntimeInput, auditLogId: string) {
+function createOwnerAlertDraft(input: any, auditLogId: string) {
   return createDistillOwnerAlertDraft({
     alertRef: controlledRef(input.ownerAlertRef, "ownerAlertRef"),
     auditRequirementRef: `controlled://audit-log/${auditLogId}`,
@@ -257,7 +264,7 @@ function ownerAlertAuditFor(input: any, auditLogId: string, draft: any) {
   };
 }
 
-function currentDay(input: DistillDailyRuntimeInput) {
+function currentDay(input: any) {
   const day = input.dailyCounts.find(
     (entry: any) => entry.businessDate === input.businessDate
   );

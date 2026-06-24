@@ -64,17 +64,24 @@ This evidence, spec, tests and implementation must not include raw/export/jsonl/
 
 ## Runtime/RLS Evidence
 
-Implemented in five touched source files totaling 592 net added source lines before docs/test:
+Implemented in five touched source files totaling 600 net added source lines before docs/test:
 
 - `apps/cron/src/main.ts` exports the scheduler planner so static dependency checks see the runtime surface.
-- `apps/cron/src/distill-scheduler.ts` builds a controlled `distill_daily_health_runtime` job payload. It does not create Redis schedules, call providers or mutate DB.
-- `apps/worker/src/distill-runtime-contracts.ts` converts injected synthetic/control-ref candidates through M5-02 helpers, caps candidates at 10, derives 7-day pass rate/downshift state, creates pending confirmation-item drafts and owner-alert audit draft metadata.
-- `apps/worker/src/distill-runtime.ts` persists through `createRlsTransactionContext` only when explicitly configured for `rls_prisma_gateway`; it rejects `prisma_gateway` and missing `UZMAX_RLS_DATABASE_URL`.
+- `apps/cron/src/distill-scheduler.ts` builds a controlled `distill_daily_health_runtime` job payload and rejects unsupported top-level payload keys before returning the job plan. It does not create Redis schedules, call providers or mutate DB.
+- `apps/worker/src/distill-runtime-contracts.ts` validates the full runtime payload boundary, converts injected synthetic/control-ref candidates through M5-02 helpers, caps candidates at 10, derives 7-day pass rate/downshift state, creates pending confirmation-item drafts and owner-alert audit draft metadata.
+- `apps/worker/src/distill-runtime.ts` persists through `createRlsTransactionContext` only when explicitly configured for `rls_prisma_gateway`; it rejects `prisma_gateway` and missing `UZMAX_RLS_DATABASE_URL`, and returns the actual `distill_health_daily` row id from the upsert result.
 - `packages/db/scripts/run-m5r-distill-scheduler-health-true-db-smoke.mjs` is a thin CLI/export wrapper for the true DB smoke support runner.
 
 The runtime writes, in one RLS transaction, `distill_run`, at most 10 pending `confirmation_item` rows with `distillRunId`, optional `audit_log` owner-alert draft, and `distill_health_daily`. Manual recovery first reads `distill_health_daily` under RLS, requires weekly/paused current state, then writes a controlled `audit_log` row and restores frequency to daily.
 
 No formal write target table is touched. Candidate metadata records `formalWrite: false`.
+
+## Review Fixes
+
+The post-PR quality review found two medium issues, both fixed in the same M5R-03 worktree/branch:
+
+- The scheduler/runtime payload boundary now rejects unsupported top-level keys, including a raw top-level key, before a job plan or runtime plan is returned.
+- The daily runtime persistence path now returns the actual `distill_health_daily` id produced by the upsert transaction result, including the existing-row update path.
 
 ## True DB/RLS Smoke Status
 
@@ -99,7 +106,7 @@ The support runner is ready to execute same-tenant positive and wrong-tenant/mis
 | `node --test scripts/tests/m5-distill-guardrails.test.mjs` | pass | M5-02 focused guardrails: 4/4. |
 | `node --test scripts/tests/m5r-confirmation-queue-persistence.test.mjs` | pass | M5R-01 baseline: 4/4. |
 | `node --test scripts/tests/m5r-formal-write-pipeline.test.mjs` | pass | M5R-02 baseline: 6/6. |
-| `node --test scripts/tests/m5r-distill-scheduler-health-runtime.test.mjs` | pass | M5R-03 focused runtime contract: 4/4. |
+| `node --test scripts/tests/m5r-distill-scheduler-health-runtime.test.mjs` | pass | M5R-03 focused runtime contract: 6/6, including raw top-level payload rejection and existing health-row update id coverage. |
 | `env -u UZMAX_RLS_DATABASE_URL node packages/db/scripts/run-m5r-distill-scheduler-health-true-db-smoke.mjs` | expected fail | `blocked_by_missing_env`; error: `UZMAX_RLS_DATABASE_URL is required`. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript no-emit. |
 | `npm run lint` | pass | ESLint passed. |
@@ -109,9 +116,9 @@ The support runner is ready to execute same-tenant positive and wrong-tenant/mis
 | `npm run jscpd` | pass | No duplicates found. |
 | `npm run guard:workspace` | pass | Linked worker worktree dirty allowed; root/main checked by guard. |
 | `npm run guard:worker-boundary -- --assigned-worktree /Users/atilla/Documents/uzmax-m5r-03-distill-scheduler-health-runtime --primary-root /Users/atilla/Documents/UZMAX智能运营` | pass | Assigned/root write boundary passed. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-03-distill-scheduler-health-runtime.md --include-worktree` | pass | Final committed diff: 10 files; source 5; net source LOC 592; new source files 4. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-03-distill-scheduler-health-runtime.md --include-worktree` | pass | Final committed diff: 10 files; source 5; net source LOC 600; new source files 4. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors. |
-| `npm run test` | pass | Full suite: 370 tests passed. |
+| `npm run test` | pass | Full suite: 372 tests passed. |
 
 The full suite initially exposed that exporting the new runtime from `apps/worker/src/main.ts` broke older data-URL worker test loaders. The fix removed broad worker/cron entrypoint exports and kept M5R-03 callable through the narrow runtime/scheduler modules. The final full-suite rerun passed.
 

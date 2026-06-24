@@ -15,7 +15,7 @@ export function createDailyDistillSchedulerJobPlan(input: {
 }) {
   return {
     jobName: runtime.distillRuntimeJobNames.dailyHealth,
-    payload: input.payload,
+    payload: runtime.sanitizeDistillDailyRuntimeInput(input.payload),
     queue: "distill",
     scheduleRef: controlledScheduleRef(input.scheduleRef)
   };

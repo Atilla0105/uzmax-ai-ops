@@ -80,7 +80,8 @@ class RlsPrismaDistillRuntimePersistence {
   constructor(private readonly runInRlsTransaction: RlsTxRunner) {}
 
   async persistDailyRun(plan: DistillRuntimePlan) {
-    await this.runInRlsTransaction({
+    const healthDailyId = await this.runInRlsTransaction<string>({
+      mapResult: (rows) => stringValue((rows.at(-1) as any)?.id, "healthDailyId"),
       operations: (client) => [
         client.distillRun.create({ data: toPrismaDistillRun(plan.distillRun) }),
         ...plan.confirmationItems.map((item) =>
@@ -102,7 +103,7 @@ class RlsPrismaDistillRuntimePersistence {
       persisted: {
         confirmationItemIds: plan.confirmationItems.map((item) => item.id),
         distillRunId: plan.distillRun.id,
-        healthDailyId: plan.healthDaily.id,
+        healthDailyId,
         ownerAlertAuditLogId: plan.ownerAlertAudit?.id
       }
     };

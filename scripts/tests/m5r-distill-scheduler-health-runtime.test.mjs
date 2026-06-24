@@ -13,6 +13,7 @@ const ORG_ID = "11111111-1111-4111-8111-111111111503";
 const TENANT_ID = "22222222-2222-4222-8222-222222222503";
 const USER_ID = "44444444-4444-4444-8444-444444444503";
 const RUN_ID = "55555555-5555-4555-8555-555555555503";
+const EXISTING_HEALTH_ID = "66666666-6666-4666-8666-666666666503";
 const BUSINESS_DATE = "2026-06-25";
 const repoRootUrl = new URL("../../", import.meta.url);
 const source = {
@@ -57,6 +58,22 @@ describe("M5R-03 distill scheduler health runtime", () => {
     assert.doesNotMatch(
       `${source.cron}\n${source.runtime}`,
       /llm-gateway|draftReply|packages\/llm/i
+    );
+  });
+
+  it("rejects top-level raw keys before scheduling or planning runtime payloads", () => {
+    const unsafePayload = { ...input(), raw: "do-not-carry-this" };
+    assert.throws(
+      () =>
+        modules.cron.createDailyDistillSchedulerJobPlan({
+          payload: unsafePayload,
+          scheduleRef: "controlled://distill-schedule/m5r-03/daily"
+        }),
+      /unsupported distill runtime payload key: raw/
+    );
+    assert.throws(
+      () => modules.contracts.createDistillRuntimePlan(unsafePayload),
+      /unsupported distill runtime payload key: raw/
     );
   });
 
@@ -106,6 +123,21 @@ describe("M5R-03 distill scheduler health runtime", () => {
     assert.equal(fake.updatedHealth[0].data.recoveryAuditLogId, recovery.auditLogId);
   });
 
+  it("returns the actual health row id when upsert updates an existing row", async () => {
+    const fake = fakePrisma({ existingHealthId: EXISTING_HEALTH_ID });
+    const persistence = modules.worker.createDistillRuntimePersistenceProviderFromEnv({
+      mode: "rls_prisma_gateway",
+      prismaClient: fake
+    });
+
+    const result = await modules.worker.runDistillDailyHealthRuntime(
+      input(),
+      persistence
+    );
+    assert.equal(result.persisted.healthDailyId, EXISTING_HEALTH_ID);
+    assert.notEqual(result.persisted.healthDailyId, result.healthDaily.id);
+  });
+
   it("fails closed without RLS env and rejects bare Prisma bypass mode", async () => {
     assert.throws(
       () =>
@@ -147,11 +179,12 @@ describe("M5R-03 distill scheduler health runtime", () => {
   });
 });
 
-function fakePrisma() {
+function fakePrisma(options = {}) {
   const fake = {
     createdAudits: [],
     createdItems: [],
     createdRuns: [],
+    existingHealthId: options.existingHealthId,
     healthRows: [],
     transactions: [],
     updatedHealth: [],
@@ -168,7 +201,12 @@ function fakePrisma() {
       fake.updatedHealth.push(args),
       { ...fake.healthRows[0], ...args.data }
     ),
-    upsert: async (args) => (fake.upsertedHealth.push(args), args.create)
+    upsert: async (args) => {
+      fake.upsertedHealth.push(args);
+      return fake.existingHealthId
+        ? { ...args.update, id: fake.existingHealthId }
+        : args.create;
+    }
   };
   fake.$executeRawUnsafe = async (sql) => {
     return { kind: "role", sql };

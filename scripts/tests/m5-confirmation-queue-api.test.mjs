@@ -36,16 +36,17 @@ const m5Readme = read("docs/evidence/M5/README.md");
 const api = await importConfirmationQueueApiSource();
 
 describe("M5-03 confirmation queue API", () => {
-  it("registers a split Nest API shell with in-memory repository only", () => {
+  it("registers a split Nest API shell with default in-memory repository", () => {
     assert.match(controllerSource, /@Controller\("confirmation-queue"\)/);
     assert.match(controllerSource, /@Get\("items"\)/);
     assert.match(controllerSource, /@Get\("items\/:itemId"\)/);
     assert.match(controllerSource, /@Post\("items\/:itemId\/decisions"\)/);
     assert.match(appModule, /ConfirmationQueueController/);
     assert.match(appModule, /InMemoryConfirmationQueueRepository/);
+    assert.match(appModule, /CONFIRMATION_QUEUE_REPOSITORY/);
     assert.doesNotMatch(
       `${controllerSource}\n${serviceSource}`,
-      /packages\/db|Prisma|Rls/i
+      /createUzmaxPrismaClientFromEnv|PrismaClient|confirmationItem\./
     );
   });
 

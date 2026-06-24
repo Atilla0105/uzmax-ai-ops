@@ -18,51 +18,34 @@ export async function importApiRuntime() {
   const entry = pathToFileURL(path.join(outDir, "main.mjs")).href;
   return import(`${entry}?t=${Date.now()}`);
 }
-
 export async function importApiOrderImportRuntimeModules(options = {}) {
-  const outDir = await compileApiRuntime(options);
-  const importModule = (fileName) =>
-    import(pathToFileURL(path.join(outDir, fileName)).href);
-  const [accessContext, orderImport, orderImportRuntime] = await Promise.all([
-    importModule("access-context.mjs"),
-    importModule("order-import.mjs"),
-    importModule("order-import.runtime.mjs")
+  return importApiRuntimeModules(options, [
+    ["accessContext", "access-context"],
+    ["orderImport", "order-import"],
+    ["orderImportRuntime", "order-import.runtime"]
   ]);
-
-  return {
-    accessContext,
-    orderImport,
-    orderImportRuntime,
-    outDir
-  };
+}
+export async function importApiCustomerAssetRuntimeModules(options = {}) {
+  return importApiRuntimeModules(options, [
+    ["accessContext", "access-context"],
+    ["customerAssetController", "customer-asset.controller"],
+    ["customerAssetRepository", "customer-asset.repository"],
+    ["customerAssetRuntime", "customer-asset.runtime"],
+    ["customerAssetService", "customer-asset.service"]
+  ]);
 }
 
-export async function importApiCustomerAssetRuntimeModules(options = {}) {
+async function importApiRuntimeModules(options, entries) {
   const outDir = await compileApiRuntime(options);
-  const importModule = (fileName) =>
-    import(pathToFileURL(path.join(outDir, fileName)).href);
-  const [
-    accessContext,
-    customerAssetController,
-    customerAssetRepository,
-    customerAssetRuntime,
-    customerAssetService
-  ] = await Promise.all([
-    importModule("access-context.mjs"),
-    importModule("customer-asset.controller.mjs"),
-    importModule("customer-asset.repository.mjs"),
-    importModule("customer-asset.runtime.mjs"),
-    importModule("customer-asset.service.mjs")
-  ]);
-
-  return {
-    accessContext,
-    customerAssetController,
-    customerAssetRepository,
-    customerAssetRuntime,
-    customerAssetService,
-    outDir
-  };
+  const modules = { outDir };
+  await Promise.all(
+    entries.map(async ([key, fileName]) => {
+      modules[key] = await import(
+        pathToFileURL(path.join(outDir, `${fileName}.mjs`)).href
+      );
+    })
+  );
+  return modules;
 }
 
 export async function compileApiRuntime(options = {}) {
@@ -282,7 +265,9 @@ export async function compileApiRuntime(options = {}) {
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
     "./access-context.ts": "./access-context.mjs",
     "./confirmation-queue.controller.ts": "./confirmation-queue.controller.mjs",
+    "./confirmation-queue.prisma-mapper.ts": "./confirmation-queue.prisma-mapper.mjs",
     "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs",
+    "./confirmation-queue.runtime.ts": "./confirmation-queue.runtime.mjs",
     "./confirmation-queue.service.ts": "./confirmation-queue.service.mjs",
     "./conversation-ticket.ts": "./conversation-ticket.mjs",
     "./customer-asset.controller.ts": "./customer-asset.controller.mjs",
@@ -312,10 +297,27 @@ async function writeModule(outDir, sourcePath, outputName, replacements = {}) {
 
 function confirmationQueueRuntimeModules() {
   const authz = { "../../../packages/authz/src/index.ts": "./authz-index.mjs" };
+  const db = { "../../../packages/db/src/index.ts": "./db-index.mjs" };
+  const prismaRuntime = {
+    "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs"
+  };
   const types = { "./confirmation-queue.types.ts": "./confirmation-queue.types.mjs" };
   return [
     ["types", authz],
+    ["prisma-mapper", types],
     ["repository", { ...authz, ...types }],
+    [
+      "runtime",
+      {
+        ...authz,
+        ...db,
+        ...prismaRuntime,
+        ...types,
+        "./confirmation-queue.prisma-mapper.ts":
+          "./confirmation-queue.prisma-mapper.mjs",
+        "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs"
+      }
+    ],
     [
       "service",
       {

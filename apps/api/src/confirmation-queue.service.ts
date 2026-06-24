@@ -5,7 +5,7 @@ import {
   type AccessContext
 } from "../../../packages/authz/src/index.ts";
 
-import { InMemoryConfirmationQueueRepository } from "./confirmation-queue.repository.ts";
+import type { ConfirmationQueueRepositoryPort } from "./confirmation-queue.repository.ts";
 import {
   ConfirmationQueueApiError,
   type ConfirmationDecisionAction,
@@ -25,26 +25,26 @@ const FORBIDDEN_KEYS = new Set(
 
 @Injectable()
 export class ConfirmationQueueService {
-  constructor(private readonly repository: InMemoryConfirmationQueueRepository) {}
+  constructor(private readonly repository: ConfirmationQueueRepositoryPort) {}
 
   async listItems(accessContext: AccessContext, filters: ConfirmationQueueListFilters) {
     assertPermission(accessContext, "confirmation:read");
-    return { items: this.repository.listItems(accessContext, filters) };
+    return { items: await this.repository.listItems(accessContext, filters) };
   }
 
   async getItemDetail(accessContext: AccessContext, itemId: string) {
     assertPermission(accessContext, "confirmation:read");
-    return { item: this.requireItem(accessContext, itemId) };
+    return { item: await this.requireItem(accessContext, itemId) };
   }
 
   async applyDecision(accessContext: AccessContext, input: ConfirmationDecisionInput) {
     assertPermission(accessContext, "confirmation:write");
-    const item = this.requireItem(accessContext, input.itemId);
+    const item = await this.requireItem(accessContext, input.itemId);
     validateDecision(item, input);
 
     const reviewedAt = new Date().toISOString();
     const auditDraft = createAuditDraft(accessContext, item, input, reviewedAt);
-    const updated = this.repository.saveItem({
+    const updated = await this.repository.saveItem({
       ...item,
       metadata: {
         ...(item.metadata ?? {}),
@@ -69,8 +69,8 @@ export class ConfirmationQueueService {
     };
   }
 
-  private requireItem(accessContext: AccessContext, itemId: string) {
-    const item = this.repository.getItem(accessContext, itemId);
+  private async requireItem(accessContext: AccessContext, itemId: string) {
+    const item = await this.repository.getItem(accessContext, itemId);
     if (!item) throw new ConfirmationQueueApiError(404, "confirmation item not found");
     return item;
   }

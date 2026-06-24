@@ -20,7 +20,12 @@ import {
   InMemoryConversationTicketRepository
 } from "./conversation-ticket.ts";
 import { ConfirmationQueueController } from "./confirmation-queue.controller.ts";
-import { InMemoryConfirmationQueueRepository } from "./confirmation-queue.repository.ts";
+import {
+  CONFIRMATION_QUEUE_REPOSITORY,
+  InMemoryConfirmationQueueRepository,
+  type ConfirmationQueueRepositoryPort
+} from "./confirmation-queue.repository.ts";
+import { createConfirmationQueueRepositoryProviderFromEnv } from "./confirmation-queue.runtime.ts";
 import { ConfirmationQueueService } from "./confirmation-queue.service.ts";
 import {
   CUSTOMER_ASSET_REPOSITORY,
@@ -234,13 +239,26 @@ class TelegramBotWebhookController {
   providers: [
     api.ApiAccessContextGuard,
     api.ApiAccessContextService,
-    ConfirmationQueueService,
+    {
+      inject: [CONFIRMATION_QUEUE_REPOSITORY],
+      provide: ConfirmationQueueService,
+      useFactory: (repository: ConfirmationQueueRepositoryPort) =>
+        new ConfirmationQueueService(repository)
+    },
     ConversationTicketService,
     CustomerAssetService,
     OrderImportService,
     TelegramBotWebhookService,
     DisabledTelegramBotIngressQueue,
     InMemoryConfirmationQueueRepository,
+    {
+      inject: [InMemoryConfirmationQueueRepository],
+      provide: CONFIRMATION_QUEUE_REPOSITORY,
+      useFactory: (repository: InMemoryConfirmationQueueRepository) =>
+        createConfirmationQueueRepositoryProviderFromEnv({
+          inMemoryRepository: repository
+        })
+    },
     InMemoryConversationTicketRepository,
     InMemoryCustomerAssetRepository,
     {

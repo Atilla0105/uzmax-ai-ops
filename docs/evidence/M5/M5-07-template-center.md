@@ -77,7 +77,7 @@ Recorded on 2026-06-24 from `/Users/atilla/Documents/uzmax-m5-07-template-center
 | `npm run guard:eval-triggers` | pass | No eval-triggering paths changed. |
 | `npm run guard:forbidden-terms` | pass | `forbidden-terms: ok`. |
 | `npm run guard:prettier-ignore` | pass | Baseline prettier-ignore markers intact. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5-07-template-center.md --include-worktree` | blocked_pre_pr | Pre-PR run hung in `gh pr view --json body`; rerun after PR creation is required for merge. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5-07-template-center.md --include-worktree` | pass | Post-PR run reported changed files 10, source files 4, net source LOC 307 and new source files 3. |
 | `git diff --check origin/main` | pass | No whitespace errors. |
 | `git diff --numstat origin/main -- apps/admin/src apps/admin/tests scripts/tests docs/specs docs/evidence/M5 docs/incidents` | pass | Changed source files 4; net source LOC 307; new source files 3; within budget. |
 | `npm run test` | blocked_local_existing_m4 | Full repo test was terminated after hanging in existing `scripts/tests/m4-order-import-bullmq-redis-runtime.test.mjs`; M5-specific Node tests passed separately. |

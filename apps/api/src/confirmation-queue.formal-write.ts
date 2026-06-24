@@ -28,14 +28,13 @@ import type {
   ConfirmationQueueItem
 } from "./confirmation-queue.types.ts";
 
-type MaybePromise<T> = T | Promise<T>;
-type PrismaBatchOperation<T = unknown> = MaybePromise<T>;
+type PrismaBatchOperation<T = unknown> = T | Promise<T>;
 type PrismaDelegate = Record<
   string,
   (...args: readonly unknown[]) => PrismaBatchOperation
 >;
 
-type ConfirmationFormalWritePrismaClientPort = {
+type PrismaClientPort = {
   auditLog: PrismaDelegate;
   configVersion: PrismaDelegate;
   confirmationItem: PrismaDelegate;
@@ -48,49 +47,43 @@ type ConfirmationFormalWritePrismaClientPort = {
     operations: T
   ): Promise<{ [K in keyof T]: Awaited<T[K]> }>;
 };
-type ConfirmationFormalWriteRlsTransactionInput<T> = {
+type RlsTxInput<T> = {
   mapResult(result: readonly unknown[]): T;
-  operations(
-    client: ConfirmationFormalWritePrismaClientPort
-  ): readonly PrismaBatchOperation[];
+  operations(client: PrismaClientPort): readonly PrismaBatchOperation[];
   scope: RlsTenantContext;
 };
-type ConfirmationFormalWriteRlsTransactionRunner = <T>(
-  input: ConfirmationFormalWriteRlsTransactionInput<T>
-) => Promise<T>;
-type ConfirmationFormalWriteRuntimeEnv = UzmaxPrismaRuntimeEnv &
+type RlsTxRunner = <T>(input: RlsTxInput<T>) => Promise<T>;
+type RuntimeEnv = UzmaxPrismaRuntimeEnv &
   Partial<Record<"UZMAX_CONFIRMATION_FORMAL_WRITE_MODE", string>>;
-type ConfirmationFormalWriteRuntimeMode =
+type RuntimeMode =
   (typeof confirmationFormalWriteRuntimeModes)[keyof typeof confirmationFormalWriteRuntimeModes];
-type ConfirmationFormalWriteProviderInput = {
+type ProviderInput = {
   disabledPipeline?: ConfirmationFormalWritePipelinePort;
-  env?: ConfirmationFormalWriteRuntimeEnv;
-  mode?: ConfirmationFormalWriteRuntimeMode;
-  prismaClient?: ConfirmationFormalWritePrismaClientPort;
-  rlsTransactionRunner?: ConfirmationFormalWriteRlsTransactionRunner;
+  env?: RuntimeEnv;
+  mode?: RuntimeMode;
+  prismaClient?: PrismaClientPort;
+  rlsTransactionRunner?: RlsTxRunner;
 };
 
-export type ConfirmationFormalWriteInput = {
+type FormalWriteInput = {
   accessContext: AccessContext;
   auditDraft: Record<string, unknown>;
   decision: ConfirmationDecisionInput;
   item: ConfirmationQueueItem;
 };
-type ConfirmationFormalWriteDecisionInput = ConfirmationFormalWriteInput & {
+type FormalWriteCommitInput = FormalWriteInput & {
   updatedItem: ConfirmationQueueItem;
 };
-type ConfirmationFormalWriteResult = {
+type FormalWriteResult = {
   auditDraft: Record<string, unknown>;
   formalWrite: boolean;
   item: ConfirmationQueueItem;
 };
 export type ConfirmationFormalWritePipelinePort = {
-  apply(
-    input: ConfirmationFormalWriteInput
-  ): MaybePromise<ConfirmationFormalWriteResult>;
+  apply(input: FormalWriteInput): PrismaBatchOperation<FormalWriteResult>;
   commitDecision?(
-    input: ConfirmationFormalWriteDecisionInput
-  ): MaybePromise<ConfirmationFormalWriteResult | undefined>;
+    input: FormalWriteCommitInput
+  ): PrismaBatchOperation<FormalWriteResult | undefined>;
 };
 
 export const CONFIRMATION_FORMAL_WRITE_PIPELINE = Symbol(
@@ -102,13 +95,13 @@ const confirmationFormalWriteRuntimeModes = {
 } as const;
 
 export class DisabledConfirmationFormalWritePipeline implements ConfirmationFormalWritePipelinePort {
-  async apply(input: ConfirmationFormalWriteInput) {
+  async apply(input: FormalWriteInput) {
     return { auditDraft: input.auditDraft, formalWrite: false, item: input.item };
   }
 }
 
 export function createConfirmationFormalWritePipelineProviderFromEnv(
-  options: ConfirmationFormalWriteProviderInput = {}
+  options: ProviderInput = {}
 ): ConfirmationFormalWritePipelinePort {
   const env = options.env ?? process.env;
   const mode = options.mode ?? readFormalWriteRuntimeMode(env);
@@ -116,26 +109,21 @@ export function createConfirmationFormalWritePipelineProviderFromEnv(
     return options.disabledPipeline ?? new DisabledConfirmationFormalWritePipeline();
   }
   if (mode === confirmationFormalWriteRuntimeModes.rlsPrismaGateway) {
+    const prisma = (options.prismaClient ??
+      createUzmaxPrismaClientFromEnv(env)) as unknown as PrismaClientPort;
     return new RlsPrismaConfirmationFormalWritePipeline(
       options.rlsTransactionRunner ??
-        createConfirmationFormalWriteRlsTransactionRunner(
-          options.prismaClient ??
-            (createUzmaxPrismaClientFromEnv(
-              env
-            ) as unknown as ConfirmationFormalWritePrismaClientPort)
-        )
+        createConfirmationFormalWriteRlsTransactionRunner(prisma)
     );
   }
   throw new Error(`unsupported formal write runtime mode: ${String(mode)}`);
 }
 
 function createConfirmationFormalWriteRlsTransactionRunner(
-  prisma: ConfirmationFormalWritePrismaClientPort
-): ConfirmationFormalWriteRlsTransactionRunner {
+  prisma: PrismaClientPort
+): RlsTxRunner {
   assertFormalWritePrismaClientPort(prisma);
-  return async function runFormalWriteRlsTransaction<T>(
-    input: ConfirmationFormalWriteRlsTransactionInput<T>
-  ): Promise<T> {
+  return async <T>(input: RlsTxInput<T>) => {
     assertFormalWritePrismaClientPort(prisma);
     const context = createRlsTransactionContext(input.scope);
     const operations = input.operations(prisma);
@@ -152,18 +140,14 @@ function createConfirmationFormalWriteRlsTransactionRunner(
 }
 
 class RlsPrismaConfirmationFormalWritePipeline implements ConfirmationFormalWritePipelinePort {
-  constructor(
-    private readonly runInRlsTransaction: ConfirmationFormalWriteRlsTransactionRunner
-  ) {}
+  constructor(private readonly runInRlsTransaction: RlsTxRunner) {}
 
-  async commitDecision(input: ConfirmationFormalWriteDecisionInput) {
-    if (!isFormalWriteDecision({ ...input, item: input.updatedItem })) {
-      return undefined;
-    }
-    return this.apply({ ...input, item: input.updatedItem });
+  async commitDecision(input: FormalWriteCommitInput) {
+    const nextInput = { ...input, item: input.updatedItem };
+    return isFormalWriteDecision(nextInput) ? this.apply(nextInput) : undefined;
   }
 
-  async apply(input: ConfirmationFormalWriteInput) {
+  async apply(input: FormalWriteInput) {
     if (!isFormalWriteDecision(input)) {
       return { auditDraft: input.auditDraft, formalWrite: false, item: input.item };
     }
@@ -236,9 +220,7 @@ class RlsPrismaConfirmationFormalWritePipeline implements ConfirmationFormalWrit
   }
 }
 
-function readFormalWriteRuntimeMode(
-  env: ConfirmationFormalWriteRuntimeEnv = process.env
-): ConfirmationFormalWriteRuntimeMode {
+function readFormalWriteRuntimeMode(env: RuntimeEnv = process.env): RuntimeMode {
   const mode =
     env.UZMAX_CONFIRMATION_FORMAL_WRITE_MODE?.trim() ??
     confirmationFormalWriteRuntimeModes.disabled;
@@ -250,7 +232,7 @@ function readFormalWriteRuntimeMode(
   throw new Error(`unsupported formal write runtime mode: ${mode}`);
 }
 
-function isFormalWriteDecision(input: ConfirmationFormalWriteInput) {
+function isFormalWriteDecision(input: FormalWriteInput) {
   return (
     (input.decision.action === "approve" && input.item.status === "approved") ||
     (input.decision.action === "edit" && input.item.status === "edited")
@@ -258,8 +240,8 @@ function isFormalWriteDecision(input: ConfirmationFormalWriteInput) {
 }
 
 function assertFormalWritePrismaClientPort(
-  value: ConfirmationFormalWritePrismaClientPort
-): asserts value is ConfirmationFormalWritePrismaClientPort {
+  value: PrismaClientPort
+): asserts value is PrismaClientPort {
   if (!value || typeof value !== "object") {
     throw new Error("formal write runtime Prisma client port is required");
   }
@@ -286,19 +268,16 @@ function readFormalWriteRlsSetting(
   key: "app.org_id" | "app.tenant_id";
   value: string;
 } {
-  const key =
-    setting?.key === "app.org_id" || setting?.key === "app.tenant_id"
-      ? setting.key
-      : undefined;
+  const key = setting?.key;
   const value = typeof setting?.value === "string" ? setting.value.trim() : "";
-  if (!key || !value) {
+  if ((key !== "app.org_id" && key !== "app.tenant_id") || !value) {
     throw new Error("formal write RLS batch setting is required");
   }
   return { key, value };
 }
 
 function createSetConfigOperation(
-  prisma: Pick<ConfirmationFormalWritePrismaClientPort, "$queryRaw">,
+  prisma: Pick<PrismaClientPort, "$queryRaw">,
   rawSetting: { key?: unknown; value?: unknown } | undefined
 ) {
   const setting = readFormalWriteRlsSetting(rawSetting);

@@ -60,11 +60,8 @@ export function readConfigTarget(input: FormalWriteContractInput): ConfigTarget 
   if (!match) {
     throw new Error("formal write targetRef must be a controlled config-version ref");
   }
-  const [, rawDomain, key] = match;
-  if (!rawDomain || !key) {
-    throw new Error("formal write targetRef must include domain and key");
-  }
-  const domain = rawDomain.toLowerCase() as ConfigTarget["domain"];
+  const domain = match[1]!.toLowerCase() as ConfigTarget["domain"];
+  const key = match[2]!;
   return {
     domain,
     key,
@@ -85,7 +82,6 @@ export function createFormalWriteContracts(
   previous: PreviousConfigVersion | undefined
 ): FormalWriteContracts {
   const writtenAt = new Date().toISOString();
-  const configVersionId = randomUUID();
   const auditLogId = randomUUID();
   const version = (previous?.version ?? 0) + 1;
   const configContract = createConfigVersionContract({
@@ -93,7 +89,7 @@ export function createFormalWriteContracts(
     createdAt: writtenAt,
     createdByUserId: input.accessContext.userId,
     domain: target.domain,
-    id: configVersionId,
+    id: randomUUID(),
     key: target.key,
     orgId: input.item.orgId,
     payload: target.payload,
@@ -236,16 +232,17 @@ function readRefRecord(
       .map(([key, value]) => [key, readControlledText(value, `${name}.${key}`)])
   );
   if (Object.keys(refs).length > 0) return refs;
-  return fallback ? readRefRecord(fallback, name) : fail(`${name} requires refs`);
+  if (fallback) return readRefRecord(fallback, name);
+  throw new Error(`${name} requires refs`);
 }
 
 function hasSideBySideDiffPayload(value: unknown): boolean {
   const diff = recordValue(value);
-  if (!diff) return false;
   return Boolean(
-    (recordValue(diff.left) && recordValue(diff.right)) ||
-    (recordValue(diff.current) && recordValue(diff.candidate)) ||
-    (recordValue(diff.before) && recordValue(diff.after))
+    diff &&
+    ((recordValue(diff.left) && recordValue(diff.right)) ||
+      (recordValue(diff.current) && recordValue(diff.candidate)) ||
+      (recordValue(diff.before) && recordValue(diff.after)))
   );
 }
 
@@ -271,8 +268,4 @@ function recordValue(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
-}
-
-function fail(message: string): never {
-  throw new Error(message);
 }

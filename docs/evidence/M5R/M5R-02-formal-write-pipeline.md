@@ -73,7 +73,7 @@ M5R-02 implements a config/audit-only proof path:
 - The audit contract includes `confirmerUserId`, `diffPayload`, `targetKind`, `targetRef`, previous version ref when present, and confirmation item trace.
 - The confirmation item update records `auditLogId`, `targetKind: "config_version"`, `targetRef`, reviewer fields, and `metadata.formalWrite.status = "written"`.
 
-Implementation source remains within M5R-02 budget: 8 changed source files, 3 new source files, and approximately +597 net source LOC for source-classified files.
+Implementation source remains within M5R-02 budget: 8 changed source files, 3 new source files, and +591 net source LOC for source-classified files after the source-budget trim.
 
 ## True DB/RLS Smoke Status
 

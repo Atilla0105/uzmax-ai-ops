@@ -9,8 +9,9 @@ Current foundation evidence: `docs/evidence/M5/M5-01-db-contract-foundation.md`.
 Current behavior-contract evidence: `docs/evidence/M5/M5-02-distill-guardrails.md`.
 Current API-contract evidence: `docs/evidence/M5/M5-03-confirmation-queue-api.md`.
 Current admin-shell evidence: `docs/evidence/M5/M5-04-confirmation-queue-admin.md`.
+Current AI-member evidence: `docs/evidence/M5/M5-05-ai-member-console.md`.
 
-M5 current status: `m5_04_confirmation_queue_admin_recorded__not_accepted`. This means the M5 entrypoint docs remain open, M5-01 has added DB/schema/contracts/test evidence for the operations-loop vocabulary, M5-02 has added pure distill guardrail behavior contracts, M5-03 has added an in-memory confirmation queue API contract for human decisions without formal writes, and M5-04 has added an admin shell/client contract slice. It does not approve M5 as a milestone, close production acceptance, or approve the items listed in the Boundary section.
+M5 current status: `m5_05_ai_member_console_recorded__not_accepted`. This means the M5 entrypoint docs remain open, M5-01 has added DB/schema/contracts/test evidence for the operations-loop vocabulary, M5-02 has added pure distill guardrail behavior contracts, M5-03 has added an in-memory confirmation queue API contract for human decisions without formal writes, M5-04 has added an admin shell/client contract slice, and M5-05 has added a frontend/local-contract AI member console slice. It does not approve M5 as a milestone, close production acceptance, or approve the items listed in the Boundary section.
 
 M4 prior state: `owner_accepted_m4_milestone_evidence`. Project owner accepted M4 milestone evidence on 2026-06-24. M4 acceptance does not approve production, GA-0, real customer traffic, customer LLM, production Redis/worker deployment, formal alert routing, real customer/order data, production eval gate or 1.0 release.
 
@@ -35,7 +36,7 @@ M4 prior state: `owner_accepted_m4_milestone_evidence`. Project owner accepted M
 | 2 | M5-02 distill guardrails | Behavior-contract evidence recorded for candidate cap, 7-day pass rate, downshift recommendation, owner alert draft and manual recovery audit requirement. Runtime scheduler/UI/audit persistence remains future. | Depends on M5-01; serial with worker/cron shared paths. |
 | 3 | M5-03 confirmation queue API | API-contract evidence recorded for approve/edit/discard/block, conflict diff enforcement, tenant scoping and no formal write before confirmation. Runtime persistence/formal write pipeline remains future. | Depends on M5-01/M5-02; serial with shared API/authz routes. |
 | 4 | M5-04 confirmation queue admin | Admin shell evidence recorded for keyboard-first queue, amber health banner, conflict diff and mobile pass/discard fallback | Depends on M5-03; frontend-only parallelism only with disjoint admin paths. |
-| 5 | M5-05 AI member console | AI member status, toggles, offline/breaker state, emergency stop/recovery audit | Serial with shared audit/log/API paths. |
+| 5 | M5-05 AI member console | Frontend/local-contract evidence recorded for AI member status, toggles, offline/breaker state, emergency stop/recovery local drafts and mobile fallback. Runtime/persisted audit remains future. | Serial with shared audit/log/API paths. |
 | 6 | M5-06 logs + analytics | Fixed analytics board, dimensions, login/presence/operation logs | Serial with shared metric/log/audit paths. |
 | 7 | M5-07 template center | Knowledge, AI member, config and eval templates; copy creates tenant-owned version | Serial with schema/config/template shared paths. |
 | 8 | M5-08 integration smoke + closeout | Integration smoke, evidence sync and owner closeout readiness request | Runs after M5-01..M5-07 are merged, or explicitly superseded/deferred by owner-approved evidence with affected items still `not_closed`. |
@@ -53,9 +54,9 @@ Future workers must use distinct physical worktree paths, distinct branches and 
 | H-05 | not_primary_m5_scope_not_closed | Future template/material refs must preserve storageRef as source and Telegram file_id as cache; runbook evidence remains later scope. |
 | H-06 | queued_not_closed | M5-07 may cover quick-reply/template governance if scoped; public/private quick-reply workflow is not closed by M5-00. |
 | H-07 | admin_ui_supported_not_closed | M5-01 adds distill run/health DB/contracts, M5-02 adds pure cap/pass-rate/downshift/recovery contracts, and M5-04 adds admin visibility. Scheduler, persisted alert/audit and full E2E remain future. |
-| I-02 | admin_ui_supported_not_closed | M5-03 API can support mobile pass/discard fallback, and M5-04 adds confirmation queue fallback UI/E2E. AI emergency fallback remains M5-05. |
+| I-02 | supported_not_closed | M5-03 API can support mobile pass/discard fallback, M5-04 adds confirmation queue fallback UI/E2E, and M5-05 adds AI emergency stop/recovery mobile fallback as local drafts. Runtime mobile emergency path remains future. |
 | I-06 | queued_not_closed | M5-02 pass-rate summary can feed analytics later; M5-06 still covers fixed analytics board, dimensions and export governance. |
-| I-07 | queued_foundation_only | M5-01 adds AI member state/version/toggle refs. M5-05/M5-06 still cover AI state/action audit and login/presence/operation log readback. |
+| I-07 | supported_not_closed | M5-01 adds AI member state/version/toggle refs and M5-05 adds local action/audit draft evidence. M5-06/future integration still covers persisted audit/log center readback. |
 | J-05 | foundation_evidence_added_not_closed | M5-00, M5-01, M5-02 and M5-03 evidence exists so M5 evidence is not deferred to M6; no release signoff. |
 | K-03 | active | One spec / one PR; current branch implements only the active M5 slice. |
 | K-04 | active | Planned queue and serial/parallel rules recorded. |
@@ -104,3 +105,7 @@ M5-03 validation is tracked in `docs/evidence/M5/M5-03-confirmation-queue-api.md
 ## M5-04 Validation
 
 M5-04 validation is tracked in `docs/evidence/M5/M5-04-confirmation-queue-admin.md`. Current M5-04 status is `admin_ui_supported_not_closed`; marker `m5_04_confirmation_queue_admin_recorded__not_accepted`; M5 is not accepted.
+
+## M5-05 Validation
+
+M5-05 validation is tracked in `docs/evidence/M5/M5-05-ai-member-console.md`. Current M5-05 status is `frontend_local_contract_supported_not_closed`; marker `m5_05_ai_member_console_recorded__not_accepted`; M5 is not accepted.

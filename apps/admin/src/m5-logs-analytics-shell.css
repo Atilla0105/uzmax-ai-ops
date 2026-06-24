@@ -1,0 +1,111 @@
+.m5-logs-shell {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.m5-logs-heading,
+.m5-logs-board,
+.m5-logs-mobile-summary,
+.m5-logs-desktop-controls,
+.m5-dimension-grid,
+.m5-export-draft,
+.m5-log-center,
+.m5-log-filters,
+.m5-log-type-tabs {
+  display: grid;
+  gap: var(--uzmax-space-3);
+}
+
+.m5-logs-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.m5-logs-board,
+.m5-dimension-grid {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.m5-logs-desktop-controls {
+  grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 0.8fr);
+}
+
+.m5-log-filters {
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.8fr) auto;
+  align-items: end;
+}
+
+.m5-log-type-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.m5-logs-shell :is(.m5-logs-mode, .m5-logs-metric, .m5-export-draft, button, input),
+.m5-logs-mobile-summary,
+.m5-log-table-wrap {
+  min-width: 0;
+  border: 1px solid var(--uzmax-color-border);
+  border-radius: var(--uzmax-radius-sm);
+  padding: var(--uzmax-space-2);
+  background: var(--uzmax-color-surface);
+  overflow-wrap: anywhere;
+}
+
+.m5-logs-metric,
+.m5-dimension-grid button,
+.m5-log-filters label {
+  display: grid;
+  gap: var(--uzmax-space-1);
+}
+
+.m5-dimension-grid button {
+  text-align: left;
+}
+
+.m5-dimension-grid button[aria-pressed="true"],
+.m5-log-type-tabs button[aria-pressed="true"],
+.m5-export-draft {
+  border-left: 4px solid var(--uzmax-color-accent);
+}
+
+.m5-logs-mobile-summary {
+  display: none;
+}
+
+.m5-log-table-wrap {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.m5-log-table {
+  width: 100%;
+  min-width: 44rem;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.m5-log-table th,
+.m5-log-table td {
+  padding: var(--uzmax-space-2);
+  text-align: left;
+  border-bottom: 1px solid var(--uzmax-color-border);
+  vertical-align: top;
+}
+
+@media (max-width: 480px) {
+  .m5-logs-heading,
+  .m5-log-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .m5-logs-desktop-controls {
+    display: none;
+  }
+
+  .m5-logs-mobile-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .m5-log-table {
+    min-width: 0;
+  }
+}

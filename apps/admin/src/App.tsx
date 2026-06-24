@@ -7,6 +7,7 @@ import { M4CustomerAssetShell } from "./M4CustomerAssetShell";
 import { M4OrderPathStatusShell } from "./M4OrderPathStatusShell";
 import { M5AiMemberConsoleShell } from "./M5AiMemberConsoleShell";
 import { M5ConfirmationQueueShell } from "./M5ConfirmationQueueShell";
+import { M5LogsAnalyticsShell } from "./M5LogsAnalyticsShell";
 
 const tenants = [
   {
@@ -197,6 +198,8 @@ export function App() {
           <M5ConfirmationQueueShell tenantName={selectedTenant.name} />
 
           <M5AiMemberConsoleShell tenantName={selectedTenant.name} />
+
+          <M5LogsAnalyticsShell tenantName={selectedTenant.name} />
 
           <section className="panel release-panel" data-testid="release-readiness">
             <div className="section-heading">

@@ -59,7 +59,7 @@ describe("M4-46 audit closeout readiness", () => {
     assert.doesNotMatch(m445Evidence, /security_blocker_open/);
 
     assert.match(m4Index, /M4-46 audit closeout readiness evidence/);
-    assert.match(m4Index, /m4_ready_for_owner_closeout_review/);
+    assert.match(m4Index, /owner_accepted_m4_milestone_evidence/);
     assert.doesNotMatch(m4Index, /security_blocker_open/);
   });
 });

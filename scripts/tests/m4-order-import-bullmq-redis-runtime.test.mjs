@@ -263,7 +263,7 @@ describe("M4-45 order import BullMQ Redis runtime", () => {
       m4Index,
       /queue_security_closeout_supported_not_production_deployment/
     );
-    assert.match(m4Index, /m4_ready_for_owner_closeout_review/);
+    assert.match(m4Index, /owner_accepted_m4_milestone_evidence/);
   });
 });
 

@@ -1,9 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-
 import ts from "typescript";
-
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const defaultOutDir = path.join(repoRoot, "node_modules/.cache/uzmax-api-runtime");
 const compilerOptions = {
@@ -12,7 +10,6 @@ const compilerOptions = {
   module: ts.ModuleKind.ES2022,
   target: ts.ScriptTarget.ES2023
 };
-
 export async function importApiRuntime() {
   const outDir = await compileApiRuntime();
   const entry = pathToFileURL(path.join(outDir, "main.mjs")).href;
@@ -34,7 +31,6 @@ export async function importApiCustomerAssetRuntimeModules(options = {}) {
     ["customerAssetService", "customer-asset.service"]
   ]);
 }
-
 async function importApiRuntimeModules(options, entries) {
   const outDir = await compileApiRuntime(options);
   const modules = { outDir };
@@ -47,7 +43,6 @@ async function importApiRuntimeModules(options, entries) {
   );
   return modules;
 }
-
 export async function compileApiRuntime(options = {}) {
   const outDir = options.outDir ?? defaultOutDir;
   await rm(outDir, { force: true, recursive: true });
@@ -67,70 +62,9 @@ export async function compileApiRuntime(options = {}) {
   await writeModule(outDir, "apps/api/src/access-context.ts", "access-context.mjs", {
     "./access-context-core.ts": "./access-context-core.mjs"
   });
-  await writeModule(
-    outDir,
-    "apps/api/src/conversation-ticket.types.ts",
-    "conversation-ticket.types.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/conversation-ticket.errors.ts",
-    "conversation-ticket.errors.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/conversation-ticket.repository.ts",
-    "conversation-ticket.repository.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs",
-      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/conversation-ticket.service.ts",
-    "conversation-ticket.service.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs",
-      "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
-      "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",
-      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/conversation-ticket.controller.ts",
-    "conversation-ticket.controller.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "./access-context.ts": "./access-context.mjs",
-      "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
-      "./conversation-ticket.service.ts": "./conversation-ticket.service.mjs",
-      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/conversation-ticket.ts",
-    "conversation-ticket.mjs",
-    {
-      "./conversation-ticket.controller.ts": "./conversation-ticket.controller.mjs",
-      "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
-      "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",
-      "./conversation-ticket.service.ts": "./conversation-ticket.service.mjs",
-      "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs"
-    }
-  );
+  for (const [sourcePath, outputName, replacements] of conversationTicketModules()) {
+    await writeModule(outDir, sourcePath, outputName, replacements);
+  }
   for (const [name, replacements] of confirmationQueueRuntimeModules()) {
     await writeModule(
       outDir,
@@ -161,110 +95,16 @@ export async function compileApiRuntime(options = {}) {
       replacements
     );
   }
-  await writeModule(
-    outDir,
-    "packages/capabilities/order-read/src/index.ts",
-    "order-read-index.mjs"
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.types.ts",
-    "order-import.types.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "../../../packages/capabilities/order-read/src/index.ts": "./order-read-index.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.defaults.ts",
-    "order-import.defaults.mjs",
-    {
-      "./order-import.types.ts": "./order-import.types.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.persistence-gateway.ts",
-    "order-import.persistence-gateway.mjs",
-    {
-      "../../../packages/db/src/index.ts": "./db-index.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.repository.ts",
-    "order-import.repository.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "../../../packages/db/src/index.ts": "./db-index.mjs",
-      "./order-import.defaults.ts": "./order-import.defaults.mjs",
-      "./order-import.persistence-gateway.ts": "./order-import.persistence-gateway.mjs",
-      "./order-import.types.ts": "./order-import.types.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.rls-runner.ts",
-    "order-import.rls-runner.mjs",
-    {
-      "./order-import.repository.ts": "./order-import.repository.mjs"
-    }
-  );
   await writeModule(outDir, "packages/db/src/prisma-runtime.ts", "prisma-runtime.mjs");
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.runtime.ts",
-    "order-import.runtime.mjs",
-    {
-      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
-      "./order-import.repository.ts": "./order-import.repository.mjs",
-      "./order-import.rls-runner.ts": "./order-import.rls-runner.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.submit.ts",
-    "order-import.submit.mjs",
-    {
-      "./order-import.types.ts": "./order-import.types.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.service.ts",
-    "order-import.service.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "../../../packages/capabilities/order-read/src/index.ts":
-        "./order-read-index.mjs",
-      "./order-import.repository.ts": "./order-import.repository.mjs",
-      "./order-import.submit.ts": "./order-import.submit.mjs",
-      "./order-import.types.ts": "./order-import.types.mjs"
-    }
-  );
-  await writeModule(
-    outDir,
-    "apps/api/src/order-import.controller.ts",
-    "order-import.controller.mjs",
-    {
-      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
-      "./access-context.ts": "./access-context.mjs",
-      "./order-import.service.ts": "./order-import.service.mjs",
-      "./order-import.types.ts": "./order-import.types.mjs"
-    }
-  );
-  await writeModule(outDir, "apps/api/src/order-import.ts", "order-import.mjs", {
-    "./order-import.controller.ts": "./order-import.controller.mjs",
-    "./order-import.repository.ts": "./order-import.repository.mjs",
-    "./order-import.rls-runner.ts": "./order-import.rls-runner.mjs",
-    "./order-import.service.ts": "./order-import.service.mjs",
-    "./order-import.submit.ts": "./order-import.submit.mjs",
-    "./order-import.types.ts": "./order-import.types.mjs"
-  });
+  for (const [sourcePath, outputName, replacements] of orderImportModules()) {
+    await writeModule(outDir, sourcePath, outputName, replacements);
+  }
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
     "./access-context.ts": "./access-context.mjs",
     "./confirmation-queue.controller.ts": "./confirmation-queue.controller.mjs",
+    "./confirmation-queue.formal-write-contracts.ts":
+      "./confirmation-queue.formal-write-contracts.mjs",
+    "./confirmation-queue.formal-write.ts": "./confirmation-queue.formal-write.mjs",
     "./confirmation-queue.prisma-mapper.ts": "./confirmation-queue.prisma-mapper.mjs",
     "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs",
     "./confirmation-queue.runtime.ts": "./confirmation-queue.runtime.mjs",
@@ -282,7 +122,6 @@ export async function compileApiRuntime(options = {}) {
   });
   return outDir;
 }
-
 async function writeModule(outDir, sourcePath, outputName, replacements = {}) {
   let source = await readFile(path.join(repoRoot, sourcePath), "utf8");
   for (const [from, to] of Object.entries(replacements)) {
@@ -294,7 +133,6 @@ async function writeModule(outDir, sourcePath, outputName, replacements = {}) {
   });
   await writeFile(path.join(outDir, outputName), outputText);
 }
-
 function confirmationQueueRuntimeModules() {
   const authz = { "../../../packages/authz/src/index.ts": "./authz-index.mjs" };
   const db = { "../../../packages/db/src/index.ts": "./db-index.mjs" };
@@ -306,6 +144,28 @@ function confirmationQueueRuntimeModules() {
     ["types", authz],
     ["prisma-mapper", types],
     ["repository", { ...authz, ...types }],
+    [
+      "formal-write-contracts",
+      {
+        ...authz,
+        ...db,
+        ...types
+      }
+    ],
+    [
+      "formal-write",
+      {
+        ...authz,
+        ...db,
+        ...prismaRuntime,
+        ...types,
+        "./audit-log.prisma-sink.ts": "./audit-log.prisma-sink.mjs",
+        "./confirmation-queue.formal-write-contracts.ts":
+          "./confirmation-queue.formal-write-contracts.mjs",
+        "./confirmation-queue.prisma-mapper.ts":
+          "./confirmation-queue.prisma-mapper.mjs"
+      }
+    ],
     [
       "runtime",
       {
@@ -323,6 +183,7 @@ function confirmationQueueRuntimeModules() {
       {
         ...authz,
         ...types,
+        "./confirmation-queue.formal-write.ts": "./confirmation-queue.formal-write.mjs",
         "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs"
       }
     ],
@@ -333,6 +194,142 @@ function confirmationQueueRuntimeModules() {
         ...types,
         "./access-context.ts": "./access-context.mjs",
         "./confirmation-queue.service.ts": "./confirmation-queue.service.mjs"
+      }
+    ]
+  ];
+}
+function conversationTicketModules() {
+  const authz = { "../../../packages/authz/src/index.ts": "./authz-index.mjs" };
+  const handoff = {
+    "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs"
+  };
+  const types = { "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs" };
+  return [
+    [
+      "apps/api/src/conversation-ticket.types.ts",
+      "conversation-ticket.types.mjs",
+      { ...authz, ...handoff }
+    ],
+    [
+      "apps/api/src/conversation-ticket.errors.ts",
+      "conversation-ticket.errors.mjs",
+      { ...authz, ...handoff }
+    ],
+    [
+      "apps/api/src/conversation-ticket.repository.ts",
+      "conversation-ticket.repository.mjs",
+      { ...authz, ...handoff, ...types }
+    ],
+    [
+      "apps/api/src/conversation-ticket.service.ts",
+      "conversation-ticket.service.mjs",
+      {
+        ...authz,
+        ...handoff,
+        "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",
+        ...types
+      }
+    ],
+    [
+      "apps/api/src/conversation-ticket.controller.ts",
+      "conversation-ticket.controller.mjs",
+      {
+        ...authz,
+        "./access-context.ts": "./access-context.mjs",
+        "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        "./conversation-ticket.service.ts": "./conversation-ticket.service.mjs",
+        ...types
+      }
+    ],
+    [
+      "apps/api/src/conversation-ticket.ts",
+      "conversation-ticket.mjs",
+      {
+        "./conversation-ticket.controller.ts": "./conversation-ticket.controller.mjs",
+        "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",
+        "./conversation-ticket.service.ts": "./conversation-ticket.service.mjs",
+        ...types
+      }
+    ]
+  ];
+}
+
+function orderImportModules() {
+  const source = "apps/api/src/order-import";
+  const authz = { "../../../packages/authz/src/index.ts": "./authz-index.mjs" };
+  const db = { "../../../packages/db/src/index.ts": "./db-index.mjs" };
+  const orderRead = {
+    "../../../packages/capabilities/order-read/src/index.ts": "./order-read-index.mjs"
+  };
+  const types = { "./order-import.types.ts": "./order-import.types.mjs" };
+  const repository = {
+    "./order-import.repository.ts": "./order-import.repository.mjs"
+  };
+  return [
+    ["packages/capabilities/order-read/src/index.ts", "order-read-index.mjs"],
+    [
+      "apps/api/src/order-import.types.ts",
+      "order-import.types.mjs",
+      { ...authz, ...orderRead }
+    ],
+    [`${source}.defaults.ts`, "order-import.defaults.mjs", types],
+    [`${source}.persistence-gateway.ts`, "order-import.persistence-gateway.mjs", db],
+    [
+      `${source}.repository.ts`,
+      "order-import.repository.mjs",
+      {
+        ...authz,
+        ...db,
+        "./order-import.defaults.ts": "./order-import.defaults.mjs",
+        "./order-import.persistence-gateway.ts":
+          "./order-import.persistence-gateway.mjs",
+        ...types
+      }
+    ],
+    [`${source}.rls-runner.ts`, "order-import.rls-runner.mjs", repository],
+    [
+      `${source}.runtime.ts`,
+      "order-import.runtime.mjs",
+      {
+        "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+        ...repository,
+        "./order-import.rls-runner.ts": "./order-import.rls-runner.mjs"
+      }
+    ],
+    [`${source}.submit.ts`, "order-import.submit.mjs", types],
+    [
+      `${source}.service.ts`,
+      "order-import.service.mjs",
+      {
+        ...authz,
+        ...orderRead,
+        ...repository,
+        "./order-import.submit.ts": "./order-import.submit.mjs",
+        ...types
+      }
+    ],
+    [
+      `${source}.controller.ts`,
+      "order-import.controller.mjs",
+      {
+        ...authz,
+        "./access-context.ts": "./access-context.mjs",
+        "./order-import.service.ts": "./order-import.service.mjs",
+        ...types
+      }
+    ],
+    [
+      `${source}.ts`,
+      "order-import.mjs",
+      {
+        "./order-import.controller.ts": "./order-import.controller.mjs",
+        ...repository,
+        "./order-import.rls-runner.ts": "./order-import.rls-runner.mjs",
+        "./order-import.service.ts": "./order-import.service.mjs",
+        "./order-import.submit.ts": "./order-import.submit.mjs",
+        ...types
       }
     ]
   ];

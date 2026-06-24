@@ -5,6 +5,10 @@ import {
   type AccessContext
 } from "../../../packages/authz/src/index.ts";
 
+import {
+  DisabledConfirmationFormalWritePipeline,
+  type ConfirmationFormalWritePipelinePort
+} from "./confirmation-queue.formal-write.ts";
 import type { ConfirmationQueueRepositoryPort } from "./confirmation-queue.repository.ts";
 import {
   ConfirmationQueueApiError,
@@ -25,7 +29,10 @@ const FORBIDDEN_KEYS = new Set(
 
 @Injectable()
 export class ConfirmationQueueService {
-  constructor(private readonly repository: ConfirmationQueueRepositoryPort) {}
+  constructor(
+    private readonly repository: ConfirmationQueueRepositoryPort,
+    private readonly formalWritePipeline: ConfirmationFormalWritePipelinePort = new DisabledConfirmationFormalWritePipeline()
+  ) {}
 
   async listItems(accessContext: AccessContext, filters: ConfirmationQueueListFilters) {
     assertPermission(accessContext, "confirmation:read");
@@ -62,11 +69,12 @@ export class ConfirmationQueueService {
       status: statusForDecision(input.action)
     });
 
-    return {
+    return this.formalWritePipeline.apply({
+      accessContext,
       auditDraft,
-      formalWrite: false,
+      decision: input,
       item: updated
-    };
+    });
   }
 
   private async requireItem(accessContext: AccessContext, itemId: string) {

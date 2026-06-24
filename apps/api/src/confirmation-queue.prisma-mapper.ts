@@ -17,6 +17,7 @@ export const confirmationQueuePrismaStatusByApi = {
 
 export function toPrismaCreateData(item: ConfirmationQueueItem) {
   return cleanRecord({
+    auditLogId: item.auditLogId,
     candidatePayload: item.candidatePayload,
     createdAt: new Date(item.createdAt),
     diffPayload: item.diffPayload ?? {},
@@ -36,6 +37,7 @@ export function toPrismaCreateData(item: ConfirmationQueueItem) {
 
 export function toPrismaUpdateData(item: ConfirmationQueueItem) {
   return cleanRecord({
+    auditLogId: item.auditLogId ?? null,
     candidatePayload: item.candidatePayload,
     diffPayload: item.diffPayload ?? {},
     kind: confirmationQueuePrismaKindByApi[item.kind],
@@ -53,6 +55,7 @@ export function mapConfirmationItemRow(row: unknown): ConfirmationQueueItem {
   const record = recordValue(row, "row");
   const metadata = optionalRecordValue(record.metadata) ?? {};
   return cleanRecord({
+    auditLogId: optionalString(record.auditLogId),
     candidatePayload: recordValue(record.candidatePayload, "candidatePayload"),
     confidenceBps: optionalInteger(metadata.confidenceBps),
     createdAt: dateText(record.createdAt, "createdAt"),

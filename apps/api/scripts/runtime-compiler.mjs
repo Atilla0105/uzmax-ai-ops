@@ -65,6 +65,37 @@ export async function importApiCustomerAssetRuntimeModules(options = {}) {
   };
 }
 
+export async function importApiConfirmationQueueRuntimeModules(options = {}) {
+  const outDir = await compileApiRuntime(options);
+  const importModule = (fileName) =>
+    import(pathToFileURL(path.join(outDir, fileName)).href);
+  const [
+    accessContext,
+    confirmationQueueController,
+    confirmationQueueRepository,
+    confirmationQueueRuntime,
+    confirmationQueueService,
+    confirmationQueueTypes
+  ] = await Promise.all([
+    importModule("access-context.mjs"),
+    importModule("confirmation-queue.controller.mjs"),
+    importModule("confirmation-queue.repository.mjs"),
+    importModule("confirmation-queue.runtime.mjs"),
+    importModule("confirmation-queue.service.mjs"),
+    importModule("confirmation-queue.types.mjs")
+  ]);
+
+  return {
+    accessContext,
+    confirmationQueueController,
+    confirmationQueueRepository,
+    confirmationQueueRuntime,
+    confirmationQueueService,
+    confirmationQueueTypes,
+    outDir
+  };
+}
+
 export async function compileApiRuntime(options = {}) {
   const outDir = options.outDir ?? defaultOutDir;
   await rm(outDir, { force: true, recursive: true });
@@ -282,7 +313,9 @@ export async function compileApiRuntime(options = {}) {
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
     "./access-context.ts": "./access-context.mjs",
     "./confirmation-queue.controller.ts": "./confirmation-queue.controller.mjs",
+    "./confirmation-queue.prisma-mapper.ts": "./confirmation-queue.prisma-mapper.mjs",
     "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs",
+    "./confirmation-queue.runtime.ts": "./confirmation-queue.runtime.mjs",
     "./confirmation-queue.service.ts": "./confirmation-queue.service.mjs",
     "./conversation-ticket.ts": "./conversation-ticket.mjs",
     "./customer-asset.controller.ts": "./customer-asset.controller.mjs",
@@ -312,10 +345,27 @@ async function writeModule(outDir, sourcePath, outputName, replacements = {}) {
 
 function confirmationQueueRuntimeModules() {
   const authz = { "../../../packages/authz/src/index.ts": "./authz-index.mjs" };
+  const db = { "../../../packages/db/src/index.ts": "./db-index.mjs" };
+  const prismaRuntime = {
+    "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs"
+  };
   const types = { "./confirmation-queue.types.ts": "./confirmation-queue.types.mjs" };
   return [
     ["types", authz],
+    ["prisma-mapper", types],
     ["repository", { ...authz, ...types }],
+    [
+      "runtime",
+      {
+        ...authz,
+        ...db,
+        ...prismaRuntime,
+        ...types,
+        "./confirmation-queue.prisma-mapper.ts":
+          "./confirmation-queue.prisma-mapper.mjs",
+        "./confirmation-queue.repository.ts": "./confirmation-queue.repository.mjs"
+      }
+    ],
     [
       "service",
       {

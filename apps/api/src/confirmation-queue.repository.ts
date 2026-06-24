@@ -5,7 +5,23 @@ import type {
   ConfirmationQueueListFilters
 } from "./confirmation-queue.types.ts";
 
-export class InMemoryConfirmationQueueRepository {
+type MaybePromise<T> = T | Promise<T>;
+
+export type ConfirmationQueueRepositoryPort = {
+  getItem(
+    accessContext: AccessContext,
+    itemId: string
+  ): MaybePromise<ConfirmationQueueItem | undefined>;
+  listItems(
+    accessContext: AccessContext,
+    filters: ConfirmationQueueListFilters
+  ): MaybePromise<ConfirmationQueueItem[]>;
+  saveItem(item: ConfirmationQueueItem): MaybePromise<ConfirmationQueueItem>;
+};
+
+export const CONFIRMATION_QUEUE_REPOSITORY = Symbol("CONFIRMATION_QUEUE_REPOSITORY");
+
+export class InMemoryConfirmationQueueRepository implements ConfirmationQueueRepositoryPort {
   private items: ConfirmationQueueItem[];
 
   constructor(seed: { items?: readonly ConfirmationQueueItem[] } = {}) {

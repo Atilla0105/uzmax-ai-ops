@@ -2,8 +2,16 @@
 
 M5R evidence tracks the runtime-readiness follow-up queue after M5 integration smoke closeout. M5 is currently shape-complete / closeout-ready as `m5_08_integration_closeout_ready__not_owner_accepted`, but it is not runtime-persistence closed and is not owner accepted.
 
-Current M5R spec: `docs/specs/M5R-00-runtime-integration-plan.md`.
+Current M5R plan spec: `docs/specs/M5R-00-runtime-integration-plan.md`.
+Current M5R implementation spec: `docs/specs/M5R-01-confirmation-queue-persistence.md`.
 Current M5R incident record: `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`.
+
+## Runtime Slice Status
+
+| Slice | Status | Evidence |
+|---|---|---|
+| M5R-00 Runtime Integration Plan | `m5r_plan_recorded_not_owner_accepted` | `docs/specs/M5R-00-runtime-integration-plan.md`; this README; `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md` |
+| M5R-01 Confirmation Queue Persistence | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-01-confirmation-queue-persistence.md`; `docs/evidence/M5R/M5R-01-confirmation-queue-persistence.md` |
 
 ## Start Audit
 

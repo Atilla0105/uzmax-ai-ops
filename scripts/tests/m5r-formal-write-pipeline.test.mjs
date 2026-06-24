@@ -52,7 +52,8 @@ describe("M5R-02 formal write pipeline", () => {
     assert.match(source.formalWrite, /createRlsTransactionContext/);
     assert.match(source.contracts, /createConfigVersionContract/);
     assert.match(source.contracts, /createAuditLogContract/);
-    assert.match(source.smoke, /requireSmokeEnv\("UZMAX_RLS_DATABASE_URL"\)/);
+    assert.match(source.smoke, /readRlsDatabaseUrl/);
+    assert.match(source.smoke, /UZMAX_RLS_DATABASE_URL/);
     assert.match(source.wrapper, /runM5rFormalWriteTrueDbSmoke/);
     assert.match(
       docs,

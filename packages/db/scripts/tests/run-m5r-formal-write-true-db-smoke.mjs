@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
-import { pathToFileURL, URL } from "node:url";
-
-import { PrismaClient } from "@prisma/client";
+import { pathToFileURL } from "node:url";
 
 import { compileApiRuntime } from "../../../../apps/api/scripts/runtime-compiler.mjs";
 
@@ -27,8 +25,8 @@ const TARGETS = {
 };
 
 export async function runM5rFormalWriteTrueDbSmoke() {
-  const databaseUrl = requireSmokeEnv("UZMAX_RLS_DATABASE_URL");
-  const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+  const databaseUrl = readRlsDatabaseUrl();
+  const prisma = await createSmokePrismaClient(databaseUrl);
 
   try {
     await cleanupSyntheticRows(prisma);
@@ -138,31 +136,31 @@ export async function runM5rFormalWriteTrueDbSmoke() {
   }
 }
 
-function requireSmokeEnv(name) {
+function readRlsDatabaseUrl() {
+  const name = "UZMAX_RLS_DATABASE_URL";
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`${name} is required`);
   return value;
 }
 
+async function createSmokePrismaClient(databaseUrl) {
+  const { PrismaClient: SmokePrismaClient } = await import("@prisma/client");
+  return new SmokePrismaClient({ datasources: { db: { url: databaseUrl } } });
+}
+
 async function importApiConfirmationQueueRuntimeModules() {
   const outDir = await compileApiRuntime();
-  const baseUrl = `${pathToFileURL(outDir).href}/`;
-  const importModule = (fileName) => import(new URL(`${fileName}.mjs`, baseUrl).href);
-  const [
-    confirmationQueueFormalWrite,
-    confirmationQueueRuntime,
-    confirmationQueueService
-  ] = await Promise.all([
-    importModule("confirmation-queue.formal-write"),
-    importModule("confirmation-queue.runtime"),
-    importModule("confirmation-queue.service")
-  ]);
-
-  return {
-    confirmationQueueFormalWrite,
-    confirmationQueueRuntime,
-    confirmationQueueService
+  const moduleBaseHref = `${pathToFileURL(outDir).href}/`;
+  const entries = {
+    confirmationQueueFormalWrite: "confirmation-queue.formal-write",
+    confirmationQueueRuntime: "confirmation-queue.runtime",
+    confirmationQueueService: "confirmation-queue.service"
   };
+  const loaded = {};
+  for (const [key, fileName] of Object.entries(entries)) {
+    loaded[key] = await import(`${moduleBaseHref}${fileName}.mjs`);
+  }
+  return loaded;
 }
 
 async function seedSyntheticTenants(prisma) {
@@ -344,31 +342,37 @@ async function assertRlsIsolation(prisma, approvedConfigId) {
 }
 
 async function runDirectRlsProbe(prisma, tenantId, operation) {
-  return (
-    await prisma.$transaction([
-      prisma.$executeRawUnsafe('set local role "uzmax_app_runtime"'),
-      prisma.$queryRaw`select set_config('app.org_id', ${ORG_ID}, true)`,
-      prisma.$queryRaw`select set_config('app.tenant_id', ${tenantId}, true)`,
-      operation(prisma)
-    ])
-  ).at(-1);
+  return runAppRuntimeProbe(prisma, operation, tenantId);
 }
 
 async function runDirectRlsProbeWithoutContext(prisma, operation) {
-  return (
-    await prisma.$transaction([
-      prisma.$executeRawUnsafe('set local role "uzmax_app_runtime"'),
-      operation(prisma)
-    ])
-  ).at(-1);
+  return runAppRuntimeProbe(prisma, operation);
+}
+
+async function runAppRuntimeProbe(prisma, operation, tenantId) {
+  const batch = [prisma.$executeRawUnsafe('set local role "uzmax_app_runtime"')];
+  if (tenantId) batch.push(...tenantSettings(prisma, tenantId));
+  batch.push(operation(prisma));
+  return (await prisma.$transaction(batch)).at(-1);
+}
+
+function tenantSettings(prisma, tenantId) {
+  return [
+    prisma.$queryRaw`select set_config('app.org_id', ${ORG_ID}, true)`,
+    prisma.$queryRaw`select set_config('app.tenant_id', ${tenantId}, true)`
+  ];
 }
 
 async function cleanupSyntheticRows(prisma) {
-  await prisma.confirmationItem.deleteMany({ where: { orgId: ORG_ID } });
-  await prisma.auditLog.deleteMany({ where: { orgId: ORG_ID } });
-  await prisma.configVersion.deleteMany({ where: { orgId: ORG_ID } });
-  await prisma.tenant.deleteMany({ where: { orgId: ORG_ID } });
-  await prisma.org.deleteMany({ where: { id: ORG_ID } });
+  for (const deleteSyntheticRows of [
+    () => prisma.confirmationItem.deleteMany({ where: { orgId: ORG_ID } }),
+    () => prisma.auditLog.deleteMany({ where: { orgId: ORG_ID } }),
+    () => prisma.configVersion.deleteMany({ where: { orgId: ORG_ID } }),
+    () => prisma.tenant.deleteMany({ where: { orgId: ORG_ID } }),
+    () => prisma.org.deleteMany({ where: { id: ORG_ID } })
+  ]) {
+    await deleteSyntheticRows();
+  }
 }
 
 async function syntheticResidueCount(prisma) {

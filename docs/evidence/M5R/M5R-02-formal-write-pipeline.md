@@ -105,6 +105,7 @@ If `UZMAX_RLS_DATABASE_URL` is later provided, the runner path is `node packages
 | `node --test scripts/tests/m5r-confirmation-queue-persistence.test.mjs` | pass | 4/4 tests; M5R-01 persistence behavior preserved. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript validation passed. |
 | `npm run lint` | pass | ESLint validation passed. |
+| `npm run jscpd` | pass | CI duplicate check passed with 0 clones after the M5R-02 helper-shape rewrite. |
 | `npm run knip` | pass | No unused file/export findings. |
 | `npm run format:check` | pass | Prettier check passed. |
 | `npm run depcruise` | pass | Dependency boundary check passed. |
@@ -131,6 +132,7 @@ If `UZMAX_RLS_DATABASE_URL` is later provided, the runner path is `node packages
 - The DB/RLS path is explicit and fail-closed: no env means no Prisma client construction; non-RLS mode is rejected.
 - RLS transaction setup is centralized in the formal-write runner and mirrors existing repo patterns.
 - Contract construction is separated from the orchestrator so target parsing, metadata, config-version data and audit content are testable without broad service changes.
+- The M5R-02 CI duplicate fix rewrites only helper shapes in the formal-write runtime and true DB smoke support; it does not lower `jscpd` thresholds or delete smoke assertions.
 - The true DB smoke support is synthetic-only, cleans up rows, and asserts residue `0`.
 - File-length and complexity budgets remain under repo limits after the source-budget trim.
 

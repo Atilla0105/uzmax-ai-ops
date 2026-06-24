@@ -138,9 +138,7 @@ function createConfirmationFormalWriteRlsTransactionRunner(
     }
     const result = await prisma.$transaction([
       prisma.$executeRawUnsafe(context.roleSql),
-      ...context.settings.map((setting) =>
-        createSetConfigOperation(prisma, requireRlsSetting(setting))
-      ),
+      ...context.settings.map((setting) => createSetConfigOperation(prisma, setting)),
       ...operations
     ]);
     return input.mapResult(result.slice(3));
@@ -252,40 +250,44 @@ function assertFormalWritePrismaClientPort(
   if (!value || typeof value !== "object") {
     throw new Error("formal write runtime Prisma client port is required");
   }
-  for (const [name, method] of [
-    ["configVersion.findFirst", value.configVersion?.findFirst],
-    ["configVersion.create", value.configVersion?.create],
-    ["auditLog.create", value.auditLog?.create],
-    ["confirmationItem.update", value.confirmationItem?.update],
-    ["$executeRawUnsafe", value.$executeRawUnsafe],
-    ["$queryRaw", value.$queryRaw],
-    ["$transaction", value.$transaction]
-  ] as const) {
+  const requiredMethods = {
+    $executeRawUnsafe: value.$executeRawUnsafe,
+    $queryRaw: value.$queryRaw,
+    $transaction: value.$transaction,
+    "auditLog.create": value.auditLog?.create,
+    "configVersion.create": value.configVersion?.create,
+    "configVersion.findFirst": value.configVersion?.findFirst,
+    "confirmationItem.update": value.confirmationItem?.update
+  };
+  for (const name of Object.keys(requiredMethods)) {
+    const method = requiredMethods[name as keyof typeof requiredMethods];
     if (typeof method !== "function") {
       throw new Error(`formal write runtime Prisma client requires ${name}`);
     }
   }
 }
 
-function requireRlsSetting(setting: { key?: unknown; value?: unknown } | undefined): {
+function readFormalWriteRlsSetting(
+  setting: { key?: unknown; value?: unknown } | undefined
+): {
   key: "app.org_id" | "app.tenant_id";
   value: string;
 } {
-  const key = setting?.key;
-  const value = setting?.value;
-  if (
-    (key !== "app.org_id" && key !== "app.tenant_id") ||
-    typeof value !== "string" ||
-    !value.trim()
-  ) {
+  const key =
+    setting?.key === "app.org_id" || setting?.key === "app.tenant_id"
+      ? setting.key
+      : undefined;
+  const value = typeof setting?.value === "string" ? setting.value.trim() : "";
+  if (!key || !value) {
     throw new Error("formal write RLS batch setting is required");
   }
-  return { key, value: value.trim() };
+  return { key, value };
 }
 
 function createSetConfigOperation(
   prisma: Pick<ConfirmationFormalWritePrismaClientPort, "$queryRaw">,
-  setting: { key: "app.org_id" | "app.tenant_id"; value: string }
+  rawSetting: { key?: unknown; value?: unknown } | undefined
 ) {
+  const setting = readFormalWriteRlsSetting(rawSetting);
   return prisma.$queryRaw`select set_config(${setting.key}, ${setting.value}, true)`;
 }

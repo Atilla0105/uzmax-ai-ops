@@ -18,82 +18,34 @@ export async function importApiRuntime() {
   const entry = pathToFileURL(path.join(outDir, "main.mjs")).href;
   return import(`${entry}?t=${Date.now()}`);
 }
-
 export async function importApiOrderImportRuntimeModules(options = {}) {
-  const outDir = await compileApiRuntime(options);
-  const importModule = (fileName) =>
-    import(pathToFileURL(path.join(outDir, fileName)).href);
-  const [accessContext, orderImport, orderImportRuntime] = await Promise.all([
-    importModule("access-context.mjs"),
-    importModule("order-import.mjs"),
-    importModule("order-import.runtime.mjs")
+  return importApiRuntimeModules(options, [
+    ["accessContext", "access-context"],
+    ["orderImport", "order-import"],
+    ["orderImportRuntime", "order-import.runtime"]
   ]);
-
-  return {
-    accessContext,
-    orderImport,
-    orderImportRuntime,
-    outDir
-  };
 }
-
 export async function importApiCustomerAssetRuntimeModules(options = {}) {
-  const outDir = await compileApiRuntime(options);
-  const importModule = (fileName) =>
-    import(pathToFileURL(path.join(outDir, fileName)).href);
-  const [
-    accessContext,
-    customerAssetController,
-    customerAssetRepository,
-    customerAssetRuntime,
-    customerAssetService
-  ] = await Promise.all([
-    importModule("access-context.mjs"),
-    importModule("customer-asset.controller.mjs"),
-    importModule("customer-asset.repository.mjs"),
-    importModule("customer-asset.runtime.mjs"),
-    importModule("customer-asset.service.mjs")
+  return importApiRuntimeModules(options, [
+    ["accessContext", "access-context"],
+    ["customerAssetController", "customer-asset.controller"],
+    ["customerAssetRepository", "customer-asset.repository"],
+    ["customerAssetRuntime", "customer-asset.runtime"],
+    ["customerAssetService", "customer-asset.service"]
   ]);
-
-  return {
-    accessContext,
-    customerAssetController,
-    customerAssetRepository,
-    customerAssetRuntime,
-    customerAssetService,
-    outDir
-  };
 }
 
-export async function importApiConfirmationQueueRuntimeModules(options = {}) {
+async function importApiRuntimeModules(options, entries) {
   const outDir = await compileApiRuntime(options);
-  const importModule = (fileName) =>
-    import(pathToFileURL(path.join(outDir, fileName)).href);
-  const [
-    accessContext,
-    confirmationQueueController,
-    confirmationQueueRepository,
-    confirmationQueueRuntime,
-    confirmationQueueService,
-    confirmationQueueTypes
-  ] = await Promise.all([
-    importModule("access-context.mjs"),
-    importModule("confirmation-queue.controller.mjs"),
-    importModule("confirmation-queue.repository.mjs"),
-    importModule("confirmation-queue.runtime.mjs"),
-    importModule("confirmation-queue.service.mjs"),
-    importModule("confirmation-queue.types.mjs")
-  ]);
-
-  return {
-    accessContext,
-    confirmationQueueController,
-    confirmationQueueRepository,
-    confirmationQueueRuntime,
-    confirmationQueueService,
-    confirmationQueueTypes,
-    outDir
-  };
+  const modules = { outDir };
+  await Promise.all(
+    entries.map(async ([key, fileName]) => {
+      modules[key] = await import(
+        pathToFileURL(path.join(outDir, `${fileName}.mjs`)).href
+      );
+    })
+  );
+  return modules;
 }
 
 export async function compileApiRuntime(options = {}) {

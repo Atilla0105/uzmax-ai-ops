@@ -116,7 +116,7 @@ describe("M5R-01 confirmation queue persistence", () => {
     assert.match(appModuleSource, /createConfirmationQueueRepositoryProviderFromEnv/);
     assert.match(appModuleSource, /CONFIRMATION_QUEUE_REPOSITORY/);
     assert.doesNotMatch(appModuleSource, /process\.env/);
-    assert.match(runtimeCompilerSource, /importApiConfirmationQueueRuntimeModules/);
+    assert.match(runtimeCompilerSource, /confirmationQueueRuntimeModules/);
     assert.match(runtimeCompilerSource, /prisma-runtime\.mjs/);
     assert.match(serviceSource, /formalWrite: false/);
     assert.doesNotMatch(
@@ -213,6 +213,8 @@ describe("M5R-01 confirmation queue persistence", () => {
     );
     assert.match(smokeRunnerSupportSource, /same-tenant/);
     assert.match(smokeRunnerSupportSource, /wrong-tenant/);
+    assert.match(smokeRunnerSupportSource, /runDirectRlsProbeWithoutContext/);
+    assert.doesNotMatch(smokeRunnerSupportSource, /runDirectRlsProbe\(prisma, "",/);
     assert.match(smokeRunnerSupportSource, /formalWrite/);
     assert.equal(typeof runM5rConfirmationQueueTrueDbSmoke, "function");
     assert.match(

@@ -57,6 +57,7 @@ This evidence, spec, tests and implementation must not include raw/export/jsonl/
 - Runtime compiler support imports `confirmation-queue.runtime.mjs` plus the existing DB runtime helpers so focused Node tests and true DB smoke can load the same runtime path.
 - Focused contract test uses a fake Prisma client only to prove transaction shape, missing-env failure, explicit RLS mode and no bare Prisma bypass. It is not counted as true DB/RLS evidence.
 - True DB smoke CLI entrypoint is `packages/db/scripts/run-m5r-confirmation-queue-true-db-smoke.mjs`; long synthetic smoke assertions live in `packages/db/scripts/tests/run-m5r-confirmation-queue-true-db-smoke.mjs` and export `runM5rConfirmationQueueTrueDbSmoke` for static contract coverage.
+- Review fix: the true DB smoke missing-context negative now opens a restricted transaction with `set local role "uzmax_app_runtime"` and intentionally omits `app.org_id` / `app.tenant_id` before Prisma select/update probes. This exercises the DB/RLS policy instead of relying on local `createRlsTransactionContext` validation.
 
 ## True DB/RLS Smoke Status
 
@@ -68,7 +69,7 @@ Status: `blocked_by_missing_env`.
 |---|---|---|
 | `node packages/db/scripts/run-m5r-confirmation-queue-true-db-smoke.mjs` | expected fail-closed | Throws `Error: UZMAX_RLS_DATABASE_URL is required`. No DB connection opened and no synthetic residue was created. |
 
-The runner is ready to prove true DB/RLS behavior when the env is available. Its covered path seeds synthetic org/tenant/confirmation rows, runs create/list/detail/approve/edit/discard/block through the RLS Prisma repository, asserts same-tenant positive reads, wrong-tenant read/mutation negatives, missing-context negative, conflict diff enforcement, persisted `formalWrite: false`, `auditLogId` remains null, and synthetic residue cleanup.
+The runner is ready to prove true DB/RLS behavior when the env is available. Its covered path seeds synthetic org/tenant/confirmation rows, runs create/list/detail/approve/edit/discard/block through the RLS Prisma repository, asserts same-tenant positive reads, wrong-tenant read/mutation negatives, DB-policy missing-context select/update negatives, conflict diff enforcement, persisted `formalWrite: false`, `auditLogId` remains null, and synthetic residue cleanup.
 
 Because the DB URL is missing, M5R-01 does not claim completed true DB/RLS smoke. The focused contract test below proves the runner/runtime requires `UZMAX_RLS_DATABASE_URL` and rejects non-RLS Prisma mode.
 
@@ -109,7 +110,7 @@ Because the DB URL is missing, M5R-01 does not claim completed true DB/RLS smoke
 ## Code Quality Review
 
 - Repository port is intentionally narrow: `listItems`, `getItem`, `saveItem`. API semantics remain in the service/controller, not duplicated in the Prisma runtime.
-- The RLS runtime is split into `confirmation-queue.runtime.ts` plus a Prisma mapper so ordinary source files stay within line budgets and in-memory behavior remains easy to test.
+- The RLS runtime is split into `confirmation-queue.runtime.ts` plus a Prisma mapper so ordinary source files stay within line budgets and in-memory behavior remains easy to test. `apps/api/scripts/runtime-compiler.mjs` is kept at 400 physical lines after review compaction.
 - Runtime mode names are explicit. Bare `prisma_gateway` is rejected to prevent privileged/service-role bypass in this slice.
 - RLS scope comes from `AccessContext` for reads and from the item's org/tenant for saves; every Prisma operation runs inside the restricted transaction runner.
 - Tests use synthetic UUIDs and controlled refs only. No raw customer data, real order data, real LLM calls, secrets or external SaaS calls were introduced.

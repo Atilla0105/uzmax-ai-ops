@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { pathToFileURL } from "node:url";
+import { pathToFileURL, URL } from "node:url";
 
 import { PrismaClient } from "@prisma/client";
 
-import { importApiConfirmationQueueRuntimeModules } from "../../../../apps/api/scripts/runtime-compiler.mjs";
+import { compileApiRuntime } from "../../../../apps/api/scripts/runtime-compiler.mjs";
 
 const SYNTHETIC_SPEC = "M5R-01";
 const ORG_ID = "11111111-1111-4111-8111-111111111501";
@@ -126,6 +126,18 @@ function requireSmokeEnv(name) {
   return value;
 }
 
+async function importApiConfirmationQueueRuntimeModules() {
+  const outDir = await compileApiRuntime();
+  const baseUrl = `${pathToFileURL(outDir).href}/`;
+  const importModule = (fileName) => import(new URL(`${fileName}.mjs`, baseUrl).href);
+  const [confirmationQueueRuntime, confirmationQueueService] = await Promise.all([
+    importModule("confirmation-queue.runtime"),
+    importModule("confirmation-queue.service")
+  ]);
+
+  return { confirmationQueueRuntime, confirmationQueueService };
+}
+
 async function seedSyntheticTenants(prisma) {
   await prisma.org.create({
     data: { id: ORG_ID, name: "M5R-01 Synthetic Org", slug: "m5r-01-synthetic-org" }
@@ -229,12 +241,23 @@ async function assertRlsIsolation(prisma) {
       ),
     /Record to update not found|No .* found|P2025|not found/i
   );
+  assert.equal(
+    (
+      await runDirectRlsProbeWithoutContext(prisma, (client) =>
+        client.confirmationItem.findMany({ where: { id: IDS.approve } })
+      )
+    ).length,
+    0
+  );
   await assert.rejects(
     () =>
-      runDirectRlsProbe(prisma, "", (client) =>
-        client.confirmationItem.findMany({ where: {} })
+      runDirectRlsProbeWithoutContext(prisma, (client) =>
+        client.confirmationItem.update({
+          data: { status: "DISCARDED" },
+          where: { id: IDS.noDiff }
+        })
       ),
-    /RLS tenant context requires orgId and tenantId/
+    /Record to update not found|No .* found|P2025|not found/i
   );
 }
 
@@ -247,6 +270,15 @@ async function runDirectRlsProbe(prisma, tenantId, operation) {
       prisma.$executeRawUnsafe('set local role "uzmax_app_runtime"'),
       prisma.$queryRaw`select set_config('app.org_id', ${ORG_ID}, true)`,
       prisma.$queryRaw`select set_config('app.tenant_id', ${tenantId}, true)`,
+      operation(prisma)
+    ])
+  ).at(-1);
+}
+
+async function runDirectRlsProbeWithoutContext(prisma, operation) {
+  return (
+    await prisma.$transaction([
+      prisma.$executeRawUnsafe('set local role "uzmax_app_runtime"'),
       operation(prisma)
     ])
   ).at(-1);

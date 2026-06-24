@@ -279,6 +279,71 @@ enum OrderQueryOutcome {
   @@map("order_query_outcome")
 }
 
+enum ConfirmationItemKind {
+  KNOWLEDGE_CANDIDATE @map("knowledge_candidate")
+  PROFILE_CANDIDATE   @map("profile_candidate")
+  EVAL_CANDIDATE      @map("eval_candidate")
+  CONFLICT_CANDIDATE  @map("conflict_candidate")
+
+  @@map("confirmation_item_kind")
+}
+
+enum ConfirmationItemStatus {
+  PENDING   @map("pending")
+  APPROVED  @map("approved")
+  EDITED    @map("edited")
+  DISCARDED @map("discarded")
+  BLOCKED   @map("blocked")
+
+  @@map("confirmation_item_status")
+}
+
+enum DistillRunStatus {
+  QUEUED    @map("queued")
+  RUNNING   @map("running")
+  COMPLETED @map("completed")
+  FAILED    @map("failed")
+  SKIPPED   @map("skipped")
+
+  @@map("distill_run_status")
+}
+
+enum DistillFrequency {
+  DAILY  @map("daily")
+  WEEKLY @map("weekly")
+  PAUSED @map("paused")
+
+  @@map("distill_frequency")
+}
+
+enum AiMemberStatus {
+  ONLINE          @map("online")
+  MANUAL_OFFLINE  @map("manual_offline")
+  BREAKER_OFFLINE @map("breaker_offline")
+  DISABLED        @map("disabled")
+
+  @@map("ai_member_status")
+}
+
+enum AiMemberVersionStatus {
+  DRAFT       @map("draft")
+  ACTIVE      @map("active")
+  ARCHIVED    @map("archived")
+  ROLLED_BACK @map("rolled_back")
+
+  @@map("ai_member_version_status")
+}
+
+enum AiCapabilityKey {
+  TUTORIAL       @map("tutorial")
+  VISION         @map("vision")
+  QUOTE          @map("quote")
+  ORDER_READ     @map("order_read")
+  BUSINESS_DRAFT @map("business_draft")
+
+  @@map("ai_capability_key")
+}
+
 model Org {
   id                    String                   @id @default(uuid()) @db.Uuid
   slug                  String                   @unique @db.Text
@@ -1075,4 +1140,142 @@ model LlmCallLog {
   @@index([orgId, tenantId, task, occurredAt])
   @@index([traceId])
   @@map("llm_call_log")
+}
+
+model DistillRun {
+  id                String           @id @default(uuid()) @db.Uuid
+  orgId             String           @map("org_id") @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  status            DistillRunStatus @default(QUEUED)
+  frequency         DistillFrequency @default(DAILY)
+  sourceWindowStart DateTime         @map("source_window_start") @db.Timestamptz(6)
+  sourceWindowEnd   DateTime         @map("source_window_end") @db.Timestamptz(6)
+  candidateLimit    Int              @default(10) @map("candidate_limit")
+  candidateCount    Int              @default(0) @map("candidate_count")
+  truncatedCount    Int              @default(0) @map("truncated_count")
+  startedAt         DateTime?        @map("started_at") @db.Timestamptz(6)
+  completedAt       DateTime?        @map("completed_at") @db.Timestamptz(6)
+  failureReasonRef  String?          @map("failure_reason_ref") @db.Text
+  metadata          Json             @default("{}")
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, status, createdAt])
+  @@index([orgId, tenantId, frequency, createdAt])
+  @@map("distill_run")
+}
+
+model DistillHealthDaily {
+  id                    String           @id @default(uuid()) @db.Uuid
+  orgId                 String           @map("org_id") @db.Uuid
+  tenantId              String           @map("tenant_id") @db.Uuid
+  businessDate          DateTime         @map("business_date") @db.Date
+  frequency             DistillFrequency @default(DAILY)
+  candidateCount        Int              @default(0) @map("candidate_count")
+  approvedCount         Int              @default(0) @map("approved_count")
+  discardedCount        Int              @default(0) @map("discarded_count")
+  sevenDayPassRateBps   Int              @default(0) @map("seven_day_pass_rate_bps")
+  consecutiveLowPassDays Int             @default(0) @map("consecutive_low_pass_days")
+  downshifted           Boolean          @default(false)
+  downshiftReasonRef    String?          @map("downshift_reason_ref") @db.Text
+  recoveryAuditLogId    String?          @map("recovery_audit_log_id") @db.Uuid
+  metadata              Json             @default("{}")
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, businessDate])
+  @@index([orgId, tenantId, downshifted, businessDate])
+  @@map("distill_health_daily")
+}
+
+model AiMember {
+  id                 String               @id @default(uuid()) @db.Uuid
+  orgId              String               @map("org_id") @db.Uuid
+  tenantId           String               @map("tenant_id") @db.Uuid
+  memberKey          String               @map("member_key") @db.Text
+  displayName        String               @map("display_name") @db.Text
+  status             AiMemberStatus       @default(ONLINE)
+  activeVersionId    String?              @map("active_version_id") @db.Uuid
+  emergencyStoppedAt DateTime?            @map("emergency_stopped_at") @db.Timestamptz(6)
+  breakerReasonRef   String?              @map("breaker_reason_ref") @db.Text
+  metadata           Json                 @default("{}")
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, memberKey])
+  @@index([orgId, tenantId, status])
+  @@map("ai_member")
+}
+
+model AiMemberVersion {
+  id              String                @id @default(uuid()) @db.Uuid
+  orgId           String                @map("org_id") @db.Uuid
+  tenantId        String                @map("tenant_id") @db.Uuid
+  aiMemberId      String                @map("ai_member_id") @db.Uuid
+  version         Int
+  status          AiMemberVersionStatus @default(DRAFT)
+  personaRef      String                @map("persona_ref") @db.Text
+  evalGateId      String?               @map("eval_gate_id") @db.Uuid
+  configVersionId String?               @map("config_version_id") @db.Uuid
+  createdByUserId String                @map("created_by_user_id") @db.Uuid
+  activatedAt     DateTime?             @map("activated_at") @db.Timestamptz(6)
+  metadata        Json                  @default("{}")
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([id, orgId, tenantId])
+  @@unique([id, aiMemberId, orgId, tenantId])
+  @@unique([orgId, tenantId, aiMemberId, version])
+  @@index([orgId, tenantId, aiMemberId, status])
+  @@index([evalGateId])
+  @@index([configVersionId])
+  @@map("ai_member_version")
+}
+
+model AiCapabilityToggle {
+  id              String          @id @default(uuid()) @db.Uuid
+  orgId           String          @map("org_id") @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  aiMemberId      String          @map("ai_member_id") @db.Uuid
+  capabilityKey   AiCapabilityKey @map("capability_key")
+  enabled         Boolean         @default(false)
+  configVersionId String?         @map("config_version_id") @db.Uuid
+  updatedByUserId String?         @map("updated_by_user_id") @db.Uuid
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  metadata        Json            @default("{}")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([id, orgId, tenantId])
+  @@unique([orgId, tenantId, aiMemberId, capabilityKey])
+  @@index([orgId, tenantId, capabilityKey, enabled])
+  @@index([configVersionId])
+  @@map("ai_capability_toggle")
+}
+
+model ConfirmationItem {
+  id               String                 @id @default(uuid()) @db.Uuid
+  orgId            String                 @map("org_id") @db.Uuid
+  tenantId         String                 @map("tenant_id") @db.Uuid
+  kind             ConfirmationItemKind
+  status           ConfirmationItemStatus @default(PENDING)
+  sourceRef        String                 @map("source_ref") @db.Text
+  targetKind       String?                @map("target_kind") @db.Text
+  targetRef        String?                @map("target_ref") @db.Text
+  candidatePayload Json                   @map("candidate_payload")
+  diffPayload      Json                   @default("{}") @map("diff_payload")
+  distillRunId     String?                @map("distill_run_id") @db.Uuid
+  reviewedByUserId String?                @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt       DateTime?              @map("reviewed_at") @db.Timestamptz(6)
+  auditLogId       String?                @map("audit_log_id") @db.Uuid
+  metadata         Json                   @default("{}")
+  createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, status, createdAt])
+  @@index([orgId, tenantId, kind, status])
+  @@index([distillRunId])
+  @@map("confirmation_item")
 }

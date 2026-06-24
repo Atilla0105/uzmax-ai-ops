@@ -291,7 +291,7 @@ describe("M3-01 AI capability data contracts foundation", () => {
     assert.match(m3Evidence, /owner-input blockers/);
   });
 
-  it("does not introduce Business, order connector, distill, or M4 customer tables in the M3 slice", () => {
+  it("does not introduce Business, order connector, distill, or M4 customer tables in the M3 migration", () => {
     for (const forbidden of [
       /model BusinessConnection/,
       /model CustomerAsset/,
@@ -304,7 +304,6 @@ describe("M3-01 AI capability data contracts foundation", () => {
       /create table if not exists kb_candidate/,
       /create table if not exists distill/i
     ]) {
-      assert.doesNotMatch(schema, forbidden);
       assert.doesNotMatch(migration, forbidden);
     }
 
@@ -372,7 +371,18 @@ function withoutQuoteProvenance(quote) {
 }
 
 async function importTypescriptSource(relativePath) {
-  const source = read(relativePath);
+  const source =
+    relativePath === "packages/db/src/index.ts"
+      ? read(relativePath).replaceAll(
+          'from "./m5-operations-contracts"',
+          `from "${asDataUrl(transpileTypescript("packages/db/src/m5-operations-contracts.ts"))}"`
+        )
+      : read(relativePath);
+  const outputText = transpileTypescript(relativePath, source);
+  return import(asDataUrl(outputText));
+}
+
+function transpileTypescript(relativePath, source = read(relativePath)) {
   const outputText = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.ES2022,
@@ -380,6 +390,10 @@ async function importTypescriptSource(relativePath) {
     },
     fileName: relativePath
   }).outputText;
+  return outputText;
+}
+
+function asDataUrl(outputText) {
   const encoded = Buffer.from(outputText, "utf8").toString("base64");
-  return import(`data:text/javascript;base64,${encoded}`);
+  return `data:text/javascript;base64,${encoded}`;
 }

@@ -6,8 +6,9 @@ M5 should let owner/operators process candidate changes quickly, see distill hea
 
 Current readiness spec: `docs/specs/M5-00-operations-loop-readiness-pack.md`.
 Current foundation evidence: `docs/evidence/M5/M5-01-db-contract-foundation.md`.
+Current behavior-contract evidence: `docs/evidence/M5/M5-02-distill-guardrails.md`.
 
-M5 current status: `m5_01_db_contract_foundation_recorded__not_accepted`. This means the M5 entrypoint docs remain open and M5-01 has added DB/schema/contracts/test evidence for the operations-loop vocabulary. It does not approve M5 as a milestone, close production acceptance, or approve the items listed in the Boundary section.
+M5 current status: `m5_02_distill_guardrails_recorded__not_accepted`. This means the M5 entrypoint docs remain open, M5-01 has added DB/schema/contracts/test evidence for the operations-loop vocabulary, and M5-02 has added pure distill guardrail behavior contracts. It does not approve M5 as a milestone, close production acceptance, or approve the items listed in the Boundary section.
 
 M4 prior state: `owner_accepted_m4_milestone_evidence`. Project owner accepted M4 milestone evidence on 2026-06-24. M4 acceptance does not approve production, GA-0, real customer traffic, customer LLM, production Redis/worker deployment, formal alert routing, real customer/order data, production eval gate or 1.0 release.
 
@@ -29,7 +30,7 @@ M4 prior state: `owner_accepted_m4_milestone_evidence`. Project owner accepted M
 | Order | Planned slice | Scope | Parallelism rule |
 |---:|---|---|---|
 | 1 | M5-01 DB/contract foundation | Foundation evidence recorded for distill health, confirmation queue and AI member DB/contracts. Analytics/log/template runtime remains future. | Global serial for schema/migrations/generated contracts. |
-| 2 | M5-02 distill guardrails | Candidate cap, 7-day pass rate, downshift, owner alert, manual recovery audit | Depends on M5-01; serial with worker/cron shared paths. |
+| 2 | M5-02 distill guardrails | Behavior-contract evidence recorded for candidate cap, 7-day pass rate, downshift recommendation, owner alert draft and manual recovery audit requirement. Runtime scheduler/UI/audit persistence remains future. | Depends on M5-01; serial with worker/cron shared paths. |
 | 3 | M5-03 confirmation queue API | Approve/edit/discard/conflict diff API and no formal write before confirmation | Depends on M5-01/M5-02; serial with shared API/authz routes. |
 | 4 | M5-04 confirmation queue admin | Keyboard-first queue, amber health banner, mobile pass/discard fallback | Depends on M5-03; frontend-only parallelism only with disjoint admin paths. |
 | 5 | M5-05 AI member console | AI member status, toggles, offline/breaker state, emergency stop/recovery audit | Serial with shared audit/log/API paths. |
@@ -44,17 +45,17 @@ Future workers must use distinct physical worktree paths, distinct branches and 
 | Item | M5 current status | Planned closure path |
 |---|---|---|
 | H-01 | queued_not_closed | M5 may contribute confirmation-backed updates through M5-03/M5-04 and template governance through M5-07. Full facts/journeys/stages/materials edit, import, publish and media-upload closure remains future-scoped unless a dedicated M5 implementation spec explicitly covers that full workflow. |
-| H-02 | foundation_supported_not_closed | M5-01 adds confirmation candidate table/contracts. M5-03/M5-04 must still prove candidates require human approve/edit/discard before formal write. |
+| H-02 | behavior_contract_supported_not_closed | M5-01 adds confirmation candidate table/contracts and M5-02 emits candidate refs without a formal write path. M5-03/M5-04 must still prove candidates require human approve/edit/discard before formal write. |
 | H-03 | foundation_supported_not_closed | M5-01 adds conflict candidate kind and diff payload contract foundation. M5-03/M5-04 must still prove conflict diff is mandatory and cannot be skipped into formal storage. |
 | H-04 | queued_not_closed | M5-07 template copy must create tenant-independent versions. |
 | H-05 | not_primary_m5_scope_not_closed | Future template/material refs must preserve storageRef as source and Telegram file_id as cache; runbook evidence remains later scope. |
 | H-06 | queued_not_closed | M5-07 may cover quick-reply/template governance if scoped; public/private quick-reply workflow is not closed by M5-00. |
-| H-07 | foundation_supported_not_closed | M5-01 adds distill run/health DB/contracts for cap, pass rate, downshift and audit refs. M5-02/M5-04/M5-06 must still implement behavior, owner alert, UI and recovery. |
+| H-07 | behavior_contract_supported_not_closed | M5-01 adds distill run/health DB/contracts and M5-02 adds pure cap, pass-rate, downshift recommendation, owner alert draft and manual recovery audit contracts. Scheduler, UI, persisted alert/audit and E2E remain future. |
 | I-02 | queued_foundation_only | M5-01 data foundation may support mobile confirmation and AI emergency flows; M5-04/M5-05 must still implement fallback UI/API. |
-| I-06 | queued_not_closed | M5-06 covers fixed analytics board, dimensions and export governance. |
+| I-06 | queued_not_closed | M5-02 pass-rate summary can feed analytics later; M5-06 still covers fixed analytics board, dimensions and export governance. |
 | I-07 | queued_foundation_only | M5-01 adds AI member state/version/toggle refs. M5-05/M5-06 still cover AI state/action audit and login/presence/operation log readback. |
-| J-05 | foundation_evidence_added_not_closed | M5-00 and M5-01 evidence exists so M5 evidence is not deferred to M6; no release signoff. |
-| K-03 | active | One spec / one PR; current branch implements only M5-01. |
+| J-05 | foundation_evidence_added_not_closed | M5-00, M5-01 and M5-02 evidence exists so M5 evidence is not deferred to M6; no release signoff. |
+| K-03 | active | One spec / one PR; current branch implements only M5-02. |
 | K-04 | active | Planned queue and serial/parallel rules recorded. |
 
 ## Boundary
@@ -89,3 +90,7 @@ M5 evidence must not include raw/export/jsonl/csv, screenshots, voice transcript
 ## M5-01 Validation
 
 M5-01 validation is tracked in `docs/evidence/M5/M5-01-db-contract-foundation.md`. Current M5-01 status remains `foundation_supported_not_closed`; M5 is not accepted.
+
+## M5-02 Validation
+
+M5-02 validation is tracked in `docs/evidence/M5/M5-02-distill-guardrails.md`. Current M5-02 status remains `behavior_contract_supported_not_closed`; M5 is not accepted.

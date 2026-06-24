@@ -306,6 +306,16 @@ Boundary:
 - No real redline samples, raw customer text, raw prompts/completions, provider SDK/key/env, model route, prompt/persona release, GA-0 or real customer traffic belongs in this contract or evidence.
 - F-05/F-06/G-05/L-02 remain foundation-only and not closed: production output filter, runtime breaker events, fault injection, leave-ticket drill and false-positive dashboard remain future work.
 
+## M5 Distill Guardrails Contract
+
+`M5-02-distill-guardrails` introduces pure `packages/distill/src/index.ts` behavior-contract helpers:
+
+- `createDailyDistillCandidateSelection` caps daily candidates at 10, sorts by confidence with deterministic tie-breakers, and returns accepted candidate refs plus truncated refs/count.
+- `summarizeSevenDayDistillPassRate` computes the 7-day pass rate in basis points, rejects invalid counts, and recommends weekly downshift after 3 consecutive low-pass-rate days.
+- `createDistillOwnerAlertDraft` and `createManualDistillRecoveryAuditContract` return structured refs-only contracts for owner alert and manual recovery audit requirements.
+
+Boundary: M5-02 does not persist DB rows, run a scheduler, call providers, deliver alerts, write formal knowledge/profile/eval records, or close M5/H-07 production acceptance. Raw customer data, raw prompts/completions, Telegram payloads, order IDs, phone/address/payment data and secrets do not belong in this contract.
+
 ## Verification
 
 本契约的本地验证入口：

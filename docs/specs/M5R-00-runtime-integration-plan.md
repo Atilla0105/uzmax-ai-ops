@@ -90,10 +90,23 @@ For future M5R slices:
 - `M5R-05` and `M5R-06` may run in parallel only if their touch lists are completely disjoint and neither touches a global serial point.
 - `M5R-08` is last and serial.
 
+## True DB/RLS Smoke Baseline
+
+Future M5R runtime slices may call a check `true DB/RLS smoke` only when it meets this baseline:
+
+- It uses the real configured smoke database through `UZMAX_RLS_DATABASE_URL` or the repo-approved true DB smoke environment.
+- It runs through the restricted app runtime role and RLS transaction context, not a service-role or privileged Prisma bypass.
+- It sets transaction-scoped `app.org_id` and `app.tenant_id`, or uses the existing helper that sets those values.
+- Where the slice owns data writes, it includes positive same-tenant read/write evidence and negative missing-context or wrong-tenant-context evidence.
+- Repository-only filters, mocks, local arrays and privileged clients do not count as true DB/RLS smoke.
+- If M5R-07 consumes prior API-backed DB/RLS evidence instead of direct DB assertions, its spec must link the prior runtime evidence and explain why those checks cover the admin runtime path.
+
 ## 事故与 closeout 记录
 
 - Incident created by M5R-00: `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`.
 - The incident records an initial patch-target write into root/main that created two untracked docs, the coordinator-authorized cleanup, clean root evidence, and no runtime/source/customer/secret impact.
+- Containment and cleanup land in this PR. The existing worker-boundary guard remains detective evidence; M5R-00 adds no new preventive guard or script.
+- Repeated patch-target failures remain a known orchestration risk to monitor and handle in later guard or tooling work if needed.
 - If any further write lands outside the assigned worktree, on root/main, on the wrong branch, in an unlisted path, or includes secret/customer-data boundary risk, stop and create or reference `docs/incidents/` before continuing.
 - If validation proves a scope change is required outside this touch list, stop and report before widening scope.
 - M5R closeout evidence must keep sensitive material out of repo evidence and record manifests/status only.
@@ -114,7 +127,7 @@ For future M5R slices:
 | Order | Planned slice | Goal | Runtime touch expectation | True DB/RLS smoke expectation | Serial / parallel rule |
 |---:|---|---|---|---|---|
 | 1 | `M5R-01 Confirmation Queue Persistence` | Put a Prisma/RLS runtime repository behind the M5-03 `InMemoryConfirmationQueueRepository`. Prove create/list/detail/approve/edit/discard/block, tenant isolation, conflict diff and no unconfirmed formal write. | `packages/db`, confirmation queue repository/API/service paths as scoped by its future spec. | Required: true DB create/list/detail/approve/edit/discard/block smoke under at least two tenant contexts; RLS must prove cross-tenant invisibility and mutation denial. | First runtime slice; global serial for DB/schema/migration/RLS and serial with API/audit shared paths. |
-| 2 | `M5R-02 Formal Write Pipeline` | Add a minimal proof path for knowledge/config/eval/template formal writes, not full H-01. Pending/discarded/blocked candidates cannot write; approved/edited candidates write to a target table or version record; `audit_log` includes confirmer, diff and target ref. | Formal write orchestrator/repository paths plus target table/version refs as scoped. | Required: true DB/RLS smoke proves only approved/edited decisions write, target refs are tenant-isolated, and pending/discarded/blocked decisions produce no formal write. | Depends on M5R-01; serial with DB, audit and target write paths. |
+| 2 | `M5R-02 Formal Write Pipeline` | Add a minimal proof path for one or more explicitly named target paths from knowledge/config/eval/template, not full H-01. The M5R-02 spec must name each target table/version record before implementation and list non-closures. Current read-only inventory suggests `config_version` + `audit_log` + `confirmation_item.auditLogId/status` as the preferred smallest candidate, but M5R-02 must make the final scoped choice. Pending/discarded/blocked candidates cannot write; approved/edited candidates write only to the named target table or version record; `audit_log` includes confirmer, diff and target ref. | Formal write orchestrator/repository paths plus the exact named target table/version refs chosen in M5R-02. | Required: true DB/RLS smoke proves only approved/edited decisions write to the named target path(s), target refs are tenant-isolated, and pending/discarded/blocked decisions produce no formal write. | Depends on M5R-01; serial with DB, audit and named target write paths. |
 | 3 | `M5R-03 Distill Scheduler + Health Runtime` | Connect M5-02 pure functions to `apps/cron` and `apps/worker`. Persist max 10 daily candidates, 7-day pass rate to `distill_health_daily`, 3 days below 40% downshift weekly, owner alert/audit draft persisted, and manual recovery. | `apps/cron`, `apps/worker`, `packages/distill`, distill health repository/API paths as scoped. | Required: true DB/RLS smoke for candidate cap, health daily persistence, downshift, owner alert/audit draft and manual recovery across tenant contexts. | Depends on M5R-01 and usually M5R-02 candidate/write boundaries; serial with worker/cron/shared runtime helper paths. |
 | 4 | `M5R-04 AI Member Runtime Control` | Add API+DB runtime control for emergency stop, recovery and capability toggles. Writes `ai_member`, `ai_member_version`, `ai_capability_toggle`; `audit_log` records emergency actions; mobile emergency fallback uses real API; no bypass of M3 eval gate/breaker. | AI member API/repository/admin-client paths, audit paths and eval-gate/breaker integration points as scoped. | Required: true DB/RLS smoke proves emergency stop/recovery/toggle writes, audit entries, cross-tenant isolation and no eval-gate/breaker bypass. | Basically serial with M5R-01..M5R-03 because DB/API/audit/runtime helpers overlap. |
 | 5 | `M5R-05 Logs + Analytics Runtime` | Replace local-contract surfaces with real login, presence and operation log sources. Fixed board includes confirmation pass rate, distill frequency and AI member state. Export is a controlled export job/draft, not a direct sensitive file. | Logs/analytics API/repositories/aggregation/admin-client paths and controlled export job/draft paths as scoped. | Required: true DB/RLS smoke for login/presence/operation log readback, fixed-board metrics, controlled export job/draft creation and cross-tenant invisibility. | May run in parallel with M5R-06 only if touch lists are completely disjoint and no shared serial point is touched. |
@@ -128,7 +141,7 @@ For future M5R slices:
 - Evidence README records start audit, current M5 runtime gap, planned queue, dependency/parallelism matrix, acceptance mapping, validation commands, incident reference and boundaries.
 - Incident record documents the initial root/main write-boundary incident and cleanup evidence.
 - Planned queue includes exactly M5R-01 through M5R-08 with the runtime acceptance boundaries listed above.
-- Future slices require true DB/RLS smoke, or an explicit why-not where the slice only consumes prior DB/RLS evidence through API-backed admin smoke.
+- Future slices require true DB/RLS smoke matching the baseline above, or an explicit why-not where the slice only consumes prior DB/RLS evidence through API-backed admin smoke.
 - Global serial points and allowed parallelism are recorded.
 - Diff only includes `docs/specs/M5R-00-runtime-integration-plan.md`, `docs/evidence/M5R/README.md` and `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`.
 - Required validation passes or failures are honestly recorded.
@@ -151,14 +164,14 @@ For future M5R slices:
 - No edits to `docs/evidence/M5/README.md` in M5R-00.
 - No real customer/order data, raw message samples, external SaaS onboarding, production Redis/worker deployment, customer LLM, real LLM calls, prompt/model route release, M6 hardening, GA-0, production readiness, owner acceptance or 1.0 release claim.
 - No automatic formal knowledge/profile/eval/template writes.
-- No guard implementation in this PR; the permanent control is process evidence plus use of absolute assigned worktree paths for this continuation.
+- No guard implementation in this PR; containment and cleanup are recorded here, and the existing worker-boundary guard is detective evidence rather than a new preventive control.
 
 ## 验收映射
 
 | Item | M5R-00 status | Future M5R closure path |
 |---|---|---|
 | A-03 | planned_runtime_queue_not_closed | M5R-06 must prove DB/API template copy to tenant creates independent tenant-owned versions and group updates do not auto-pollute tenants. |
-| H-01 | limited_proof_path_planned_not_full_h01_closed | M5R-02 proves a minimal formal write path for knowledge/config/eval/template targets; full facts/journeys/stages/materials authoring remains outside M5R unless separately scoped. |
+| H-01 | limited_proof_path_planned_not_full_h01_closed | M5R-02 proves a minimal formal write path for one or more explicitly named knowledge/config/eval/template targets chosen in its own spec; full facts/journeys/stages/materials authoring remains outside M5R unless separately scoped. |
 | H-02 | runtime_queue_planned_not_closed | M5R-01 persists confirmation decisions; M5R-02 proves no pending/discarded/blocked candidate can write and only approved/edited decisions write. |
 | H-03 | runtime_queue_planned_not_closed | M5R-01 and M5R-02 must prove conflict diff is required before formal write and cannot be skipped into storage. |
 | H-04 | runtime_queue_planned_not_closed | M5R-06 proves template copy independence with true DB/RLS smoke. |

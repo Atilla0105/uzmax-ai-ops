@@ -38,12 +38,25 @@ M5R-00 includes `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-polluti
 
 Impact was limited to two untracked root docs created by the initial patch-target mistake. Cleanup removed those two files and the empty directory from root/main; root/main returned clean. No runtime/source files, tracked root files, customer/order data, secrets, LLM calls, validation, commit, push or PR were affected by the incident.
 
+Containment and cleanup are recorded in this PR. The existing worker-boundary guard is detective evidence, not a new preventive control. No guard/script preventive control lands in M5R-00; repeated patch-target failures remain a known orchestration risk to monitor and handle in later guard or tooling work if needed.
+
+## True DB/RLS Smoke Baseline
+
+Future M5R runtime slices may call a check `true DB/RLS smoke` only when it meets this baseline:
+
+- It uses the real configured smoke database through `UZMAX_RLS_DATABASE_URL` or the repo-approved true DB smoke environment.
+- It runs through the restricted app runtime role and RLS transaction context, not a service-role or privileged Prisma bypass.
+- It sets transaction-scoped `app.org_id` and `app.tenant_id`, or uses the existing helper that sets those values.
+- Where the slice owns data writes, it includes positive same-tenant read/write evidence and negative missing-context or wrong-tenant-context evidence.
+- Repository-only filters, mocks, local arrays and privileged clients do not count as true DB/RLS smoke.
+- If M5R-07 consumes prior API-backed DB/RLS evidence instead of direct DB assertions, it must link the prior runtime evidence and explain why those checks cover the admin runtime path.
+
 ## Planned Queue
 
 | Order | Slice | Required runtime proof | Acceptance boundary |
 |---:|---|---|---|
 | 1 | M5R-01 Confirmation Queue Persistence | Prisma/RLS repository behind M5-03 `InMemoryConfirmationQueueRepository`; true DB create/list/detail/approve/edit/discard/block; tenant isolation; conflict diff; no unconfirmed formal write. | Persists confirmation decisions only; no formal write pipeline yet. |
-| 2 | M5R-02 Formal Write Pipeline | Minimal proof path for knowledge/config/eval/template; pending/discarded/blocked cannot write; approved/edited writes target table or version record; `audit_log` includes confirmer/diff/target ref. | Minimal proof path only, not full H-01 knowledge/resource authoring. |
+| 2 | M5R-02 Formal Write Pipeline | Minimal proof path for one or more explicitly named target paths from knowledge/config/eval/template. The M5R-02 spec must name each target table/version record and list non-closures before implementation. Current read-only inventory suggests `config_version` + `audit_log` + `confirmation_item.auditLogId/status` as the preferred smallest candidate, but M5R-02 must make the final scoped choice. Pending/discarded/blocked cannot write; approved/edited write only to named target table/version records with `audit_log` confirmer/diff/target ref. | Minimal named proof path only, not full H-01 knowledge/resource authoring and not all knowledge/config/eval/template domains in one PR unless explicitly scoped. |
 | 3 | M5R-03 Distill Scheduler + Health Runtime | Connect M5-02 pure functions to `apps/cron`/`apps/worker`; max 10 daily candidates; 7-day pass rate persisted to `distill_health_daily`; 3 days below 40% downshifts weekly; owner alert/audit draft persisted; true DB smoke for downshift/manual recovery. | Runtime distill health only; no real customer messages or real LLM calls. |
 | 4 | M5R-04 AI Member Runtime Control | API+DB emergency stop/recovery/capability toggles; writes `ai_member`/`ai_member_version`/`ai_capability_toggle`; `audit_log` for emergency actions; mobile fallback through real API; no bypass of M3 eval gate/breaker. | Runtime control only; no AI persona/prompt release approval. |
 | 5 | M5R-05 Logs + Analytics Runtime | Real data sources for login/presence/operation logs; fixed board includes confirmation pass rate, distill frequency and AI member state; export as controlled export job/draft, not direct sensitive file. | Runtime analytics/log/export governance only; no sensitive file committed. |
@@ -56,7 +69,7 @@ Impact was limited to two untracked root docs created by the initial patch-targe
 | Slice | Depends on | May run parallel with | Serial points |
 |---|---|---|---|
 | M5R-01 | M5 closeout evidence | none | `packages/db`, migrations, RLS, confirmation API/repository, audit/runtime helper paths |
-| M5R-02 | M5R-01 | none | target formal-write paths, target table/version records, `audit_log`, DB/RLS |
+| M5R-02 | M5R-01 | none | explicitly named formal-write paths, named target table/version records, `audit_log`, DB/RLS |
 | M5R-03 | M5R-01 and usually M5R-02 boundaries | none by default | `apps/cron`, `apps/worker`, `packages/distill`, shared runtime helper, `distill_health_daily`, audit |
 | M5R-04 | M5R-01 and relevant eval-gate/breaker state | none by default | AI member tables/API, audit, emergency runtime control, eval-gate/breaker integration |
 | M5R-05 | M5R-01 plus log/audit data contracts | M5R-06 only if completely disjoint | log/analytics repositories, export job/draft, metric aggregation, any shared audit/log helpers |
@@ -71,7 +84,7 @@ Global serial points for the whole M5R queue: `packages/db`, Prisma schema, migr
 | Item | M5R-00 status | Planned runtime closure |
 |---|---|---|
 | A-03 | planned_runtime_queue_not_closed | M5R-06 proves independent tenant-owned template copies. |
-| H-01 | limited_proof_path_planned_not_full_h01_closed | M5R-02 proves minimal formal writes; full H-01 authoring remains separately scoped. |
+| H-01 | limited_proof_path_planned_not_full_h01_closed | M5R-02 proves minimal formal writes for one or more target paths explicitly named in its own spec; full H-01 authoring remains separately scoped. |
 | H-02 | runtime_queue_planned_not_closed | M5R-01 and M5R-02 prove confirmation before formal write. |
 | H-03 | runtime_queue_planned_not_closed | M5R-01 and M5R-02 prove conflict diff before write. |
 | H-04 | runtime_queue_planned_not_closed | M5R-06 proves template copy runtime independence. |

@@ -36,7 +36,9 @@ The worker used the patching tool without an assigned-worktree working directory
 
 ## Permanent Control
 
-For this continuation, all manual file edits use absolute paths under `/Users/atilla/Documents/uzmax-m5r-00-runtime-integration-plan`, and the required worker-boundary guard is part of validation. No guard or script change is added in this PR; the durable control is process evidence for M5R-00 plus the existing worker-boundary validation.
+Containment and cleanup landed in this PR: the two untracked root docs were removed, root/main returned clean, and the assigned worktree carries the intended docs. The required worker-boundary guard remains detective evidence that the assigned/root state is clean at validation time; it is not a new preventive control for patch-target mistakes.
+
+No new guard or script preventive control lands in M5R-00. Repeated patch-target failures remain a known orchestration risk to monitor and handle in later guard or tooling work if needed.
 
 Institutionalized status: `pending_merge`.
 

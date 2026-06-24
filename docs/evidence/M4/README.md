@@ -56,6 +56,7 @@ Current M4 evidence contains:
 - M4-45 order import queue security closeout evidence: `M4-45-order-import-queue-security-closeout.md`.
 - M4-46 audit closeout readiness evidence: `M4-46-audit-closeout-readiness.md`.
 - M4-47 owner closeout signoff evidence: `M4-47-owner-closeout-signoff.md`.
+- M4-48 owner signoff test alignment evidence: `M4-48-owner-signoff-test-alignment.md`.
 
 Current SPK-02 branch status is `no_api_for_m4__import_snapshot_main_path`: project owner provided the input “暂时没有api” on 2026-06-22. This records only the current M4 no-API branch. It does not claim the order SaaS API is permanently impossible and can be superseded by a new spec/ADR revision/superseding ADR after owner provides API docs, sandbox credentials or controlled test evidence.
 

@@ -14,7 +14,7 @@ AI agent: implement only the allowlisted API/test/docs files in the assigned wor
 
 ## 时间盒
 
-0.5 个工作日. If changed source files exceed 6, net source LOC exceeds 550, new source files exceed 5, or meaningful implementation requires DB/runtime/admin/worker integration, stop and report `BLOCKED` with a smaller split.
+0.5 个工作日. If changed source files exceed 6, net source LOC exceeds 550, new source files exceed 4, or meaningful implementation requires DB/runtime/admin/worker integration, stop and report `BLOCKED` with a smaller split.
 
 ## Spec 类型
 
@@ -30,8 +30,8 @@ feature
   - `apps/api/src/confirmation-queue.repository.ts`
   - `apps/api/src/confirmation-queue.service.ts`
   - `apps/api/src/confirmation-queue.controller.ts`
-  - `apps/api/src/confirmation-queue.ts`
   - `apps/api/src/app.module.ts`
+  - `apps/api/scripts/runtime-compiler.mjs`
   - `scripts/tests/m5-confirmation-queue-api.test.mjs`
 - 说明/备注：
   - Root/main checkout `/Users/atilla/Documents/UZMAX智能运营` is read-only for this worker.
@@ -39,9 +39,9 @@ feature
 
 ## 变更预算与路径分类
 
-- source budget target: changed source files <= 6, net source LOC <= 550, new source files <= 5.
+- source budget target: changed source files <= 6, net source LOC <= 550, new source files <= 4.
 - docs: this spec, M5-03 evidence, M5 evidence README.
-- source: five new `apps/api/src/confirmation-queue.*` files plus existing `apps/api/src/app.module.ts`.
+- source: four new `apps/api/src/confirmation-queue.*` component files plus existing `apps/api/src/app.module.ts` and the narrow `apps/api/scripts/runtime-compiler.mjs` cache compiler path.
 - test: `scripts/tests/m5-confirmation-queue-api.test.mjs`.
 - generated/lock/config/packages/db/packages/distill/apps/admin/apps/worker/apps/cron/engine/capabilities/llm-gateway/evals/raw samples/external provider/adapter: none.
 - New source `rg` conclusion: searched `ConfirmationQueue`, `confirmation-queue`, `confirmation_item`, `conflict_candidate`, `confirmation:` and `确认队列` under `apps/api`, `packages`, `scripts`, `docs/specs` and `docs/evidence/M5`. Existing confirmation queue implementation is limited to M5-01 DB contract vocabulary and M5 readiness/spec references; there is no API controller/service/repository shell. New source belongs under `apps/api/src/confirmation-queue.*` because M5-03 is an API contract slice and must not extend DB, distill, admin, worker or capability packages.
@@ -83,11 +83,12 @@ Single active writing worker for this spec. Touch list is distinct from M5-01 DB
 ## 实施步骤
 
 1. Record start audit evidence for worker/root/GitHub state.
-2. Add split confirmation queue types/repository/service/controller/barrel under `apps/api/src`.
+2. Add split confirmation queue types/repository/service/controller under `apps/api/src`.
 3. Register the controller/service/repository in `apps/api/src/app.module.ts`, defaulting to in-memory repository.
-4. Add focused Node test covering API registration, tenant scoping, permissions, list/detail filters, decision actions, conflict diff enforcement, raw key/unsafe ref rejection, explicit HTTP error mapping and docs/evidence status.
-5. Update M5 evidence README and M5-03 evidence without marking M5 accepted.
-6. Run required validation and commit if all checks pass.
+4. Emit the confirmation queue API modules through the existing API runtime compiler cache used by readiness tests.
+5. Add focused Node test covering API registration, tenant scoping, permissions, list/detail filters, decision actions, conflict diff enforcement, raw key/unsafe ref rejection, explicit HTTP error mapping and docs/evidence status.
+6. Update M5 evidence README and M5-03 evidence without marking M5 accepted.
+7. Run required validation and commit if all checks pass.
 
 ## 通过条件
 
@@ -104,7 +105,7 @@ Single active writing worker for this spec. Touch list is distinct from M5-01 DB
 - Raw carrier keys and unsafe refs are rejected in decision payloads, including `raw`, `body`, `content`, `prompt`, `completion`, `customerPlaintext`, `telegramPayload`, `phone`, `address`, `payment`, `orderId`, `secret`, `http`, `https`, `data`, `blob`, `file` and base64-ish inline refs.
 - Controller maps validation to 400, not found to 404, and permission/access failures to 403.
 - Required validation passes or failures are honestly recorded.
-- Source budget remains within changed source files <= 6, net source LOC <= 550, new source files <= 5.
+- Source budget remains within changed source files <= 6, net source LOC <= 550, new source files <= 4.
 
 ## 失败分支
 

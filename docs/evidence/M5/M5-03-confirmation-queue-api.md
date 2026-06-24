@@ -28,6 +28,7 @@ M5-03 implements a split in-memory API contract shell for:
 - returning audit draft contracts and explicit `formalWrite: false`;
 - rejecting unsafe raw carriers and refs in API decision payloads;
 - proving org + selected tenant scoping and conservative permissions.
+- emitting confirmation queue modules through the API runtime compiler cache used by the readiness Nest HTTP shell.
 
 Allowed files are exactly the allowlist in `docs/specs/M5-03-confirmation-queue-api.md`. Root/main checkout is read-only for this worker.
 
@@ -56,7 +57,9 @@ This evidence, spec, tests and implementation must not include raw/export/jsonl/
 | Command | Result | Notes |
 |---|---|---|
 | `npm ci` | pass | Initial `npm ci` through the Codex npm shim was killed with exit 137 and later hung on `npm --version`; direct `node .../npm-cli.js ci` installed 360 packages with 0 vulnerabilities in the assigned worktree. |
-| `node --test scripts/tests/m5-confirmation-queue-api.test.mjs` | pass | 6/6 tests passed. |
+| `node --test scripts/tests/m5-confirmation-queue-api.test.mjs` | pass | Follow-up rerun: 6/6 tests passed. |
+| `node --test scripts/tests/m1-02-api-access-context.test.mjs` | pass | Follow-up runtime smoke: 5/5 tests passed; Nest boot mapped `/confirmation-queue/items`, `/confirmation-queue/items/:itemId`, and `/confirmation-queue/items/:itemId/decisions` from the API runtime compiler cache. |
+| `npm run test` | pass | Follow-up final rerun with literal `npm run test`; 338/338 tests passed. |
 | `npm run format:check` | pass | Direct npm CLI invocation reported all matched files use Prettier style. |
 | `npm run typecheck` | pass | TypeScript completed with exit 0. |
 | `npm run lint` | pass | ESLint completed with exit 0 after keeping the test below lint's effective line limit. |
@@ -68,13 +71,13 @@ This evidence, spec, tests and implementation must not include raw/export/jsonl/
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok` for linked worktree `codex/m5-03-confirmation-queue-api`. |
 | `npm run guard:worker-boundary -- --assigned /Users/atilla/Documents/uzmax-m5-03-confirmation-queue-api --root /Users/atilla/Documents/UZMAX智能运营` | pass | `worker-write-boundary: ok`. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5-03-confirmation-queue-api.md --include-worktree` | pass | Post-commit guard reported changedFiles 10; categories docs 3, source 6, test 1; source changedFiles 6, netLoc 540, newFiles 5. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5-03-confirmation-queue-api.md --include-worktree` | pass | Follow-up rerun reported changedFiles 10; categories docs 3, source 6, test 1; source changedFiles 6, netLoc 550, newFiles 4. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors in post-commit diff. |
 
 ## Spec Compliance Review
 
-- Allowlist compliance: only the ten M5-03 allowlist files are changed.
-- Source budget: changed source files = 6; new source files = 5; net source LOC = 540, within target `<= 550`.
+- Allowlist compliance: only M5-03 allowlist files are changed.
+- Source budget: follow-up branch diff is changed source files = 6, new source files = 4, net source LOC = 550, at the M5-03 target.
 - Scope compliance: implementation is an in-memory `apps/api` API contract shell. It has no Prisma/DB runtime, distill scheduler, worker/cron/admin UI, provider call or formal write path.
 - Sensitive-data boundary: raw carrier keys and unsafe refs are rejected in decision payloads; this evidence and tests use controlled refs and synthetic UUIDs only.
 - Acceptance status: H-02/H-03/I-02 are `api_contract_supported_not_closed`; M5 is not accepted.

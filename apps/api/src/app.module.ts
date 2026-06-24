@@ -19,11 +19,9 @@ import {
   ConversationTicketService,
   InMemoryConversationTicketRepository
 } from "./conversation-ticket.ts";
-import {
-  ConfirmationQueueController,
-  ConfirmationQueueService,
-  InMemoryConfirmationQueueRepository
-} from "./confirmation-queue.ts";
+import { ConfirmationQueueController } from "./confirmation-queue.controller.ts";
+import { InMemoryConfirmationQueueRepository } from "./confirmation-queue.repository.ts";
+import { ConfirmationQueueService } from "./confirmation-queue.service.ts";
 import {
   CUSTOMER_ASSET_REPOSITORY,
   InMemoryCustomerAssetRepository

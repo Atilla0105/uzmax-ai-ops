@@ -350,15 +350,14 @@ async function importConfirmationQueueApiSource() {
       "@nestjs/common": nestCommon
     }
   );
-  const barrelSource = replaceImports(read("apps/api/src/confirmation-queue.ts"), {
-    "./confirmation-queue.controller.ts": controllerModuleUrl,
-    "./confirmation-queue.repository.ts": repositoryModuleUrl,
-    "./confirmation-queue.service.ts": serviceModuleUrl,
-    "./confirmation-queue.types.ts": typesModuleUrl
-  });
   const moduleUrl = writeTempModule(
     "confirmation-queue.mjs",
-    transpileSource(barrelSource)
+    [
+      `export * from "${controllerModuleUrl}";`,
+      `export * from "${repositoryModuleUrl}";`,
+      `export * from "${serviceModuleUrl}";`,
+      `export * from "${typesModuleUrl}";`
+    ].join("\n")
   );
   return { module: await import(moduleUrl), moduleUrl };
 }

@@ -2,6 +2,10 @@
 
 M4 evidence tracks order/customer milestone records: SPK-02 order SaaS API branch decision, import-snapshot main path evidence, customer asset/order snapshot workflows, fields/tags, quote records and identity merge/split evidence.
 
+Current closeout/signoff record: `M4-47-owner-closeout-signoff.md`.
+
+M4 current status: `owner_accepted_m4_milestone_evidence`. Project owner accepted M4 milestone evidence on 2026-06-24 with “m4可以签收了，通过。” This means M4 evidence is signed off for the current milestone; it does not mean production, GA-0, real customer traffic, customer LLM, production Redis/worker deployment, formal alert routing, real customer/order data, production eval gate or 1.0 release approval.
+
 Current M4 evidence contains:
 
 - SPK-02 no-API branch evidence: `spikes/SPK-02-order-saas-api/manifest.md`, `docs/specs/SPK-02-order-api.md`, `docs/adr/ADR-B02-order-api.md`.
@@ -51,6 +55,7 @@ Current M4 evidence contains:
 - M4-44 order-read runtime eval gate evidence: `M4-44-order-read-runtime-eval-gate.md`.
 - M4-45 order import queue security closeout evidence: `M4-45-order-import-queue-security-closeout.md`.
 - M4-46 audit closeout readiness evidence: `M4-46-audit-closeout-readiness.md`.
+- M4-47 owner closeout signoff evidence: `M4-47-owner-closeout-signoff.md`.
 
 Current SPK-02 branch status is `no_api_for_m4__import_snapshot_main_path`: project owner provided the input “暂时没有api” on 2026-06-22. This records only the current M4 no-API branch. It does not claim the order SaaS API is permanently impossible and can be superseded by a new spec/ADR revision/superseding ADR after owner provides API docs, sandbox credentials or controlled test evidence.
 
@@ -72,7 +77,7 @@ Current acceptance mapping:
 
 M4 current evidence boundary:
 
-- No production, GA-0, real customer traffic, customer LLM, formal 1.0 release signoff or order/customer milestone closeout is approved by this README.
+- No production, GA-0, real customer traffic, customer LLM or formal 1.0 release signoff is approved by this README; M4-47 only records project-owner acceptance of M4 milestone evidence.
 - No external order API, LLM/provider, Telegram, real customer system or production connector call is represented as evidence here.
 - No raw order/customer data belongs in this directory: no CSV/XLSX exports, raw payloads, screenshots, order IDs, phone numbers, addresses, payment information, customer plaintext, credentials or env files.
 - Future admin order UI wording for the no-API branch must be `订单数据主路径：导入快照`; do not present the branch as a temporary API outage.
@@ -83,8 +88,9 @@ M4 current evidence boundary:
 - customer asset admin UI/E2E beyond the M4-43 smoke-only runtime workflow remains future scope for formal auth, owner production flow, full aggregation and release signoff.
 - M4-44 supersedes the previous E-04 tracking token `still_requires_m4_44_ai_order_read_runtime` only for the controlled runtime-to-eval bridge; real fixtures, provider judge and production eval gate remain future scope.
 - M4-45 supersedes the previous J-02 tracking token `still_requires_m4_45_queue_security_closeout` for opt-in queue smoke evidence; M4-46 clears the follow-up npm audit high blocker. Production worker/Redis deployment remains future scope.
-- M4 status after M4-46 local validation is `m4_ready_for_owner_closeout_review`: the M4 no-API order import path, customer asset runtime smoke, order-read no-fabrication bridge, queue runtime smoke and audit high blocker all have evidence, but owner final closeout/release decisions remain separate.
+- M4 status after M4-47 owner signoff is `owner_accepted_m4_milestone_evidence`: the M4 no-API order import path, customer asset runtime smoke, order-read no-fabrication bridge, queue runtime smoke and audit high blocker all have evidence accepted for the M4 milestone. Production/release decisions remain separate.
 - M4-01, M4-02, M4-04, M4-05, M4-06, M4-07, M4-08, M4-09, M4-10, M4-11, M4-12, M4-13, M4-14, M4-15, M4-16, M4-17, M4-18, M4-19, M4-20, M4-21, M4-22, M4-23, M4-24, M4-25, M4-26, M4-27, M4-28, M4-29, M4-30, M4-31, M4-32, M4-33, M4-34, M4-35, M4-36, M4-37, M4-38, M4-39, M4-40, M4-41, M4-42, M4-43, M4-44, M4-45 and M4-46 are foundation/M4-readiness evidence only. M4-33 removed the temporary-branch “schema never applied to true Supabase” uncertainty and added explicit API RLS Prisma runtime readiness; M4-34 further removes the dev main DB baseline blocker by applying M1-M4 migrations to `uzmax-dev` and proving synthetic RLS isolation; M4-35 adds a CI/dev true DB runtime smoke for worker-generated import rows through DB/RLS and API repository reads; M4-36 adds a CI/dev true DB HTTP smoke through real Nest order import routes with a smoke-only access-context service; M4-37 adds a CI/dev true DB HTTP smoke through the existing Admin order import API client; M4-38 adds a CI/dev browser-visible fresh true DB smoke through the Admin shell; M4-39 adds a CI/dev browser-visible stale/missing true DB smoke through the same Admin shell without exposing status refs on handoff; M4-40 adds a CI-targeted browser submit smoke through API POST, worker dispatch/persistence and true DB readback; M4-41 adds CI-proven real Supabase Storage upload/download into worker Storage intake before the same true DB readback, with `db_residue=0` and `storage_object_residue=0`; M4-42 adds CI-proven operator-clicked Storage TSV metadata submit, true DB readback and stale/missing handoff, with `db_residue=0` and `storage_object_residue=0`; M4-43 adds CI-proven customer asset API/admin/browser true DB/RLS runtime workflow and restore audit persistence evidence in latest archived full PR run `28043835289`, job `83016709755`, with `residue=0`; M4-44 adds controlled runtime-to-eval bridge evidence for order-read no-fabrication; M4-45 adds opt-in BullMQ/Redis runtime smoke evidence for queue retry, duplicate enqueue, Storage lock and health alerts; M4-46 clears npm audit high findings. They still do not close broader runtime/admin/E2E blockers beyond the M4-43 customer asset smoke workflow, formal auth runtime, owner real import sample evidence, XLSX parser, production worker/Redis deployment, full durable SQL/RLS matrix, customer asset history-order-quote-ticket aggregation, real eval fixtures, LLM/provider judge, production eval gate, production readiness or release signoff.
+- M4-47 records project-owner acceptance of M4 milestone evidence and does not close broader runtime/admin/E2E blockers, production readiness, GA-0 or 1.0 release.
 - Supabase advisor after M4-34 returned security lints `0`; performance lints remain and should be handled in a dedicated DB hardening slice, especially missing FK indexes and RLS `current_setting()` initplan optimization. This is not counted as E-02 closed.
 
 This M4 directory is an evidence index, not a runtime implementation or release gate approval.

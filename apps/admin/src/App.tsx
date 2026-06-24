@@ -5,6 +5,7 @@ import { M2ConversationTicketShell } from "./M2ConversationTicketShell";
 import { M3KnowledgeEvalShell } from "./M3KnowledgeEvalShell";
 import { M4CustomerAssetShell } from "./M4CustomerAssetShell";
 import { M4OrderPathStatusShell } from "./M4OrderPathStatusShell";
+import { M5ConfirmationQueueShell } from "./M5ConfirmationQueueShell";
 
 const tenants = [
   {
@@ -191,6 +192,8 @@ export function App() {
           <M4OrderPathStatusShell tenantName={selectedTenant.name} />
 
           <M4CustomerAssetShell tenantName={selectedTenant.name} />
+
+          <M5ConfirmationQueueShell tenantName={selectedTenant.name} />
 
           <section className="panel release-panel" data-testid="release-readiness">
             <div className="section-heading">

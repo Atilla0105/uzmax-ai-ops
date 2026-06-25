@@ -51,6 +51,7 @@ const closeoutSteps = [
 ];
 
 const docs = {
+  ci: text(".github/workflows/ci.yml"),
   evidence: text("docs/evidence/M5R/M5R-08-true-integration-closeout.md"),
   m5Index: text("docs/evidence/M5/README.md"),
   m5rIndex: text("docs/evidence/M5R/README.md"),
@@ -129,11 +130,32 @@ describe("M5R-08 true integration closeout", () => {
     );
   });
 
+  it("wires CI through a separate M5R flag and fails closed on missing secret", () => {
+    const m4TrueDbClassifier = docs.ci.match(
+      /case "\$file" in\s+\.github\/workflows\/ci\.yml[\s\S]*?true_db_smoke_changed=true/
+    )?.[0];
+
+    assert.ok(m4TrueDbClassifier);
+    assert.doesNotMatch(m4TrueDbClassifier, /m5r-true-integration-closeout|M5R-08/);
+    assert.match(docs.ci, /m5r_true_db_closeout_changed=false/);
+    assert.match(docs.ci, /run_m5r_true_db_closeout=false/);
+    assert.match(
+      docs.ci,
+      /scripts\/tests\/m5r-true-integration-closeout\.test\.mjs[\s\S]*?m5r_true_db_closeout_changed=true/
+    );
+    assert.match(docs.ci, /UZMAX_RLS_DATABASE_URL_BASE/);
+    assert.match(docs.ci, /UZMAX_RLS_DATABASE_URL secret is required/);
+    assert.match(
+      docs.ci,
+      /run_core == 'true'[\s\S]*run_true_db_smoke == 'true'[\s\S]*run_m5r_true_db_closeout == 'true'/
+    );
+  });
+
   it("records closeout status without owner acceptance or production/release claims", () => {
     assert.match(docs.spec, /M5R-08 True Integration Closeout/);
     assert.match(docs.spec, /scripts\/tests\/m5r-true-integration-closeout\.test\.mjs/);
-    assert.match(docs.evidence, /blocked pending a true integration DB\/RLS smoke/);
-    assert.match(docs.evidence, /blocked_missing_env/);
+    assert.match(docs.evidence, /pending_secret_backed_ci/);
+    assert.match(docs.evidence, /M5R true integration closeout/);
     assert.match(docs.m5rIndex, /M5R-08 True Integration Closeout/);
     assert.match(
       docs.m5rIndex,
@@ -141,11 +163,11 @@ describe("M5R-08 true integration closeout", () => {
     );
     assert.match(
       docs.m5Index,
-      /m5_runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted/
+      /m5_runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted/
     );
     assert.match(
       docs.m5rIndex,
-      /m5r_08_true_integration_closeout_blocked_missing_true_db_env_not_owner_accepted/
+      /m5r_08_true_integration_closeout_pending_secret_backed_ci_not_owner_accepted/
     );
     assert.doesNotMatch(
       `${docs.spec}\n${docs.evidence}\n${docs.m5Index}\n${docs.m5rIndex}`,

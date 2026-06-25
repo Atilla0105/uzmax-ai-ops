@@ -62,6 +62,7 @@ jobs:
           redis_smoke_changed=false
           spike_changed=false
           true_db_smoke_changed=false
+          m5r_true_db_closeout_changed=false
 
           if [ -z "$changed_files" ]; then
             docs_only=false
@@ -101,6 +102,12 @@ jobs:
                 true_db_smoke_changed=true
                 ;;
             esac
+
+            case "$file" in
+              .github/workflows/ci.yml|scripts/tests/m5r-true-integration-closeout.test.mjs|docs/specs/M5R-08-true-integration-closeout.md|docs/specs/M5R-08-true-db-ci-closeout.md|docs/evidence/M5R/M5R-08-true-integration-closeout.md|docs/evidence/M5R/README.md|docs/evidence/M5/README.md)
+                m5r_true_db_closeout_changed=true
+                ;;
+            esac
           done <<< "$changed_files"
 
           force_full="${{ github.event_name == 'workflow_dispatch' && inputs.full }}"
@@ -109,6 +116,7 @@ jobs:
           run_spikes=false
           run_playwright=false
           run_true_db_smoke=false
+          run_m5r_true_db_closeout=false
 
           if [ "$docs_only" != "true" ] || [ "$force_full" = "true" ]; then
             run_core=true
@@ -125,6 +133,9 @@ jobs:
           if [ "$true_db_smoke_changed" = "true" ] || [ "$force_full" = "true" ]; then
             run_true_db_smoke=true
           fi
+          if [ "$m5r_true_db_closeout_changed" = "true" ] || [ "$force_full" = "true" ]; then
+            run_m5r_true_db_closeout=true
+          fi
 
           {
             echo "docs_only=$docs_only"
@@ -132,11 +143,13 @@ jobs:
             echo "redis_smoke_changed=$redis_smoke_changed"
             echo "spike_changed=$spike_changed"
             echo "true_db_smoke_changed=$true_db_smoke_changed"
+            echo "m5r_true_db_closeout_changed=$m5r_true_db_closeout_changed"
             echo "run_core=$run_core"
             echo "run_redis_smoke=$run_redis_smoke"
             echo "run_spikes=$run_spikes"
             echo "run_playwright=$run_playwright"
             echo "run_true_db_smoke=$run_true_db_smoke"
+            echo "run_m5r_true_db_closeout=$run_m5r_true_db_closeout"
             echo "changed_files<<EOF"
             printf '%s\n' "$changed_files"
             echo "EOF"
@@ -151,11 +164,13 @@ jobs:
           echo "redis_smoke_changed=${{ steps.path-scope.outputs.redis_smoke_changed }}"
           echo "spike_changed=${{ steps.path-scope.outputs.spike_changed }}"
           echo "true_db_smoke_changed=${{ steps.path-scope.outputs.true_db_smoke_changed }}"
+          echo "m5r_true_db_closeout_changed=${{ steps.path-scope.outputs.m5r_true_db_closeout_changed }}"
           echo "run_core=${{ steps.path-scope.outputs.run_core }}"
           echo "run_redis_smoke=${{ steps.path-scope.outputs.run_redis_smoke }}"
           echo "run_spikes=${{ steps.path-scope.outputs.run_spikes }}"
           echo "run_playwright=${{ steps.path-scope.outputs.run_playwright }}"
           echo "run_true_db_smoke=${{ steps.path-scope.outputs.run_true_db_smoke }}"
+          echo "run_m5r_true_db_closeout=${{ steps.path-scope.outputs.run_m5r_true_db_closeout }}"
           echo "changed_files:"
           printf '%s\n' "$UZMAX_CI_CHANGED_FILES"
       - uses: actions/setup-node@v4
@@ -204,7 +219,10 @@ jobs:
       - run: npm run guard:workspace
       - if: github.event_name == 'pull_request'
         run: npm run guard:pr-shape -- --base "${{ steps.guard-base.outputs.base }}"
-      - if: steps.path-scope.outputs.run_core == 'true'
+      - if:
+          steps.path-scope.outputs.run_core == 'true' ||
+          steps.path-scope.outputs.run_true_db_smoke == 'true' ||
+          steps.path-scope.outputs.run_m5r_true_db_closeout == 'true'
         run: npm run -w @uzmax/db prisma:generate
       - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
         run: npx playwright install --with-deps chromium
@@ -225,6 +243,19 @@ jobs:
           node packages/db/scripts/run-m4-order-import-storage-backed-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-operator-workflow-smoke.mjs
           node packages/db/scripts/run-m4-customer-asset-runtime-workflow-smoke.mjs
+      - if: steps.path-scope.outputs.run_m5r_true_db_closeout == 'true'
+        name: M5R true integration closeout
+        env:
+          UZMAX_RLS_DATABASE_URL_BASE: ${{ secrets.UZMAX_RLS_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${UZMAX_RLS_DATABASE_URL_BASE:-}" ]; then
+            echo "UZMAX_RLS_DATABASE_URL secret is required"
+            exit 1
+          fi
+          export UZMAX_RLS_DATABASE_URL="${UZMAX_RLS_DATABASE_URL_BASE}&connection_limit=4&pool_timeout=60"
+          node --test scripts/tests/m5r-true-integration-closeout.test.mjs
       - if: steps.path-scope.outputs.run_spikes == 'true'
         name: SPK-03 RLS Prisma pool spike
         env:

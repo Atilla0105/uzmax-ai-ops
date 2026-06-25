@@ -37,7 +37,7 @@ test("M5R-07 spec and evidence keep admin-only runtime boundaries explicit", () 
   );
   assert.match(
     files.readme,
-    /M5R-08 True Integration Closeout \| `m5r_08_true_integration_closeout_blocked_missing_true_db_env_not_owner_accepted`/
+    /M5R-08 True Integration Closeout \| `m5r_08_true_integration_closeout_pending_secret_backed_ci_not_owner_accepted`/
   );
 });
 

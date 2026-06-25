@@ -84,6 +84,18 @@ The M6-05 AI safety/eval-gate record maps F-01 through F-06, G-01 through G-06, 
 
 This record does not approve GA-0, production prompt/knowledge/model/persona publishing, customer LLM, real provider calls, real customer/order data, external SaaS onboarding or 1.0 release. G-04 owner language blind review, G-06 full >=200 eval set, L-02 real Bot leave-ticket drill and production `llm_call_log` rollup remain open release gaps.
 
+## M6-06 Telegram Bot GA-0 Main Path
+
+The M6-06 Bot-only readiness record maps C-01, C-02, C-03b, C-06, J-04, L-01 and L-02 to current repo evidence:
+
+- M2-02 Telegram Bot ingress covers bounded text, image, voice and callback normalization, secret fail-closed behavior, duplicate `update_id` dedupe and unsupported/Business-deferred classification.
+- M2-03/M2-07 conversation handoff/ticket contracts cover manual escalation, ticket draft metadata, AI suspended state, in-flight message cancel semantics and HTTP error hardening.
+- ADR-B01/SPK-01 keeps Telegram Business in the `no_go_owner_inputs_missing` branch; Business auto-reply, Business draft-send and Business feasibility are not opened.
+- M6-03 queue evidence and M6-05 AI safety evidence remain dependencies for any later GA-0 checklist.
+- `docs/runbooks/telegram-bot-main-path.md` covers bot no response, duplicate/out-of-order ingress, Business-disabled handling and manual escalation failure branches.
+
+This record does not approve GA-0, production Bot traffic, real customer data, production Bot tokens, production webhook secrets, Telegram Business automatic reply, outbound Bot sending, production worker/queue deployment or 1.0 release. Real staging Bot evidence, DB-backed dedupe/order restore, worker/engine consumer processing, outbound leave-ticket behavior and final owner GA-0 open decision remain open release gaps.
+
 ## Not Approved
 
 - GA-0 is not open.

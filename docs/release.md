@@ -70,6 +70,20 @@ The M6-04 RLS/authz matrix records B-01 through B-05 support from current repo e
 
 This matrix does not approve production DB/RLS, GA-0, real customer/order data, customer LLM, external SaaS onboarding or 1.0 release.
 
+## M6-05 AI Safety Eval Gates
+
+The M6-05 AI safety/eval-gate record maps F-01 through F-06, G-01 through G-06, J-04 and L-02 to current repo evidence:
+
+- ADR-003 keeps customer LLM blocked for real customer messages, screenshots, voice transcripts and customer profiles.
+- M3-02 LLM gateway evidence supports mock model-all-down routing and accounting without raw prompt/completion exposure or real provider calls.
+- M3-03 eval-gate evidence refuses prompt, knowledge, model route and persona publish decisions when gates are failed, blocked, pending, stale, mismatched or incomplete.
+- M3-08 engine evidence suppresses unsafe redline output and records fuse radius behavior without echoing unsafe content.
+- M4 order-read no-fabrication evidence requires handoff when order data is missing, stale or degraded.
+- M5R-04 AI member runtime evidence supports emergency stop, recovery and capability enable checks with controlled evidence refs.
+- `docs/runbooks/ai-safety-fuse.md` covers model-all-down, redline bad send and AI fuse/recovery release drills.
+
+This record does not approve GA-0, production prompt/knowledge/model/persona publishing, customer LLM, real provider calls, real customer/order data, external SaaS onboarding or 1.0 release. G-04 owner language blind review, G-06 full >=200 eval set, L-02 real Bot leave-ticket drill and production `llm_call_log` rollup remain open release gaps.
+
 ## Not Approved
 
 - GA-0 is not open.

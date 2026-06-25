@@ -141,9 +141,7 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
         </div>
         <div className="m5-logs-mode">
           <strong>{tenantName}</strong>
-          <span>
-            {runtimeEnabled ? "runtime API client" : "synthetic local shell"}
-          </span>
+          <span>{runtimeEnabled ? "runtime API client" : "synthetic local shell"}</span>
         </div>
       </div>
       {runtimeEnabled ? (

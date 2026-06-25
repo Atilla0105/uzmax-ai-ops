@@ -25,7 +25,10 @@ test("M5R-07 spec and evidence keep admin-only runtime boundaries explicit", () 
   for (const slice of ["M5R-01", "M5R-04", "M5R-05", "M5R-06"]) {
     assert.match(files.evidence, new RegExp(slice));
   }
-  assert.match(files.readme, /M5R-06 Template Copy Runtime \| `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted`/);
+  assert.match(
+    files.readme,
+    /M5R-06 Template Copy Runtime \| `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted`/
+  );
   assert.match(files.readme, /M5R-07 Admin Runtime Wiring \| `active/);
 });
 

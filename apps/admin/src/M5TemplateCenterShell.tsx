@@ -75,9 +75,7 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
         </div>
         <div className="m5-template-mode">
           <strong>{tenantName}</strong>
-          <span>
-            {runtimeEnabled ? "runtime API client" : "synthetic local shell"}
-          </span>
+          <span>{runtimeEnabled ? "runtime API client" : "synthetic local shell"}</span>
         </div>
       </div>
       {runtimeEnabled ? (

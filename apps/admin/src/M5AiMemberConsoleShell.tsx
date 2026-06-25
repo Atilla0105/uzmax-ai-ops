@@ -23,8 +23,9 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
   const memberId = getM5RuntimeAiMemberId();
   const [runtimeResult, setRuntimeResult] = useState("");
   const [status, setStatus] = useState<AiMemberStatus>("breaker_offline");
-  const [capabilities, setCapabilities] =
-    useState<Record<AiMemberCapabilityKey, boolean>>(initialAiMemberCapabilities);
+  const [capabilities, setCapabilities] = useState<
+    Record<AiMemberCapabilityKey, boolean>
+  >(initialAiMemberCapabilities);
   const [draft, setDraft] = useState<AiMemberActionDraft | undefined>();
   const [reasonExpanded, setReasonExpanded] = useState(false);
 
@@ -32,7 +33,10 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
     action: AiMemberActionDraft["action"],
     options: Partial<Pick<AiMemberActionDraft, "capabilityKey" | "nextEnabled">> = {}
   ) => {
-    if (runtimeEnabled && (action === "emergency_stop" || action === "recover_online")) {
+    if (
+      runtimeEnabled &&
+      (action === "emergency_stop" || action === "recover_online")
+    ) {
       await applyRuntimeAction(action);
       return;
     }
@@ -184,7 +188,9 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
           <span>{member.breakerReasonRef}</span>
           {reasonExpanded ? <small>3-day pass rate below recovery floor.</small> : null}
         </div>
-        <button type="button" onClick={() => setReasonExpanded((visible) => !visible)}>View breaker reason</button>
+        <button type="button" onClick={() => setReasonExpanded((visible) => !visible)}>
+          View breaker reason
+        </button>
       </div>
 
       <div className="m5-ai-actions" aria-label="AI member local actions">
@@ -197,8 +203,12 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
         <button type="button" onClick={() => void createDraft("recover_online")}>
           {actionLabel(runtimeEnabled, "Recover API", "Draft recovery")}
         </button>
-        <button type="button" disabled>Confirm AI recovery disabled</button>
-        <button type="button" disabled>Production action disabled</button>
+        <button type="button" disabled>
+          Confirm AI recovery disabled
+        </button>
+        <button type="button" disabled>
+          Production action disabled
+        </button>
       </div>
 
       <div className="m5-ai-mobile-fallback" data-testid="m5-ai-mobile-fallback">
@@ -206,7 +216,11 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
           Emergency stop fallback
         </button>
         <button type="button" onClick={() => void createDraft("recover_online")}>
-          {actionLabel(runtimeEnabled, "Recover API fallback", "Draft recovery fallback")}
+          {actionLabel(
+            runtimeEnabled,
+            "Recover API fallback",
+            "Draft recovery fallback"
+          )}
         </button>
       </div>
 

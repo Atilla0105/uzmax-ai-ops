@@ -115,7 +115,11 @@ export function LogTable({
   );
 }
 
-function Cell(props: { code?: true; label: string; value: boolean | string | undefined }) {
+function Cell(props: {
+  code?: true;
+  label: string;
+  value: boolean | string | undefined;
+}) {
   const { code, label, value } = props;
   const text = String(value ?? "");
   return <td data-label={label}>{code ? <code>{text}</code> : text}</td>;

@@ -196,22 +196,39 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
             data-testid={`m5-card-${item.kind}`}
             key={item.id}
           >
-            <button aria-label={`Select ${item.kind} candidate`} className="m5-card-select" type="button" onClick={() => setSelectedIndex(index)}>
+            <button
+              aria-label={`Select ${item.kind} candidate`}
+              className="m5-card-select"
+              type="button"
+              onClick={() => setSelectedIndex(index)}
+            >
               <span>{item.kind}</span>
               <strong>{item.summary}</strong>
-              <small>{item.target} / {item.confidence}</small>
+              <small>
+                {item.target} / {item.confidence}
+              </small>
             </button>
             <div className="m5-card-actions">
-              <button type="button" onClick={() => void markDecision(item.id, "approved")}>
+              <button
+                type="button"
+                onClick={() => void markDecision(item.id, "approved")}
+              >
                 Approve
               </button>
-              <button className="m5-desktop-edit" type="button" onClick={() => setEditId(item.id)}>
+              <button
+                className="m5-desktop-edit"
+                type="button"
+                onClick={() => setEditId(item.id)}
+              >
                 Edit
               </button>
               <button className="m5-mobile-edit" type="button" disabled>
                 Edit on desktop
               </button>
-              <button type="button" onClick={() => void markDecision(item.id, "discarded")}>
+              <button
+                type="button"
+                onClick={() => void markDecision(item.id, "discarded")}
+              >
                 Discard
               </button>
               <button type="button" onClick={() => void toggleDetails(item)}>

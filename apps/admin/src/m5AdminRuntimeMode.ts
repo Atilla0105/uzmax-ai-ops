@@ -15,9 +15,7 @@ declare global {
 export const defaultM5RuntimeAiMemberId = "00000000-0000-4000-8000-000000000507";
 
 export function readM5AdminRuntimeMode() {
-  return typeof window === "undefined"
-    ? undefined
-    : window.__UZMAX_M5R_ADMIN_RUNTIME__;
+  return typeof window === "undefined" ? undefined : window.__UZMAX_M5R_ADMIN_RUNTIME__;
 }
 
 export function isM5AdminRuntimeEnabled(area: RuntimeArea) {

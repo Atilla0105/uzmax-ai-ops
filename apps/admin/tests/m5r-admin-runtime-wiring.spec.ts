@@ -6,7 +6,9 @@ const requests: string[] = [];
 test.beforeEach(async ({ page }) => {
   requests.length = 0;
   await page.addInitScript((id) => {
-    (window as Window & { __UZMAX_M5R_ADMIN_RUNTIME__?: unknown }).__UZMAX_M5R_ADMIN_RUNTIME__ = {
+    (
+      window as Window & { __UZMAX_M5R_ADMIN_RUNTIME__?: unknown }
+    ).__UZMAX_M5R_ADMIN_RUNTIME__ = {
       aiMemberId: id,
       enabled: true
     };
@@ -105,9 +107,7 @@ test("routes 320px confirmation and AI emergency controls through API", async ({
       `/ai-members/${memberId}/runtime-control/recover`
     ])
   );
-  expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(
-    320
-  );
+  expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
 async function routeRuntimeApis(page: Page) {

@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import {
   createTemplateCopyDraft,
   templateCenterCards,
@@ -14,7 +13,6 @@ import {
 } from "./m5AdminRuntimeMode";
 import "./m5-template-center-shell.css";
 import { createTemplateCopyApiClient } from "./templateCopyApiClient";
-
 export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
   const runtimeEnabled = isM5AdminRuntimeEnabled("templateCopy");
   const [runtimeResult, setRuntimeResult] = useState("");
@@ -22,7 +20,6 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
   const [draft, setDraft] = useState<TemplateCopyDraft | undefined>();
   const visibleCards = templateCenterCards.filter((card) => card.kind === kind);
   const selectedCard = visibleCards[0] ?? templateCenterCards[0];
-
   const draftCopy = async () => {
     if (runtimeEnabled) {
       try {
@@ -65,7 +62,6 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
       })
     );
   };
-
   return (
     <section className="panel m5-template-shell" data-testid="m5-template-center-shell">
       <div className="m5-template-heading">
@@ -83,7 +79,6 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
           {runtimeResult || "Runtime API client mode waiting."}
         </p>
       ) : null}
-
       <div className="m5-template-tabs" data-testid="m5-template-tabs">
         {templateCenterKinds.map((templateKind) => (
           <button
@@ -101,7 +96,6 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
           </button>
         ))}
       </div>
-
       <div className="m5-template-layout">
         <div className="m5-template-cards" data-testid="m5-template-cards">
           {visibleCards.map((card) => (
@@ -118,7 +112,6 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
             </article>
           ))}
         </div>
-
         <div className="m5-template-copy" data-testid="m5-template-copy">
           <button type="button" onClick={() => void draftCopy()}>
             Draft tenant copy
@@ -148,15 +141,12 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
     </section>
   );
 }
-
 function runtimeTemplateKind(kind: TemplateCenterKind) {
   return kind === "knowledge" ? "config" : kind;
 }
-
 function runtimeSourceTemplateRef(kind: TemplateCenterKind) {
   return `controlled://group-template/${runtimeTemplateKind(kind)}/m5r-07`;
 }
-
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "template copy API request failed";
 }

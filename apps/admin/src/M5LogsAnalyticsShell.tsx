@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import {
   createLogsAnalyticsExportDraft,
   fixedAnalyticsBoardItems,
@@ -25,7 +24,6 @@ import {
   type RuntimeTables
 } from "./m5LogsAnalyticsRuntime";
 import "./m5-logs-analytics-shell.css";
-
 export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
   const runtimeEnabled = isM5AdminRuntimeEnabled("logsAnalytics");
   const [runtimeResult, setRuntimeResult] = useState("");
@@ -44,7 +42,6 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
   const activeTables = runtimeTables ?? logsAnalyticsLogTables;
   const table = activeTables[logType];
   const rows = table.rows.filter((row) => rowMatches(row, query, highRiskOnly));
-
   const toggleDimension = (dimension: LogsAnalyticsDimension) => {
     setSelectedDimensions((current) =>
       current.includes(dimension)
@@ -52,7 +49,6 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
         : [...current, dimension]
     );
   };
-
   const draftExport = async () => {
     if (runtimeEnabled) {
       try {
@@ -96,7 +92,6 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
       })
     );
   };
-
   useEffect(() => {
     if (!runtimeEnabled) {
       setRuntimeTables(undefined);
@@ -131,7 +126,6 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
       active = false;
     };
   }, [runtimeEnabled]);
-
   return (
     <section className="panel m5-logs-shell" data-testid="m5-logs-analytics-shell">
       <div className="m5-logs-heading">
@@ -149,7 +143,6 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
           {runtimeResult || "Runtime API client mode waiting."}
         </p>
       ) : null}
-
       <div className="m5-logs-board" data-testid="m5-analytics-board">
         {boardItems.map((item) => (
           <article className="m5-logs-metric" key={item.key}>
@@ -159,14 +152,12 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
           </article>
         ))}
       </div>
-
       <div className="m5-logs-mobile-summary" data-testid="m5-mobile-metrics">
         <strong>{fixedAnalyticsBoardItems[0].label}</strong>
         <span>{boardItems[0].value}</span>
         <strong>{fixedAnalyticsBoardItems[8].label}</strong>
         <span>{boardItems[8].value}</span>
       </div>
-
       <div
         className="m5-logs-desktop-controls"
         data-testid="m5-dimension-export-controls"
@@ -208,7 +199,6 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
           )}
         </div>
       </div>
-
       <div className="m5-log-center" data-testid="m5-log-center">
         <div className="m5-log-filters" data-testid="m5-log-filters">
           <div className="m5-log-type-tabs" aria-label="Log type">
@@ -247,11 +237,9 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
     </section>
   );
 }
-
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "logs runtime API request failed";
 }
-
 function rowMatches(row: LogsAnalyticsLogRow, query: string, highRiskOnly: boolean) {
   if (highRiskOnly && row.highRisk !== true) return false;
   return row.values.join(" ").toLowerCase().includes(query.trim().toLowerCase());

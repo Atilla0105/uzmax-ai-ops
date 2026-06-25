@@ -3,7 +3,6 @@ type Fetcher = (
   input: string,
   init?: Init
 ) => Promise<{ json(): Promise<unknown>; ok: boolean; status: number }>;
-
 export function createTemplateCopyApiClient({
   basePath = "/template-copy",
   fetcher
@@ -21,14 +20,12 @@ export function createTemplateCopyApiClient({
       }).then(record)
   };
 }
-
 async function request(fetcher: Fetcher, path: string, init: Init) {
   const response = await fetcher(path, init);
   if (!response.ok)
     throw new Error(`template copy API request failed with status ${response.status}`);
   return response.json();
 }
-
 function record(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("template copy response must be an object");

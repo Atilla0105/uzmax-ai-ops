@@ -56,10 +56,10 @@ Pre-validation source budget check after tightening:
 |---|---|
 | changed source files | 10 |
 | new source files | 5 |
-| net source LOC | 598 |
+| net source LOC | 563 |
 | source budget status | within default AGENTS budget |
 
-Tracked shell diff at the time of this evidence update was reduced from the early broad wiring draft to keep total source net LOC under 600. No `large_change_exception` is declared.
+Tracked shell diff at the time of this evidence update was reduced from the early broad wiring draft to keep total source net LOC under 600. Final shell line counts: `apps/admin/src/M5AiMemberConsoleShell.tsx` 247 lines and `apps/admin/src/M5ConfirmationQueueShell.tsx` 239 lines. No `large_change_exception` is declared.
 
 ## Validation
 
@@ -71,6 +71,7 @@ Tracked shell diff at the time of this evidence update was reduced from the earl
 | `node --test scripts/tests/m5-confirmation-queue-admin.test.mjs scripts/tests/m5-ai-member-console.test.mjs scripts/tests/m5-logs-analytics.test.mjs scripts/tests/m5-template-center.test.mjs scripts/tests/m5-integration-smoke-closeout.test.mjs` | pass | 18/18 existing affected M5 admin/closeout node tests passed. |
 | `npm run typecheck` | pass | TypeScript no emit completed. |
 | `npm run lint` | pass | ESLint completed after helper extraction kept React files within limits. |
+| `npm run format:check` | pass | Prettier check completed after line-budget tightening. |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-07-admin-runtime-wiring.md --include-worktree` | pass | Reported changed files 15; categories source 10, docs 3, test 2. Script reported source net/new as 0 with untracked include-worktree, so manual budget above records the effective source LOC. |
 | `git diff --check` | pass | No whitespace errors. |
 

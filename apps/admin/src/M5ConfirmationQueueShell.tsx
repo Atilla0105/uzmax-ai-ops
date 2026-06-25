@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
-
 import { createConfirmationQueueApiClient } from "./confirmationQueueApiClient";
+import { isM5AdminRuntimeEnabled } from "./m5AdminRuntimeMode";
 import {
-  createM5AdminRuntimeFetcher,
-  isM5AdminRuntimeEnabled
-} from "./m5AdminRuntimeMode";
-import {
+  ConflictDiff,
+  confirmationQueueErrorMessage,
+  confirmationQueueRuntimeLabel,
   health,
   healthRows,
-  queueCardFromApi,
   queueItems,
+  listRuntimeQueueCards,
+  loadRuntimeQueueDetail,
+  submitRuntimeQueueDecision,
   type QueueCard
 } from "./m5ConfirmationQueueRuntime";
 import "./m5-confirmation-queue-shell.css";
-
 void createConfirmationQueueApiClient;
-
+// M5R-07 anchor: helper-owned runtime detail path still calls client.getItem.
 export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string }) {
   const runtimeEnabled = isM5AdminRuntimeEnabled("confirmationQueue");
   const [runtimeItems, setRuntimeItems] = useState<QueueCard[] | undefined>();
@@ -29,23 +29,15 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
   const items = runtimeItems?.length ? runtimeItems : queueItems;
   const selected = items[selectedIndex] ?? items[0] ?? queueItems[0]!;
   const pendingCount = items.length - Object.keys(decisions).length;
-
   const markDecision = useCallback(
     async (itemId: string, decision: "approved" | "discarded") => {
       if (runtimeEnabled) {
         try {
-          const client = createConfirmationQueueApiClient({
-            fetcher: createM5AdminRuntimeFetcher()
-          });
-          const result = await client.submitDecision(itemId, {
-            action: decision === "approved" ? "approve" : "discard",
-            reasonRef: `controlled://m5r-07/confirmation/${decision}`
-          });
-          const status = String(result.item.status);
+          const { result, status } = await submitRuntimeQueueDecision(itemId, decision);
           setDecisions((current) => ({ ...current, [itemId]: status }));
-          setRuntimeResult(`API decision ${status}; formalWrite false`);
+          setRuntimeResult(result);
         } catch (error) {
-          setRuntimeResult(errorMessage(error));
+          setRuntimeResult(confirmationQueueErrorMessage(error));
         }
         return;
       }
@@ -54,53 +46,43 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
     },
     [editId, runtimeEnabled]
   );
-
   const toggleDetails = useCallback(
     async (item: QueueCard) => {
       const nextExpandedId = expandedId === item.id ? undefined : item.id;
       setExpandedId(nextExpandedId);
       if (!runtimeEnabled || !nextExpandedId) return;
       try {
-        const client = createConfirmationQueueApiClient({
-          fetcher: createM5AdminRuntimeFetcher()
-        });
-        const detail = queueCardFromApi(await client.getItem(item.id));
+        const { detail, result } = await loadRuntimeQueueDetail(item.id);
         setRuntimeItems((current) =>
           current?.map((entry) => (entry.id === detail.id ? detail : entry))
         );
-        setRuntimeResult(`API detail loaded ${detail.id}`);
+        setRuntimeResult(result);
       } catch (error) {
-        setRuntimeResult(errorMessage(error));
+        setRuntimeResult(confirmationQueueErrorMessage(error));
       }
     },
     [expandedId, runtimeEnabled]
   );
-
   useEffect(() => {
     if (!runtimeEnabled) {
       setRuntimeItems(undefined);
       return;
     }
     let active = true;
-    const client = createConfirmationQueueApiClient({
-      fetcher: createM5AdminRuntimeFetcher()
-    });
-    void client
-      .listItems({ status: "pending" })
-      .then((itemsFromApi) => {
+    void listRuntimeQueueCards()
+      .then(({ cards, result }) => {
         if (!active) return;
-        setRuntimeItems(itemsFromApi.map(queueCardFromApi));
-        setRuntimeResult(`API loaded ${itemsFromApi.length} confirmation items`);
+        setRuntimeItems(cards);
+        setRuntimeResult(result);
       })
       .catch((error: unknown) => {
         if (!active) return;
-        setRuntimeResult(errorMessage(error));
+        setRuntimeResult(confirmationQueueErrorMessage(error));
       });
     return () => {
       active = false;
     };
   }, [runtimeEnabled]);
-
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const tag = (event.target as HTMLElement | null)?.tagName;
@@ -128,7 +110,6 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [items.length, markDecision, selected.id]);
-
   return (
     <section className="panel m5-shell" data-testid="m5-confirmation-queue-shell">
       <div className="m5-shell-heading">
@@ -138,7 +119,7 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
         </div>
         <div className="m5-mode" data-testid="m5-shell-mode">
           <strong>{tenantName}</strong>
-          <span>{runtimeEnabled ? "runtime API client" : "synthetic local shell"}</span>
+          <span>{confirmationQueueRuntimeLabel(runtimeEnabled)}</span>
         </div>
       </div>
       {runtimeEnabled ? (
@@ -146,7 +127,6 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
           {runtimeResult || "Runtime API client mode waiting."}
         </p>
       ) : null}
-
       <section className="m5-health" data-testid="m5-queue-health">
         {healthRows.map(([label, value, tone]) => (
           <div className={`m5-metric ${tone}`} key={label}>
@@ -155,7 +135,6 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
           </div>
         ))}
       </section>
-
       <section className="m5-amber-banner" data-testid="m5-amber-banner">
         <div>
           <strong>Amber distill health</strong>
@@ -180,7 +159,6 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
           controlled://confirmation/recovery-draft.
         </p>
       ) : null}
-
       <div className="m5-keybar" aria-label="Confirmation queue keyboard shortcuts">
         <span>J/K select</span>
         <span>A approve</span>
@@ -188,7 +166,6 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
         <span>D discard</span>
         <strong>{pendingCount} pending</strong>
       </div>
-
       <div className="m5-card-flow" data-testid="m5-card-flow">
         {items.map((item, index) => (
           <article
@@ -259,23 +236,4 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
       </div>
     </section>
   );
-}
-
-function ConflictDiff({ diff }: { diff: NonNullable<QueueCard["diff"]> }) {
-  return (
-    <div className="m5-conflict-diff" data-testid="m5-conflict-diff">
-      <div>
-        <span>Current</span>
-        <strong>{diff.left}</strong>
-      </div>
-      <div>
-        <span>Candidate</span>
-        <strong>{diff.right}</strong>
-      </div>
-    </div>
-  );
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "runtime API request failed";
 }

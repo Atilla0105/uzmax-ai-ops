@@ -4,13 +4,11 @@ import {
   type LogsAnalyticsLogRow,
   type LogsAnalyticsLogType
 } from "./logsAnalyticsContracts";
-
 type LogTableData = {
   columns: { label: string; code?: true }[];
   rows: LogsAnalyticsLogRow[];
 };
 export type RuntimeTables = Record<LogsAnalyticsLogType, LogTableData>;
-
 export function runtimeBoardItems(board: Record<string, unknown>) {
   return fixedAnalyticsBoardItems.map((item) => {
     if (item.key === "confirmation_pass_rate")
@@ -30,7 +28,6 @@ export function runtimeBoardItems(board: Record<string, unknown>) {
     return item;
   });
 }
-
 export function runtimeLoginTable(rows: Record<string, unknown>[]): LogTableData {
   return {
     columns: logsAnalyticsLogTables.login.columns,
@@ -45,7 +42,6 @@ export function runtimeLoginTable(rows: Record<string, unknown>[]): LogTableData
     }))
   };
 }
-
 export function runtimePresenceTable(rows: Record<string, unknown>[]): LogTableData {
   return {
     columns: logsAnalyticsLogTables.presence.columns,
@@ -61,7 +57,6 @@ export function runtimePresenceTable(rows: Record<string, unknown>[]): LogTableD
     }))
   };
 }
-
 export function runtimeOperationTable(rows: Record<string, unknown>[]): LogTableData {
   return {
     columns: logsAnalyticsLogTables.operation.columns,
@@ -78,7 +73,6 @@ export function runtimeOperationTable(rows: Record<string, unknown>[]): LogTable
     }))
   };
 }
-
 export function LogTable({
   columns,
   rows
@@ -114,7 +108,6 @@ export function LogTable({
     </div>
   );
 }
-
 function Cell(props: {
   code?: true;
   label: string;
@@ -124,7 +117,6 @@ function Cell(props: {
   const text = String(value ?? "");
   return <td data-label={label}>{code ? <code>{text}</code> : text}</td>;
 }
-
 function bpsPercent(value: unknown) {
   return Math.round(Number(value ?? 0) / 100);
 }

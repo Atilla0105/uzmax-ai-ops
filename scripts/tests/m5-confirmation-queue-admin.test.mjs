@@ -9,6 +9,7 @@ import ts from "typescript";
 const repoRoot = process.cwd();
 const source = read("apps/admin/src/confirmationQueueApiClient.ts");
 const shellSource = read("apps/admin/src/M5ConfirmationQueueShell.tsx");
+const runtimeSource = read("apps/admin/src/m5ConfirmationQueueRuntime.ts");
 const appSource = read("apps/admin/src/App.tsx");
 const playwrightSpec = read("apps/admin/tests/m5-confirmation-queue.spec.ts");
 const spec = read("docs/specs/M5-04-confirmation-queue-admin.md");
@@ -56,7 +57,7 @@ describe("M5-04 confirmation queue admin", () => {
     });
   });
 
-  it("fails closed for malformed responses, formal writes and unsafe payloads", async () => {
+  it("fails closed for malformed responses, mismatched formal writes and unsafe payloads", async () => {
     await assert.rejects(
       () =>
         clientModule
@@ -110,16 +111,36 @@ describe("M5-04 confirmation queue admin", () => {
           .listItems(),
       /diffPayload requires side-by-side refs/
     );
-    await assert.rejects(
-      () =>
-        clientModule
+    assert.equal(
+      (
+        await clientModule
           .createConfirmationQueueApiClient({
             fetcher: scriptedQueueResponses([
               { payload: decisionPayload("approved", true) }
             ]).fetcher
           })
+          .submitDecision("item/a", { action: "approve" })
+      ).formalWrite,
+      true
+    );
+    await assert.rejects(
+      () =>
+        clientModule
+          .createConfirmationQueueApiClient({
+            fetcher: scriptedQueueResponses([
+              {
+                payload: {
+                  ...decisionPayload("approved", true),
+                  auditDraft: {
+                    ...decisionPayload("approved", true).auditDraft,
+                    formalWrite: false
+                  }
+                }
+              }
+            ]).fetcher
+          })
           .submitDecision("item/a", { action: "approve" }),
-      /formalWrite false/
+      /auditDraft\.formalWrite must match formalWrite/
     );
     await assert.rejects(
       () =>
@@ -150,7 +171,8 @@ describe("M5-04 confirmation queue admin", () => {
   it("records scope and source boundaries without backend imports or runtime fetches", () => {
     assert.match(source, /createConfirmationQueueApiClient/);
     assert.match(source, /\/confirmation-queue/);
-    assert.match(shellSource, /void createConfirmationQueueApiClient/);
+    assert.match(runtimeSource, /createConfirmationQueueApiClient/);
+    assert.match(shellSource, /listRuntimeQueueCards/);
     assert.match(appSource, /M5ConfirmationQueueShell/);
     assert.match(playwrightSpec, /M5-04 confirmation queue/);
     assert.match(

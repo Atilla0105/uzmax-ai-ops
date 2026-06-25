@@ -1,86 +1,91 @@
 import { useCallback, useEffect, useState } from "react";
-
-import { createConfirmationQueueApiClient } from "./confirmationQueueApiClient";
+import { isM5AdminRuntimeEnabled } from "./m5AdminRuntimeMode";
+import {
+  ConflictDiff,
+  confirmationQueueErrorMessage,
+  confirmationQueueRuntimeLabel,
+  health,
+  healthRows,
+  queueItems,
+  listRuntimeQueueCards,
+  loadRuntimeQueueDetail,
+  submitRuntimeQueueDecision,
+  type QueueCard
+} from "./m5ConfirmationQueueRuntime";
 import "./m5-confirmation-queue-shell.css";
 
-void createConfirmationQueueApiClient;
-
-const queueItems = [
-  {
-    confidence: "92%",
-    detail:
-      "Candidate ref controlled://candidate/knowledge-a; source ref controlled://distill/source-a.",
-    id: "knowledge-a",
-    kind: "knowledge",
-    summary: "Update one fact card after repeated owner review.",
-    target: "Knowledge fact",
-    urgency: "high"
-  },
-  {
-    confidence: "88%",
-    detail:
-      "Candidate ref controlled://candidate/profile-a; target ref controlled://profile/field-a.",
-    id: "profile-a",
-    kind: "profile",
-    summary: "Adjust profile field from confirmed journey signal.",
-    target: "Profile field",
-    urgency: "medium"
-  },
-  {
-    confidence: "83%",
-    detail:
-      "Candidate ref controlled://candidate/eval-a; payload ref controlled://eval/case-a.",
-    id: "eval-a",
-    kind: "eval",
-    summary: "Promote review case into eval coverage.",
-    target: "Eval sample",
-    urgency: "medium"
-  },
-  {
-    confidence: "79%",
-    detail: "Conflict cannot skip into formal storage; owner must compare both refs.",
-    diff: {
-      left: "Current controlled://kb/current-stage",
-      right: "Candidate controlled://candidate/stage-rewrite"
-    },
-    id: "conflict-a",
-    kind: "conflict",
-    summary: "Resolve two competing stage-card refs.",
-    target: "Conflict diff",
-    urgency: "blocked"
-  }
-] as const;
-
-const health = {
-  reason: "3-day pass rate below 40%",
-  risk: "downshift risk active"
-} as const;
-const healthRows = [
-  ["Today candidates", "8/10", ""],
-  ["Daily cap", "10", ""],
-  ["7-day pass rate", "36%", "warn"],
-  ["Distill frequency", "weekly until owner recovery", ""],
-  ["Latest downshift reason", health.reason, "warn"]
-] as const;
-
 export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string }) {
+  const runtimeEnabled = isM5AdminRuntimeEnabled("confirmationQueue");
+  const [runtimeItems, setRuntimeItems] = useState<QueueCard[] | undefined>();
+  const [runtimeResult, setRuntimeResult] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expandedId, setExpandedId] = useState<string | undefined>();
   const [editId, setEditId] = useState<string | undefined>();
   const [reasonVisible, setReasonVisible] = useState(false);
   const [recoveryDrafted, setRecoveryDrafted] = useState(false);
   const [decisions, setDecisions] = useState<Record<string, string>>({});
-  const selected = queueItems[selectedIndex] ?? queueItems[0];
-  const pendingCount = queueItems.length - Object.keys(decisions).length;
-
+  const items = runtimeEnabled ? (runtimeItems ?? []) : queueItems;
+  const selected = items[selectedIndex];
+  const pendingCount = Math.max(0, items.length - Object.keys(decisions).length);
   const markDecision = useCallback(
-    (itemId: string, decision: "approved" | "discarded") => {
+    async (itemId: string, decision: "approved" | "discarded") => {
+      if (runtimeEnabled) {
+        try {
+          const { result, status } = await submitRuntimeQueueDecision(itemId, decision);
+          setDecisions((current) => ({ ...current, [itemId]: status }));
+          setRuntimeResult(result);
+        } catch (error) {
+          setRuntimeResult(confirmationQueueErrorMessage(error));
+        }
+        return;
+      }
       setDecisions((current) => ({ ...current, [itemId]: decision }));
       if (editId === itemId) setEditId(undefined);
     },
-    [editId]
+    [editId, runtimeEnabled]
   );
-
+  const toggleDetails = useCallback(
+    async (item: QueueCard) => {
+      const nextExpandedId = expandedId === item.id ? undefined : item.id;
+      setExpandedId(nextExpandedId);
+      if (!runtimeEnabled || !nextExpandedId) return;
+      try {
+        const { detail, result } = await loadRuntimeQueueDetail(item.id);
+        setRuntimeItems((current) =>
+          current?.map((entry) => (entry.id === detail.id ? detail : entry))
+        );
+        setRuntimeResult(result);
+      } catch (error) {
+        setRuntimeResult(confirmationQueueErrorMessage(error));
+      }
+    },
+    [expandedId, runtimeEnabled]
+  );
+  useEffect(() => {
+    if (!runtimeEnabled) {
+      setRuntimeItems(undefined);
+      return;
+    }
+    let active = true;
+    void listRuntimeQueueCards()
+      .then(({ cards, result }) => {
+        if (!active) return;
+        setRuntimeItems(cards);
+        setRuntimeResult(result);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setRuntimeResult(confirmationQueueErrorMessage(error));
+      });
+    return () => {
+      active = false;
+    };
+  }, [runtimeEnabled]);
+  useEffect(() => {
+    setSelectedIndex((index) =>
+      items.length === 0 ? 0 : Math.min(index, items.length - 1)
+    );
+  }, [items.length]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const tag = (event.target as HTMLElement | null)?.tagName;
@@ -88,27 +93,19 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
       const key = event.key.toLowerCase();
       if (!["j", "k", "a", "e", "d"].includes(key)) return;
       event.preventDefault();
-      switch (key) {
-        case "j":
-          setSelectedIndex((index) => Math.min(index + 1, queueItems.length - 1));
-          break;
-        case "k":
-          setSelectedIndex((index) => Math.max(index - 1, 0));
-          break;
-        case "a":
-          markDecision(selected.id, "approved");
-          break;
-        case "d":
-          markDecision(selected.id, "discarded");
-          break;
-        default:
-          setEditId(selected.id);
-      }
+      if (!selected) return;
+      const actions: Record<string, () => void> = {
+        a: () => void markDecision(selected.id, "approved"),
+        d: () => void markDecision(selected.id, "discarded"),
+        e: () => setEditId(selected.id),
+        j: () => setSelectedIndex((index) => Math.min(index + 1, items.length - 1)),
+        k: () => setSelectedIndex((index) => Math.max(index - 1, 0))
+      };
+      actions[key]?.();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [markDecision, selected.id]);
-
+  }, [items.length, markDecision, selected]);
   return (
     <section className="panel m5-shell" data-testid="m5-confirmation-queue-shell">
       <div className="m5-shell-heading">
@@ -118,10 +115,14 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
         </div>
         <div className="m5-mode" data-testid="m5-shell-mode">
           <strong>{tenantName}</strong>
-          <span>synthetic local shell</span>
+          <span>{confirmationQueueRuntimeLabel(runtimeEnabled)}</span>
         </div>
       </div>
-
+      {runtimeEnabled ? (
+        <p className="m5-recovery-draft" data-testid="m5-runtime-result">
+          {runtimeResult || "Runtime API client mode waiting."}
+        </p>
+      ) : null}
       <section className="m5-health" data-testid="m5-queue-health">
         {healthRows.map(([label, value, tone]) => (
           <div className={`m5-metric ${tone}`} key={label}>
@@ -130,7 +131,6 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
           </div>
         ))}
       </section>
-
       <section className="m5-amber-banner" data-testid="m5-amber-banner">
         <div>
           <strong>Amber distill health</strong>
@@ -155,7 +155,6 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
           controlled://confirmation/recovery-draft.
         </p>
       ) : null}
-
       <div className="m5-keybar" aria-label="Confirmation queue keyboard shortcuts">
         <span>J/K select</span>
         <span>A approve</span>
@@ -163,9 +162,13 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
         <span>D discard</span>
         <strong>{pendingCount} pending</strong>
       </div>
-
+      {runtimeEnabled && runtimeItems && items.length === 0 ? (
+        <p className="m5-recovery-draft" data-testid="m5-runtime-empty">
+          Runtime queue empty.
+        </p>
+      ) : null}
       <div className="m5-card-flow" data-testid="m5-card-flow">
-        {queueItems.map((item, index) => (
+        {items.map((item, index) => (
           <article
             className={`m5-card ${index === selectedIndex ? "selected" : ""}`}
             data-testid={`m5-card-${item.kind}`}
@@ -184,7 +187,10 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
               </small>
             </button>
             <div className="m5-card-actions">
-              <button type="button" onClick={() => markDecision(item.id, "approved")}>
+              <button
+                type="button"
+                onClick={() => void markDecision(item.id, "approved")}
+              >
                 Approve
               </button>
               <button
@@ -197,15 +203,13 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
               <button className="m5-mobile-edit" type="button" disabled>
                 Edit on desktop
               </button>
-              <button type="button" onClick={() => markDecision(item.id, "discarded")}>
-                Discard
-              </button>
               <button
                 type="button"
-                onClick={() =>
-                  setExpandedId(expandedId === item.id ? undefined : item.id)
-                }
+                onClick={() => void markDecision(item.id, "discarded")}
               >
+                Discard
+              </button>
+              <button type="button" onClick={() => void toggleDetails(item)}>
                 Details
               </button>
             </div>
@@ -214,7 +218,9 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
               <span>{index === selectedIndex ? "selected" : "queued"}</span>
               <span>{item.urgency}</span>
             </div>
-            {item.kind === "conflict" ? <ConflictDiff item={item} /> : null}
+            {item.kind === "conflict" && item.diff ? (
+              <ConflictDiff diff={item.diff} />
+            ) : null}
             {expandedId === item.id || editId === item.id ? (
               <div className="m5-details" data-testid={`m5-details-${item.kind}`}>
                 <p>{item.detail}</p>
@@ -230,20 +236,5 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
         ))}
       </div>
     </section>
-  );
-}
-
-function ConflictDiff({ item }: { item: (typeof queueItems)[3] }) {
-  return (
-    <div className="m5-conflict-diff" data-testid="m5-conflict-diff">
-      <div>
-        <span>Current</span>
-        <strong>{item.diff.left}</strong>
-      </div>
-      <div>
-        <span>Candidate</span>
-        <strong>{item.diff.right}</strong>
-      </div>
-    </div>
   );
 }

@@ -3,8 +3,8 @@
 M5R evidence tracks the runtime-readiness follow-up queue after M5 integration smoke closeout. M5 is currently shape-complete / closeout-ready as `m5_08_integration_closeout_ready__not_owner_accepted`, but it is not runtime-persistence closed and is not owner accepted.
 
 Current M5R plan spec: `docs/specs/M5R-00-runtime-integration-plan.md`.
-Current M5R implementation spec: `docs/specs/M5R-01-confirmation-queue-persistence.md`.
-Current active M5R implementation spec: `docs/specs/M5R-06-template-copy-runtime.md`.
+Current M5R implementation spec: `docs/specs/M5R-07-admin-runtime-wiring.md`.
+Current active M5R implementation spec: `docs/specs/M5R-07-admin-runtime-wiring.md`.
 Current M5R incident records: `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`; `docs/incidents/INC-2026-06-25-m5r-04-root-readme-pollution.md`; `docs/incidents/INC-2026-06-25-m5r-06-root-patch-target.md`.
 
 ## Runtime Slice Status
@@ -17,7 +17,8 @@ Current M5R incident records: `docs/incidents/INC-2026-06-24-m5r-00-root-main-wo
 | M5R-03 Distill Scheduler + Health Runtime | `distill_runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-03-distill-scheduler-health-runtime.md`; `docs/evidence/M5R/M5R-03-distill-scheduler-health-runtime.md` |
 | M5R-04 AI Member Runtime Control | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-04-ai-member-runtime-control.md`; `docs/evidence/M5R/M5R-04-ai-member-runtime-control.md`; `docs/incidents/INC-2026-06-25-m5r-04-root-readme-pollution.md` |
 | M5R-05 Logs + Analytics Runtime | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-05-logs-analytics-runtime.md`; `docs/evidence/M5R/M5R-05-logs-analytics-runtime.md` |
-| M5R-06 Template Copy Runtime | `active` | `docs/specs/M5R-06-template-copy-runtime.md`; `docs/evidence/M5R/M5R-06-template-copy-runtime.md` |
+| M5R-06 Template Copy Runtime | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-06-template-copy-runtime.md`; `docs/evidence/M5R/M5R-06-template-copy-runtime.md` |
+| M5R-07 Admin Runtime Wiring | `active` | `docs/specs/M5R-07-admin-runtime-wiring.md`; `docs/evidence/M5R/M5R-07-admin-runtime-wiring.md` |
 
 ## Start Audit
 

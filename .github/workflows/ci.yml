@@ -258,8 +258,9 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y postgresql-client
           fi
-          psql "${UZMAX_RLS_DATABASE_URL_BASE}" -v ON_ERROR_STOP=1 -f packages/db/migrations/0007_m5_operations_contracts_foundation.sql
-          psql "${UZMAX_RLS_DATABASE_URL_BASE}" -v ON_ERROR_STOP=1 -f packages/db/migrations/0008_m5r05_logs_analytics_runtime.sql
+          migration_url="$(node -e 'const url = new URL(process.env.UZMAX_RLS_DATABASE_URL_BASE); for (const key of ["pgbouncer", "connection_limit", "pool_timeout"]) url.searchParams.delete(key); process.stdout.write(url.toString());')"
+          psql "${migration_url}" -v ON_ERROR_STOP=1 -f packages/db/migrations/0007_m5_operations_contracts_foundation.sql
+          psql "${migration_url}" -v ON_ERROR_STOP=1 -f packages/db/migrations/0008_m5r05_logs_analytics_runtime.sql
       - if: steps.path-scope.outputs.run_m5r_true_db_closeout == 'true'
         name: M5R true integration closeout
         env:

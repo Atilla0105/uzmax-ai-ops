@@ -149,6 +149,8 @@ describe("M5R-08 true integration closeout", () => {
     assert.match(docs.ci, /UZMAX_RLS_DATABASE_URL_BASE/);
     assert.match(docs.ci, /UZMAX_RLS_DATABASE_URL secret is required/);
     assert.match(docs.ci, /Apply M5R dev smoke migrations/);
+    assert.match(docs.ci, /migration_url/);
+    assert.match(docs.ci, /"pgbouncer", "connection_limit", "pool_timeout"/);
     assert.match(
       docs.ci,
       /0007_m5_operations_contracts_foundation\.sql[\s\S]*0008_m5r05_logs_analytics_runtime\.sql/

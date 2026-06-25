@@ -34,6 +34,7 @@ infra
 - 说明/备注：
   - This slice may read prior M5R specs/evidence and existing M5R true DB wrappers.
   - It may modify CI only to run the existing M5R-08 closeout test with the existing GitHub Actions secret.
+  - It may apply existing, already-merged SQL migrations `packages/db/migrations/0007_m5_operations_contracts_foundation.sql` and `packages/db/migrations/0008_m5r05_logs_analytics_runtime.sql` to the configured dev smoke DB before the closeout. It must not edit or add migration files in this PR.
   - M5R docs/tests use a separate CI path flag and must not newly trigger the existing M4 true DB smoke group. M4 true DB smoke triggers remain scoped to API/worker/DB/M4 smoke paths, package manifests and lockfile.
   - It must not modify `apps/**`, `packages/**`, Prisma schema/migrations/generated client, lockfile, production/deploy files, Playwright tests or runtime source.
   - Root/main checkout `/Users/atilla/Documents/UZMAX智能运营` is coordination/read-only only.
@@ -94,13 +95,15 @@ If any write lands outside the assigned worktree, on the wrong branch, in root/m
 
 1. Add M5R-08 files to the CI true DB smoke path classifier.
 2. Add a CI step named `M5R true integration closeout` that runs `node --test scripts/tests/m5r-true-integration-closeout.test.mjs` with masked `UZMAX_RLS_DATABASE_URL`.
-3. Update M5R-08 evidence and indexes to record runtime evidence ready only after the CI closeout passes.
-4. Update focused tests so local missing-env behavior remains fail-closed while docs can record the CI true DB pass.
-5. Run local validation and PR CI; record the final run/job after it passes.
+3. Before the closeout step, apply existing idempotent M5/M5R dev smoke migrations `0007` and `0008` with the same masked DB secret so the configured smoke DB matches the repo schema.
+4. Update M5R-08 evidence and indexes to record runtime evidence ready only after the CI closeout passes.
+5. Update focused tests so local missing-env behavior remains fail-closed while docs can record the CI true DB pass.
+6. Run local validation and PR CI; record the final run/job after it passes.
 
 ## 通过条件
 
 - CI injects `UZMAX_RLS_DATABASE_URL` only through GitHub Actions secrets and does not print the secret value.
+- CI applies existing idempotent M5/M5R dev smoke migrations `0007` and `0008` before the M5R closeout and does not edit/add migration files.
 - The `M5R true integration closeout` CI step executes the existing M5R-08 closeout runner.
 - The closeout runner reports `passed_true_db` in CI only after distill, confirmation queue, formal write, logs/analytics, template copy and AI member wrappers pass.
 - Local missing-env tests still prove fail-closed behavior.
@@ -112,6 +115,7 @@ If any write lands outside the assigned worktree, on the wrong branch, in root/m
 ## 失败分支
 
 - If the GitHub Actions secret is missing or empty: keep M5/M5R blocked and record the missing secret without printing values.
+- If applying existing dev smoke migrations fails: keep M5/M5R blocked, record the failing migration/run, and do not report `passed_true_db`.
 - If any wrapper fails in CI: keep M5/M5R blocked, record the failing wrapper/run, and do not report `passed_true_db`.
 - If CI changes would require broad workflow redesign or new external services: stop and split to a future infra spec.
 - If wording implies owner acceptance, production readiness, GA-0 opening, 1.0 release approval, real customer/order-data approval, customer LLM approval or external SaaS onboarding: correct it before merge.

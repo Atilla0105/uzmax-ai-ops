@@ -70,7 +70,7 @@ When `UZMAX_RLS_DATABASE_URL` is present, the same closeout runner executes the 
 
 Current CI true DB closeout status: `pending_secret_backed_ci`.
 
-The local worker environment still does not print or store `UZMAX_RLS_DATABASE_URL`; local missing-env tests continue to prove fail-closed behavior. GitHub Actions reads the existing masked `UZMAX_RLS_DATABASE_URL` repo secret through a step-local base env in the `M5R true integration closeout` step, checks that it is non-empty, and only then exports the pooled URL for the test process. With that env present, `scripts/tests/m5r-true-integration-closeout.test.mjs` executes all six existing M5R true DB wrappers and returns `passed_true_db` only after they pass. This evidence will be updated with the run/job after CI proves that path.
+The local worker environment still does not print or store `UZMAX_RLS_DATABASE_URL`; local missing-env tests continue to prove fail-closed behavior. GitHub Actions reads the existing masked `UZMAX_RLS_DATABASE_URL` repo secret through a step-local base env, checks that it is non-empty, applies the existing idempotent dev smoke migrations `0007_m5_operations_contracts_foundation.sql` and `0008_m5r05_logs_analytics_runtime.sql`, and only then exports the pooled URL for the test process in the `M5R true integration closeout` step. With that env present, `scripts/tests/m5r-true-integration-closeout.test.mjs` executes all six existing M5R true DB wrappers and returns `passed_true_db` only after they pass. This evidence will be updated with the run/job after CI proves that path.
 
 The true DB closeout command is:
 
@@ -94,6 +94,7 @@ Recorded from `/private/tmp/uzmax-m5r-08-true-db-ci-closeout` on 2026-06-25.
 | `npm run test` | pass | Full Node suite passed: 396/396 tests across 78 suites. |
 | `git diff --check` | pass | No whitespace errors. |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-08-true-db-ci-closeout.md --include-worktree` | pass | No PR existed yet for this branch; guard reported 8 changed files, categories config=1/docs=5/test=2, source changed files 0, net source LOC 0 and new source files 0. |
+| GitHub Actions `Apply M5R dev smoke migrations` | pending | Secret-backed CI step applies existing migrations `0007` and `0008`; final run/job will be recorded before merge. |
 | GitHub Actions `M5R true integration closeout` | pending | Secret-backed CI step runs `node --test scripts/tests/m5r-true-integration-closeout.test.mjs` with masked `UZMAX_RLS_DATABASE_URL`; final run/job will be recorded in this evidence before merge. |
 
 ## No Sensitive Data Statement

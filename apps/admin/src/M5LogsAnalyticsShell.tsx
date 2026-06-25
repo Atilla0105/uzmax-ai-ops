@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   createLogsAnalyticsExportDraft,
@@ -11,9 +11,26 @@ import {
   type LogsAnalyticsLogRow,
   type LogsAnalyticsLogType
 } from "./logsAnalyticsContracts";
+import { createLogsAnalyticsApiClient } from "./logsAnalyticsApiClient";
+import {
+  createM5AdminRuntimeFetcher,
+  isM5AdminRuntimeEnabled
+} from "./m5AdminRuntimeMode";
+import {
+  LogTable,
+  runtimeBoardItems,
+  runtimeLoginTable,
+  runtimeOperationTable,
+  runtimePresenceTable,
+  type RuntimeTables
+} from "./m5LogsAnalyticsRuntime";
 import "./m5-logs-analytics-shell.css";
 
 export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
+  const runtimeEnabled = isM5AdminRuntimeEnabled("logsAnalytics");
+  const [runtimeResult, setRuntimeResult] = useState("");
+  const [runtimeBoard, setRuntimeBoard] = useState<Record<string, unknown>>();
+  const [runtimeTables, setRuntimeTables] = useState<RuntimeTables | undefined>();
   const [selectedDimensions, setSelectedDimensions] = useState<
     LogsAnalyticsDimension[]
   >(["tenant", "member", "channel", "time_grain"]);
@@ -21,7 +38,11 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
   const [logType, setLogType] = useState<LogsAnalyticsLogType>("login");
   const [query, setQuery] = useState("");
   const [highRiskOnly, setHighRiskOnly] = useState(false);
-  const table = logsAnalyticsLogTables[logType];
+  const boardItems = runtimeBoard
+    ? runtimeBoardItems(runtimeBoard)
+    : fixedAnalyticsBoardItems;
+  const activeTables = runtimeTables ?? logsAnalyticsLogTables;
+  const table = activeTables[logType];
   const rows = table.rows.filter((row) => rowMatches(row, query, highRiskOnly));
 
   const toggleDimension = (dimension: LogsAnalyticsDimension) => {
@@ -32,7 +53,37 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
     );
   };
 
-  const draftExport = () => {
+  const draftExport = async () => {
+    if (runtimeEnabled) {
+      try {
+        const client = createLogsAnalyticsApiClient({
+          fetcher: createM5AdminRuntimeFetcher()
+        });
+        const result = await client.createExportJob({
+          filters: { dimensionRefs: selectedDimensions },
+          logKinds: ["login", "presence", "operation"],
+          metricRefs: boardItems.map((item) => `controlled://metric/${item.key}`),
+          reasonRef: "controlled://m5r-07/logs/export-reason",
+          scope: { selectedDimensions },
+          traceId: "m5r-07:logs-export"
+        });
+        setRuntimeResult(`Export job API ${String(result.exportRef)}`);
+        setDraft({
+          actorRef: "controlled://analytics/actor/owner",
+          dimensions: selectedDimensions,
+          fileRef: null,
+          filterRefs: ["controlled://m5r-07/logs/filter"],
+          formalExportWrite: false,
+          metricRefs: boardItems.map((item) => `controlled://metric/${item.key}`),
+          requiresOwnerConfirmation: true,
+          status: "draft_requires_owner_confirmation",
+          viewRef: String(result.exportRef)
+        });
+      } catch (error) {
+        setRuntimeResult(errorMessage(error));
+      }
+      return;
+    }
     setDraft(
       createLogsAnalyticsExportDraft({
         actorRef: "controlled://analytics/actor/owner",
@@ -46,6 +97,41 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
     );
   };
 
+  useEffect(() => {
+    if (!runtimeEnabled) {
+      setRuntimeTables(undefined);
+      setRuntimeBoard(undefined);
+      return;
+    }
+    let active = true;
+    const client = createLogsAnalyticsApiClient({
+      fetcher: createM5AdminRuntimeFetcher()
+    });
+    void Promise.all([
+      client.getBoard(),
+      client.listLoginLogs({ limit: 20 }),
+      client.listPresenceLogs({ limit: 20 }),
+      client.listOperationLogs({ limit: 20 })
+    ])
+      .then(([board, login, presence, operation]) => {
+        if (!active) return;
+        setRuntimeBoard(board);
+        setRuntimeTables({
+          login: runtimeLoginTable(login),
+          operation: runtimeOperationTable(operation),
+          presence: runtimePresenceTable(presence)
+        });
+        setRuntimeResult("Runtime logs and board loaded through API");
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setRuntimeResult(errorMessage(error));
+      });
+    return () => {
+      active = false;
+    };
+  }, [runtimeEnabled]);
+
   return (
     <section className="panel m5-logs-shell" data-testid="m5-logs-analytics-shell">
       <div className="m5-logs-heading">
@@ -55,12 +141,19 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
         </div>
         <div className="m5-logs-mode">
           <strong>{tenantName}</strong>
-          <span>synthetic local shell</span>
+          <span>
+            {runtimeEnabled ? "runtime API client" : "synthetic local shell"}
+          </span>
         </div>
       </div>
+      {runtimeEnabled ? (
+        <p className="m5-export-draft" data-testid="m5-logs-runtime-result">
+          {runtimeResult || "Runtime API client mode waiting."}
+        </p>
+      ) : null}
 
       <div className="m5-logs-board" data-testid="m5-analytics-board">
-        {fixedAnalyticsBoardItems.map((item) => (
+        {boardItems.map((item) => (
           <article className="m5-logs-metric" key={item.key}>
             <span>{item.label}</span>
             <strong>{item.value}</strong>
@@ -71,9 +164,9 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
 
       <div className="m5-logs-mobile-summary" data-testid="m5-mobile-metrics">
         <strong>{fixedAnalyticsBoardItems[0].label}</strong>
-        <span>{fixedAnalyticsBoardItems[0].value}</span>
+        <span>{boardItems[0].value}</span>
         <strong>{fixedAnalyticsBoardItems[8].label}</strong>
-        <span>{fixedAnalyticsBoardItems[8].value}</span>
+        <span>{boardItems[8].value}</span>
       </div>
 
       <div
@@ -99,7 +192,7 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
           <button
             disabled={selectedDimensions.length === 0}
             type="button"
-            onClick={draftExport}
+            onClick={() => void draftExport()}
           >
             Draft export review
           </button>
@@ -157,53 +250,8 @@ export function M5LogsAnalyticsShell({ tenantName }: { tenantName: string }) {
   );
 }
 
-function LogTable({
-  columns,
-  rows
-}: {
-  columns: { label: string; code?: true }[];
-  rows: LogsAnalyticsLogRow[];
-}) {
-  return (
-    <div className="m5-log-table-wrap">
-      <table className="m5-log-table" data-testid="m5-log-table">
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th key={column.label}>{column.label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={`${row.values[0] ?? "row"}-${index}`}>
-              {columns.map((column, columnIndex) => (
-                <Cell
-                  code={column.code}
-                  key={column.label}
-                  label={column.label}
-                  value={row.values[columnIndex]}
-                />
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Cell({
-  code,
-  label,
-  value
-}: {
-  code?: true;
-  label: string;
-  value: boolean | string | undefined;
-}) {
-  const text = String(value ?? "");
-  return <td data-label={label}>{code ? <code>{text}</code> : text}</td>;
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "logs runtime API request failed";
 }
 
 function rowMatches(row: LogsAnalyticsLogRow, query: string, highRiskOnly: boolean) {

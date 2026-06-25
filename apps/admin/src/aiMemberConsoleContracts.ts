@@ -48,6 +48,29 @@ export type AiMemberActionDraftInput = {
   nextEnabled?: boolean;
 } & Record<string, unknown>;
 
+export const aiMemberCapabilityLabels: Record<AiMemberCapabilityKey, string> = {
+  business_draft: "Business draft",
+  order_read: "Order read",
+  quote: "Quote",
+  tutorial: "Tutorial",
+  vision: "Vision"
+};
+
+export const initialAiMemberCapabilities = {
+  business_draft: true,
+  order_read: true,
+  quote: false,
+  tutorial: true,
+  vision: false
+} satisfies Record<AiMemberCapabilityKey, boolean>;
+
+export const aiMemberConsoleMember = {
+  activeVersionRef: "controlled://ai-member/version/v1",
+  breakerReasonRef: "controlled://ai-member/breaker-low-pass-rate",
+  displayName: "Operations AI",
+  personaRef: "controlled://ai-member/persona/v1"
+} as const;
+
 const allowedDraftKeys = new Set([
   "action",
   "auditRef",

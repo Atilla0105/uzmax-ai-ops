@@ -8,15 +8,54 @@ import {
   type TemplateCenterKind,
   type TemplateCopyDraft
 } from "./templateCenterContracts";
+import {
+  createM5AdminRuntimeFetcher,
+  isM5AdminRuntimeEnabled
+} from "./m5AdminRuntimeMode";
 import "./m5-template-center-shell.css";
+import { createTemplateCopyApiClient } from "./templateCopyApiClient";
 
 export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
+  const runtimeEnabled = isM5AdminRuntimeEnabled("templateCopy");
+  const [runtimeResult, setRuntimeResult] = useState("");
   const [kind, setKind] = useState<TemplateCenterKind>("knowledge");
   const [draft, setDraft] = useState<TemplateCopyDraft | undefined>();
   const visibleCards = templateCenterCards.filter((card) => card.kind === kind);
   const selectedCard = visibleCards[0] ?? templateCenterCards[0];
 
-  const draftCopy = () => {
+  const draftCopy = async () => {
+    if (runtimeEnabled) {
+      try {
+        const client = createTemplateCopyApiClient({
+          fetcher: createM5AdminRuntimeFetcher()
+        });
+        const result = await client.copyToTenant({
+          controlRefs: ["controlled://m5r-07/template-copy/control"],
+          reasonRef: "controlled://m5r-07/template-copy/reason",
+          sourceSnapshotRef: "controlled://template-copy/snapshot/m5r-07",
+          sourceTemplateRef: runtimeSourceTemplateRef(selectedCard.kind),
+          targetKey: `m5r-07.${selectedCard.kind}`,
+          templateKind: runtimeTemplateKind(selectedCard.kind),
+          traceId: "m5r-07:template-copy"
+        });
+        setDraft({
+          action: "copy_to_tenant",
+          formalTenantWrite: false,
+          requiresOwnerConfirmation: true,
+          sourceTemplateRef: runtimeSourceTemplateRef(selectedCard.kind),
+          targetTenantRef: "controlled://tenant/current",
+          templateAutoOverwrite: false,
+          templateKind: selectedCard.kind,
+          tenantVersionRef: String(result.tenantVersionRef)
+        });
+        setRuntimeResult(
+          `Template copy API ${String(result.configVersionRef)} ${String(result.auditRef)}`
+        );
+      } catch (error) {
+        setRuntimeResult(errorMessage(error));
+      }
+      return;
+    }
     setDraft(
       createTemplateCopyDraft({
         sourceTemplateRef: selectedCard.sourceTemplateRef,
@@ -36,9 +75,16 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
         </div>
         <div className="m5-template-mode">
           <strong>{tenantName}</strong>
-          <span>synthetic local shell</span>
+          <span>
+            {runtimeEnabled ? "runtime API client" : "synthetic local shell"}
+          </span>
         </div>
       </div>
+      {runtimeEnabled ? (
+        <p className="m5-template-copy" data-testid="m5-template-runtime-result">
+          {runtimeResult || "Runtime API client mode waiting."}
+        </p>
+      ) : null}
 
       <div className="m5-template-tabs" data-testid="m5-template-tabs">
         {templateCenterKinds.map((templateKind) => (
@@ -76,7 +122,7 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
         </div>
 
         <div className="m5-template-copy" data-testid="m5-template-copy">
-          <button type="button" onClick={draftCopy}>
+          <button type="button" onClick={() => void draftCopy()}>
             Draft tenant copy
           </button>
           <button type="button" disabled>
@@ -103,4 +149,16 @@ export function M5TemplateCenterShell({ tenantName }: { tenantName: string }) {
       </div>
     </section>
   );
+}
+
+function runtimeTemplateKind(kind: TemplateCenterKind) {
+  return kind === "knowledge" ? "config" : kind;
+}
+
+function runtimeSourceTemplateRef(kind: TemplateCenterKind) {
+  return `controlled://group-template/${runtimeTemplateKind(kind)}/m5r-07`;
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "template copy API request failed";
 }

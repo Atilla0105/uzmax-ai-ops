@@ -1,10 +1,10 @@
 # M5R Evidence
 
-M5R evidence tracks the runtime-readiness follow-up queue after M5 integration smoke closeout. M5 moved from docs/test-only closeout-ready evidence to a secret-backed CI closeout path through M5R-08. M5/M5R are pending the final CI true DB/RLS closeout before runtime-evidence-ready can be recorded, are not owner accepted, and are not production/GA/release approved.
+M5R evidence tracks the runtime-readiness follow-up queue after M5 integration smoke closeout. M5 moved from docs/test-only closeout-ready evidence to a secret-backed CI true DB/RLS closeout through M5R-08. M5/M5R are now runtime-evidence-ready for owner review, are not owner accepted, and are not production/GA/release approved.
 
 Current M5R plan spec: `docs/specs/M5R-00-runtime-integration-plan.md`.
 Current M5R implementation spec: `docs/specs/M5R-08-true-db-ci-closeout.md`.
-Current active M5R implementation spec: none; final closeout status is `m5r_08_true_integration_closeout_pending_secret_backed_ci_not_owner_accepted`.
+Current active M5R implementation spec: none; final closeout status is `m5r_08_true_integration_closeout_passed_true_db_not_owner_accepted`.
 Current M5R incident records: `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`; `docs/incidents/INC-2026-06-25-m5r-04-root-readme-pollution.md`; `docs/incidents/INC-2026-06-25-m5r-06-root-patch-target.md`.
 
 ## Runtime Slice Status
@@ -19,9 +19,9 @@ Current M5R incident records: `docs/incidents/INC-2026-06-24-m5r-00-root-main-wo
 | M5R-05 Logs + Analytics Runtime | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-05-logs-analytics-runtime.md`; `docs/evidence/M5R/M5R-05-logs-analytics-runtime.md` |
 | M5R-06 Template Copy Runtime | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-06-template-copy-runtime.md`; `docs/evidence/M5R/M5R-06-template-copy-runtime.md` |
 | M5R-07 Admin Runtime Wiring | `admin_runtime_wiring_supported_not_true_closeout_not_owner_accepted` | `docs/specs/M5R-07-admin-runtime-wiring.md`; `docs/evidence/M5R/M5R-07-admin-runtime-wiring.md` |
-| M5R-08 True Integration Closeout | `m5r_08_true_integration_closeout_pending_secret_backed_ci_not_owner_accepted` | `docs/specs/M5R-08-true-integration-closeout.md`; `docs/specs/M5R-08-true-db-ci-closeout.md`; `docs/evidence/M5R/M5R-08-true-integration-closeout.md`; `scripts/tests/m5r-true-integration-closeout.test.mjs` |
+| M5R-08 True Integration Closeout | `m5r_08_true_integration_closeout_passed_true_db_not_owner_accepted` | `docs/specs/M5R-08-true-integration-closeout.md`; `docs/specs/M5R-08-true-db-ci-closeout.md`; `docs/evidence/M5R/M5R-08-true-integration-closeout.md`; `scripts/tests/m5r-true-integration-closeout.test.mjs`; CI run `28183737387`, job `83479977791` |
 
-M5R-01 through M5R-06 rows preserve their original slice-local missing-env evidence status. M5R-08 records the final secret-backed CI wrapper-chain path that will execute those true DB wrappers together before the evidence is marked passed.
+M5R-01 through M5R-06 rows preserve their original slice-local missing-env evidence status. M5R-08 records the final secret-backed CI wrapper-chain path that executed those true DB wrappers together before the evidence was marked passed.
 
 ## Start Audit
 
@@ -46,9 +46,9 @@ Recorded before docs edits on 2026-06-24 from the assigned M5R-00 worktree.
 
 ## Current M5 Runtime State
 
-M5 evidence now says `m5_runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted`. M5-08 explicitly remained docs/test-only; M5R-01 through M5R-07 added runtime contracts, API/admin wiring and true DB wrappers; M5R-08 links those wrappers into a final CI closeout chain through the masked GitHub Actions `UZMAX_RLS_DATABASE_URL` secret.
+M5 evidence now says `m5_runtime_evidence_ready_not_owner_accepted`. M5-08 explicitly remained docs/test-only; M5R-01 through M5R-07 added runtime contracts, API/admin wiring and true DB wrappers; M5R-08 linked those wrappers into a final CI closeout chain through the masked GitHub Actions `UZMAX_RLS_DATABASE_URL` secret.
 
-M5R therefore does not reopen M5 scope or claim owner acceptance. It records the pending CI closeout path while keeping production, GA/release, real customer/order data, real LLM/provider calls and external SaaS onboarding out of scope.
+M5R therefore does not reopen M5 scope or claim owner acceptance. It records the passed CI closeout path while keeping production, GA/release, real customer/order data, real LLM/provider calls and external SaaS onboarding out of scope.
 
 ## Incident Record
 
@@ -88,7 +88,7 @@ Future M5R runtime slices may call a check `true DB/RLS smoke` only when it meet
 | 5 | M5R-05 Logs + Analytics Runtime | Real data sources for login/presence/operation logs; fixed board includes confirmation pass rate, distill frequency and AI member state; export as controlled export job/draft, not direct sensitive file. | Runtime analytics/log/export governance only; no sensitive file committed. |
 | 6 | M5R-06 Template Copy Runtime | API/DB template copy; group template creates tenant-owned independent version; group update does not auto-pollute tenant; at least one quick reply/config/AI member/eval template path; RLS smoke for cross-tenant invisibility. | Runtime template copy proof only; no external SaaS onboarding. |
 | 7 | M5R-07 Admin Runtime Wiring | M5-04..M5-07 admin shells use API client runtime mode; Playwright goes through API; 320px mobile fallback processes confirmation queue and AI emergency stop/recovery. | Admin runtime wiring only; DB/RLS proof may be consumed through prior API-backed runtime evidence if explicitly linked. |
-| 8 | M5R-08 True Integration Closeout | Final serial chain: distill candidate -> confirmation persistence -> owner confirm/conflict diff -> formal write -> audit/log readback -> analytics board -> independent template copy -> AI emergency stop/recovery. | Pending secret-backed CI true DB/RLS closeout; still not owner accepted. |
+| 8 | M5R-08 True Integration Closeout | Final serial chain: distill candidate -> confirmation persistence -> owner confirm/conflict diff -> formal write -> audit/log readback -> analytics board -> independent template copy -> AI emergency stop/recovery. | Secret-backed CI true DB/RLS closeout passed; still not owner accepted. |
 
 ## Dependency / Parallelism Matrix
 
@@ -109,7 +109,7 @@ Global serial points for the whole M5R queue: `packages/db`, Prisma schema, migr
 
 | Item | M5R closeout status | Runtime evidence |
 |---|---|---|
-| A-03 | runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted | M5R-06 proves independent tenant-owned template copies; M5R-08 true DB CI will execute the wrapper chain before this is marked ready. |
+| A-03 | runtime_evidence_ready_not_owner_accepted | M5R-06 proves independent tenant-owned template copies; M5R-08 true DB CI executed the wrapper chain before this was marked ready. |
 | H-01 | limited_formal_write_runtime_evidence_ready_not_full_h01_closed | M5R-02 proves the named config-version write path only; full H-01 authoring remains separately scoped. |
 | H-02 | confirmation_to_formal_write_runtime_evidence_ready | M5R-01 and M5R-02 prove confirmation before formal write. |
 | H-03 | conflict_diff_to_formal_write_runtime_evidence_ready | M5R-01 and M5R-02 prove conflict diff before write. |
@@ -119,7 +119,7 @@ Global serial points for the whole M5R queue: `packages/db`, Prisma schema, migr
 | I-02 | mobile_runtime_wiring_evidence_ready | M5R-04 and M5R-07 prove emergency and confirmation mobile fallback through API paths. |
 | I-06 | logs_analytics_runtime_evidence_ready | M5R-05 proves fixed board and controlled export job/draft; M5R-07 wires admin API mode. |
 | I-07 | ai_audit_logs_runtime_evidence_ready | M5R-04 and M5R-05 prove AI state/audit plus login/presence/operation logs. |
-| J-05 | m5r_08_true_integration_closeout_pending_secret_backed_ci_not_owner_accepted | M5R records the wrapper index and pending secret-backed true integration DB/RLS closeout; owner acceptance and release signoff remain open. |
+| J-05 | m5r_08_true_integration_closeout_passed_true_db_not_owner_accepted | M5R records the wrapper index and passed secret-backed true integration DB/RLS closeout; owner acceptance and release signoff remain open. |
 | K-03 | active | One spec / one PR. |
 | K-04 | active | Serial/parallel queue rules recorded; M5R-08 was final serial closeout. |
 

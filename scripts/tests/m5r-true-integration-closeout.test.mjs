@@ -164,20 +164,18 @@ describe("M5R-08 true integration closeout", () => {
   it("records closeout status without owner acceptance or production/release claims", () => {
     assert.match(docs.spec, /M5R-08 True Integration Closeout/);
     assert.match(docs.spec, /scripts\/tests\/m5r-true-integration-closeout\.test\.mjs/);
-    assert.match(docs.evidence, /pending_secret_backed_ci/);
+    assert.match(docs.evidence, /Current CI true DB closeout status: `passed_true_db`/);
+    assert.match(docs.evidence, /28183737387/);
     assert.match(docs.evidence, /M5R true integration closeout/);
     assert.match(docs.m5rIndex, /M5R-08 True Integration Closeout/);
     assert.match(
       docs.m5rIndex,
       /M5R-07 Admin Runtime Wiring \| `admin_runtime_wiring_supported/
     );
-    assert.match(
-      docs.m5Index,
-      /m5_runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted/
-    );
+    assert.match(docs.m5Index, /m5_runtime_evidence_ready_not_owner_accepted/);
     assert.match(
       docs.m5rIndex,
-      /m5r_08_true_integration_closeout_pending_secret_backed_ci_not_owner_accepted/
+      /m5r_08_true_integration_closeout_passed_true_db_not_owner_accepted/
     );
     assert.doesNotMatch(
       `${docs.spec}\n${docs.evidence}\n${docs.m5Index}\n${docs.m5rIndex}`,

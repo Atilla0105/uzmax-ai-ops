@@ -133,16 +133,16 @@ If any write lands outside the assigned worktree, on the wrong branch, in root/m
 
 | Item | M5R-08 true DB CI status | Evidence |
 |---|---|---|
-| A-03 | `runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted` | M5R-06 plus pending M5R-08 CI closeout will prove independent tenant-owned template copies before runtime-evidence-ready is recorded; not owner accepted. |
+| A-03 | `runtime_evidence_ready_not_owner_accepted` | M5R-06 plus M5R-08 CI closeout prove independent tenant-owned template copies before runtime-evidence-ready is recorded; not owner accepted. |
 | H-01 | `limited_formal_write_runtime_evidence_ready_not_full_h01_closed` | M5R-02 named config-version path only; full H-01 remains future scoped. |
-| H-02 | `confirmation_to_formal_write_runtime_evidence_pending_secret_backed_ci_closeout` | M5R-01/M5R-02 and pending M5R-08 CI closeout prove confirmation before formal write before final ready status is recorded. |
-| H-03 | `conflict_diff_to_formal_write_runtime_evidence_pending_secret_backed_ci_closeout` | M5R-01/M5R-02 and pending M5R-08 CI closeout preserve conflict diff before write before final ready status is recorded. |
-| H-04 | `template_copy_runtime_evidence_pending_secret_backed_ci_closeout` | M5R-06 and pending M5R-08 CI closeout prove template copy runtime independence before final ready status is recorded. |
+| H-02 | `confirmation_to_formal_write_runtime_evidence_ready` | M5R-01/M5R-02 and M5R-08 CI closeout prove confirmation before formal write before final ready status is recorded. |
+| H-03 | `conflict_diff_to_formal_write_runtime_evidence_ready` | M5R-01/M5R-02 and M5R-08 CI closeout preserve conflict diff before write before final ready status is recorded. |
+| H-04 | `template_copy_runtime_evidence_ready` | M5R-06 and M5R-08 CI closeout prove template copy runtime independence before final ready status is recorded. |
 | H-06 | `template_kind_runtime_evidence_ready_not_full_quick_reply_closed` | M5R-06 includes quick-reply/config-style proof; full quick-reply workflows remain future. |
-| H-07 | `distill_health_runtime_evidence_pending_secret_backed_ci_closeout` | M5R-03 and pending M5R-08 CI closeout prove cap, health, downshift, owner alert/audit draft and manual recovery path before final ready status is recorded. |
+| H-07 | `distill_health_runtime_evidence_ready` | M5R-03 and M5R-08 CI closeout prove cap, health, downshift, owner alert/audit draft and manual recovery path before final ready status is recorded. |
 | I-02 | `mobile_runtime_wiring_evidence_ready` | M5R-04/M5R-07 prove emergency/confirmation mobile fallback through API paths. |
-| I-06 | `logs_analytics_runtime_evidence_pending_secret_backed_ci_closeout` | M5R-05/M5R-07 and pending M5R-08 CI closeout prove fixed board/log/export draft runtime path before final ready status is recorded. |
-| I-07 | `ai_audit_logs_runtime_evidence_pending_secret_backed_ci_closeout` | M5R-04/M5R-05 and pending M5R-08 CI closeout prove AI state/audit plus log readback paths before final ready status is recorded. |
-| J-05 | `m5_runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted` | M5R-08 true DB CI closeout is pending final runtime evidence for owner review, not owner acceptance or release signoff. |
+| I-06 | `logs_analytics_runtime_evidence_ready` | M5R-05/M5R-07 and M5R-08 CI closeout prove fixed board/log/export draft runtime path before final ready status is recorded. |
+| I-07 | `ai_audit_logs_runtime_evidence_ready` | M5R-04/M5R-05 and M5R-08 CI closeout prove AI state/audit plus log readback paths before final ready status is recorded. |
+| J-05 | `m5_runtime_evidence_ready_not_owner_accepted` | M5R-08 true DB CI closeout passed final runtime evidence for owner review, not owner acceptance or release signoff. |
 | K-03 | `active` | One spec / one PR; this PR implements only the CI true DB closeout follow-up. |
 | K-04 | `active` | Final closeout remains serial. |

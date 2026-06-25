@@ -134,7 +134,7 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 
 | Item | M5R-08 status | Evidence |
 |---|---|---|
-| A-03 | `runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted` | M5R-06 proves independent tenant-owned template copy path; M5R-08 links the wrapper in the final CI true DB chain pending secret-backed execution. |
+| A-03 | `runtime_evidence_ready_not_owner_accepted` | M5R-06 proves independent tenant-owned template copy path; M5R-08 links the wrapper in the final CI true DB chain that passed secret-backed execution. |
 | H-01 | `limited_formal_write_runtime_evidence_ready_not_full_h01_closed` | M5R-02 proves the named config-version formal write path only; full knowledge/resource authoring remains future scoped. |
 | H-02 | `confirmation_to_formal_write_runtime_evidence_ready` | M5R-01 persists confirmation decisions; M5R-02 writes only approved/edited decisions. |
 | H-03 | `conflict_diff_to_formal_write_runtime_evidence_ready` | M5R-01/M5R-02 preserve conflict diff requirement before formal write. |
@@ -144,8 +144,8 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 | I-02 | `mobile_runtime_wiring_evidence_ready` | M5R-04 proves emergency runtime path; M5R-07 proves 320px admin API wiring. |
 | I-06 | `logs_analytics_runtime_evidence_ready` | M5R-05 proves fixed board/log/export draft runtime path; M5R-07 wires admin API mode. |
 | I-07 | `ai_audit_logs_runtime_evidence_ready` | M5R-04/M5R-05 prove AI state/audit and login/presence/operation log readback paths. |
-| J-05 | `m5_runtime_evidence_pending_secret_backed_ci_closeout_not_owner_accepted` | M5R-08 records the wrapper index and pending CI true integration DB/RLS smoke; owner acceptance and release decisions remain future owner decisions. |
+| J-05 | `m5_runtime_evidence_ready_not_owner_accepted` | M5R-08 records the wrapper index and passed CI true integration DB/RLS smoke; owner acceptance and release decisions remain future owner decisions. |
 | K-03 | `active` | One spec / one PR; this PR implements only M5R-08. |
 | K-04 | `active` | M5R-08 is final serial closeout with docs/test-only touch list. |
 
-M5R-08 closes no production acceptance item. It records the final true integration wrapper index and, through the true DB CI follow-up, will prove the wrapper chain against the configured smoke database before runtime-evidence-ready is recorded, without claiming owner acceptance or release approval.
+M5R-08 closes no production acceptance item. It records the final true integration wrapper index and, through the true DB CI follow-up, proved the wrapper chain against the configured smoke database before runtime-evidence-ready was recorded, without claiming owner acceptance or release approval.

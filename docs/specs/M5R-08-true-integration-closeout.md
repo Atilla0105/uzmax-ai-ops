@@ -2,9 +2,9 @@
 
 ## 目标
 
-Record the M5R runtime-integration closeout blocker by adding a final scoped integration closeout test and evidence record that links M5R-01 through M5R-07 runtime boundaries.
+Record the M5R runtime-integration closeout by adding a final scoped integration closeout test and evidence record that links M5R-01 through M5R-07 runtime boundaries.
 
-M5R-08 does not expand product scope. It records the wrapper index and missing true DB/RLS environment blocker required before M5R can be completed. M5 remains explicitly `not_owner_accepted`, not runtime-evidence-ready, not production ready, not GA/release approved, and with true DB execution blocked while `UZMAX_RLS_DATABASE_URL` is absent.
+M5R-08 does not expand product scope. The initial PR recorded the wrapper index and missing true DB/RLS environment blocker while local `UZMAX_RLS_DATABASE_URL` was absent. The M5R-08 true DB CI follow-up runs the same closeout wrapper through GitHub Actions with the existing masked secret. M5 remains explicitly `not_owner_accepted`, not production ready and not GA/release approved.
 
 ## 项目 owner 确认点与 AI agent 执行/复核责任
 
@@ -24,20 +24,21 @@ docs
 
 - 触碰模块集合（机器可读 glob/path，一行一个；禁止散文；`guard:pr-shape` 唯一读取本列表）：
   - `docs/specs/M5R-08-true-integration-closeout.md`
+  - `docs/specs/M5R-08-true-db-ci-closeout.md`
   - `docs/evidence/M5R/M5R-08-true-integration-closeout.md`
   - `docs/evidence/M5R/README.md`
   - `docs/evidence/M5/README.md`
   - `scripts/tests/m5r-admin-runtime-wiring.test.mjs`
   - `scripts/tests/m5r-true-integration-closeout.test.mjs`
 - 说明/备注：
-  - This slice may read M5/M5R specs, evidence, existing M5R tests and existing true DB smoke wrappers.
+  - This slice may read M5/M5R specs, evidence, existing M5R tests and existing true DB smoke wrappers. The M5R-08 true DB CI follow-up may update this spec to point at the secret-backed CI closeout.
   - It must not modify `apps/**`, `packages/**`, Prisma schema/migrations/generated client, lockfile, shared config/CI/guard scripts, production/deploy files, Playwright tests, or any runtime source.
   - Root/main checkout `/Users/atilla/Documents/UZMAX智能运营` is read-only coordination only.
 
 ## 变更预算与路径分类
 
 - source budget target: changed source files <= 0, net source LOC <= 0, new source files <= 0.
-- docs: this spec, M5R-08 evidence, M5R README and M5 README.
+- docs: this spec, the M5R-08 true DB CI follow-up spec, M5R-08 evidence, M5R README and M5 README.
 - test: one focused Node closeout test under `scripts/tests`, plus one existing M5R-07 status assertion update so prior admin-wiring tests reflect that M5R-07 is no longer active after M5R-08.
 - source/generated/lock/config/schema/migration/API/admin source/worker/cron/distill/ops-assets/evals/provider/adapter/runtime source: none.
 - New source/test `rg` conclusion: `rg -n "M5R-08|true integration closeout|m5r-true-integration|runM5rTrueIntegration|run-m5r.*closeout|True Integration Closeout" docs scripts packages apps` found only the M5R-00 planned queue plus forward references in M5R-04/05/06/07 docs and no existing closeout aggregator. `rg -n "runM5rConfirmationQueueTrueDbSmoke|runM5rFormalWriteTrueDbSmoke|runM5rDistillSchedulerHealthTrueDbSmoke|runM5rAiMemberRuntimeTrueDbSmoke|runM5rLogsAnalyticsTrueDbSmoke|runM5rTemplateCopyTrueDbSmoke" packages/db/scripts scripts/tests docs` found existing M5R true DB wrappers/support runners, so M5R-08 reuses those wrappers in `scripts/tests/m5r-true-integration-closeout.test.mjs` rather than inventing parallel runtime logic.
@@ -96,7 +97,7 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 4. When `UZMAX_RLS_DATABASE_URL` is present, run the existing wrappers in this order: distill health/candidates, confirmation queue persistence, formal write, logs/analytics readback, template copy independence, AI emergency/recovery.
 5. Create this spec and `docs/evidence/M5R/M5R-08-true-integration-closeout.md`.
 6. Update `docs/evidence/M5R/README.md`: mark M5R-07 no longer active, add M5R-08 blocker status, and keep true DB missing-env status honest.
-7. Update `docs/evidence/M5/README.md`: keep M5 blocked pending true integration DB/RLS smoke, still `not_owner_accepted`, not production/GA/release, and true DB closeout blocked if env is missing.
+7. Update `docs/evidence/M5/README.md`: keep M5 blocked if true integration DB/RLS smoke cannot run; update M5 to runtime-evidence-ready only after the secret-backed true DB closeout passes; in all cases keep `not_owner_accepted` and not production/GA/release.
 8. Run and record validation.
 
 ## 通过条件
@@ -107,7 +108,7 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 - If `UZMAX_RLS_DATABASE_URL` is available, closeout runner executes the existing M5R true DB wrappers and reports `passed_true_db` only after they pass.
 - Evidence links distill candidate/health, confirmation persistence, owner confirm/conflict diff, formal write, audit/log readback, analytics board, independent template copy, AI emergency/recovery, tenant/RLS evidence from M5R-01..06 and admin runtime wiring from M5R-07.
 - M5R README marks M5R-07 completed/not active and M5R-08 as final closeout.
-- M5 README status remains blocked pending true integration DB/RLS smoke while still `not_owner_accepted` and not production/GA/release.
+- M5 README status reflects the true DB closeout result while still `not_owner_accepted` and not production/GA/release.
 - Required validation passes or failures are honestly recorded.
 - No source/runtime/schema/migration/config/lock/generated/production deploy changes.
 
@@ -133,7 +134,7 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 
 | Item | M5R-08 status | Evidence |
 |---|---|---|
-| A-03 | `runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted` | M5R-06 proves independent tenant-owned template copy path; M5R-08 links the wrapper in the final chain, but true DB/RLS closeout remains blocked by missing env. |
+| A-03 | `runtime_evidence_ready_not_owner_accepted` | M5R-06 proves independent tenant-owned template copy path; M5R-08 links the wrapper in the final CI true DB chain that passed secret-backed execution. |
 | H-01 | `limited_formal_write_runtime_evidence_ready_not_full_h01_closed` | M5R-02 proves the named config-version formal write path only; full knowledge/resource authoring remains future scoped. |
 | H-02 | `confirmation_to_formal_write_runtime_evidence_ready` | M5R-01 persists confirmation decisions; M5R-02 writes only approved/edited decisions. |
 | H-03 | `conflict_diff_to_formal_write_runtime_evidence_ready` | M5R-01/M5R-02 preserve conflict diff requirement before formal write. |
@@ -143,8 +144,8 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 | I-02 | `mobile_runtime_wiring_evidence_ready` | M5R-04 proves emergency runtime path; M5R-07 proves 320px admin API wiring. |
 | I-06 | `logs_analytics_runtime_evidence_ready` | M5R-05 proves fixed board/log/export draft runtime path; M5R-07 wires admin API mode. |
 | I-07 | `ai_audit_logs_runtime_evidence_ready` | M5R-04/M5R-05 prove AI state/audit and login/presence/operation log readback paths. |
-| J-05 | `m5_runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted` | M5R-08 records the blocker and wrapper index only; final true integration DB/RLS smoke, owner acceptance and release decisions remain future owner decisions. |
+| J-05 | `m5_runtime_evidence_ready_not_owner_accepted` | M5R-08 records the wrapper index and passed CI true integration DB/RLS smoke; owner acceptance and release decisions remain future owner decisions. |
 | K-03 | `active` | One spec / one PR; this PR implements only M5R-08. |
 | K-04 | `active` | M5R-08 is final serial closeout with docs/test-only touch list. |
 
-M5R-08 closes no production acceptance item. It records the final true integration closeout blocker and wrapper index, and preserves missing true DB env as an explicit blocker to M5R completion and live true DB execution.
+M5R-08 closes no production acceptance item. It records the final true integration wrapper index and, through the true DB CI follow-up, proved the wrapper chain against the configured smoke database before runtime-evidence-ready was recorded, without claiming owner acceptance or release approval.

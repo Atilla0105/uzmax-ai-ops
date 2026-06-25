@@ -17,20 +17,20 @@ Recorded before edits from the assigned worktree on 2026-06-25.
 
 ## Scope
 
-M5R-08 is the final serial runtime closeout blocker record. It adds a focused Node closeout test that aggregates existing M5R true DB wrappers and updates M5/M5R evidence wording.
+M5R-08 is the final serial runtime closeout record. It adds a focused Node closeout test that aggregates existing M5R true DB wrappers and updates M5/M5R evidence wording.
 
-It does not mark M5 or M5R runtime-evidence-ready. It records that final true integration DB/RLS smoke is still blocked because `UZMAX_RLS_DATABASE_URL` is absent. It does not approve owner acceptance, production, GA-0, 1.0 release, real customer/order data, real LLM/provider calls, external SaaS onboarding, production Redis/worker deployment or M6 release hardening.
+The initial local worker recorded missing-env fail-closed behavior because `UZMAX_RLS_DATABASE_URL` was absent. The M5R-08 true DB CI follow-up ran the same closeout test in GitHub Actions with the existing masked repo secret and recorded `passed_true_db` only after the wrapper chain passed. It does not approve owner acceptance, production, GA-0, 1.0 release, real customer/order data, real LLM/provider calls, external SaaS onboarding, production Redis/worker deployment or M6 release hardening.
 
 ## Prior Runtime Boundary Chain
 
 | Slice | Runtime boundary linked by M5R-08 |
 |---|---|
-| M5R-01 Confirmation Queue Persistence | Persists confirmation queue decisions in `confirmation_item`; true DB wrapper `runM5rConfirmationQueueTrueDbSmoke`; local status `blocked_by_missing_env`. |
-| M5R-02 Formal Write Pipeline | Writes only approved/edited decisions to named `config_version` + `audit_log`; pending/discarded/blocked do not write; true DB wrapper `runM5rFormalWriteTrueDbSmoke`; local status `blocked_by_missing_env`. |
-| M5R-03 Distill Scheduler + Health Runtime | Persists capped distill run/candidates/health/downshift/manual recovery evidence; true DB wrapper `runM5rDistillSchedulerHealthTrueDbSmoke`; local status `blocked_by_missing_env`. |
-| M5R-04 AI Member Runtime Control | Persists AI emergency stop/recovery/toggle and audit behavior; true DB support runner `runM5rAiMemberRuntimeTrueDbSmoke`; local status `blocked_by_missing_env`. |
-| M5R-05 Logs + Analytics Runtime | Persists login/presence/operation readback, fixed board and controlled export draft path; true DB wrapper `runM5rLogsAnalyticsTrueDbSmoke`; local status `blocked_by_missing_env`. |
-| M5R-06 Template Copy Runtime | Copies controlled group template refs into independent tenant-owned `config_version` rows with audit; true DB wrapper `runM5rTemplateCopyTrueDbSmoke`; local status `blocked_by_missing_env`. |
+| M5R-01 Confirmation Queue Persistence | Persists confirmation queue decisions in `confirmation_item`; true DB wrapper `runM5rConfirmationQueueTrueDbSmoke`; CI closeout status passed. |
+| M5R-02 Formal Write Pipeline | Writes only approved/edited decisions to named `config_version` + `audit_log`; pending/discarded/blocked do not write; true DB wrapper `runM5rFormalWriteTrueDbSmoke`; CI closeout status passed. |
+| M5R-03 Distill Scheduler + Health Runtime | Persists capped distill run/candidates/health/downshift/manual recovery evidence; true DB wrapper `runM5rDistillSchedulerHealthTrueDbSmoke`; CI closeout status passed. |
+| M5R-04 AI Member Runtime Control | Persists AI emergency stop/recovery/toggle and audit behavior; true DB support runner `runM5rAiMemberRuntimeTrueDbSmoke`; CI closeout status passed. |
+| M5R-05 Logs + Analytics Runtime | Persists login/presence/operation readback, fixed board and controlled export draft path; true DB wrapper `runM5rLogsAnalyticsTrueDbSmoke`; CI closeout status passed. |
+| M5R-06 Template Copy Runtime | Copies controlled group template refs into independent tenant-owned `config_version` rows with audit; true DB wrapper `runM5rTemplateCopyTrueDbSmoke`; CI closeout status passed. |
 | M5R-07 Admin Runtime Wiring | Wires admin shells to API runtime mode and 320px confirmation/AI emergency paths; direct DB smoke omitted because DB/RLS writes are owned by M5R-01/04/05/06. |
 
 ## Closeout Test
@@ -68,32 +68,43 @@ When `UZMAX_RLS_DATABASE_URL` is present, the same closeout runner executes the 
 
 ## True DB/RLS Closeout Status
 
-Current local true DB closeout status: `blocked_missing_env`.
+Current CI true DB closeout status: `passed_true_db`.
 
-`UZMAX_RLS_DATABASE_URL` is absent in this worker environment. The closeout test therefore records the blocked status before executing any DB wrapper. It proves the wrapper modules/exports resolve, but M5/M5R remain blocked pending a true integration DB/RLS smoke. This is not a true DB pass, not runtime evidence ready and not owner acceptance.
+The local worker environment still does not print or store `UZMAX_RLS_DATABASE_URL`; local missing-env tests continue to prove fail-closed behavior. GitHub Actions read the existing masked `UZMAX_RLS_DATABASE_URL` repo secret through a step-local base env, checked that it was non-empty, sanitized Prisma-only URL query parameters for the `psql` migration client, applied the existing idempotent dev smoke migrations `0007_m5_operations_contracts_foundation.sql` and `0008_m5r05_logs_analytics_runtime.sql`, and only then exported the pooled URL for the test process in the `M5R true integration closeout` step. With that env present, `scripts/tests/m5r-true-integration-closeout.test.mjs` executed all six existing M5R true DB wrappers and returned `passed_true_db` only after they passed.
 
-If the env is later provided, run:
+CI evidence:
+
+- Run: <https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/28183737387>
+- Job: <https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/28183737387/job/83479977791>
+- Head commit: `8bb77d3d58c07fd0e45e9ca8223fe26bc4dd3c33`
+- `Apply M5R dev smoke migrations`: pass
+- `M5R true integration closeout`: pass
+- Overall `checks` job: pass, duration 9m26s
+
+The true DB closeout command is:
 
 `node --test scripts/tests/m5r-true-integration-closeout.test.mjs`
 
-The test will execute the existing wrapper chain and report failure if any wrapper fails.
+The test executes the existing wrapper chain and reports failure if any wrapper fails. Secret values are not printed or committed.
 
 ## Validation
 
-Recorded from `/private/tmp/uzmax-m5r-08-true-integration-closeout` on 2026-06-25.
+Recorded from `/private/tmp/uzmax-m5r-08-true-db-ci-closeout` on 2026-06-25.
 
 | Command | Result | Notes |
 |---|---|---|
 | `npm ci` | pass | Installed locked dependencies in the assigned worktree; 360 packages, 0 vulnerabilities. |
-| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs` | pass | 5/5 tests passed; local true DB closeout status is `blocked_missing_env` because `UZMAX_RLS_DATABASE_URL` is absent; wrapper modules/exports resolved without wrapper execution. |
-| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs scripts/tests/m5r-confirmation-queue-persistence.test.mjs scripts/tests/m5r-formal-write-pipeline.test.mjs scripts/tests/m5r-distill-scheduler-health-runtime.test.mjs scripts/tests/m5r-ai-member-runtime-control.test.mjs scripts/tests/m5r-logs-analytics-runtime.test.mjs scripts/tests/m5r-template-copy-runtime.test.mjs scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | Focused M5R subset passed: 39/39 tests. |
+| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs` | pass | 6/6 tests passed; local true DB closeout status is `blocked_missing_env` because `UZMAX_RLS_DATABASE_URL` is absent; wrapper modules/exports resolved without wrapper execution. |
+| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | Focused M5R closeout/admin status subset passed: 9/9 tests. |
 | `npm run format:check` | pass | Prettier reported all matched files use Prettier code style after formatting the new test. |
 | `npm run lint` | pass | ESLint completed across apps, packages and scripts. |
 | `npm run typecheck` | pass | TypeScript no-emit check passed. |
 | `npm run knip` | pass | No unused export/dependency findings reported. |
-| `npm run test` | pass | Full Node suite passed: 395/395 tests across 78 suites. |
+| `npm run test` | pass | Full Node suite passed: 396/396 tests across 78 suites. |
 | `git diff --check` | pass | No whitespace errors. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-08-true-integration-closeout.md --include-worktree` | pass | No PR existed yet for this branch; guard reported 6 changed files, categories docs=4/test=2, source changed files 0, net source LOC 0 and new source files 0. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-08-true-db-ci-closeout.md --include-worktree` | pass | No PR existed yet for this branch; guard reported 8 changed files, categories config=1/docs=5/test=2, source changed files 0, net source LOC 0 and new source files 0. |
+| GitHub Actions `Apply M5R dev smoke migrations` | pass | Run `28183737387`, job `83479977791`; secret-backed CI applied existing migrations `0007` and `0008` after sanitizing Prisma-only URL query parameters for `psql`. |
+| GitHub Actions `M5R true integration closeout` | pass | Run `28183737387`, job `83479977791`; secret-backed CI ran `node --test scripts/tests/m5r-true-integration-closeout.test.mjs` with masked `UZMAX_RLS_DATABASE_URL` and returned `passed_true_db`. |
 
 ## No Sensitive Data Statement
 
@@ -118,8 +129,8 @@ M5R-08 does not approve:
 
 ## Closeout Status
 
-M5 is now recorded as `m5_runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted`.
+M5 is now recorded as `m5_runtime_evidence_ready_not_owner_accepted`.
 
-M5R-08 is now recorded as `m5r_08_true_integration_closeout_blocked_missing_true_db_env_not_owner_accepted`.
+M5R-08 is now recorded as `m5r_08_true_integration_closeout_passed_true_db_not_owner_accepted`.
 
-These are AI evidence statuses only. They record the missing-env blocker and wrapper index, not final M5R completion. Final true integration DB/RLS smoke is still required before M5/M5R can be marked runtime-evidence-ready. They do not claim owner acceptance, production/GA/release approval or live true DB execution success.
+These are AI evidence statuses only. They record the wrapper index and secret-backed CI true DB/RLS closeout for owner review. They do not claim owner acceptance, production/GA/release approval, real customer/order data approval, real LLM/provider approval or external SaaS onboarding approval.

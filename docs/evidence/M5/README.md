@@ -15,7 +15,7 @@ Current template-center evidence: `docs/evidence/M5/M5-07-template-center.md`.
 Current closeout evidence: `docs/evidence/M5/M5-08-integration-smoke-closeout.md`.
 Current runtime closeout evidence: `docs/evidence/M5R/M5R-08-true-integration-closeout.md`.
 
-M5 current status: `m5_runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted`. This means M5-01 through M5-08 first established the operations-loop contracts and docs/test closeout, and M5R-01 through M5R-08 linked the runtime persistence, formal write, distill health, AI emergency control, logs/analytics, template copy and admin API wiring wrapper index. The current worker environment lacks `UZMAX_RLS_DATABASE_URL`, so the final true integration DB/RLS closeout smoke is explicitly blocked. M5 is not runtime-evidence-ready, not owner accepted, not production accepted, and not approved for any item listed in the Boundary section.
+M5 current status: `m5_runtime_evidence_ready_not_owner_accepted`. This means M5-01 through M5-08 first established the operations-loop contracts and docs/test closeout, and M5R-01 through M5R-08 linked runtime persistence, formal write, distill health, AI emergency control, logs/analytics, template copy, admin API wiring and the final secret-backed true integration DB/RLS closeout path. M5 is runtime-evidence-ready for owner review, and remains not owner accepted, not production accepted, not GA/release approved, and not approved for any item listed in the Boundary section.
 
 M4 prior state: `owner_accepted_m4_milestone_evidence`. Project owner accepted M4 milestone evidence on 2026-06-24. M4 acceptance does not approve production, GA-0, real customer traffic, customer LLM, production Redis/worker deployment, formal alert routing, real customer/order data, production eval gate or 1.0 release.
 
@@ -44,7 +44,7 @@ M4 prior state: `owner_accepted_m4_milestone_evidence`. Project owner accepted M
 | 6 | M5-06 logs + analytics | Frontend/local-contract fixed analytics board, dimensions, export draft governance and login/presence/operation log readback recorded. Runtime aggregation/export/log persistence remains future. | Serial with shared metric/log/audit paths. |
 | 7 | M5-07 template center | Frontend/local-contract evidence recorded for knowledge, AI member, config, eval and quick-reply templates; copy draft creates tenant-owned version refs without auto-overwrite | Serial with schema/config/template shared paths. |
 | 8 | M5-08 integration smoke + closeout | Integration smoke, evidence sync and owner closeout readiness request recorded | Completed after M5-01..M5-07 were merged; marks closeout ready for owner review, not owner accepted. |
-| M5R | M5 runtime integration bridge | Runtime persistence/formal write/distill health/AI control/logs/template copy/admin API wiring plus final closeout wrapper index recorded | Blocked pending final true integration DB/RLS smoke; true DB closeout execution is `blocked_missing_env`; not owner accepted. |
+| M5R | M5 runtime integration bridge | Runtime persistence/formal write/distill health/AI control/logs/template copy/admin API wiring plus final closeout wrapper index recorded | Secret-backed final true integration DB/RLS smoke passed in CI; not owner accepted. |
 
 Future workers must use distinct physical worktree paths, distinct branches and non-overlapping machine-readable touch lists. `packages/db` schema and migrations, lockfile, shared config, CI/guard scripts, global generated artifacts and release/production gates are global serial. Root/main remains coordination/read-only only.
 
@@ -52,7 +52,7 @@ Future workers must use distinct physical worktree paths, distinct branches and 
 
 | Item | M5 current status | Planned closure path |
 |---|---|---|
-| A-03 | runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted | M5R-06 proves tenant-owned template copy versions and no auto-overwrite; M5R-08 links the true DB wrapper, but final true integration DB/RLS smoke remains blocked. |
+| A-03 | runtime_evidence_ready_not_owner_accepted | M5R-06 proves tenant-owned template copy versions and no auto-overwrite; M5R-08 executed the true DB wrapper chain in CI before this was marked ready. |
 | H-01 | limited_formal_write_runtime_evidence_ready_not_full_h01_closed | M5R-02 proves a named `config_version` formal write path after confirmation; full facts/journeys/stages/materials edit, import, publish and media-upload closure remains future-scoped unless a dedicated implementation spec covers that workflow. |
 | H-02 | confirmation_to_formal_write_runtime_evidence_ready | M5R-01 persists confirmation queue decisions and M5R-02 proves approved/edited decisions write only after confirmation; pending/discarded/blocked do not write. |
 | H-03 | conflict_diff_to_formal_write_runtime_evidence_ready | M5R-01/M5R-02 preserve conflict diff enforcement before formal write. |
@@ -63,7 +63,7 @@ Future workers must use distinct physical worktree paths, distinct branches and 
 | I-02 | mobile_runtime_wiring_evidence_ready | M5R-04 proves AI emergency/recovery runtime path and M5R-07 proves 320px admin API wiring for confirmation and emergency actions. |
 | I-06 | logs_analytics_runtime_evidence_ready | M5R-05 proves fixed board/log/export draft runtime path and M5R-07 wires admin API mode. |
 | I-07 | ai_audit_logs_runtime_evidence_ready | M5R-04/M5R-05 prove AI state/audit plus login/presence/operation log readback paths. |
-| J-05 | m5_runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted | M5/M5R evidence now includes the final wrapper index and missing-env blocker; final true integration DB/RLS smoke, owner acceptance and release signoff remain open. |
+| J-05 | m5_runtime_evidence_ready_not_owner_accepted | M5/M5R evidence now includes the final wrapper index and passed secret-backed true integration DB/RLS closeout; owner acceptance and release signoff remain open. |
 | K-03 | active | One spec / one PR; current branch implements only the active M5 slice. |
 | K-04 | active | Planned queue and serial/parallel rules recorded. |
 
@@ -71,7 +71,7 @@ Future workers must use distinct physical worktree paths, distinct branches and 
 
 This M5 entrypoint does not approve:
 
-- M5 accepted status;
+- M5 owner accepted status;
 - M6 release hardening;
 - GA-0 opening;
 - production readiness;

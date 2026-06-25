@@ -4,10 +4,10 @@ M6 evidence tracks release hardening, final fault drills, GA-0 readiness evidenc
 
 Current M6 readiness spec: `docs/specs/M6-00-m5-signoff-and-m6-readiness-pack.md`.
 Current M6 entry evidence: `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md`.
-Current active M6 implementation spec: `docs/specs/M6-02-runtime-deploy-baseline.md`.
-Current active M6 evidence: `docs/evidence/M6/M6-02-runtime-deploy-baseline.md`.
+Current active M6 implementation spec: `docs/specs/M6-03-queue-failure-injection-drills.md`.
+Current active M6 evidence: `docs/evidence/M6/M6-03-queue-failure-injection-drills.md`.
 
-M6 current status: `m6_runtime_baseline_recorded_j01_j04_partial_not_ga0_not_release`. Project owner accepted M5 milestone/runtime evidence in the Codex thread on 2026-06-25 with "同意签收m5，可以启动m6". That acceptance allows the repo to open M6 planning and future spec-governed M6 work. It does not approve GA-0 opening, production deployment, real customer/order-data use, customer LLM, real LLM/provider keys or cost risk, external SaaS onboarding, P1 risk acceptance, or 1.0 release.
+M6 current status: `m6_queue_failure_drill_recorded_j02_supported_not_production_deployment`. Project owner accepted M5 milestone/runtime evidence in the Codex thread on 2026-06-25 with "同意签收m5，可以启动m6". That acceptance allows the repo to open M6 planning and future spec-governed M6 work. It does not approve GA-0 opening, production deployment, real customer/order-data use, customer LLM, real LLM/provider keys or cost risk, external SaaS onboarding, P1 risk acceptance, or 1.0 release.
 
 The M5/M5R README files remain historical M5R-08 closeout inputs and may still contain pre-signoff `not_owner_accepted` status strings required by the M5R closeout test contract. This M6 evidence directory records the later owner signoff and M6 handoff.
 
@@ -32,8 +32,8 @@ M6-02 is the active M6 slice in this branch. Future slices must each create or u
 |---:|---|---|---|
 | 0 | M6-00 M5 signoff and M6 readiness pack | `merged_ready_for_owner_review` | `docs/specs/M6-00-m5-signoff-and-m6-readiness-pack.md`; `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md` |
 | 1 | M6-01 Release Gate Console | `merged_ready_for_owner_review` | `docs/specs/M6-01-release-gate-console.md`; `docs/evidence/M6/M6-01-release-gate-console.md` |
-| 2 | M6-02 Runtime deploy and rollback baseline | `active` | `docs/specs/M6-02-runtime-deploy-baseline.md`; `docs/evidence/M6/M6-02-runtime-deploy-baseline.md` |
-| 3 | M6-03 Queue and failure injection drills | `not_started` | Future `docs/specs/M6-03-*` |
+| 2 | M6-02 Runtime deploy and rollback baseline | `merged_ready_for_owner_review` | `docs/specs/M6-02-runtime-deploy-baseline.md`; `docs/evidence/M6/M6-02-runtime-deploy-baseline.md` |
+| 3 | M6-03 Queue and failure injection drills | `active` | `docs/specs/M6-03-queue-failure-injection-drills.md`; `docs/evidence/M6/M6-03-queue-failure-injection-drills.md` |
 | 4 | M6-04 RLS/authz release matrix | `not_started` | Future `docs/specs/M6-04-*` |
 | 5 | M6-05 AI safety and eval gates | `not_started` | Future `docs/specs/M6-05-*` |
 | 6 | M6-06 Telegram Bot GA-0 main path | `not_started` | Future `docs/specs/M6-06-*` |
@@ -78,21 +78,21 @@ M6 does not approve:
 
 ## Current Main / CI / PR / Branch State
 
-Recorded at M6-02 entry on 2026-06-26.
+Recorded at M6-03 entry on 2026-06-26.
 
 | Fact | Evidence |
 |---|---|
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
 | root/main status | `## main...origin/main` |
-| root/main HEAD | `39b8b8cc40de3ccb38338f4926ad7e46d9887b75` |
-| root/main origin/main | `39b8b8cc40de3ccb38338f4926ad7e46d9887b75` |
-| assigned worktree | `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m6-02-runtime-deploy-baseline` |
-| assigned branch | `codex/m6-02-runtime-deploy-baseline` |
-| assigned branch base | `origin/main` at `39b8b8cc40de3ccb38338f4926ad7e46d9887b75` |
-| open PR audit | GitHub connector returned no open PRs before M6-02 PR |
-| latest merged M6 PR | GitHub PR #130 merged to main at `39b8b8cc40de3ccb38338f4926ad7e46d9887b75` |
-| current commit workflow/status audit | GitHub connector returned no PR-triggered workflow runs and no legacy commit statuses for `39b8b8c`; M6-02 merge readiness will rely on this PR's CI before merge |
-| branch hygiene | M6-01 branch/worktree deleted; root `git branch --no-merged main` returned no output before M6-02 work |
+| root/main HEAD | `ead0b901dec16fc4de89972729e6834d3718516c` |
+| root/main origin/main | `ead0b901dec16fc4de89972729e6834d3718516c` |
+| assigned worktree | `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m6-03-queue-failure-drills` |
+| assigned branch | `codex/m6-03-queue-failure-drills` |
+| assigned branch base | `origin/main` at `ead0b901dec16fc4de89972729e6834d3718516c` |
+| open PR audit | GitHub connector returned no open PRs before M6-03 PR |
+| latest merged M6 PR | GitHub PR #131 merged to main at `ead0b901dec16fc4de89972729e6834d3718516c` |
+| current commit workflow/status audit | GitHub PR #131 CI passed before merge; M6-03 merge readiness will rely on this PR's CI before merge |
+| branch hygiene | M6-02 branch/worktree deleted; root `git branch --no-merged main` returned no output before M6-03 work |
 
 ## Acceptance-Gap Summary
 
@@ -103,9 +103,11 @@ Current high-level M6 entry posture:
 - M0-M4 milestone evidence is accepted in prior evidence records.
 - M5/M5R runtime evidence is now owner accepted for milestone evidence only.
 - M6-01 release gate console is merged and records current gate state in admin.
-- M6-02 runtime deploy/rollback baseline is active and records J-01/J-04 partial state without closing real rollback drills.
-- M6 has not yet closed J-01/J-02/J-03/J-04/J-05/L-01/L-02.
+- M6-02 runtime deploy/rollback baseline is merged and records J-01/J-04 partial state without closing real rollback drills.
+- M6-03 queue/failure-injection drill is active and records J-02 synthetic BullMQ/Redis retry/idempotency/backlog support without production Redis/worker approval.
+- M6 has not yet closed J-01/J-03/J-04/J-05/L-01/L-02.
 - J-01 remains open because real Render/Vercel rollback drills are pending and worker/cron starts are still placeholders.
+- J-02 has synthetic release-drill evidence from the M4-45 Redis smoke and M6-03 runbook, but production Redis/worker deployment and formal alert-channel routing remain not approved.
 - J-04 deploy/rollback runbook coverage is improved; remaining fault drills stay open for later M6 slices.
 - GA-0 remains closed until its checklist is green and owner explicitly opens it.
 - 1.0 release remains blocked until all P0 items pass and P1/P2 handling matches the acceptance matrix.
@@ -115,6 +117,7 @@ Current high-level M6 entry posture:
 M6-00 validation is tracked in `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md`.
 M6-01 validation is tracked in `docs/evidence/M6/M6-01-release-gate-console.md`.
 M6-02 validation is tracked in `docs/evidence/M6/M6-02-runtime-deploy-baseline.md`.
+M6-03 validation is tracked in `docs/evidence/M6/M6-03-queue-failure-injection-drills.md`.
 
 ## Sensitive Data Boundary
 

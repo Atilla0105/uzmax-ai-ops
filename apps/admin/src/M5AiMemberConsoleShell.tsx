@@ -4,13 +4,13 @@ import {
   aiMemberCapabilityKeys,
   aiMemberConsoleMember as member,
   aiMemberActionLabel,
-  aiMemberDraftElements,
+  aiMemberDraftLines,
   aiMemberEmergencyStopLabel,
   aiMemberErrorMessage,
   aiMemberRuntimeActionInput,
   aiMemberRuntimeLabel,
   aiMemberRuntimeRecord,
-  aiMemberSummaryElements,
+  aiMemberSummaryRows,
   createAiMemberActionDraft,
   initialAiMemberCapabilities,
   type AiMemberActionDraft,
@@ -25,17 +25,23 @@ import {
 } from "./m5AdminRuntimeMode";
 import "./m5-ai-member-console-shell.css";
 
+type AiMemberCapabilities = Record<AiMemberCapabilityKey, boolean>;
+type ActiveVersionEvidence = Record<string, string | undefined>;
+type RuntimeAiMemberAction = "emergency_stop" | "recover_online";
+
+function createRuntimeClient() {
+  return createAiMemberRuntimeApiClient({ fetcher: createM5AdminRuntimeFetcher() });
+}
 export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
   const runtimeEnabled = isM5AdminRuntimeEnabled("aiMember");
   const memberId = getM5RuntimeAiMemberId();
   const [runtimeResult, setRuntimeResult] = useState("");
   const [status, setStatus] = useState<AiMemberStatus>("breaker_offline");
-  const [activeVersionEvidence, setActiveVersionEvidence] = useState<
-    Record<string, string | undefined>
-  >({});
-  const [capabilities, setCapabilities] = useState<
-    Record<AiMemberCapabilityKey, boolean>
-  >(initialAiMemberCapabilities);
+  const [activeVersionEvidence, setActiveVersionEvidence] =
+    useState<ActiveVersionEvidence>({});
+  const [capabilities, setCapabilities] = useState<AiMemberCapabilities>(
+    initialAiMemberCapabilities
+  );
   const [draft, setDraft] = useState<AiMemberActionDraft | undefined>();
   const [reasonExpanded, setReasonExpanded] = useState(false);
   const actionButton = (label: string, action: AiMemberActionDraft["action"]) => (
@@ -73,9 +79,7 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
         return;
       }
       try {
-        const client = createAiMemberRuntimeApiClient({
-          fetcher: createM5AdminRuntimeFetcher()
-        });
+        const client = createRuntimeClient();
         const result = await client.toggleCapability(memberId, capabilityKey, {
           ...(nextEnabled ? activeVersionEvidence : {}),
           controlRef: `controlled://m5r-07/ai-member/capability/${capabilityKey}`,
@@ -105,13 +109,9 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
     setCapabilities((current) => ({ ...current, [capabilityKey]: nextEnabled }));
     void createDraft("toggle_capability", { capabilityKey, nextEnabled });
   };
-  const applyRuntimeAction = async (
-    action: Extract<AiMemberActionDraft["action"], "emergency_stop" | "recover_online">
-  ) => {
+  const applyRuntimeAction = async (action: RuntimeAiMemberAction) => {
     try {
-      const client = createAiMemberRuntimeApiClient({
-        fetcher: createM5AdminRuntimeFetcher()
-      });
+      const client = createRuntimeClient();
       const input = aiMemberRuntimeActionInput(action);
       const result =
         action === "emergency_stop"
@@ -136,9 +136,7 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
   useEffect(() => {
     if (!runtimeEnabled) return;
     let active = true;
-    const client = createAiMemberRuntimeApiClient({
-      fetcher: createM5AdminRuntimeFetcher()
-    });
+    const client = createRuntimeClient();
     void client
       .getRuntimeState(memberId)
       .then((state) => {
@@ -184,7 +182,12 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
         </div>
       ) : null}
       <div className="m5-ai-summary" data-testid="m5-ai-member-summary">
-        {aiMemberSummaryElements(status)}
+        {aiMemberSummaryRows(status).map(([label, value, testId]) => (
+          <div data-testid={testId} key={label}>
+            {label}
+            <strong>{value}</strong>
+          </div>
+        ))}
       </div>
       <div className="m5-ai-breaker" data-testid="m5-ai-breaker-reason">
         <div>
@@ -237,7 +240,9 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
       </div>
       {draft ? (
         <div className="m5-ai-draft" data-testid="m5-ai-action-draft">
-          {aiMemberDraftElements(draft)}
+          {aiMemberDraftLines(draft).map((text) => (
+            <span key={text}>{text}</span>
+          ))}
         </div>
       ) : null}
     </section>

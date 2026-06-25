@@ -1,5 +1,3 @@
-import { createElement as h } from "react";
-
 const CONTROLLED_REF_PATTERN = /^controlled:\/\/[a-z0-9][a-z0-9/_-]*$/i;
 const BASE64ISH_SEGMENT_PATTERN = /(?:^|\/)[A-Za-z0-9+_-]{40,}={0,2}(?:$|\/)/;
 const FORBIDDEN_REF_TEXT_PATTERN =
@@ -82,20 +80,16 @@ export function aiMemberActionLabel(enabled: boolean, runtime: string, local: st
 export function aiMemberEmergencyStopLabel(enabled: boolean) {
   return aiMemberActionLabel(enabled, "Emergency stop API", "Emergency stop local");
 }
-export function aiMemberSummaryElements(status: AiMemberStatus) {
-  return (
-    [
-      ["Member", aiMemberConsoleMember.displayName, undefined],
-      ["Status", status, "m5-ai-member-status"],
-      ["Active version", aiMemberConsoleMember.activeVersionRef, undefined],
-      ["Persona", aiMemberConsoleMember.personaRef, undefined]
-    ] as const
-  ).map(([label, value, testId]) =>
-    h("div", { "data-testid": testId, key: label }, label, h("strong", null, value))
-  );
+export function aiMemberSummaryRows(status: AiMemberStatus) {
+  return [
+    ["Member", aiMemberConsoleMember.displayName, undefined],
+    ["Status", status, "m5-ai-member-status"],
+    ["Active version", aiMemberConsoleMember.activeVersionRef, undefined],
+    ["Persona", aiMemberConsoleMember.personaRef, undefined]
+  ] as const;
 }
-export function aiMemberDraftElements(draft: AiMemberActionDraft) {
-  const lines = [
+export function aiMemberDraftLines(draft: AiMemberActionDraft) {
+  return [
     draft.action,
     `target ${draft.targetStatus}`,
     `formal runtime write ${draft.formalRuntimeWrite}`,
@@ -106,7 +100,6 @@ export function aiMemberDraftElements(draft: AiMemberActionDraft) {
       ? [`${draft.capabilityKey} ${draft.nextEnabled ? "enabled" : "disabled"}`]
       : [])
   ];
-  return lines.map((text) => h("span", { key: text }, text));
 }
 export function aiMemberErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "AI runtime API request failed";

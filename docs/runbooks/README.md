@@ -10,8 +10,6 @@
 - `queue-failure-injection.md`：worker 积压、队列重试/幂等、订单导入异常路径演练
 - `backup-restore.md`：数据库备份与恢复演练
 - `secret-token-rotation.md`：Bot token、LLM key、服务角色 key 轮换
+- `ai-safety-fuse.md`：模型全挂、红线误发、AI 熔断与恢复演练
 - bot 无响应
-- 模型全挂
-- 红线误发
 - 订单 API 挂
-- AI 熔断与恢复

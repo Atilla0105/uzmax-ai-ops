@@ -27,6 +27,12 @@ import {
   type LogsAnalyticsRuntimeRepositoryPort
 } from "./logs-analytics-runtime.ts";
 import {
+  TEMPLATE_COPY_RUNTIME_REPOSITORY,
+  TemplateCopyRuntimeController,
+  createTemplateCopyRuntimeRepositoryProviderFromEnv,
+  type TemplateCopyRuntimeRepositoryPort
+} from "./template-copy-runtime.ts";
+import {
   ConversationTicketController,
   ConversationTicketService,
   InMemoryConversationTicketRepository
@@ -173,6 +179,12 @@ type LogsAnalyticsRuntimeContractAnchor = {
   repositoryProvider: typeof createLogsAnalyticsRuntimeRepositoryProviderFromEnv;
   repositoryToken: typeof LOGS_ANALYTICS_RUNTIME_REPOSITORY;
 };
+type TemplateCopyRuntimeContractAnchor = {
+  controller: typeof TemplateCopyRuntimeController;
+  repository: TemplateCopyRuntimeRepositoryPort;
+  repositoryProvider: typeof createTemplateCopyRuntimeRepositoryProviderFromEnv;
+  repositoryToken: typeof TEMPLATE_COPY_RUNTIME_REPOSITORY;
+};
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
   | "defaultRuntimeMode"
@@ -235,6 +247,12 @@ function logsAnalyticsRuntimeContractAnchor(
   void contract;
 }
 void logsAnalyticsRuntimeContractAnchor;
+function templateCopyRuntimeContractAnchor(
+  contract: TemplateCopyRuntimeContractAnchor
+) {
+  void contract;
+}
+void templateCopyRuntimeContractAnchor;
 
 @Injectable()
 class DisabledTelegramBotIngressQueue {
@@ -275,6 +293,7 @@ class TelegramBotWebhookController {
     CustomerAssetController,
     LogsAnalyticsRuntimeController,
     OrderImportController,
+    TemplateCopyRuntimeController,
     TelegramBotWebhookController
   ],
   providers: [
@@ -313,6 +332,10 @@ class TelegramBotWebhookController {
     {
       provide: LOGS_ANALYTICS_RUNTIME_REPOSITORY,
       useFactory: () => createLogsAnalyticsRuntimeRepositoryProviderFromEnv()
+    },
+    {
+      provide: TEMPLATE_COPY_RUNTIME_REPOSITORY,
+      useFactory: () => createTemplateCopyRuntimeRepositoryProviderFromEnv()
     },
     InMemoryConversationTicketRepository,
     InMemoryCustomerAssetRepository,

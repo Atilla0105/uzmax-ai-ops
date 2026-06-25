@@ -39,6 +39,11 @@ export async function importApiLogsAnalyticsRuntimeModules(options = {}) {
     ["logsAnalyticsRuntime", "logs-analytics-runtime"]
   ]);
 }
+export async function importApiTemplateCopyRuntimeModules(options = {}) {
+  return importApiRuntimeModules(options, [
+    ["templateCopyRuntime", "template-copy-runtime"]
+  ]);
+}
 async function importApiRuntimeModules(options, entries) {
   const outDir = await compileApiRuntime(options);
   const modules = { outDir };
@@ -164,6 +169,38 @@ export async function compileApiRuntime(options = {}) {
         "./logs-analytics-runtime.repository.mjs"
     }
   );
+  await writeModule(
+    outDir,
+    "apps/api/src/template-copy-runtime.contracts.ts",
+    "template-copy-runtime.contracts.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/template-copy-runtime.repository.ts",
+    "template-copy-runtime.repository.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+      "./template-copy-runtime.contracts.ts": "./template-copy-runtime.contracts.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/template-copy-runtime.ts",
+    "template-copy-runtime.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "./access-context.ts": "./access-context.mjs",
+      "./template-copy-runtime.contracts.ts": "./template-copy-runtime.contracts.mjs",
+      "./template-copy-runtime.repository.ts": "./template-copy-runtime.repository.mjs"
+    }
+  );
   for (const [name, replacements] of customerAssetRuntimeModules()) {
     await writeModule(
       outDir,
@@ -194,7 +231,8 @@ export async function compileApiRuntime(options = {}) {
     "./customer-asset.service.ts": "./customer-asset.service.mjs",
     "./logs-analytics-runtime.ts": "./logs-analytics-runtime.mjs",
     "./order-import.ts": "./order-import.mjs",
-    "./order-import.runtime.ts": "./order-import.runtime.mjs"
+    "./order-import.runtime.ts": "./order-import.runtime.mjs",
+    "./template-copy-runtime.ts": "./template-copy-runtime.mjs"
   });
   await writeModule(outDir, "apps/api/src/main.ts", "main.mjs", {
     "./app.module.ts": "./app.module.mjs"

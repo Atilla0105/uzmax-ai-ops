@@ -86,17 +86,17 @@ No true DB write, customer/order data, secret or LLM/provider call occurred. The
 
 ## Validation
 
-Recorded after implementation and finalizer fixes on 2026-06-25.
+Final validation refreshed after the quality-blocker fix on 2026-06-25.
 
 | Command | Result | Notes |
 |---|---|---|
-| `node --test scripts/tests/m5r-ai-member-runtime-control.test.mjs` | pass | 4 tests passed; validates disabled default, explicit RLS mode, API/admin client route shape, audit behavior and missing-env true DB fail-closed contract. |
+| `node --test scripts/tests/m5r-ai-member-runtime-control.test.mjs` | pass | 4 tests passed; validates disabled default, explicit RLS mode, API/admin client route shape, audit behavior, missing-env true DB fail-closed contract and the regression that `enabled: true` without `evalGateId` rejects before changing `ai_capability_toggle.enabled`. |
 | `node packages/db/scripts/tests/run-m5r-ai-member-runtime-true-db-smoke.mjs` | acceptable fail-closed | Missing `UZMAX_RLS_DATABASE_URL`; exact error `UZMAX_RLS_DATABASE_URL is required`. |
 | `npm run format:check` | pass | Prettier reported all matched files use Prettier code style. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m5r-04-ai-member-runtime-control, linked worktree, dirty allowed)`. |
 | `npm run guard:worker-boundary -- --assigned /private/tmp/uzmax-m5r-04-ai-member-runtime-control --root /Users/atilla/Documents/UZMAX智能运营` | pass | Explicit assigned/root boundary check passed. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-04-ai-member-runtime-control.md --include-worktree` | pre-commit caveat | Before final commit/PR metadata, exact failure was `out-of-scope file: packages/db/scripts/run-m5r-ai-member-runtime-true-db-smoke.mjs` and `net source LOC 1084 > 600`. The out-of-scope file is a pre-commit guard artifact: `origin/main...HEAD` still contained the thin wrapper while the worktree deletion removed it from the actual final diff. The remaining final governance caveat is the documented `large_change_exception` for source net LOC. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-04-ai-member-runtime-control.md --include-worktree` | pass | Reports 13 changed files, categories source 7/docs 4/test 2, source net LOC 815 and new source files 4; source LOC overrun remains the documented `large_change_exception`. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors reported before commit. |
 | `npm run check` | pass | Includes format, prettier-ignore guard, typecheck, lint, depcruise, jscpd, knip, forbidden/eval/doc/workspace/boundary/pr-shape guards, 376 node tests, build, size and 21 Playwright tests. Size output: 67.07 kB brotlied. |
 
@@ -129,10 +129,11 @@ Scope compliance is mostly satisfied:
 
 Focused code quality review:
 
+- Quality blocker fixed on 2026-06-25: previous repository logic allowed `toggleCapability(..., { enabled: true, reasonRef })` without `evalGateId` when no `configVersionId` was supplied. The runtime now requires `evalGateId` for every capability enable path, checks that the referenced `eval_gate` exists with `PASSED` status, and fails before updating the toggle or writing audit if evidence is missing, blocked or failed.
 - `npm run check` passed after replacing the initial oversized API source file with an ESLint-compliant split and anchoring the admin client for knip.
 - Runtime mode fails closed by default and rejects `prisma_gateway` bypass.
 - Request validation rejects raw/high-risk keys, inline refs and non-controlled refs.
-- Recovery and capability enabling cannot bypass existing M3 eval-gate/breaker evidence.
+- Recovery and capability enabling cannot bypass existing M3 eval-gate/breaker evidence, including the no-`evalGateId` capability enable regression.
 - Remaining caveat is PR size/budget, not a failing validation command.
 
 ## Acceptance Mapping

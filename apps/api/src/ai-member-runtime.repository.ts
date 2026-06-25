@@ -170,9 +170,11 @@ function repo(tx: c.RlsTxRunner): c.AiMemberRuntimeRepositoryPort {
       if (!toggle)
         throw new c.AiMemberRuntimeError(404, "AI capability toggle not found");
       if (input.enabled) {
-        if (input.configVersionId && !input.evalGateId)
-          throw c.bad("enabling capability with configVersionId requires evalGateId");
-        if (input.evalGateId) await gate(rls, input.evalGateId);
+        if (!input.evalGateId)
+          throw c.bad(
+            "enabling capability requires evalGateId with passed eval gate evidence"
+          );
+        await gate(rls, input.evalGateId);
       }
       const auditId = randomUUID();
       const before = toggleState(toggle);

@@ -158,6 +158,15 @@ describe("M5R-04 AI member runtime control", () => {
       /passed eval gate/
     );
     assert.equal(fake.toggles[0].enabled, false);
+    await assert.rejects(
+      () =>
+        repository.toggleCapability(context(), MEMBER_ID, "quote", {
+          enabled: true,
+          reasonRef: "controlled://ai-member/m5r-04/toggle-missing-gate"
+        }),
+      /evalGateId.*passed eval gate/
+    );
+    assert.equal(fake.toggles[0].enabled, false);
     const toggled = await repository.toggleCapability(context(), MEMBER_ID, "quote", {
       configVersionId: CONFIG_ID,
       enabled: true,

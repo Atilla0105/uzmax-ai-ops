@@ -12,4 +12,5 @@
 - `secret-token-rotation.md`：Bot token、LLM key、服务角色 key 轮换
 - `ai-safety-fuse.md`：模型全挂、红线误发、AI 熔断与恢复演练
 - `telegram-bot-main-path.md`：bot 无响应、重复/乱序入站、Business 关闭边界与人工留单
+- `core-ops-synthetic-e2e.md`：对话、工单、客户资产、订单、确认队列、日志与后台可见性的合成闭环演练
 - 订单 API 挂

@@ -110,6 +110,20 @@ The M6-07 core operations record maps A/D/E/H/I release-readiness status to one 
 
 This record does not approve a new live production E2E, GA-0, real customer/order data, production worker/queue deployment, customer LLM, external SaaS onboarding or 1.0 release. D-06 anonymization, H-01 broad authoring, H-05 asset recovery, H-06 full quick-reply flow, I-03 performance, I-04 realtime, I-05 visual/token release evidence, backup/restore and final P0/P1/P2 owner rollup remain open release gaps.
 
+## M6-08 Backup Restore And Asset Safety
+
+Current status token: `m6_backup_restore_asset_safety_recorded_j03_external_blocker_h05_h06_partial_not_ga0`.
+
+The M6-08 record maps backup/restore and asset/material safety status to current repo evidence:
+
+- J-03 remains blocked because no owner-approved safe restore target, backup snapshot ref or restore command output is recorded in repo evidence.
+- `docs/runbooks/backup-restore.md` now records safe target requirements, forbidden production overwrite, post-restore RLS/audit/config/storage checks and failure branches.
+- M3 media/vision contracts keep `storageRef` as the durable material body pointer; Telegram `file_id` remains cache/provider metadata.
+- M5R-02 and M5R-06 record confirmation/formal-write and template-copy DRAFT safety: no broad formal knowledge/config/template write is approved without confirmation or a named proof path.
+- H-01/H-05/H-06 remain partial/open where the repo lacks full authoring, real storage rebuild/token-rotation drill and full quick-reply public/private library workflow.
+
+This record does not approve a database restore, production mutation, GA-0, real customer/order data, customer LLM, external SaaS onboarding or 1.0 release. A future real J-03 drill requires an owner-approved safe restore target and sanitized restore evidence.
+
 ## Not Approved
 
 - GA-0 is not open.

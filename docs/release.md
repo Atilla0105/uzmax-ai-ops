@@ -96,6 +96,20 @@ The M6-06 Bot-only readiness record maps C-01, C-02, C-03b, C-06, J-04, L-01 and
 
 This record does not approve GA-0, production Bot traffic, real customer data, production Bot tokens, production webhook secrets, Telegram Business automatic reply, outbound Bot sending, production worker/queue deployment or 1.0 release. Real staging Bot evidence, DB-backed dedupe/order restore, worker/engine consumer processing, outbound leave-ticket behavior and final owner GA-0 open decision remain open release gaps.
 
+## M6-07 Core Operations Synthetic E2E
+
+Current status token: `m6_core_ops_synthetic_e2e_recorded_a_d_e_h_i_supported_not_ga0`.
+
+The M6-07 core operations record maps A/D/E/H/I release-readiness status to one repo-level synthetic golden path:
+
+- Conversation and ticket readiness is linked from M2 conversation/ticket API, admin shell and HTTP hardening evidence, plus the M6-06 Bot handoff dependency.
+- Customer asset readiness is linked from M4-43 customer asset API/admin/browser/DB/RLS runtime workflow evidence.
+- Order snapshot readiness is linked from M4-37 Admin client -> Nest HTTP -> API -> DB/RLS evidence, M4-42 operator-visible Storage metadata/import readback evidence and M4-44 order no-fabrication eval evidence.
+- Confirmation, formal write, logs and admin runtime visibility are linked from M5/M5R confirmation queue, formal-write, logs/analytics, admin runtime wiring and true integration closeout evidence.
+- `docs/runbooks/core-ops-synthetic-e2e.md` covers the safe operator replay path using controlled refs only.
+
+This record does not approve a new live production E2E, GA-0, real customer/order data, production worker/queue deployment, customer LLM, external SaaS onboarding or 1.0 release. D-06 anonymization, H-01 broad authoring, H-05 asset recovery, H-06 full quick-reply flow, I-03 performance, I-04 realtime, I-05 visual/token release evidence, backup/restore and final P0/P1/P2 owner rollup remain open release gaps.
+
 ## Not Approved
 
 - GA-0 is not open.

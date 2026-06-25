@@ -66,6 +66,14 @@ M4-46 replaces that failed simple override with a nested `@nestjs/platform-expre
 | Health alert | waiting/delayed backlog and failed counts produce alert snapshots |
 | Cleanup | Redis queue and run-specific lock keys are removed; smoke reports `run residue 0` |
 
+## M6-03 Release Replay
+
+M6-03 reuses this M4-45 queue closeout as release-hardening evidence for J-02. The replay scope is synthetic BullMQ/Redis only: duplicate deterministic job enqueue, first-attempt retry, permanent failed job, backlog/failed health alerts, source lock duplicate/release and run cleanup.
+
+The M6-03 PR intentionally touches this evidence file so the existing CI path-scope reruns `apps/worker/scripts/run-m4-order-import-bullmq-redis-smoke.mjs` with disposable `redis:7-alpine`. Existing historical proof remains PR CI run `28056312343`, job `83059437609`; current M6-03 closeout records its own PR/CI result outside this historical M4 claim.
+
+M6-03 does not change the M4-45 runtime source, does not approve production Redis/worker deployment and does not approve real customer/order data.
+
 ## Acceptance Mapping
 
 | Item | Status | Notes |

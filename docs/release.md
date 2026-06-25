@@ -46,6 +46,18 @@ The M6-02 runtime baseline records deploy/rollback readiness from repo manifests
 
 `docs/runbooks/deploy-rollback.md` now covers api, worker, cron and admin rollback dry-run evidence. This does not close J-01, because real rollback drills and owner/platform decisions remain open.
 
+## M6-03 Queue Failure Injection
+
+The M6-03 queue drill records J-02 support from the existing M4-45 BullMQ/Redis order-import smoke:
+
+- duplicate deterministic `jobId` enqueue does not create duplicate successful dispatch effects;
+- first-attempt handler failure reaches a completed job through retry;
+- permanent failed job and backlog counts produce `order_import_queue_failed_high` and `order_import_queue_backlog_high`;
+- Storage source lock duplicate/release behavior is token-checked;
+- disposable Redis queue and run-scoped lock keys are cleaned with `run residue 0`.
+
+`docs/runbooks/queue-failure-injection.md` now covers the safe synthetic drill path and failure branches. This does not approve production Redis/worker deployment, production alert-channel routing, real customer/order data or GA-0.
+
 ## Not Approved
 
 - GA-0 is not open.

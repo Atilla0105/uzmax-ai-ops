@@ -16,10 +16,11 @@ Recorded from the assigned worktree before completing docs/tests.
 ## Implementation Evidence
 
 - `apps/admin/src/m5AdminRuntimeMode.ts` adds explicit opt-in runtime mode via `window.__UZMAX_M5R_ADMIN_RUNTIME__`. Default behavior remains local/synthetic.
+- `apps/admin/src/confirmationQueueApiClient.ts` now accepts the M5R-02 runtime response shape where approved/edited config writes may return `formalWrite: true`; `auditDraft.formalWrite` must match the top-level value when present.
 - `apps/admin/src/m5ConfirmationQueueRuntime.ts` and `apps/admin/src/m5LogsAnalyticsRuntime.tsx` hold compact admin-only mapping/table helpers so React shell files stay within lint limits.
 - `apps/admin/src/aiMemberConsoleContracts.ts` now exports existing AI console labels/defaults used by the shell.
-- `apps/admin/src/M5ConfirmationQueueShell.tsx` uses `confirmationQueueApiClient` in runtime mode for `GET /confirmation-queue/items`, `GET /confirmation-queue/items/:id` and `POST /confirmation-queue/items/:id/decisions`.
-- `apps/admin/src/M5AiMemberConsoleShell.tsx` uses `aiMemberRuntimeApiClient` in runtime mode for state read, emergency stop, recovery and capability toggle.
+- `apps/admin/src/M5ConfirmationQueueShell.tsx` uses `confirmationQueueApiClient` in runtime mode for `GET /confirmation-queue/items`, `GET /confirmation-queue/items/:id` and `POST /confirmation-queue/items/:id/decisions`; an empty runtime queue renders as empty and does not fall back to synthetic local cards.
+- `apps/admin/src/M5AiMemberConsoleShell.tsx` uses `aiMemberRuntimeApiClient` in runtime mode for state read, emergency stop, recovery and capability toggle. Capability enable uses `activeVersion.evalGateId` and optional `activeVersion.configVersionId` from runtime state; if eval evidence is missing, no enable API call is made.
 - `apps/admin/src/M5LogsAnalyticsShell.tsx` uses `logsAnalyticsApiClient` in runtime mode for `GET /logs-analytics/board`, `GET /login-logs`, `GET /presence-logs`, `GET /operation-logs` and `POST /export-jobs`.
 - `apps/admin/src/M5TemplateCenterShell.tsx` uses `templateCopyApiClient` in runtime mode for `POST /template-copy/copies`.
 - Existing local shell flows remain the default when runtime mode is absent.
@@ -43,7 +44,8 @@ Exact M5R-07 true DB/RLS status: `not_run_not_applicable_admin_wiring_slice__rel
 
 - desktop runtime requests include `/confirmation-queue`, `/ai-members`, `/logs-analytics` and `/template-copy`;
 - confirmation details and decisions go through API paths;
-- AI member state and capability toggle go through API paths;
+- AI member state and capability toggle go through API paths, and capability enable body includes `evalGateId` plus `configVersionId` when runtime state returns them;
+- empty runtime confirmation queue stays empty, shows no synthetic cards and keyboard approve/discard cannot hit local fallback actions;
 - logs board/log/export job requests go through API paths;
 - template copy request goes through API path;
 - 320px confirmation approve/discard and AI emergency/recovery go through API paths.
@@ -54,25 +56,26 @@ Pre-validation source budget check after tightening:
 
 | Metric | Result |
 |---|---|
-| changed source files | 10 |
+| changed source files | 11 |
 | new source files | 5 |
-| net source LOC | 563 |
+| net source LOC | 590 |
 | source budget status | within default AGENTS budget |
 
-Tracked shell diff at the time of this evidence update was reduced from the early broad wiring draft to keep total source net LOC under 600. Final shell line counts: `apps/admin/src/M5AiMemberConsoleShell.tsx` 247 lines and `apps/admin/src/M5ConfirmationQueueShell.tsx` 239 lines. No `large_change_exception` is declared.
+Tracked shell/helper diff at the time of this evidence update was tightened to keep total source net LOC under 600 after adding `apps/admin/src/confirmationQueueApiClient.ts` to the source touch list. No `large_change_exception` is declared.
 
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
 | `npm ci` | pass | Installed local worktree dependencies after initial `playwright: command not found`. |
-| `npm run playwright -- apps/admin/tests/m5r-admin-runtime-wiring.spec.ts` | pass | 2/2 targeted Playwright tests passed. |
-| `node --test scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | 3/3 focused docs/source anchor tests passed. |
-| `node --test scripts/tests/m5-confirmation-queue-admin.test.mjs scripts/tests/m5-ai-member-console.test.mjs scripts/tests/m5-logs-analytics.test.mjs scripts/tests/m5-template-center.test.mjs scripts/tests/m5-integration-smoke-closeout.test.mjs` | pass | 18/18 existing affected M5 admin/closeout node tests passed. |
-| `npm run typecheck` | pass | TypeScript no emit completed. |
-| `npm run lint` | pass | ESLint completed after helper extraction kept React files within limits. |
 | `npm run format:check` | pass | Prettier check completed after line-budget tightening. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-07-admin-runtime-wiring.md --include-worktree` | pass | Reported changed files 15; categories source 10, docs 3, test 2. Script reported source net/new as 0 with untracked include-worktree, so manual budget above records the effective source LOC. |
+| `npm run knip` | pass | No unused public exports after removing M5R runtime helper exports. |
+| `npm run lint` | pass | ESLint completed after helper extraction kept React files within limits and shortcut handling under complexity limit. |
+| `npm run typecheck` | pass | TypeScript no emit completed. |
+| `node --test scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | 3/3 focused docs/source anchor tests passed. |
+| `npm run playwright -- apps/admin/tests/m5r-admin-runtime-wiring.spec.ts` | pass | 3/3 targeted Playwright tests passed, including eval-evidence enable body and empty runtime queue no-fallback coverage. |
+| `node --test scripts/tests/m5-confirmation-queue-admin.test.mjs` | pass | Extra focused confirmation queue client contract passed, including `formalWrite: true` and mismatch rejection coverage. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-07-admin-runtime-wiring.md --include-worktree` | pass | Reported changed files 17; categories source 11, docs 3, test 3; source changed files 11, net LOC 563, new files 5. |
 | `git diff --check` | pass | No whitespace errors. |
 
 ## No Sensitive Data Statement

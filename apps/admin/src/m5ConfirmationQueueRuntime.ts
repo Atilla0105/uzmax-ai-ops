@@ -1,21 +1,16 @@
 import { createElement } from "react";
 import { createConfirmationQueueApiClient } from "./confirmationQueueApiClient";
 import { createM5AdminRuntimeFetcher } from "./m5AdminRuntimeMode";
-export type QueueCard = {
-  confidence: string;
-  detail: string;
+export type QueueCard = Record<
+  "confidence" | "detail" | "id" | "kind" | "summary" | "target" | "urgency",
+  string
+> & {
   diff?: { left: string; right: string };
-  id: string;
-  kind: string;
-  summary: string;
-  target: string;
-  urgency: string;
 };
 export const queueItems: readonly QueueCard[] = [
   {
     confidence: "92%",
-    detail:
-      "Candidate ref controlled://candidate/knowledge-a; source ref controlled://distill/source-a.",
+    detail: "controlled://candidate/knowledge-a; controlled://distill/source-a.",
     id: "knowledge-a",
     kind: "knowledge",
     summary: "Update one fact card after repeated owner review.",
@@ -24,8 +19,7 @@ export const queueItems: readonly QueueCard[] = [
   },
   {
     confidence: "88%",
-    detail:
-      "Candidate ref controlled://candidate/profile-a; target ref controlled://profile/field-a.",
+    detail: "controlled://candidate/profile-a; controlled://profile/field-a.",
     id: "profile-a",
     kind: "profile",
     summary: "Adjust profile field from confirmed journey signal.",
@@ -34,8 +28,7 @@ export const queueItems: readonly QueueCard[] = [
   },
   {
     confidence: "83%",
-    detail:
-      "Candidate ref controlled://candidate/eval-a; payload ref controlled://eval/case-a.",
+    detail: "controlled://candidate/eval-a; controlled://eval/case-a.",
     id: "eval-a",
     kind: "eval",
     summary: "Promote review case into eval coverage.",
@@ -44,7 +37,7 @@ export const queueItems: readonly QueueCard[] = [
   },
   {
     confidence: "79%",
-    detail: "Conflict cannot skip into formal storage; owner must compare both refs.",
+    detail: "Conflict needs owner side-by-side review.",
     diff: {
       left: "Current controlled://kb/current-stage",
       right: "Candidate controlled://candidate/stage-rewrite"
@@ -56,10 +49,8 @@ export const queueItems: readonly QueueCard[] = [
     urgency: "blocked"
   }
 ] as const;
-export const health = {
-  reason: "3-day pass rate below 40%",
-  risk: "downshift risk active"
-} as const;
+const healthReason = "3-day pass rate below 40%";
+export const health = { reason: healthReason, risk: "downshift risk active" } as const;
 export const healthRows = [
   ["Today candidates", "8/10", ""],
   ["Daily cap", "10", ""],
@@ -67,7 +58,7 @@ export const healthRows = [
   ["Distill frequency", "weekly until owner recovery", ""],
   ["Latest downshift reason", health.reason, "warn"]
 ] as const;
-export function queueCardFromApi(item: unknown): QueueCard {
+function queueCardFromApi(item: unknown): QueueCard {
   const row = record(item);
   const kind = String(row.kind ?? "knowledge_candidate").replace("_candidate", "");
   return {
@@ -107,7 +98,10 @@ export async function submitRuntimeQueueDecision(
     reasonRef: `controlled://m5r-07/confirmation/${decision}`
   });
   const status = String(result.item.status);
-  return { result: `API decision ${status}; formalWrite false`, status };
+  return {
+    result: `API decision ${status}; formalWrite ${String(result.formalWrite)}`,
+    status
+  };
 }
 export function confirmationQueueErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "runtime API request failed";
@@ -130,9 +124,7 @@ export function ConflictDiff({ diff }: { diff: NonNullable<QueueCard["diff"]> })
   );
 }
 function createRuntimeQueueClient() {
-  return createConfirmationQueueApiClient({
-    fetcher: createM5AdminRuntimeFetcher()
-  });
+  return createConfirmationQueueApiClient({ fetcher: createM5AdminRuntimeFetcher() });
 }
 function diffFromApi(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;

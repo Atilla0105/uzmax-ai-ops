@@ -145,8 +145,16 @@ function queueItem(value: unknown) {
 function decisionResult(value: unknown) {
   const record = recordPayload(value, "decision result");
   const auditDraft = recordPayload(record.auditDraft, "auditDraft");
-  if (record.formalWrite !== false || auditDraft.formalWrite !== false) {
-    throw new Error("decision result must keep formalWrite false");
+  if (typeof record.formalWrite !== "boolean") {
+    throw new Error("formalWrite must be boolean");
+  }
+  const formalWrite = record.formalWrite;
+  if (
+    auditDraft.formalWrite !== undefined &&
+    (typeof auditDraft.formalWrite !== "boolean" ||
+      auditDraft.formalWrite !== formalWrite)
+  ) {
+    throw new Error("auditDraft.formalWrite must match formalWrite");
   }
   enumText(auditDraft.action, ACTIONS, "auditDraft.action");
   controlledRef(auditDraft.auditRef, "auditDraft.auditRef");
@@ -154,7 +162,7 @@ function decisionResult(value: unknown) {
   optionalControlledRef(auditDraft.reasonRef, "auditDraft.reasonRef");
   requiredText(auditDraft.reviewedAt, "auditDraft.reviewedAt");
   requiredText(auditDraft.reviewerUserId, "auditDraft.reviewerUserId");
-  return { auditDraft, formalWrite: false, item: queueItem(record.item) };
+  return { auditDraft, formalWrite, item: queueItem(record.item) };
 }
 
 function normalizeBasePath(basePath: string) {

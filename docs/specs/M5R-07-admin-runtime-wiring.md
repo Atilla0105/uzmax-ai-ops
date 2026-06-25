@@ -31,11 +31,13 @@ feature
   - `apps/admin/src/M5LogsAnalyticsShell.tsx`
   - `apps/admin/src/M5TemplateCenterShell.tsx`
   - `apps/admin/src/aiMemberConsoleContracts.ts`
+  - `apps/admin/src/confirmationQueueApiClient.ts`
   - `apps/admin/src/m5AdminRuntimeMode.ts`
   - `apps/admin/src/m5ConfirmationQueueRuntime.ts`
   - `apps/admin/src/m5LogsAnalyticsRuntime.tsx`
   - `apps/admin/src/logsAnalyticsApiClient.ts`
   - `apps/admin/src/templateCopyApiClient.ts`
+  - `scripts/tests/m5-confirmation-queue-admin.test.mjs`
   - `apps/admin/tests/m5r-admin-runtime-wiring.spec.ts`
   - `scripts/tests/m5r-admin-runtime-wiring.test.mjs`
 - 说明/备注：
@@ -47,10 +49,10 @@ feature
 
 - source budget target: changed source files <= 12, net source LOC <= 600, new source files <= 5.
 - docs: this spec, M5R-07 evidence and M5R evidence README.
-- source: four existing M5 admin shells, one existing AI contract file, and tiny admin runtime helper/client adapters.
-- test: focused Playwright runtime wiring smoke and Node anchor test.
+- source: four existing M5 admin shells, one existing AI contract file, existing confirmation queue admin API client, and tiny admin runtime helper/client adapters.
+- test: focused Playwright runtime wiring smoke, Node anchor test and the existing confirmation queue admin client contract test for `formalWrite` result parsing.
 - generated/lock/config/schema/migration/API/backend package/worker/cron/provider/adapter/production gate: none.
-- New source `rg` conclusion: searched current admin runtime/client patterns and M5R evidence with `rg` for `__UZMAX_M5R_ADMIN_RUNTIME__`, `confirmationQueueApiClient`, `aiMemberRuntimeApiClient`, `logsAnalytics`, `templateCopy`, `export-jobs`, `template-copy`, `page.route` and M5 shell test ids. Existing clients already covered confirmation queue and AI member runtime. No reusable M5 admin runtime mode helper, logs analytics admin client or template copy admin client existed. Small helper extraction keeps React shell files under lint limits, so new source belongs under `apps/admin/src/m5AdminRuntimeMode.ts`, `apps/admin/src/m5ConfirmationQueueRuntime.ts`, `apps/admin/src/m5LogsAnalyticsRuntime.tsx`, `apps/admin/src/logsAnalyticsApiClient.ts` and `apps/admin/src/templateCopyApiClient.ts`.
+- New source `rg` conclusion: searched current admin runtime/client patterns and M5R evidence with `rg` for `__UZMAX_M5R_ADMIN_RUNTIME__`, `confirmationQueueApiClient`, `aiMemberRuntimeApiClient`, `logsAnalytics`, `templateCopy`, `export-jobs`, `template-copy`, `page.route` and M5 shell test ids. Existing clients already covered confirmation queue and AI member runtime. `apps/admin/src/confirmationQueueApiClient.ts` is the correct existing owner for M5R-02 `formalWrite` response parsing. No reusable M5 admin runtime mode helper, logs analytics admin client or template copy admin client existed. Small helper extraction keeps React shell files under lint limits, so new source belongs under `apps/admin/src/m5AdminRuntimeMode.ts`, `apps/admin/src/m5ConfirmationQueueRuntime.ts`, `apps/admin/src/m5LogsAnalyticsRuntime.tsx`, `apps/admin/src/logsAnalyticsApiClient.ts` and `apps/admin/src/templateCopyApiClient.ts`.
 - External API/SDK/provider/connector/adapter basis: none. This PR adds no external provider/connector/adapter and performs no real LLM/provider call. It only uses existing internal relative API paths.
 - Exceptions: none expected. No `large_change_exception` and no `test_weakening_exception`.
 

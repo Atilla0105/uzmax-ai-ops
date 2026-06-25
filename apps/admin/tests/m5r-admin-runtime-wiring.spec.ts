@@ -1,10 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const memberId = "00000000-0000-4000-8000-000000000507";
+const evalGateId = "11111111-1111-4111-8111-111111111507";
+const configVersionId = "22222222-2222-4222-8222-222222222507";
 const requests: string[] = [];
+const capabilityBodies: unknown[] = [];
 
 test.beforeEach(async ({ page }) => {
   requests.length = 0;
+  capabilityBodies.length = 0;
   await page.addInitScript((id) => {
     (
       window as Window & { __UZMAX_M5R_ADMIN_RUNTIME__?: unknown }
@@ -37,6 +41,13 @@ test("wires M5 admin shells to runtime API clients", async ({ page }) => {
   await page.getByTestId("m5-ai-capability-quote").click();
   await expect(page.getByTestId("m5-ai-runtime-result")).toContainText(
     "toggle capability API quote"
+  );
+  expect(capabilityBodies).toContainEqual(
+    expect.objectContaining({
+      configVersionId,
+      enabled: true,
+      evalGateId
+    })
   );
 
   await expect(page.getByTestId("m5-logs-runtime-result")).toContainText(
@@ -110,6 +121,32 @@ test("routes 320px confirmation and AI emergency controls through API", async ({
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
+test("keeps empty runtime queue empty without synthetic card fallback", async ({
+  page
+}) => {
+  await page.unroute("**/confirmation-queue/items?status=pending");
+  await page.route("**/confirmation-queue/items?status=pending", async (route) => {
+    requests.push(requestPath(route.request().url()));
+    await route.fulfill({ json: { items: [] } });
+  });
+
+  await page.goto("/design");
+
+  await expect(page.getByTestId("m5-runtime-result")).toContainText(
+    "API loaded 0 confirmation items"
+  );
+  await expect(page.getByTestId("m5-runtime-empty")).toContainText(
+    "Runtime queue empty."
+  );
+  await expect(page.getByTestId("m5-card-knowledge")).toHaveCount(0);
+
+  await page.keyboard.press("a");
+  await page.keyboard.press("d");
+  expect(
+    requests.filter((path) => path.includes("/confirmation-queue/items/"))
+  ).toHaveLength(0);
+});
+
 async function routeRuntimeApis(page: Page) {
   await page.route("**/confirmation-queue/items?status=pending", async (route) => {
     requests.push(requestPath(route.request().url()));
@@ -146,11 +183,19 @@ async function routeRuntimeApis(page: Page) {
   );
   await page.route("**/ai-members/**/runtime-control", async (route) => {
     requests.push(requestPath(route.request().url()));
-    await route.fulfill({ json: { status: "breaker_offline" } });
+    await route.fulfill({
+      json: {
+        activeVersion: { configVersionId, evalGateId },
+        status: "breaker_offline"
+      }
+    });
   });
   await page.route("**/ai-members/**/runtime-control/**", async (route) => {
     const path = requestPath(route.request().url());
     requests.push(path);
+    if (path.includes("/capabilities/")) {
+      capabilityBodies.push(JSON.parse(route.request().postData() ?? "{}"));
+    }
     const status = path.includes("recover") ? "online" : "disabled";
     await route.fulfill({
       json: {

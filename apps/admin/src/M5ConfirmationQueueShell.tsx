@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { createConfirmationQueueApiClient } from "./confirmationQueueApiClient";
 import { isM5AdminRuntimeEnabled } from "./m5AdminRuntimeMode";
 import {
   ConflictDiff,
@@ -14,8 +13,7 @@ import {
   type QueueCard
 } from "./m5ConfirmationQueueRuntime";
 import "./m5-confirmation-queue-shell.css";
-void createConfirmationQueueApiClient;
-// M5R-07 anchor: helper-owned runtime detail path still calls client.getItem.
+
 export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string }) {
   const runtimeEnabled = isM5AdminRuntimeEnabled("confirmationQueue");
   const [runtimeItems, setRuntimeItems] = useState<QueueCard[] | undefined>();
@@ -26,9 +24,9 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
   const [reasonVisible, setReasonVisible] = useState(false);
   const [recoveryDrafted, setRecoveryDrafted] = useState(false);
   const [decisions, setDecisions] = useState<Record<string, string>>({});
-  const items = runtimeItems?.length ? runtimeItems : queueItems;
-  const selected = items[selectedIndex] ?? items[0] ?? queueItems[0]!;
-  const pendingCount = items.length - Object.keys(decisions).length;
+  const items = runtimeEnabled ? (runtimeItems ?? []) : queueItems;
+  const selected = items[selectedIndex];
+  const pendingCount = Math.max(0, items.length - Object.keys(decisions).length);
   const markDecision = useCallback(
     async (itemId: string, decision: "approved" | "discarded") => {
       if (runtimeEnabled) {
@@ -84,32 +82,30 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
     };
   }, [runtimeEnabled]);
   useEffect(() => {
+    setSelectedIndex((index) =>
+      items.length === 0 ? 0 : Math.min(index, items.length - 1)
+    );
+  }, [items.length]);
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       const key = event.key.toLowerCase();
       if (!["j", "k", "a", "e", "d"].includes(key)) return;
       event.preventDefault();
-      switch (key) {
-        case "j":
-          setSelectedIndex((index) => Math.min(index + 1, items.length - 1));
-          break;
-        case "k":
-          setSelectedIndex((index) => Math.max(index - 1, 0));
-          break;
-        case "a":
-          void markDecision(selected.id, "approved");
-          break;
-        case "d":
-          void markDecision(selected.id, "discarded");
-          break;
-        default:
-          setEditId(selected.id);
-      }
+      if (!selected) return;
+      const actions: Record<string, () => void> = {
+        a: () => void markDecision(selected.id, "approved"),
+        d: () => void markDecision(selected.id, "discarded"),
+        e: () => setEditId(selected.id),
+        j: () => setSelectedIndex((index) => Math.min(index + 1, items.length - 1)),
+        k: () => setSelectedIndex((index) => Math.max(index - 1, 0))
+      };
+      actions[key]?.();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [items.length, markDecision, selected.id]);
+  }, [items.length, markDecision, selected]);
   return (
     <section className="panel m5-shell" data-testid="m5-confirmation-queue-shell">
       <div className="m5-shell-heading">
@@ -166,6 +162,11 @@ export function M5ConfirmationQueueShell({ tenantName }: { tenantName: string })
         <span>D discard</span>
         <strong>{pendingCount} pending</strong>
       </div>
+      {runtimeEnabled && runtimeItems && items.length === 0 ? (
+        <p className="m5-recovery-draft" data-testid="m5-runtime-empty">
+          Runtime queue empty.
+        </p>
+      ) : null}
       <div className="m5-card-flow" data-testid="m5-card-flow">
         {items.map((item, index) => (
           <article

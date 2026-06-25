@@ -124,6 +124,21 @@ The M6-08 record maps backup/restore and asset/material safety status to current
 
 This record does not approve a database restore, production mutation, GA-0, real customer/order data, customer LLM, external SaaS onboarding or 1.0 release. A future real J-03 drill requires an owner-approved safe restore target and sanitized restore evidence.
 
+## M6-09 Final Acceptance Rollup
+
+Current status token: `m6_final_acceptance_rollup_recorded_no_go_recommended_owner_decision_pending_not_ga0`.
+
+The M6-09 final acceptance package records the owner-review posture from current repo evidence:
+
+- GA-0 status is `no_go_recommended_owner_decision_pending`; GA-0 remains closed.
+- 1.0 status is `blocked_p0_gaps_open`.
+- M6-00 through M6-08 evidence is linked from `docs/evidence/M6/M6-09-final-acceptance-rollup.md`.
+- J-01 real deploy/rollback drills, J-03 backup/restore, L-02 real Bot leave-ticket drill, staging Bot/worker/outbound behavior, G-04 blind review, G-06 full >=200 eval set, H-01/H-05/H-06 knowledge/asset gaps and D-06/I-03/I-04/I-05 final quality gates remain open or owner-decision-required.
+- No P1 risk signoff, fix date, impact note or P2 backlog classification is recorded in repo evidence.
+- M6-09 validation is tracked in `docs/evidence/M6/M6-09-final-acceptance-rollup.md`.
+
+This record does not approve GA-0, production deployment, real customer/order data, customer LLM, real provider calls, P1 risk acceptance, external SaaS onboarding or 1.0 release. The project owner must make any future go/no-go, risk or backlog decision explicitly.
+
 ## Not Approved
 
 - GA-0 is not open.

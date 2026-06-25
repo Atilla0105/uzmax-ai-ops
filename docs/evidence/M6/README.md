@@ -4,7 +4,8 @@ M6 evidence tracks release hardening, final fault drills, GA-0 readiness evidenc
 
 Current M6 readiness spec: `docs/specs/M6-00-m5-signoff-and-m6-readiness-pack.md`.
 Current M6 entry evidence: `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md`.
-Current active M6 implementation spec: none beyond M6-00 docs-only readiness.
+Current active M6 implementation spec: `docs/specs/M6-01-release-gate-console.md`.
+Current active M6 evidence: `docs/evidence/M6/M6-01-release-gate-console.md`.
 
 M6 current status: `m6_readiness_pack_recorded_not_ga0_not_release`. Project owner accepted M5 milestone/runtime evidence in the Codex thread on 2026-06-25 with "同意签收m5，可以启动m6". That acceptance allows the repo to open M6 planning and future spec-governed M6 work. It does not approve GA-0 opening, production deployment, real customer/order-data use, customer LLM, real LLM/provider keys or cost risk, external SaaS onboarding, P1 risk acceptance, or 1.0 release.
 
@@ -25,12 +26,12 @@ The M5/M5R README files remain historical M5R-08 closeout inputs and may still c
 
 ## M6 Execution Queue
 
-M6-00 is the only active M6 slice in this branch. Future slices must each create or update a dedicated spec before implementation.
+M6-01 is the active M6 slice in this branch. Future slices must each create or update a dedicated spec before implementation.
 
 | Order | Slice | Status | Evidence / expected next source |
 |---:|---|---|---|
-| 0 | M6-00 M5 signoff and M6 readiness pack | `active_docs_only` | `docs/specs/M6-00-m5-signoff-and-m6-readiness-pack.md`; `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md` |
-| 1 | M6-01 Evidence-driven release gate console | `not_started` | Future `docs/specs/M6-01-*` |
+| 0 | M6-00 M5 signoff and M6 readiness pack | `merged_ready_for_owner_review` | `docs/specs/M6-00-m5-signoff-and-m6-readiness-pack.md`; `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md` |
+| 1 | M6-01 Release Gate Console | `active` | `docs/specs/M6-01-release-gate-console.md`; `docs/evidence/M6/M6-01-release-gate-console.md` |
 | 2 | M6-02 Runtime deploy and rollback baseline | `not_started` | Future `docs/specs/M6-02-*` |
 | 3 | M6-03 Queue and failure injection drills | `not_started` | Future `docs/specs/M6-03-*` |
 | 4 | M6-04 RLS/authz release matrix | `not_started` | Future `docs/specs/M6-04-*` |
@@ -77,22 +78,21 @@ M6 does not approve:
 
 ## Current Main / CI / PR / Branch State
 
-Recorded at M6-00 entry on 2026-06-26.
+Recorded at M6-01 entry on 2026-06-26.
 
 | Fact | Evidence |
 |---|---|
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
 | root/main status | `## main...origin/main` |
-| root/main HEAD | `698a7edde0a33c1bb0280aa82175f0671427342e` |
-| root/main origin/main | `698a7edde0a33c1bb0280aa82175f0671427342e` |
-| assigned worktree | `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m6-00-m5-signoff-readiness` |
-| assigned branch | `codex/m6-00-m5-signoff-readiness` |
-| assigned branch base | `origin/main` at `698a7edde0a33c1bb0280aa82175f0671427342e` |
-| open PR audit | GitHub REST returned `open_pr_count 0` on 2026-06-26 |
-| latest main CI | GitHub Actions `CI`, run `28185173893`, title `M5R-08 true DB CI closeout (#128)`, conclusion `success`, head SHA `698a7edde0a33c1bb0280aa82175f0671427342e` |
-| branch protection audit | GitHub REST branch protection endpoint returned `Requires authentication`; not used as completion proof |
-| remote branch note | `origin/codex/m4-22-order-read-no-fabrication-eval` and `origin/codex/m5r-04..07-*` remote branches still exist with no open PR; cleanup/classification remains a branch-hygiene follow-up, not M6-00 source work |
-| M6-00 closeout PR | GitHub PR #129, branch `codex/m6-00-m5-signoff-readiness`, docs-only |
+| root/main HEAD | `6a32dc365fd8df3174c76cbd566a57119fc6106e` |
+| root/main origin/main | `6a32dc365fd8df3174c76cbd566a57119fc6106e` |
+| assigned worktree | `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m6-01-release-gate-console` |
+| assigned branch | `codex/m6-01-release-gate-console` |
+| assigned branch base | `origin/main` at `6a32dc365fd8df3174c76cbd566a57119fc6106e` |
+| open PR audit | GitHub REST returned `open_pr_count 0` before M6-01 PR |
+| latest main CI | GitHub Actions `CI`, run `28196030193`, push on `6a32dc3`, conclusion `success` |
+| M6-00 closeout | GitHub PR #129 merged to main; local/remote M6-00 branch and worktree cleaned |
+| branch hygiene | prior merged M5R remote stale branches were deleted before M6-01 start; no no-merged local or remote branch remained before M6-01 work |
 
 ## Acceptance-Gap Summary
 
@@ -102,6 +102,7 @@ Current high-level M6 entry posture:
 
 - M0-M4 milestone evidence is accepted in prior evidence records.
 - M5/M5R runtime evidence is now owner accepted for milestone evidence only.
+- M6-01 release gate console is active and records current gate state in admin.
 - M6 has not yet closed J-01/J-02/J-03/J-04/J-05/L-01/L-02.
 - GA-0 remains closed until its checklist is green and owner explicitly opens it.
 - 1.0 release remains blocked until all P0 items pass and P1/P2 handling matches the acceptance matrix.

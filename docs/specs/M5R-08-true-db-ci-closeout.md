@@ -34,7 +34,7 @@ infra
 - 说明/备注：
   - This slice may read prior M5R specs/evidence and existing M5R true DB wrappers.
   - It may modify CI only to run the existing M5R-08 closeout test with the existing GitHub Actions secret.
-  - M5R docs/tests use a separate CI path flag and must not newly trigger the existing M4 true DB smoke group. The existing `.github/workflows/ci.yml` self-change safety behavior remains unchanged.
+  - M5R docs/tests use a separate CI path flag and must not newly trigger the existing M4 true DB smoke group. M4 true DB smoke triggers remain scoped to API/worker/DB/M4 smoke paths, package manifests and lockfile.
   - It must not modify `apps/**`, `packages/**`, Prisma schema/migrations/generated client, lockfile, production/deploy files, Playwright tests or runtime source.
   - Root/main checkout `/Users/atilla/Documents/UZMAX智能运营` is coordination/read-only only.
 

@@ -132,11 +132,14 @@ describe("M5R-08 true integration closeout", () => {
 
   it("wires CI through a separate M5R flag and fails closed on missing secret", () => {
     const m4TrueDbClassifier = docs.ci.match(
-      /case "\$file" in\s+\.github\/workflows\/ci\.yml[\s\S]*?true_db_smoke_changed=true/
+      /case "\$file" in\s+apps\/api\/\*[\s\S]*?true_db_smoke_changed=true/
     )?.[0];
 
     assert.ok(m4TrueDbClassifier);
-    assert.doesNotMatch(m4TrueDbClassifier, /m5r-true-integration-closeout|M5R-08/);
+    assert.doesNotMatch(
+      m4TrueDbClassifier,
+      /\.github\/workflows\/ci\.yml|m5r-true-integration-closeout|M5R-08/
+    );
     assert.match(docs.ci, /m5r_true_db_closeout_changed=false/);
     assert.match(docs.ci, /run_m5r_true_db_closeout=false/);
     assert.match(

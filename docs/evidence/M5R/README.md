@@ -4,8 +4,8 @@ M5R evidence tracks the runtime-readiness follow-up queue after M5 integration s
 
 Current M5R plan spec: `docs/specs/M5R-00-runtime-integration-plan.md`.
 Current M5R implementation spec: `docs/specs/M5R-01-confirmation-queue-persistence.md`.
-Current active M5R implementation spec: `docs/specs/M5R-03-distill-scheduler-health-runtime.md`.
-Current M5R incident record: `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`.
+Current active M5R implementation spec: `docs/specs/M5R-04-ai-member-runtime-control.md`.
+Current M5R incident records: `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`; `docs/incidents/INC-2026-06-25-m5r-04-root-readme-pollution.md`.
 
 ## Runtime Slice Status
 
@@ -15,6 +15,7 @@ Current M5R incident record: `docs/incidents/INC-2026-06-24-m5r-00-root-main-wor
 | M5R-01 Confirmation Queue Persistence | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-01-confirmation-queue-persistence.md`; `docs/evidence/M5R/M5R-01-confirmation-queue-persistence.md` |
 | M5R-02 Formal Write Pipeline | `formal_write_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-02-formal-write-pipeline.md`; `docs/evidence/M5R/M5R-02-formal-write-pipeline.md` |
 | M5R-03 Distill Scheduler + Health Runtime | `distill_runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-03-distill-scheduler-health-runtime.md`; `docs/evidence/M5R/M5R-03-distill-scheduler-health-runtime.md` |
+| M5R-04 AI Member Runtime Control | `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted` | `docs/specs/M5R-04-ai-member-runtime-control.md`; `docs/evidence/M5R/M5R-04-ai-member-runtime-control.md`; `docs/incidents/INC-2026-06-25-m5r-04-root-readme-pollution.md` |
 
 ## Start Audit
 
@@ -47,9 +48,13 @@ M5R therefore does not reopen M5 scope or claim owner acceptance. It records the
 
 M5R-00 includes `docs/incidents/INC-2026-06-24-m5r-00-root-main-worktree-pollution.md`.
 
+M5R-04 includes `docs/incidents/INC-2026-06-25-m5r-04-root-readme-pollution.md`.
+
 Impact was limited to two untracked root docs created by the initial patch-target mistake. Cleanup removed those two files and the empty directory from root/main; root/main returned clean. No runtime/source files, tracked root files, customer/order data, secrets, LLM calls, validation, commit, push or PR were affected by the incident.
 
 Containment and cleanup are recorded in this PR. The existing worker-boundary guard is detective evidence, not a new preventive control. No guard/script preventive control lands in M5R-00; repeated patch-target failures remain a known orchestration risk to monitor and handle in later guard or tooling work if needed.
+
+The M5R-04 incident records a separate earlier root/main README pollution event. The coordinator restored root/main and moved the same linked worktree to `/private/tmp/uzmax-m5r-04-ai-member-runtime-control`; M5R-04 records this as process evidence only, not product scope.
 
 ## True DB/RLS Smoke Baseline
 

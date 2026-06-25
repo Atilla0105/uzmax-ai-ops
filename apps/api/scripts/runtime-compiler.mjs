@@ -31,6 +31,9 @@ export async function importApiCustomerAssetRuntimeModules(options = {}) {
     ["customerAssetService", "customer-asset.service"]
   ]);
 }
+export async function importApiAiMemberRuntimeModules(options = {}) {
+  return importApiRuntimeModules(options, [["aiMemberRuntime", "ai-member-runtime"]]);
+}
 async function importApiRuntimeModules(options, entries) {
   const outDir = await compileApiRuntime(options);
   const modules = { outDir };
@@ -87,6 +90,40 @@ export async function compileApiRuntime(options = {}) {
       "./access-context-core.ts": "./access-context-core.mjs"
     }
   );
+  await writeModule(
+    outDir,
+    "apps/api/src/ai-member-runtime.contracts.ts",
+    "ai-member-runtime.contracts.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/ai-member-runtime.repository.ts",
+    "ai-member-runtime.repository.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+      "./ai-member-runtime.contracts.ts": "./ai-member-runtime.contracts.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/ai-member-runtime.ts",
+    "ai-member-runtime.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+      "./access-context.ts": "./access-context.mjs",
+      "./ai-member-runtime.contracts.ts": "./ai-member-runtime.contracts.mjs",
+      "./ai-member-runtime.repository.ts": "./ai-member-runtime.repository.mjs"
+    }
+  );
   for (const [name, replacements] of customerAssetRuntimeModules()) {
     await writeModule(
       outDir,
@@ -101,6 +138,7 @@ export async function compileApiRuntime(options = {}) {
   }
   await writeModule(outDir, "apps/api/src/app.module.ts", "app.module.mjs", {
     "./access-context.ts": "./access-context.mjs",
+    "./ai-member-runtime.ts": "./ai-member-runtime.mjs",
     "./confirmation-queue.controller.ts": "./confirmation-queue.controller.mjs",
     "./confirmation-queue.formal-write-contracts.ts":
       "./confirmation-queue.formal-write-contracts.mjs",

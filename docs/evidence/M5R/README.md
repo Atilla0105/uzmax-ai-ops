@@ -56,11 +56,13 @@ M5R-04 includes `docs/incidents/INC-2026-06-25-m5r-04-root-readme-pollution.md`.
 
 M5R-06 includes `docs/incidents/INC-2026-06-25-m5r-06-root-patch-target.md`.
 
-Impact was limited to two untracked root docs created by the initial patch-target mistake. Cleanup removed those two files and the empty directory from root/main; root/main returned clean. No runtime/source files, tracked root files, customer/order data, secrets, LLM calls, validation, commit, push or PR were affected by the incident.
+M5R-00 impact was limited to two untracked root docs created by the initial patch-target mistake. Cleanup removed those two files and the empty directory from root/main; root/main returned clean. No runtime/source files, tracked root files, customer/order data, secrets, LLM calls, validation, commit, push or PR were affected by M5R-00.
 
-Containment and cleanup are recorded in this PR. The existing worker-boundary guard is detective evidence, not a new preventive control. No guard/script preventive control lands in M5R-00; repeated patch-target failures remain a known orchestration risk to monitor and handle in later guard or tooling work if needed.
+M5R-04 impact was limited to root/main documentation pollution in `docs/evidence/M5R/README.md`. The coordinator restored root/main and moved the same linked worktree to `/private/tmp/uzmax-m5r-04-ai-member-runtime-control`; M5R-04 records this as process evidence only, not product scope.
 
-The M5R-04 incident records a separate earlier root/main README pollution event. The coordinator restored root/main and moved the same linked worktree to `/private/tmp/uzmax-m5r-04-ai-member-runtime-control`; M5R-04 records this as process evidence only, not product scope.
+M5R-06 impact included temporary tracked root/main edits to `apps/api/scripts/runtime-compiler.mjs`, `apps/api/src/app.module.ts` and `docs/evidence/M5R/README.md`, plus untracked M5R-06 files in root/main. The M5R-06 diff and untracked files were moved to the assigned worktree, root/main tracked files were restored, and no commit, push, PR, merge, production deploy, real customer/order data, real LLM call, secret, external SaaS action, generated artifact or unrelated user change was created from root/main.
+
+Containment and cleanup are recorded in the linked incident records. The existing worker-boundary guard is detective evidence, not a new preventive control. No guard/script preventive control lands in these incident records; repeated patch-target failures remain a known orchestration risk to monitor and handle in later guard or tooling work if needed.
 
 ## True DB/RLS Smoke Baseline
 

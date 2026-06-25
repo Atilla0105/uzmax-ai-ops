@@ -75,7 +75,7 @@ Tracked shell/helper diff at the time of this evidence update was tightened to k
 | `node --test scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | 3/3 focused docs/source anchor tests passed. |
 | `npm run playwright -- apps/admin/tests/m5r-admin-runtime-wiring.spec.ts` | pass | 3/3 targeted Playwright tests passed, including eval-evidence enable body and empty runtime queue no-fallback coverage. |
 | `node --test scripts/tests/m5-confirmation-queue-admin.test.mjs` | pass | Extra focused confirmation queue client contract passed, including `formalWrite: true` and mismatch rejection coverage. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-07-admin-runtime-wiring.md --include-worktree` | pass | Reported changed files 17; categories source 11, docs 3, test 3; source changed files 11, net LOC 563, new files 5. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-07-admin-runtime-wiring.md --include-worktree` | pass | Reported changed files 17; categories source 11, docs 3, test 3; source changed files 11, net LOC 590, new files 5. |
 | `git diff --check` | pass | No whitespace errors. |
 
 ## No Sensitive Data Statement

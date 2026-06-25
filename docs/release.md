@@ -35,6 +35,17 @@ The M6-01 admin contract renders M0-M6, GA-0 and 1.0 status from one maintained 
 
 Evidence links in the admin shell are repo paths only. They are not sensitive artifacts and must not include raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, LLM keys or secrets.
 
+## M6-02 Runtime Baseline
+
+The M6-02 runtime baseline records deploy/rollback readiness from repo manifests and app package commands:
+
+- api: Render service definition, package start command and `/healthz`/`/readyz` are present; real rollback drill is still pending.
+- worker: Render service definition exists, but package `start` is still an M0 deployment placeholder.
+- cron: Render service definition exists, but package `start` is still an M0 deployment placeholder.
+- admin: Vercel project and app build/start scripts exist; deployment strategy and rollback drill remain owner-pending.
+
+`docs/runbooks/deploy-rollback.md` now covers api, worker, cron and admin rollback dry-run evidence. This does not close J-01, because real rollback drills and owner/platform decisions remain open.
+
 ## Not Approved
 
 - GA-0 is not open.

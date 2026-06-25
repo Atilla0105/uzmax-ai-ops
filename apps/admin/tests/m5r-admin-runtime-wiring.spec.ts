@@ -121,6 +121,36 @@ test("routes 320px confirmation and AI emergency controls through API", async ({
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
+test("blocks runtime capability enable when config evidence is missing", async ({
+  page
+}) => {
+  await page.unroute("**/ai-members/**/runtime-control");
+  await page.route("**/ai-members/**/runtime-control", async (route) => {
+    requests.push(requestPath(route.request().url()));
+    await route.fulfill({
+      json: {
+        activeVersion: { evalGateId },
+        status: "breaker_offline"
+      }
+    });
+  });
+
+  await page.goto("/design");
+
+  await expect(page.getByTestId("m5-ai-runtime-result")).toContainText(
+    "Runtime state breaker_offline"
+  );
+  await page.getByTestId("m5-ai-capability-quote").click();
+  await expect(page.getByTestId("m5-ai-runtime-result")).toContainText(
+    "Capability enable requires passed eval and config evidence."
+  );
+  await expect(page.getByTestId("m5-ai-capability-quote")).toContainText("disabled");
+  expect(capabilityBodies).toHaveLength(0);
+  expect(
+    requests.filter((path) => path.includes("/runtime-control/capabilities/"))
+  ).toHaveLength(0);
+});
+
 test("keeps empty runtime queue empty without synthetic card fallback", async ({
   page
 }) => {

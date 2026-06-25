@@ -20,7 +20,7 @@ Recorded from the assigned worktree before completing docs/tests.
 - `apps/admin/src/m5ConfirmationQueueRuntime.ts` and `apps/admin/src/m5LogsAnalyticsRuntime.tsx` hold compact admin-only mapping/table helpers so React shell files stay within lint limits.
 - `apps/admin/src/aiMemberConsoleContracts.ts` now exports existing AI console labels/defaults used by the shell.
 - `apps/admin/src/M5ConfirmationQueueShell.tsx` uses `confirmationQueueApiClient` in runtime mode for `GET /confirmation-queue/items`, `GET /confirmation-queue/items/:id` and `POST /confirmation-queue/items/:id/decisions`; an empty runtime queue renders as empty and does not fall back to synthetic local cards.
-- `apps/admin/src/M5AiMemberConsoleShell.tsx` uses `aiMemberRuntimeApiClient` in runtime mode for state read, emergency stop, recovery and capability toggle. Capability enable uses `activeVersion.evalGateId` and optional `activeVersion.configVersionId` from runtime state; if eval evidence is missing, no enable API call is made.
+- `apps/admin/src/M5AiMemberConsoleShell.tsx` uses `aiMemberRuntimeApiClient` in runtime mode for state read, emergency stop, recovery and capability toggle. Capability enable requires both `activeVersion.evalGateId` and `activeVersion.configVersionId` from runtime state; if either evidence field is missing, no enable API call is made and local capability state is unchanged.
 - `apps/admin/src/M5LogsAnalyticsShell.tsx` uses `logsAnalyticsApiClient` in runtime mode for `GET /logs-analytics/board`, `GET /login-logs`, `GET /presence-logs`, `GET /operation-logs` and `POST /export-jobs`.
 - `apps/admin/src/M5TemplateCenterShell.tsx` uses `templateCopyApiClient` in runtime mode for `POST /template-copy/copies`.
 - Existing local shell flows remain the default when runtime mode is absent.
@@ -44,7 +44,7 @@ Exact M5R-07 true DB/RLS status: `not_run_not_applicable_admin_wiring_slice__rel
 
 - desktop runtime requests include `/confirmation-queue`, `/ai-members`, `/logs-analytics` and `/template-copy`;
 - confirmation details and decisions go through API paths;
-- AI member state and capability toggle go through API paths, and capability enable body includes `evalGateId` plus `configVersionId` when runtime state returns them;
+- AI member state and capability toggle go through API paths, capability enable body includes `evalGateId` plus `configVersionId` when runtime state returns them, and missing config evidence cannot bypass the enable guard;
 - empty runtime confirmation queue stays empty, shows no synthetic cards and keyboard approve/discard cannot hit local fallback actions;
 - logs board/log/export job requests go through API paths;
 - template copy request goes through API path;
@@ -73,10 +73,11 @@ Tracked shell/helper diff at the time of this evidence update was tightened to k
 | `npm run lint` | pass | ESLint completed after helper extraction kept React files within limits and shortcut handling under complexity limit. |
 | `npm run typecheck` | pass | TypeScript no emit completed. |
 | `node --test scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | 3/3 focused docs/source anchor tests passed. |
-| `npm run playwright -- apps/admin/tests/m5r-admin-runtime-wiring.spec.ts` | pass | 3/3 targeted Playwright tests passed, including eval-evidence enable body and empty runtime queue no-fallback coverage. |
+| `npm run playwright -- apps/admin/tests/m5r-admin-runtime-wiring.spec.ts` | pass | 4/4 targeted Playwright tests passed, including eval/config enable body, missing-config no-bypass, and empty runtime queue no-fallback coverage. |
 | `node --test scripts/tests/m5-confirmation-queue-admin.test.mjs` | pass | Extra focused confirmation queue client contract passed, including `formalWrite: true` and mismatch rejection coverage. |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-07-admin-runtime-wiring.md --include-worktree` | pass | Reported changed files 17; categories source 11, docs 3, test 3; source changed files 11, net LOC 588, new files 5. |
 | `git diff --check` | pass | No whitespace errors. |
+| `npm run test` | pass | 390/390 Node tests passed. |
 
 ## No Sensitive Data Statement
 

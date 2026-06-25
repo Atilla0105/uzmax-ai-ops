@@ -24,11 +24,9 @@ import {
   isM5AdminRuntimeEnabled
 } from "./m5AdminRuntimeMode";
 import "./m5-ai-member-console-shell.css";
-
 type AiMemberCapabilities = Record<AiMemberCapabilityKey, boolean>;
 type ActiveVersionEvidence = Record<string, string | undefined>;
 type RuntimeAiMemberAction = "emergency_stop" | "recover_online";
-
 function createRuntimeClient() {
   return createAiMemberRuntimeApiClient({ fetcher: createM5AdminRuntimeFetcher() });
 }
@@ -73,9 +71,11 @@ export function M5AiMemberConsoleShell({ tenantName }: { tenantName: string }) {
   };
   const toggleCapability = async (capabilityKey: AiMemberCapabilityKey) => {
     const nextEnabled = !capabilities[capabilityKey];
+    const hasEnableEvidence =
+      activeVersionEvidence.evalGateId && activeVersionEvidence.configVersionId;
     if (runtimeEnabled) {
-      if (nextEnabled && !activeVersionEvidence.evalGateId) {
-        setRuntimeResult("Capability enable requires passed eval evidence.");
+      if (nextEnabled && !hasEnableEvidence) {
+        setRuntimeResult("Capability enable requires passed eval and config evidence.");
         return;
       }
       try {

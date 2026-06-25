@@ -2,9 +2,9 @@
 
 ## 目标
 
-Close the M5R runtime-integration evidence chain by adding a final scoped integration closeout test and evidence record that links M5R-01 through M5R-07 runtime boundaries.
+Record the M5R runtime-integration closeout blocker by adding a final scoped integration closeout test and evidence record that links M5R-01 through M5R-07 runtime boundaries.
 
-M5R-08 does not expand product scope. It records M5 as runtime-evidence-ready for project-owner review, while still explicitly `not_owner_accepted`, not production ready, not GA/release approved, and with true DB execution honestly blocked when `UZMAX_RLS_DATABASE_URL` is absent.
+M5R-08 does not expand product scope. It records the wrapper index and missing true DB/RLS environment blocker required before M5R can be completed. M5 remains explicitly `not_owner_accepted`, not runtime-evidence-ready, not production ready, not GA/release approved, and with true DB execution blocked while `UZMAX_RLS_DATABASE_URL` is absent.
 
 ## 项目 owner 确认点与 AI agent 执行/复核责任
 
@@ -95,26 +95,26 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 3. Make the closeout runner return `blocked_missing_env` without executing true DB wrappers when `UZMAX_RLS_DATABASE_URL` is absent.
 4. When `UZMAX_RLS_DATABASE_URL` is present, run the existing wrappers in this order: distill health/candidates, confirmation queue persistence, formal write, logs/analytics readback, template copy independence, AI emergency/recovery.
 5. Create this spec and `docs/evidence/M5R/M5R-08-true-integration-closeout.md`.
-6. Update `docs/evidence/M5R/README.md`: mark M5R-07 no longer active, add M5R-08 closeout status, and keep true DB missing-env status honest.
-7. Update `docs/evidence/M5/README.md`: move M5 from M5-08 docs-only closeout-ready wording to runtime-evidence-ready for owner review, still `not_owner_accepted`, not production/GA/release, and true DB closeout blocked if env is missing.
+6. Update `docs/evidence/M5R/README.md`: mark M5R-07 no longer active, add M5R-08 blocker status, and keep true DB missing-env status honest.
+7. Update `docs/evidence/M5/README.md`: keep M5 blocked pending true integration DB/RLS smoke, still `not_owner_accepted`, not production/GA/release, and true DB closeout blocked if env is missing.
 8. Run and record validation.
 
 ## 通过条件
 
 - M5R-08 spec contains all required fields from `docs/specs/README.md`.
 - New test links existing M5R runtime wrappers and does not introduce production source/runtime logic.
-- Missing `UZMAX_RLS_DATABASE_URL` produces explicit `blocked_missing_env` before DB runner execution.
+- Missing `UZMAX_RLS_DATABASE_URL` still resolves each wrapper module/export, then produces explicit `blocked_missing_env` before DB runner execution.
 - If `UZMAX_RLS_DATABASE_URL` is available, closeout runner executes the existing M5R true DB wrappers and reports `passed_true_db` only after they pass.
 - Evidence links distill candidate/health, confirmation persistence, owner confirm/conflict diff, formal write, audit/log readback, analytics board, independent template copy, AI emergency/recovery, tenant/RLS evidence from M5R-01..06 and admin runtime wiring from M5R-07.
 - M5R README marks M5R-07 completed/not active and M5R-08 as final closeout.
-- M5 README status becomes runtime-evidence-ready for owner review while still `not_owner_accepted` and not production/GA/release.
+- M5 README status remains blocked pending true integration DB/RLS smoke while still `not_owner_accepted` and not production/GA/release.
 - Required validation passes or failures are honestly recorded.
 - No source/runtime/schema/migration/config/lock/generated/production deploy changes.
 
 ## 失败分支
 
 - If worktree path, branch or HEAD differs from expected: stop and report.
-- If prior M5R evidence is missing or contradicts runtime boundaries: record the contradiction and do not mark runtime-evidence-ready.
+- If prior M5R evidence is missing or contradicts runtime boundaries: record the contradiction and do not mark the wrapper index complete.
 - If the closeout requires schema/migration/API/admin/runtime source/worker/cron/config/lockfile/CI/guard changes: stop and split to a future spec instead of widening M5R-08.
 - If `UZMAX_RLS_DATABASE_URL` is absent: record true DB closeout as `blocked_missing_env`; do not fake a true DB pass.
 - If any true DB wrapper fails after env is present: record the failing wrapper and do not report `passed_true_db`.
@@ -133,7 +133,7 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 
 | Item | M5R-08 status | Evidence |
 |---|---|---|
-| A-03 | `runtime_evidence_ready_true_db_blocked_missing_env_not_owner_accepted` | M5R-06 proves independent tenant-owned template copy path; M5R-08 links the wrapper in the final chain. |
+| A-03 | `runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted` | M5R-06 proves independent tenant-owned template copy path; M5R-08 links the wrapper in the final chain, but true DB/RLS closeout remains blocked by missing env. |
 | H-01 | `limited_formal_write_runtime_evidence_ready_not_full_h01_closed` | M5R-02 proves the named config-version formal write path only; full knowledge/resource authoring remains future scoped. |
 | H-02 | `confirmation_to_formal_write_runtime_evidence_ready` | M5R-01 persists confirmation decisions; M5R-02 writes only approved/edited decisions. |
 | H-03 | `conflict_diff_to_formal_write_runtime_evidence_ready` | M5R-01/M5R-02 preserve conflict diff requirement before formal write. |
@@ -143,8 +143,8 @@ If any M5R-08 write lands outside the assigned worktree, on the wrong branch, in
 | I-02 | `mobile_runtime_wiring_evidence_ready` | M5R-04 proves emergency runtime path; M5R-07 proves 320px admin API wiring. |
 | I-06 | `logs_analytics_runtime_evidence_ready` | M5R-05 proves fixed board/log/export draft runtime path; M5R-07 wires admin API mode. |
 | I-07 | `ai_audit_logs_runtime_evidence_ready` | M5R-04/M5R-05 prove AI state/audit and login/presence/operation log readback paths. |
-| J-05 | `m5_runtime_evidence_ready_for_owner_review_not_owner_accepted` | M5R-08 updates evidence status only; owner acceptance and release decisions remain future owner decisions. |
+| J-05 | `m5_runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted` | M5R-08 records the blocker and wrapper index only; final true integration DB/RLS smoke, owner acceptance and release decisions remain future owner decisions. |
 | K-03 | `active` | One spec / one PR; this PR implements only M5R-08. |
 | K-04 | `active` | M5R-08 is final serial closeout with docs/test-only touch list. |
 
-M5R-08 closes no production acceptance item. It provides final runtime-evidence closeout for owner review and preserves missing true DB env as an explicit blocker to live true DB execution.
+M5R-08 closes no production acceptance item. It records the final true integration closeout blocker and wrapper index, and preserves missing true DB env as an explicit blocker to M5R completion and live true DB execution.

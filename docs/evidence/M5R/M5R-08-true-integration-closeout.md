@@ -17,9 +17,9 @@ Recorded before edits from the assigned worktree on 2026-06-25.
 
 ## Scope
 
-M5R-08 is the final serial runtime closeout. It adds a focused Node closeout test that aggregates existing M5R true DB wrappers and updates M5/M5R evidence wording.
+M5R-08 is the final serial runtime closeout blocker record. It adds a focused Node closeout test that aggregates existing M5R true DB wrappers and updates M5/M5R evidence wording.
 
-It marks M5 runtime-evidence-ready for owner review, but not owner accepted. It does not approve production, GA-0, 1.0 release, real customer/order data, real LLM/provider calls, external SaaS onboarding, production Redis/worker deployment, M6 release hardening or owner acceptance.
+It does not mark M5 or M5R runtime-evidence-ready. It records that final true integration DB/RLS smoke is still blocked because `UZMAX_RLS_DATABASE_URL` is absent. It does not approve owner acceptance, production, GA-0, 1.0 release, real customer/order data, real LLM/provider calls, external SaaS onboarding, production Redis/worker deployment or M6 release hardening.
 
 ## Prior Runtime Boundary Chain
 
@@ -44,7 +44,7 @@ It marks M5 runtime-evidence-ready for owner review, but not owner accepted. It 
 5. `runM5rTemplateCopyTrueDbSmoke`
 6. `runM5rAiMemberRuntimeTrueDbSmoke`
 
-When `UZMAX_RLS_DATABASE_URL` is absent, the closeout runner returns:
+When `UZMAX_RLS_DATABASE_URL` is absent, the closeout runner first resolves every wrapper module/export without invoking the wrapper functions. It then returns:
 
 `status=blocked_missing_env`, `trueDbStatus=blocked_missing_env`, `blocker=UZMAX_RLS_DATABASE_URL is required`, `executedSteps=[]`.
 
@@ -70,7 +70,7 @@ When `UZMAX_RLS_DATABASE_URL` is present, the same closeout runner executes the 
 
 Current local true DB closeout status: `blocked_missing_env`.
 
-`UZMAX_RLS_DATABASE_URL` is absent in this worker environment. The closeout test therefore records the blocked status before executing any DB wrapper. This is runtime-evidence-ready for owner review because the full wrapper chain is present and linked, but it is not a true DB pass and not owner acceptance.
+`UZMAX_RLS_DATABASE_URL` is absent in this worker environment. The closeout test therefore records the blocked status before executing any DB wrapper. It proves the wrapper modules/exports resolve, but M5/M5R remain blocked pending a true integration DB/RLS smoke. This is not a true DB pass, not runtime evidence ready and not owner acceptance.
 
 If the env is later provided, run:
 
@@ -85,13 +85,13 @@ Recorded from `/private/tmp/uzmax-m5r-08-true-integration-closeout` on 2026-06-2
 | Command | Result | Notes |
 |---|---|---|
 | `npm ci` | pass | Installed locked dependencies in the assigned worktree; 360 packages, 0 vulnerabilities. |
-| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs` | pass | 4/4 tests passed; local true DB closeout status is `blocked_missing_env` because `UZMAX_RLS_DATABASE_URL` is absent. |
-| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs scripts/tests/m5r-confirmation-queue-persistence.test.mjs scripts/tests/m5r-formal-write-pipeline.test.mjs scripts/tests/m5r-distill-scheduler-health-runtime.test.mjs scripts/tests/m5r-ai-member-runtime-control.test.mjs scripts/tests/m5r-logs-analytics-runtime.test.mjs scripts/tests/m5r-template-copy-runtime.test.mjs scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | Focused M5R subset passed: 38/38 tests. |
+| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs` | pass | 5/5 tests passed; local true DB closeout status is `blocked_missing_env` because `UZMAX_RLS_DATABASE_URL` is absent; wrapper modules/exports resolved without wrapper execution. |
+| `node --test scripts/tests/m5r-true-integration-closeout.test.mjs scripts/tests/m5r-confirmation-queue-persistence.test.mjs scripts/tests/m5r-formal-write-pipeline.test.mjs scripts/tests/m5r-distill-scheduler-health-runtime.test.mjs scripts/tests/m5r-ai-member-runtime-control.test.mjs scripts/tests/m5r-logs-analytics-runtime.test.mjs scripts/tests/m5r-template-copy-runtime.test.mjs scripts/tests/m5r-admin-runtime-wiring.test.mjs` | pass | Focused M5R subset passed: 39/39 tests. |
 | `npm run format:check` | pass | Prettier reported all matched files use Prettier code style after formatting the new test. |
 | `npm run lint` | pass | ESLint completed across apps, packages and scripts. |
 | `npm run typecheck` | pass | TypeScript no-emit check passed. |
 | `npm run knip` | pass | No unused export/dependency findings reported. |
-| `npm run test` | pass | Full Node suite passed: 394/394 tests across 78 suites. |
+| `npm run test` | pass | Full Node suite passed: 395/395 tests across 78 suites. |
 | `git diff --check` | pass | No whitespace errors. |
 | `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-08-true-integration-closeout.md --include-worktree` | pass | No PR existed yet for this branch; guard reported 6 changed files, categories docs=4/test=2, source changed files 0, net source LOC 0 and new source files 0. |
 
@@ -118,8 +118,8 @@ M5R-08 does not approve:
 
 ## Closeout Status
 
-M5 is now recorded as `m5_runtime_evidence_ready_for_owner_review__true_db_closeout_blocked_missing_env__not_owner_accepted`.
+M5 is now recorded as `m5_runtime_evidence_blocked_pending_true_integration_db_smoke_not_owner_accepted`.
 
-M5R is now recorded as `m5r_08_runtime_evidence_ready_for_owner_review__true_db_closeout_blocked_missing_env__not_owner_accepted`.
+M5R-08 is now recorded as `m5r_08_true_integration_closeout_blocked_missing_true_db_env_not_owner_accepted`.
 
-These are AI evidence statuses only. They do not claim owner acceptance, production/GA/release approval or live true DB execution success.
+These are AI evidence statuses only. They record the missing-env blocker and wrapper index, not final M5R completion. Final true integration DB/RLS smoke is still required before M5/M5R can be marked runtime-evidence-ready. They do not claim owner acceptance, production/GA/release approval or live true DB execution success.

@@ -8,7 +8,7 @@
 - `rls-misconfig.md`：RLS 误配
 - `deploy-rollback.md`：api / worker 回滚演练
 - `queue-failure-injection.md`：worker 积压、队列重试/幂等、订单导入异常路径演练
-- `backup-restore.md`：数据库备份与恢复演练
+- `backup-restore.md`：数据库备份与恢复演练、素材 `storageRef` / Telegram `file_id` 安全边界
 - `secret-token-rotation.md`：Bot token、LLM key、服务角色 key 轮换
 - `ai-safety-fuse.md`：模型全挂、红线误发、AI 熔断与恢复演练
 - `telegram-bot-main-path.md`：bot 无响应、重复/乱序入站、Business 关闭边界与人工留单

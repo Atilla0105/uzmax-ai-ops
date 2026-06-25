@@ -58,6 +58,18 @@ The M6-03 queue drill records J-02 support from the existing M4-45 BullMQ/Redis 
 
 `docs/runbooks/queue-failure-injection.md` now covers the safe synthetic drill path and failure branches. This does not approve production Redis/worker deployment, production alert-channel routing, real customer/order data or GA-0.
 
+## M6-04 RLS Authz Matrix
+
+The M6-04 RLS/authz matrix records B-01 through B-05 support from current repo evidence:
+
+- ADR-001, SPK-03, M1 platform tests, M4 order-import RLS tests and M5R true-DB closeout support the dev/staging RLS boundary without approving production DB/RLS use.
+- ADR-002, `packages/authz/src/index.ts`, `apps/api/src/access-context.ts` and M1 access-context tests support server-side tenant selection, forged-context rejection and backend permission enforcement.
+- Group aggregate-only behavior is recorded as contract-level support; production customer-plaintext surface review remains a final-release concern.
+- Permission/config audit contracts and selected true-DB writes support B-05 for known paths; full high-risk action coverage remains in final rollup.
+- `docs/runbooks/rls-misconfig.md` now contains the M6-04 release drill and failure branches.
+
+This matrix does not approve production DB/RLS, GA-0, real customer/order data, customer LLM, external SaaS onboarding or 1.0 release.
+
 ## Not Approved
 
 - GA-0 is not open.

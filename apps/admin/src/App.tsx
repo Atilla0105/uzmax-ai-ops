@@ -9,6 +9,7 @@ import { M5AiMemberConsoleShell } from "./M5AiMemberConsoleShell";
 import { M5ConfirmationQueueShell } from "./M5ConfirmationQueueShell";
 import { M5LogsAnalyticsShell } from "./M5LogsAnalyticsShell";
 import { M5TemplateCenterShell } from "./M5TemplateCenterShell";
+import { releaseGateConsoleState } from "./releaseGateContracts";
 
 const tenants = [
   {
@@ -35,32 +36,6 @@ const tenants = [
 ] as const;
 
 const navItems = ["Group", "Tenants", "Access", "Release"] as const;
-const releaseGates = [
-  {
-    adr: "ADR-001/002/003",
-    blocker: "none",
-    evidence: "CI + spikes",
-    gate: "M0",
-    owner: "accepted",
-    state: "Accepted"
-  },
-  {
-    adr: "M1 specs",
-    blocker: "M1-05 open",
-    evidence: "M1-01 to M1-04 rolling evidence",
-    gate: "M1",
-    owner: "pending",
-    state: "In progress"
-  },
-  {
-    adr: "release checklist",
-    blocker: "checklist locked",
-    evidence: "Blocked until checklist green",
-    gate: "GA-0",
-    owner: "not requested",
-    state: "Locked"
-  }
-] as const;
 
 export function App() {
   const [selectedTenantId, setSelectedTenantId] =
@@ -209,20 +184,33 @@ export function App() {
               <p className="eyebrow">Release and acceptance</p>
               <h2>Gate status</h2>
             </div>
+            <div className="notice" data-testid="release-gate-summary">
+              <strong>Current release gate</strong>
+              <span>{releaseGateConsoleState.summary}</span>
+            </div>
             <div className="gate-list">
-              {releaseGates.map((gate) => (
-                <div className="gate-row" key={gate.gate}>
+              {releaseGateConsoleState.rows.map((gate) => (
+                <div
+                  className="gate-row"
+                  data-testid={`release-gate-${gate.gate}`}
+                  key={gate.gate}
+                >
                   <span className="gate-code">{gate.gate}</span>
                   <span>{gate.state}</span>
-                  <span>{gate.evidence}</span>
+                  <a href={gate.evidenceHref}>{gate.evidenceLabel}</a>
                   <span>Owner: {gate.owner}</span>
                   <span>Blocker: {gate.blocker}</span>
-                  <span>{gate.adr}</span>
+                  <span>{gate.source}</span>
                 </div>
               ))}
             </div>
-            <button className="release-button" type="button" disabled>
-              GA-0 open action locked
+            <button
+              className="release-button"
+              type="button"
+              disabled={releaseGateConsoleState.ga0Action.disabled}
+              title={releaseGateConsoleState.ga0Action.auditBoundary}
+            >
+              {releaseGateConsoleState.ga0Action.label}
             </button>
           </section>
         </section>

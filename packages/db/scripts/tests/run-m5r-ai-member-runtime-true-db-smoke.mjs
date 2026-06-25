@@ -99,6 +99,14 @@ export async function runM5rAiMemberRuntimeTrueDbSmoke() {
   }
 }
 
+if (
+  process.argv[1]?.endsWith(
+    "packages/db/scripts/tests/run-m5r-ai-member-runtime-true-db-smoke.mjs"
+  )
+) {
+  await runM5rAiMemberRuntimeTrueDbSmoke();
+}
+
 function readRlsDatabaseUrl() {
   const value = process.env.UZMAX_RLS_DATABASE_URL?.trim();
   if (!value) throw new Error("UZMAX_RLS_DATABASE_URL is required");

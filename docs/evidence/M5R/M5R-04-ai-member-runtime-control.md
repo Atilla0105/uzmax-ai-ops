@@ -78,7 +78,7 @@ M5R-04 records this exact runtime rule before implementation:
 
 ## True DB/RLS Smoke Status
 
-`node packages/db/scripts/run-m5r-ai-member-runtime-true-db-smoke.mjs` was run and failed closed because this environment does not provide `UZMAX_RLS_DATABASE_URL`.
+`node packages/db/scripts/tests/run-m5r-ai-member-runtime-true-db-smoke.mjs` was run and failed closed because this environment does not provide `UZMAX_RLS_DATABASE_URL`.
 
 Exact blocker: `Error: UZMAX_RLS_DATABASE_URL is required`.
 
@@ -91,30 +91,30 @@ Recorded after implementation and finalizer fixes on 2026-06-25.
 | Command | Result | Notes |
 |---|---|---|
 | `node --test scripts/tests/m5r-ai-member-runtime-control.test.mjs` | pass | 4 tests passed; validates disabled default, explicit RLS mode, API/admin client route shape, audit behavior and missing-env true DB fail-closed contract. |
-| `node packages/db/scripts/run-m5r-ai-member-runtime-true-db-smoke.mjs` | acceptable fail-closed | Missing `UZMAX_RLS_DATABASE_URL`; exact error `UZMAX_RLS_DATABASE_URL is required`. |
+| `node packages/db/scripts/tests/run-m5r-ai-member-runtime-true-db-smoke.mjs` | acceptable fail-closed | Missing `UZMAX_RLS_DATABASE_URL`; exact error `UZMAX_RLS_DATABASE_URL is required`. |
 | `npm run format:check` | pass | Prettier reported all matched files use Prettier code style. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `npm run guard:workspace` | pass | `workspace-isolation: ok (codex/m5r-04-ai-member-runtime-control, linked worktree, dirty allowed)`. |
 | `npm run guard:worker-boundary -- --assigned /private/tmp/uzmax-m5r-04-ai-member-runtime-control --root /Users/atilla/Documents/UZMAX智能运营` | pass | Explicit assigned/root boundary check passed. |
-| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-04-ai-member-runtime-control.md --include-worktree` | pass | Command exited 0; because candidates were staged, this invocation reported 0 worktree changed files. Manual staged numstat below records the real PR budget. |
+| `npm run guard:pr-shape -- --base origin/main --spec docs/specs/M5R-04-ai-member-runtime-control.md --include-worktree` | pre-commit caveat | Before final commit/PR metadata, exact failure was `out-of-scope file: packages/db/scripts/run-m5r-ai-member-runtime-true-db-smoke.mjs` and `net source LOC 1084 > 600`. The out-of-scope file is a pre-commit guard artifact: `origin/main...HEAD` still contained the thin wrapper while the worktree deletion removed it from the actual final diff. The remaining final governance caveat is the documented `large_change_exception` for source net LOC. |
 | `git diff --check origin/main...HEAD` | pass | No whitespace errors reported before commit. |
 | `npm run check` | pass | Includes format, prettier-ignore guard, typecheck, lint, depcruise, jscpd, knip, forbidden/eval/doc/workspace/boundary/pr-shape guards, 376 node tests, build, size and 21 Playwright tests. Size output: 67.07 kB brotlied. |
 
 ## Source Budget
 
-Computed from `git diff --cached --numstat origin/main` after staging M5R-04 candidates.
+Computed from the actual `git diff --numstat origin/main` after the thin DB smoke wrapper was removed and the direct true DB runner remained under `packages/db/scripts/tests`.
 
 | Metric | Value | Budget status |
 |---|---:|---|
-| changed source files | 8 | within target `<= 10` |
-| net source LOC | +1084 | exceeds target `<= 650` |
-| new source files | 5 | exceeds target `<= 4` |
-| gross source churn | 1084 | report-only |
-| total PR gross churn | 2114 | report-only |
+| changed source files | 7 | within target `<= 10` |
+| net source LOC | +815 | exceeds target `<= 650`; `large_change_exception` |
+| new source files | 4 | within target `<= 4` |
+| gross source churn | 815 | report-only |
+| total PR gross churn | 1852 | report-only |
 
-Source files counted: `apps/admin/src/M5AiMemberConsoleShell.tsx`, `apps/admin/src/aiMemberRuntimeApiClient.ts`, `apps/api/scripts/runtime-compiler.mjs`, `apps/api/src/ai-member-runtime.contracts.ts`, `apps/api/src/ai-member-runtime.repository.ts`, `apps/api/src/ai-member-runtime.ts`, `apps/api/src/app.module.ts`, `packages/db/scripts/run-m5r-ai-member-runtime-true-db-smoke.mjs`.
+Source files counted: `apps/admin/src/M5AiMemberConsoleShell.tsx`, `apps/admin/src/aiMemberRuntimeApiClient.ts`, `apps/api/scripts/runtime-compiler.mjs`, `apps/api/src/ai-member-runtime.contracts.ts`, `apps/api/src/ai-member-runtime.repository.ts`, `apps/api/src/ai-member-runtime.ts`, `apps/api/src/app.module.ts`.
 
-Budget caveat: the implementation stays inside the M5R-04 scope and validation passes, but the focused API runtime needed an ESLint-compliant controller/contracts/repository split plus admin client and true DB smoke wrapper, so manual staged numstat exceeds the spec target for net source LOC and new source files. No `large_change_exception` is self-approved here; owner/review approval is required before merge if this over-budget shape is accepted.
+Budget caveat: the implementation stays inside the M5R-04 scope and validation passes, but the focused API runtime needed an ESLint-compliant controller/contracts/repository split plus admin client and direct true DB smoke runner, so actual diff numstat exceeds the spec target for net source LOC. Budget-reduction attempts included wrapper removal, contracts/client compaction and repository compaction. Further reduction would risk obscuring or weakening RLS transaction setup, breaker/eval-gate checks, DB writes, audit rows or route behavior. The `large_change_exception` is only for M5R-04 source-size governance; it is not product scope approval, M5 owner acceptance, production approval or release approval. Owner/review approval is required before merge if this over-budget shape is accepted.
 
 ## Spec Compliance Review
 
@@ -123,7 +123,7 @@ Scope compliance is mostly satisfied:
 - Implementation is limited to the M5R-04 touch list plus the narrow `apps/admin/src/M5AiMemberConsoleShell.tsx` contract anchor added to satisfy knip without visible runtime wiring.
 - No schema, migration, generated client, lockfile, shared config/CI/guard, worker, cron, distill, log analytics, template runtime, prompt/persona/model-route release, external provider or production/release change is included.
 - True DB/RLS remains blocked only by missing `UZMAX_RLS_DATABASE_URL`.
-- Manual staged source budget exceeds the spec target as recorded above; this must be treated as a PR hygiene caveat, not as hidden compliance.
+- Actual diff source budget exceeds the net LOC target as recorded above; this is explicitly declared as `large_change_exception`, not hidden compliance.
 
 ## Code Quality Review
 

@@ -6,7 +6,7 @@ import { describe, it } from "node:test";
 import ts from "typescript";
 
 import { compileApiRuntime } from "../../apps/api/scripts/runtime-compiler.mjs";
-import { runM5rAiMemberRuntimeTrueDbSmoke } from "../../packages/db/scripts/run-m5r-ai-member-runtime-true-db-smoke.mjs";
+import { runM5rAiMemberRuntimeTrueDbSmoke } from "../../packages/db/scripts/tests/run-m5r-ai-member-runtime-true-db-smoke.mjs";
 
 const repoRoot = process.cwd();
 const ORG_ID = "11111111-1111-4111-8111-111111111504";

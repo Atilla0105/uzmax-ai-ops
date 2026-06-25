@@ -1,294 +1,319 @@
 import { randomUUID } from "node:crypto";
 
 import type { AccessContext } from "../../../packages/authz/src/index.ts";
-import {
-  createRlsTransactionContext,
-  type RlsTenantContext
-} from "../../../packages/db/src/index.ts";
+import { createRlsTransactionContext } from "../../../packages/db/src/index.ts";
+import type { RlsTenantContext } from "../../../packages/db/src/index.ts";
 import { createUzmaxPrismaClientFromEnv } from "../../../packages/db/src/prisma-runtime.ts";
-import {
-  AiMemberRuntimeError,
-  aiMemberRuntimeModes,
-  array,
-  assertPrismaPort,
-  audit,
-  bad,
-  dbCapability,
-  dbStatus,
-  metadata,
-  readRuntimeMode,
-  record,
-  result,
-  scope,
-  setConfig,
-  snapToggle,
-  state,
-  status,
-  text,
-  version,
-  type ActionInput,
-  type AiMemberRuntimeRepositoryPort,
-  type Bundle,
-  type CapabilityKey,
-  type Operation,
-  type PrismaPort,
-  type RlsTxRunner,
-  type Row,
-  type RuntimeEnv,
-  type RuntimeMode,
-  type ToggleInput
-} from "./ai-member-runtime.contracts.ts";
+import * as c from "./ai-member-runtime.contracts.ts";
 
-class DisabledAiMemberRuntimeRepository implements AiMemberRuntimeRepositoryPort {
-  async emergencyStop(): Promise<never> {
-    throw new AiMemberRuntimeError(503, "AI member runtime is not configured");
-  }
-  async getRuntimeState(): Promise<never> {
-    throw new AiMemberRuntimeError(503, "AI member runtime is not configured");
-  }
-  async recoverOnline(): Promise<never> {
-    throw new AiMemberRuntimeError(503, "AI member runtime is not configured");
-  }
-  async toggleCapability(): Promise<never> {
-    throw new AiMemberRuntimeError(503, "AI member runtime is not configured");
-  }
-}
+type Action = "capability_toggle" | "emergency_stop" | "recover_online";
+type Bundle = { activeVersion?: c.Row; member: c.Row };
+type Op = (p: c.PrismaPort) => c.Operation;
+const CAP = {
+  business_draft: "BUSINESS_DRAFT",
+  order_read: "ORDER_READ",
+  quote: "QUOTE",
+  tutorial: "TUTORIAL",
+  vision: "VISION"
+} as const;
+const STATUS = { disabled: "DISABLED", online: "ONLINE" } as const;
+const off = async () => {
+  throw new c.AiMemberRuntimeError(503, "AI member runtime is not configured");
+};
 
 export function createAiMemberRuntimeRepositoryProviderFromEnv(
   options: {
-    env?: RuntimeEnv;
-    mode?: RuntimeMode;
-    prismaClient?: PrismaPort;
-    repository?: AiMemberRuntimeRepositoryPort;
-    rlsTransactionRunner?: RlsTxRunner;
+    env?: c.RuntimeEnv;
+    mode?: c.RuntimeMode;
+    prismaClient?: c.PrismaPort;
+    repository?: c.AiMemberRuntimeRepositoryPort;
+    rlsTransactionRunner?: c.RlsTxRunner;
   } = {}
-): AiMemberRuntimeRepositoryPort {
-  const mode = options.mode ?? readRuntimeMode(options.env ?? process.env);
-  if (mode === aiMemberRuntimeModes.disabled)
-    return options.repository ?? new DisabledAiMemberRuntimeRepository();
-  if (mode !== aiMemberRuntimeModes.rlsPrismaGateway)
+): c.AiMemberRuntimeRepositoryPort {
+  const mode = options.mode ?? c.readRuntimeMode(options.env ?? process.env);
+  if (mode === c.aiMemberRuntimeModes.disabled)
+    return (
+      options.repository ?? {
+        emergencyStop: off,
+        getRuntimeState: off,
+        recoverOnline: off,
+        toggleCapability: off
+      }
+    );
+  if (mode !== c.aiMemberRuntimeModes.rlsPrismaGateway)
     throw new Error(`unsupported AI member runtime mode: ${mode}`);
   const prisma =
     options.prismaClient ??
-    (createUzmaxPrismaClientFromEnv(options.env) as unknown as PrismaPort);
-  return new RlsPrismaAiMemberRuntimeRepository(
-    options.rlsTransactionRunner ?? createAiMemberRlsTransactionRunner(prisma)
-  );
+    (createUzmaxPrismaClientFromEnv(options.env) as unknown as c.PrismaPort);
+  return repo(options.rlsTransactionRunner ?? rlsRunner(prisma));
 }
 
-class RlsPrismaAiMemberRuntimeRepository implements AiMemberRuntimeRepositoryPort {
-  constructor(private readonly tx: RlsTxRunner) {}
-
-  async getRuntimeState(ctx: AccessContext, memberId: string) {
-    return state(await this.bundle(scope(ctx), memberId));
-  }
-
-  async emergencyStop(ctx: AccessContext, memberId: string, input: ActionInput) {
-    const rls = scope(ctx),
-      before = await this.bundle(rls, memberId),
-      auditId = randomUUID(),
-      now = new Date().toISOString();
-    const after = {
-      breakerReasonRef: input.reasonRef,
-      emergencyStoppedAt: new Date(now),
-      metadata: metadata(before.member.metadata, "emergency_stop", input, auditId),
-      status: dbStatus.disabled
-    };
-    const member = await this.memberAuditTx(
-      rls,
-      memberId,
-      after,
-      audit("emergency_stop", ctx, before, input, auditId, after, now)
-    );
-    return result("emergency_stop", auditId, state({ ...before, member }));
-  }
-
-  async recoverOnline(ctx: AccessContext, memberId: string, input: ActionInput) {
-    const rls = scope(ctx),
-      before = await this.bundle(rls, memberId);
-    if (!["breaker_offline", "disabled"].includes(status(before.member.status)))
-      throw bad("AI member is not in recoverable emergency state");
-    if (text(before.member.breakerReasonRef) && !input.breakerResolvedRef)
-      throw bad("recovery requires controlled breakerResolvedRef");
-    await this.assertActiveVersionGate(rls, before.activeVersion);
-    const auditId = randomUUID(),
-      activeVersion = version(before.activeVersion);
-    const after = {
-      breakerReasonRef: null,
-      emergencyStoppedAt: null,
-      metadata: metadata(before.member.metadata, "recover_online", input, auditId, {
-        activeVersion
-      }),
-      status: dbStatus.online
-    };
-    const member = await this.memberAuditTx(
-      rls,
-      memberId,
-      after,
-      audit(
-        "recover_online",
-        ctx,
-        before,
-        input,
-        auditId,
-        { ...after, activeVersion },
-        new Date().toISOString()
-      )
-    );
-    return result("recover_online", auditId, state({ ...before, member }));
-  }
-
-  async toggleCapability(
-    ctx: AccessContext,
-    memberId: string,
-    key: CapabilityKey,
-    input: ToggleInput
-  ) {
-    const rls = scope(ctx),
-      before = await this.bundle(rls, memberId);
-    const toggle = await this.one(
-      rls,
-      (p) =>
-        p.aiCapabilityToggle.findFirst({
-          where: { ...rls, aiMemberId: memberId, capabilityKey: dbCapability[key] }
-        }),
-      "ai capability toggle row"
-    );
-    if (!toggle) throw new AiMemberRuntimeError(404, "AI capability toggle not found");
-    if (input.enabled) await this.assertToggleGate(rls, input);
-    const auditId = randomUUID(),
-      beforeToggle = snapToggle(toggle);
-    const after = {
-      configVersionId: input.configVersionId ?? null,
-      enabled: input.enabled,
-      metadata: metadata(toggle.metadata, "capability_toggle", input, auditId),
-      updatedByUserId: ctx.userId
-    };
-    const afterToggle = {
-      ...beforeToggle,
-      ...snapToggle({ ...toggle, ...after }),
-      targetRef: `controlled://ai-member/${memberId}/capability/${key}`
-    };
-    const changed = await this.tx<Row>({
-      map: ([row]) => record(row, "ai capability toggle row"),
-      ops: (p) => [
-        p.aiCapabilityToggle.update({
-          data: after,
-          where: { id: String(toggle.id) }
-        }),
-        p.auditLog.create({
-          data: audit(
-            "capability_toggle",
-            ctx,
-            before,
-            input,
-            auditId,
-            afterToggle,
-            new Date().toISOString(),
-            beforeToggle
-          )
-        })
-      ],
+function repo(tx: c.RlsTxRunner): c.AiMemberRuntimeRepositoryPort {
+  const scoped = (rls: RlsTenantContext, extra: c.Row) => ({
+    where: { ...rls, ...extra }
+  });
+  const one = (rls: RlsTenantContext, op: Op, name: string) =>
+    tx<c.Row | undefined>({
+      map: ([row]) => (row ? c.record(row, name) : undefined),
+      ops: (p) => [op(p)],
       scope: rls
     });
-    return {
-      ...result("capability_toggle", auditId, state(before)),
-      capability: snapToggle(changed)
-    };
-  }
-
-  private async bundle(rls: RlsTenantContext, memberId: string): Promise<Bundle> {
-    const member = await this.one(
+  const bundle = async (rls: RlsTenantContext, memberId: string) => {
+    const member = await one(
       rls,
-      (p) => p.aiMember.findFirst({ where: { ...rls, id: memberId } }),
+      (p) => p.aiMember.findFirst(scoped(rls, { id: memberId })),
       "ai member row"
     );
-    if (!member) throw new AiMemberRuntimeError(404, "AI member not found");
-    const activeVersionId = text(member.activeVersionId);
-    const activeVersion = activeVersionId
-      ? await this.one(
-          rls,
-          (p) =>
-            p.aiMemberVersion.findFirst({ where: { ...rls, id: activeVersionId } }),
-          "ai member version row"
-        )
-      : undefined;
-    const toggles = await this.many(
+    if (!member) throw new c.AiMemberRuntimeError(404, "AI member not found");
+    const activeVersionId = c.text(member.activeVersionId);
+    return {
+      activeVersion: activeVersionId
+        ? await one(
+            rls,
+            (p) => p.aiMemberVersion.findFirst(scoped(rls, { id: activeVersionId })),
+            "ai member version row"
+          )
+        : undefined,
+      member
+    };
+  };
+  const gate = async (rls: RlsTenantContext, id: string) => {
+    const row = await one(
       rls,
-      (p) =>
-        p.aiCapabilityToggle.findMany({ where: { ...rls, aiMemberId: member.id } }),
-      "toggle row"
+      (p) => p.evalGate.findFirst(scoped(rls, { id })),
+      "eval gate row"
     );
-    return { activeVersion, member, toggles };
-  }
-
-  private one(rls: RlsTenantContext, op: (p: PrismaPort) => Operation, name: string) {
-    return this.tx<Row | undefined>({
-      map: ([row]) => (row ? record(row, name) : undefined),
-      ops: (p) => [op(p)],
-      scope: rls
-    });
-  }
-
-  private many(rls: RlsTenantContext, op: (p: PrismaPort) => Operation, name: string) {
-    return this.tx<Row[]>({
-      map: ([rows]) => array(rows).map((row) => record(row, name)),
-      ops: (p) => [op(p)],
-      scope: rls
-    });
-  }
-
-  private memberAuditTx(
+    if (!row || String(row.status).toUpperCase() !== "PASSED")
+      throw c.bad("AI member runtime requires passed eval gate evidence");
+  };
+  const writeMember = (
     rls: RlsTenantContext,
     memberId: string,
-    data: Row,
-    auditRow: Row
-  ) {
-    return this.tx<Row>({
-      map: ([row]) => record(row, "ai member row"),
+    data: c.Row,
+    auditRow: c.Row
+  ) =>
+    tx<c.Row>({
+      map: ([row]) => c.record(row, "ai member row"),
       ops: (p) => [
         p.aiMember.update({ data, where: { id: memberId } }),
         p.auditLog.create({ data: auditRow })
       ],
       scope: rls
     });
-  }
-
-  private async assertActiveVersionGate(rls: RlsTenantContext, active?: Row) {
-    const gateId = text(active?.evalGateId);
-    if (!active || !gateId)
-      throw bad("recovery requires active AI member version with passed eval gate");
-    await this.assertPassedGate(rls, gateId);
-  }
-
-  private async assertToggleGate(rls: RlsTenantContext, input: ToggleInput) {
-    if (!input.configVersionId && !input.evalGateId) return;
-    if (!input.evalGateId)
-      throw bad("enabling capability with configVersionId requires evalGateId");
-    await this.assertPassedGate(rls, input.evalGateId);
-  }
-
-  private async assertPassedGate(rls: RlsTenantContext, gateId: string) {
-    const gate = await this.one(
+  const memberAction = async (
+    ctx: AccessContext,
+    memberId: string,
+    input: c.ActionInput,
+    action: Exclude<Action, "capability_toggle">
+  ) => {
+    const rls = c.scope(ctx);
+    const before = await bundle(rls, memberId);
+    if (action === "recover_online") {
+      if (!["breaker_offline", "disabled"].includes(c.status(before.member.status)))
+        throw c.bad("AI member is not in recoverable emergency state");
+      if (c.text(before.member.breakerReasonRef) && !input.breakerResolvedRef)
+        throw c.bad("recovery requires controlled breakerResolvedRef");
+      const gateId = c.text(before.activeVersion?.evalGateId);
+      if (!before.activeVersion || !gateId)
+        throw c.bad("recovery requires active AI member version with passed eval gate");
+      await gate(rls, gateId);
+    }
+    const auditId = randomUUID();
+    const activeVersion = version(before.activeVersion);
+    const now = new Date().toISOString();
+    const data =
+      action === "emergency_stop"
+        ? {
+            breakerReasonRef: input.reasonRef,
+            emergencyStoppedAt: new Date(now),
+            metadata: meta(before.member.metadata, action, input, auditId),
+            status: STATUS.disabled
+          }
+        : {
+            breakerReasonRef: null,
+            emergencyStoppedAt: null,
+            metadata: meta(before.member.metadata, action, input, auditId, {
+              activeVersion
+            }),
+            status: STATUS.online
+          };
+    const member = await writeMember(
       rls,
-      (p) => p.evalGate.findFirst({ where: { ...rls, id: gateId } }),
-      "eval gate row"
+      memberId,
+      data,
+      audit(
+        action,
+        ctx,
+        memberId,
+        input,
+        auditId,
+        action === "recover_online" ? { ...data, activeVersion } : data,
+        state(before)
+      )
     );
-    if (!gate || String(gate.status).toUpperCase() !== "PASSED")
-      throw bad("AI member runtime requires passed eval gate evidence");
-  }
+    return result(action, auditId, state({ ...before, member }));
+  };
+  return {
+    getRuntimeState: async (ctx, id) => state(await bundle(c.scope(ctx), id)),
+    emergencyStop: (ctx, id, input) => memberAction(ctx, id, input, "emergency_stop"),
+    recoverOnline: (ctx, id, input) => memberAction(ctx, id, input, "recover_online"),
+    toggleCapability: async (ctx, memberId, key, input) => {
+      const rls = c.scope(ctx);
+      const toggle = await one(
+        rls,
+        (p) =>
+          p.aiCapabilityToggle.findFirst(
+            scoped(rls, { aiMemberId: memberId, capabilityKey: CAP[key] })
+          ),
+        "ai capability toggle row"
+      );
+      if (!toggle)
+        throw new c.AiMemberRuntimeError(404, "AI capability toggle not found");
+      if (input.enabled) {
+        if (input.configVersionId && !input.evalGateId)
+          throw c.bad("enabling capability with configVersionId requires evalGateId");
+        if (input.evalGateId) await gate(rls, input.evalGateId);
+      }
+      const auditId = randomUUID();
+      const before = toggleState(toggle);
+      const data = {
+        configVersionId: input.configVersionId ?? null,
+        enabled: input.enabled,
+        metadata: meta(toggle.metadata, "capability_toggle", input, auditId),
+        updatedByUserId: ctx.userId
+      };
+      const after = {
+        ...toggleState({ ...toggle, ...data }),
+        targetRef: `${target(memberId)}/capability/${key}`
+      };
+      const changed = await tx<c.Row>({
+        map: ([row]) => c.record(row, "ai capability toggle row"),
+        ops: (p) => [
+          p.aiCapabilityToggle.update({ data, where: { id: String(toggle.id) } }),
+          p.auditLog.create({
+            data: audit(
+              "capability_toggle",
+              ctx,
+              memberId,
+              input,
+              auditId,
+              after,
+              before
+            )
+          })
+        ],
+        scope: rls
+      });
+      return {
+        ...result("capability_toggle", auditId, { targetRef: target(memberId) }),
+        capability: toggleState(changed)
+      };
+    }
+  };
 }
 
-function createAiMemberRlsTransactionRunner(prisma: PrismaPort): RlsTxRunner {
-  assertPrismaPort(prisma);
-  return async (input) => {
-    const context = createRlsTransactionContext(input.scope);
+function rlsRunner(prisma: c.PrismaPort): c.RlsTxRunner {
+  return async ({ map, ops, scope }) => {
+    const context = createRlsTransactionContext(scope);
     const rows = await prisma.$transaction([
       prisma.$executeRawUnsafe(context.roleSql),
-      ...context.settings.map((setting) => setConfig(prisma, setting)),
-      ...input.ops(prisma)
+      ...context.settings.map((setting) => c.setConfig(prisma, setting)),
+      ...ops(prisma)
     ]);
     const businessRows = rows.slice(1 + context.settings.length);
-    return input.map ? input.map(businessRows) : (businessRows as never);
+    return map ? map(businessRows) : (businessRows as never);
   };
+}
+
+function state({ activeVersion, member }: Bundle) {
+  return clean({
+    activeVersion: version(activeVersion),
+    breakerReasonRef: c.text(member.breakerReasonRef),
+    emergencyStoppedAt: date(member.emergencyStoppedAt),
+    id: required(member.id, "member id"),
+    status: c.status(member.status),
+    targetRef: target(member.id)
+  });
+}
+const version = (row?: c.Row) =>
+  row
+    ? clean({
+        configVersionId: c.text(row.configVersionId),
+        evalGateId: c.text(row.evalGateId),
+        id: c.text(row.id),
+        personaRef: c.text(row.personaRef),
+        status: c.text(row.status)?.toLowerCase()
+      })
+    : undefined;
+const toggleState = (row: c.Row) =>
+  clean({
+    capabilityKey: String(row.capabilityKey).toLowerCase(),
+    configVersionId: c.text(row.configVersionId),
+    enabled: row.enabled === true,
+    id: c.text(row.id),
+    updatedByUserId: c.text(row.updatedByUserId)
+  });
+const meta = (
+  current: unknown,
+  action: Action,
+  input: c.Row,
+  auditLogId: string,
+  extra: c.Row = {}
+) => ({
+  ...c.record(current ?? {}, "metadata"),
+  runtimeControl: clean({ action, auditLogId, ...input, ...extra })
+});
+const result = (action: Action, auditLogId: string, member: c.Row) => ({
+  action,
+  auditLogId,
+  auditRef: `controlled://audit-log/${auditLogId}`,
+  member,
+  targetRef: member.targetRef
+});
+function audit(
+  action: Action,
+  ctx: AccessContext,
+  memberId: string,
+  input: c.ActionInput,
+  id: string,
+  after: c.Row,
+  before: unknown
+) {
+  return {
+    action,
+    actorUserId: ctx.userId,
+    content: {
+      after: clean({
+        ...after,
+        action,
+        actorUserId: ctx.userId,
+        controlRef: input.controlRef,
+        reasonRef: input.reasonRef,
+        targetRef: target(memberId, action)
+      }),
+      before
+    },
+    eventType: `ai_member.${action}`,
+    id,
+    module: "ai_member_runtime",
+    objectId: memberId,
+    objectType: action === "capability_toggle" ? "ai_capability_toggle" : "ai_member",
+    occurredAt: new Date(),
+    orgId: ctx.orgId,
+    tenantId: ctx.selectedTenantId,
+    traceId: input.traceId ?? `ai-member-runtime:${action}:${memberId}`
+  };
+}
+const target = (memberId: unknown, action?: Action) =>
+  `controlled://ai-member/${memberId}${action === "capability_toggle" ? "/capability" : ""}`;
+const clean = <T extends c.Row>(value: T): T =>
+  Object.fromEntries(
+    Object.entries(value).filter(([, item]) => item !== undefined)
+  ) as T;
+const date = (value: unknown) =>
+  value instanceof Date ? value.toISOString() : c.text(value);
+function required(value: unknown, name: string) {
+  const out = c.text(value);
+  if (!out) throw c.bad(`${name} is required`);
+  return out;
 }

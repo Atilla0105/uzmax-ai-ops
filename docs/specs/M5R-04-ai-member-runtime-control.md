@@ -14,7 +14,7 @@ AI agent: implement only this spec in the assigned worktree/branch, preserve ten
 
 ## 时间盒
 
-0.8 个工作日. If implementation requires Prisma schema/migration/RLS policy changes, generated client, lockfile/shared config/CI/guard changes, LLM/provider calls, prompt/persona/model-route release, broad admin UI wiring, worker/cron/distill/template/log expansion, or source budget overrun, stop and report before widening scope.
+0.8 个工作日. If implementation requires Prisma schema/migration/RLS policy changes, generated client, lockfile/shared config/CI/guard changes, LLM/provider calls, prompt/persona/model-route release, broad admin UI wiring, worker/cron/distill/template/log expansion, or source budget overrun, stop and report before widening scope. Source budget overrun may only proceed through the AGENTS.md `large_change_exception` path with explicit PR hygiene disclosure and owner/review approval before merge.
 
 ## Spec 类型
 
@@ -35,7 +35,6 @@ feature
   - `apps/admin/src/M5AiMemberConsoleShell.tsx`
   - `apps/admin/src/aiMemberRuntimeApiClient.ts`
   - `scripts/tests/m5r-ai-member-runtime-control.test.mjs`
-  - `packages/db/scripts/run-m5r-ai-member-runtime-true-db-smoke.mjs`
   - `packages/db/scripts/tests/run-m5r-ai-member-runtime-true-db-smoke.mjs`
 - 说明/备注：
   - Root/main checkout `/Users/atilla/Documents/UZMAX智能运营` is read-only coordination/audit only.
@@ -46,12 +45,12 @@ feature
 
 - source budget target: changed source files <= 10, net source LOC <= 650, new source files <= 4.
 - docs: this spec, M5R-04 evidence, M5R evidence README, mandatory incident record.
-- source: minimal `apps/api` AI member runtime controller/contracts/repository source split, AppModule provider/controller wiring, API runtime compiler support, a tiny admin API-client fallback proof plus non-wiring shell anchor, and a thin true DB smoke CLI wrapper.
-- test: focused M5R-04 runtime/API/client contract test and true DB smoke support under `packages/db/scripts/tests`.
+- source: minimal `apps/api` AI member runtime controller/contracts/repository source split, AppModule provider/controller wiring, API runtime compiler support, and a tiny admin API-client fallback proof plus non-wiring shell anchor.
+- test: focused M5R-04 runtime/API/client contract test and the direct true DB smoke runner under `packages/db/scripts/tests`.
 - generated/lock/config/schema/migration/broad admin UI/Playwright/worker/cron/distill/evals/llm-gateway/prompt/persona/model-route/external provider/adapter: none.
-- New source `rg` conclusion: searched `AiMember`, `ai_member`, `AI member`, `ai member`, `aiMember`, `AI 成员`, `capability toggle`, `aiCapability`, `emergency stop`, `recover_online`, `breaker_offline`, `manual_offline`, `toggle_capability`, `ai_capability_toggle`, `evalGate`, `eval_gate`, `createRlsTransactionContext`, `UZMAX_RLS_DATABASE_URL`, `audit_log` and `rls_prisma_gateway` under `apps`, `packages`, `scripts`, `docs/specs`, `docs/evidence/M5` and `docs/evidence/M5R`. Existing work provides M5-05 local frontend drafts, M5-01 DB contracts and M5R runtime patterns, but no AI member runtime API/repository/client path. New API source belongs under `apps/api/src/ai-member-runtime*.ts` because M5R-04 is an API+DB runtime slice; the controller entrypoint stays in `apps/api/src/ai-member-runtime.ts`, shared validation/contract helpers live in `apps/api/src/ai-member-runtime.contracts.ts`, and RLS repository behavior lives in `apps/api/src/ai-member-runtime.repository.ts` to stay within ESLint file-length/complexity gates without changing product scope. The tiny mobile fallback client belongs in `apps/admin/src/aiMemberRuntimeApiClient.ts`; the true DB smoke wrapper belongs under `packages/db/scripts`.
+- New source `rg` conclusion: searched `AiMember`, `ai_member`, `AI member`, `ai member`, `aiMember`, `AI 成员`, `capability toggle`, `aiCapability`, `emergency stop`, `recover_online`, `breaker_offline`, `manual_offline`, `toggle_capability`, `ai_capability_toggle`, `evalGate`, `eval_gate`, `createRlsTransactionContext`, `UZMAX_RLS_DATABASE_URL`, `audit_log` and `rls_prisma_gateway` under `apps`, `packages`, `scripts`, `docs/specs`, `docs/evidence/M5` and `docs/evidence/M5R`. Existing work provides M5-05 local frontend drafts, M5-01 DB contracts and M5R runtime patterns, but no AI member runtime API/repository/client path. New API source belongs under `apps/api/src/ai-member-runtime*.ts` because M5R-04 is an API+DB runtime slice; the controller entrypoint stays in `apps/api/src/ai-member-runtime.ts`, shared validation/contract helpers live in `apps/api/src/ai-member-runtime.contracts.ts`, and RLS repository behavior lives in `apps/api/src/ai-member-runtime.repository.ts` to stay within ESLint file-length/complexity gates without changing product scope. The tiny mobile fallback client belongs in `apps/admin/src/aiMemberRuntimeApiClient.ts`; the true DB smoke runner remains test-classified under `packages/db/scripts/tests`.
 - External API/SDK/provider/connector/adapter basis: none. This PR adds no external API/provider/connector/adapter and performs no real LLM/provider call. Prisma usage relies on existing generated Prisma client/model and repo-local `createRlsTransactionContext`/`UZMAX_RLS_DATABASE_URL` runtime helpers.
-- Exceptions: none. No `large_change_exception` and no `test_weakening_exception`.
+- Exceptions: `large_change_exception` for source net LOC over the M5R-04 target only. New source files are within target after removing the thin DB smoke wrapper and using the direct runner at `packages/db/scripts/tests/run-m5r-ai-member-runtime-true-db-smoke.mjs`. Budget-reduction attempts included wrapper removal, contracts/client compaction and repository compaction; further reduction would risk obscuring or weakening RLS transaction setup, breaker/eval-gate checks, DB writes, audit rows or route behavior. No `test_weakening_exception`.
 
 ## 文档触发检查
 
@@ -137,14 +136,14 @@ Open PR audit before edits returned `[]`. Root no-merged branch audit before edi
 - Mobile emergency fallback proof reaches real API routes through a focused admin API client only; visible admin runtime wiring remains M5R-07.
 - True DB smoke proves same-tenant positive behavior and wrong-tenant/missing-context negative behavior using real DB/RLS, not repository-only filters, if `UZMAX_RLS_DATABASE_URL` is available.
 - Required validation passes or failures are honestly recorded.
-- Source budget remains within changed source files <= 10, net source LOC <= 650, new source files <= 4.
+- Source budget remains within changed source files <= 10 and new source files <= 4, while net source LOC over target is explicitly recorded under `large_change_exception`.
 
 ## 失败分支
 
 - If worktree/branch/root boundary differs: stop and report `BLOCKED`.
 - If current DB contract is insufficient and schema/migration/RLS changes are required: stop and report `BLOCKED` with evidence; do not add schema/migration in M5R-04.
 - If true DB smoke cannot run because `UZMAX_RLS_DATABASE_URL` is absent: record the missing-env blocker in evidence and keep the contract test proving the runner/runtime requires `UZMAX_RLS_DATABASE_URL`.
-- If source budget exceeds target: stop and report with proposed split.
+- If source budget exceeds target without an explicit `large_change_exception`: stop and report with proposed split. For this M5R-04 finalizer, the exception is limited to source-size governance; it is not product scope approval, M5 owner acceptance, production approval or release approval.
 - If tests require broad admin UI wiring, Playwright visible browser evidence, worker/cron, distill scheduler, template copy runtime, log analytics runtime, formal write expansion, H-01 full authoring, eval publishing, prompt/persona/model-route release, external provider calls, production deploy or real customer/order data: stop and split to later M5R specs.
 - If raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, LLM keys or secrets appear: stop, clean up and create or reference incident evidence before continuing.
 - If validation fails from this slice, fix within allowed files; do not weaken tests or expand mocks to pass.

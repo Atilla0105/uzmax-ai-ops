@@ -7,7 +7,10 @@ import {
   type AiMemberCapabilityKey,
   type AiMemberStatus
 } from "./aiMemberConsoleContracts";
+import { createAiMemberRuntimeApiClient } from "./aiMemberRuntimeApiClient";
 import "./m5-ai-member-console-shell.css";
+
+void createAiMemberRuntimeApiClient;
 
 const capabilityLabels: Record<AiMemberCapabilityKey, string> = {
   business_draft: "Business draft",

@@ -15,6 +15,12 @@ import type {
   toPrismaAuditLogCreateData
 } from "./audit-log.prisma-sink.ts";
 import {
+  AI_MEMBER_RUNTIME_REPOSITORY,
+  AiMemberRuntimeController,
+  createAiMemberRuntimeRepositoryProviderFromEnv,
+  type AiMemberRuntimeRepositoryPort
+} from "./ai-member-runtime.ts";
+import {
   ConversationTicketController,
   ConversationTicketService,
   InMemoryConversationTicketRepository
@@ -149,6 +155,12 @@ type ApiAuditPersistenceContractAnchor = {
   prismaClient: AuditLogPrismaClientPort;
   prismaSink: typeof PrismaAuditSink;
 };
+type AiMemberRuntimeContractAnchor = {
+  controller: typeof AiMemberRuntimeController;
+  repository: AiMemberRuntimeRepositoryPort;
+  repositoryProvider: typeof createAiMemberRuntimeRepositoryProviderFromEnv;
+  repositoryToken: typeof AI_MEMBER_RUNTIME_REPOSITORY;
+};
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
   | "defaultRuntimeMode"
@@ -201,6 +213,10 @@ function apiAuditPersistenceContractAnchor(
   void contract;
 }
 void apiAuditPersistenceContractAnchor;
+function aiMemberRuntimeContractAnchor(contract: AiMemberRuntimeContractAnchor) {
+  void contract;
+}
+void aiMemberRuntimeContractAnchor;
 
 @Injectable()
 class DisabledTelegramBotIngressQueue {
@@ -235,6 +251,7 @@ class TelegramBotWebhookController {
   controllers: [
     api.ApiAccessContextController,
     api.ApiHealthController,
+    AiMemberRuntimeController,
     ConfirmationQueueController,
     ConversationTicketController,
     CustomerAssetController,
@@ -269,6 +286,10 @@ class TelegramBotWebhookController {
     {
       provide: CONFIRMATION_FORMAL_WRITE_PIPELINE,
       useFactory: () => createConfirmationFormalWritePipelineProviderFromEnv()
+    },
+    {
+      provide: AI_MEMBER_RUNTIME_REPOSITORY,
+      useFactory: () => createAiMemberRuntimeRepositoryProviderFromEnv()
     },
     InMemoryConversationTicketRepository,
     InMemoryCustomerAssetRepository,

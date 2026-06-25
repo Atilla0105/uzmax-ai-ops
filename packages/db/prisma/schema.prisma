@@ -344,6 +344,16 @@ enum AiCapabilityKey {
   @@map("ai_capability_key")
 }
 
+enum ExportJobStatus {
+  DRAFT     @map("draft")
+  QUEUED    @map("queued")
+  COMPLETED @map("completed")
+  FAILED    @map("failed")
+  EXPIRED   @map("expired")
+
+  @@map("export_job_status")
+}
+
 model Org {
   id                    String                   @id @default(uuid()) @db.Uuid
   slug                  String                   @unique @db.Text
@@ -382,6 +392,9 @@ model Org {
   evalResults           EvalResult[]
   evalGates             EvalGate[]
   llmCallLogs           LlmCallLog[]
+  loginLogs             LoginLog[]
+  presenceLogs          PresenceLog[]
+  exportJobs            ExportJob[]
 
   @@map("org")
 }
@@ -424,6 +437,9 @@ model Tenant {
   evalResults           EvalResult[]
   evalGates             EvalGate[]
   llmCallLogs           LlmCallLog[]
+  loginLogs             LoginLog[]
+  presenceLogs          PresenceLog[]
+  exportJobs            ExportJob[]
 
   @@unique([orgId, id])
   @@unique([orgId, slug])
@@ -538,6 +554,69 @@ model AuditLog {
   @@index([eventType, occurredAt])
   @@index([objectType, objectId])
   @@map("audit_log")
+}
+
+model LoginLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  memberUserId String   @map("member_user_id") @db.Uuid
+  loginType    String   @map("login_type") @db.Text
+  ipHash       String?  @map("ip_hash") @db.Text
+  locationRef  String?  @map("location_ref") @db.Text
+  device       String?  @db.Text
+  metadata     Json     @default("{}")
+  occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  org          Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, memberUserId, occurredAt])
+  @@index([orgId, tenantId, occurredAt])
+  @@map("login_log")
+}
+
+model PresenceLog {
+  id              String    @id @default(uuid()) @db.Uuid
+  orgId           String    @map("org_id") @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  memberUserId    String    @map("member_user_id") @db.Uuid
+  status          String    @db.Text
+  updateMethod    String    @map("update_method") @db.Text
+  startedAt       DateTime  @map("started_at") @db.Timestamptz(6)
+  endedAt         DateTime? @map("ended_at") @db.Timestamptz(6)
+  durationSeconds Int?      @map("duration_seconds")
+  metadata        Json      @default("{}")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant          Tenant    @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, memberUserId, startedAt])
+  @@index([orgId, tenantId, status, startedAt])
+  @@map("presence_log")
+}
+
+model ExportJob {
+  id              String          @id @default(uuid()) @db.Uuid
+  orgId           String          @map("org_id") @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  createdByUserId String          @map("created_by_user_id") @db.Uuid
+  scope           Json
+  filters         Json
+  status          ExportJobStatus @default(DRAFT)
+  fileRef         String?         @map("file_ref") @db.Text
+  expiresAt       DateTime?       @map("expires_at") @db.Timestamptz(6)
+  metadata        Json            @default("{}")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  org             Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant          Tenant          @relation(fields: [orgId, tenantId], references: [orgId, id], onDelete: Cascade)
+
+  @@unique([id, orgId, tenantId])
+  @@index([orgId, tenantId, status, createdAt])
+  @@index([createdByUserId, createdAt])
+  @@map("export_job")
 }
 
 model ChannelConnection {

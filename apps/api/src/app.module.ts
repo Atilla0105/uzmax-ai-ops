@@ -21,6 +21,12 @@ import {
   type AiMemberRuntimeRepositoryPort
 } from "./ai-member-runtime.ts";
 import {
+  LOGS_ANALYTICS_RUNTIME_REPOSITORY,
+  LogsAnalyticsRuntimeController,
+  createLogsAnalyticsRuntimeRepositoryProviderFromEnv,
+  type LogsAnalyticsRuntimeRepositoryPort
+} from "./logs-analytics-runtime.ts";
+import {
   ConversationTicketController,
   ConversationTicketService,
   InMemoryConversationTicketRepository
@@ -161,6 +167,12 @@ type AiMemberRuntimeContractAnchor = {
   repositoryProvider: typeof createAiMemberRuntimeRepositoryProviderFromEnv;
   repositoryToken: typeof AI_MEMBER_RUNTIME_REPOSITORY;
 };
+type LogsAnalyticsRuntimeContractAnchor = {
+  controller: typeof LogsAnalyticsRuntimeController;
+  repository: LogsAnalyticsRuntimeRepositoryPort;
+  repositoryProvider: typeof createLogsAnalyticsRuntimeRepositoryProviderFromEnv;
+  repositoryToken: typeof LOGS_ANALYTICS_RUNTIME_REPOSITORY;
+};
 const orderImportRepositoryContractAnchor: Pick<
   OrderImportRepositoryContractAnchor,
   | "defaultRuntimeMode"
@@ -217,6 +229,12 @@ function aiMemberRuntimeContractAnchor(contract: AiMemberRuntimeContractAnchor) 
   void contract;
 }
 void aiMemberRuntimeContractAnchor;
+function logsAnalyticsRuntimeContractAnchor(
+  contract: LogsAnalyticsRuntimeContractAnchor
+) {
+  void contract;
+}
+void logsAnalyticsRuntimeContractAnchor;
 
 @Injectable()
 class DisabledTelegramBotIngressQueue {
@@ -255,6 +273,7 @@ class TelegramBotWebhookController {
     ConfirmationQueueController,
     ConversationTicketController,
     CustomerAssetController,
+    LogsAnalyticsRuntimeController,
     OrderImportController,
     TelegramBotWebhookController
   ],
@@ -290,6 +309,10 @@ class TelegramBotWebhookController {
     {
       provide: AI_MEMBER_RUNTIME_REPOSITORY,
       useFactory: () => createAiMemberRuntimeRepositoryProviderFromEnv()
+    },
+    {
+      provide: LOGS_ANALYTICS_RUNTIME_REPOSITORY,
+      useFactory: () => createLogsAnalyticsRuntimeRepositoryProviderFromEnv()
     },
     InMemoryConversationTicketRepository,
     InMemoryCustomerAssetRepository,

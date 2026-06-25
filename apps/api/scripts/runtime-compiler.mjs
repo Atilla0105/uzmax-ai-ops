@@ -34,6 +34,11 @@ export async function importApiCustomerAssetRuntimeModules(options = {}) {
 export async function importApiAiMemberRuntimeModules(options = {}) {
   return importApiRuntimeModules(options, [["aiMemberRuntime", "ai-member-runtime"]]);
 }
+export async function importApiLogsAnalyticsRuntimeModules(options = {}) {
+  return importApiRuntimeModules(options, [
+    ["logsAnalyticsRuntime", "logs-analytics-runtime"]
+  ]);
+}
 async function importApiRuntimeModules(options, entries) {
   const outDir = await compileApiRuntime(options);
   const modules = { outDir };
@@ -124,6 +129,41 @@ export async function compileApiRuntime(options = {}) {
       "./ai-member-runtime.repository.ts": "./ai-member-runtime.repository.mjs"
     }
   );
+  await writeModule(
+    outDir,
+    "apps/api/src/logs-analytics-runtime.contracts.ts",
+    "logs-analytics-runtime.contracts.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/logs-analytics-runtime.repository.ts",
+    "logs-analytics-runtime.repository.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+      "./logs-analytics-runtime.contracts.ts": "./logs-analytics-runtime.contracts.mjs"
+    }
+  );
+  await writeModule(
+    outDir,
+    "apps/api/src/logs-analytics-runtime.ts",
+    "logs-analytics-runtime.mjs",
+    {
+      "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+      "../../../packages/db/src/index.ts": "./db-index.mjs",
+      "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+      "./access-context.ts": "./access-context.mjs",
+      "./logs-analytics-runtime.contracts.ts": "./logs-analytics-runtime.contracts.mjs",
+      "./logs-analytics-runtime.repository.ts":
+        "./logs-analytics-runtime.repository.mjs"
+    }
+  );
   for (const [name, replacements] of customerAssetRuntimeModules()) {
     await writeModule(
       outDir,
@@ -152,6 +192,7 @@ export async function compileApiRuntime(options = {}) {
     "./customer-asset.repository.ts": "./customer-asset.repository.mjs",
     "./customer-asset.runtime.ts": "./customer-asset.runtime.mjs",
     "./customer-asset.service.ts": "./customer-asset.service.mjs",
+    "./logs-analytics-runtime.ts": "./logs-analytics-runtime.mjs",
     "./order-import.ts": "./order-import.mjs",
     "./order-import.runtime.ts": "./order-import.runtime.mjs"
   });

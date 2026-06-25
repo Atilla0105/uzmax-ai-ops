@@ -57,14 +57,21 @@ This evidence, spec, tests and implementation must not include raw/export/jsonl/
 ## Runtime/RLS Evidence
 
 - `apps/api/src/template-copy-runtime.ts` exposes a minimal `POST /template-copy/copies` controller guarded by `ApiAccessContextGuard` and `template:write` permission.
-- `apps/api/src/template-copy-runtime.contracts.ts` accepts only supported template kinds `ai_member`, `config`, `eval` and `quick_reply`; source template refs must be `controlled://group-template/...`; snapshot/reason/control refs must be controlled refs; unsafe raw/customer/order/prompt/secret/url/body/content/file-like keys fail closed.
+- `apps/api/src/template-copy-runtime.contracts.ts` accepts only supported template kinds `ai_member`, `config`, `eval` and `quick_reply`; source template refs must be `controlled://group-template/...`; snapshot/reason/control refs must be controlled refs; unsafe raw/customer/order/prompt/completion/secret/blob/url/file/base64-like ref bodies or path segments fail closed.
 - `apps/api/src/template-copy-runtime.repository.ts` keeps default mode disabled and requires explicit `UZMAX_TEMPLATE_COPY_RUNTIME_MODE=rls_prisma_gateway`; bare `prisma_gateway` is rejected.
 - Explicit runtime uses `createRlsTransactionContext`, restricted `uzmax_app_runtime` role and transaction-scoped `app.org_id` / `app.tenant_id` before DB reads/writes.
 - Runtime writes only existing `config_version` and `audit_log`: a tenant-owned `config_version` with `domain = TEMPLATE_COPY`, `status = DRAFT`, no `activatedAt`, increasing version per tenant/key, and payload snapshot containing controlled source refs plus `formalTenantWrite: false` and `templateAutoOverwrite: false`.
-- Runtime audit rows use `eventType = template_copy.copied`, `module = template_copy_runtime`, actor, source template ref, config version ref, template kind and before/after copy metadata.
+- Runtime audit rows use `eventType = template_copy.copied`, `module = template_copy_runtime`, actor, source template ref, config version ref, template kind and before/after copy metadata; audit `before` stores only previous version id/ref/version/template metadata and safe controlled source refs, not the whole previous payload.
 - `apps/api/src/app.module.ts` wires the controller/provider disabled by default; missing DB env does not affect default AppModule boot.
 - `apps/api/scripts/runtime-compiler.mjs` emits template-copy runtime modules for focused tests and true DB smoke support.
 - `packages/ops-assets/src/index.ts` remains the placeholder package export; no broad ops-assets template library was added.
+
+## Quality Review Fix
+
+QUALITY_BLOCKED follow-up completed in the same M5R-06 branch/PR:
+
+- controlled-ref validation now normalizes the ref body and rejects unsafe raw/customer/order/prompt/completion/secret/blob/url/file/base64-like material inside path segments for source, snapshot, updated, reason and control refs;
+- audit `before` metadata no longer persists `previous.payload` wholesale and focused tests assert arbitrary prior payload fields are absent.
 
 ## True DB/RLS Smoke Status
 
@@ -87,7 +94,7 @@ The support runner is ready to execute same-tenant positive and wrong-tenant/mis
 | Command | Result | Notes |
 |---|---|---|
 | `npm ci` | pass | Installed locked dependencies because `node_modules` was missing at worker start. |
-| `node --test scripts/tests/m5r-template-copy-runtime.test.mjs` | pass | 5/5 focused tests passed. |
+| `node --test scripts/tests/m5r-template-copy-runtime.test.mjs` | pass | 6/6 focused tests passed after quality-review fix. |
 | `node packages/db/scripts/run-m5r-template-copy-true-db-smoke.mjs` | expected fail-closed | Missing `UZMAX_RLS_DATABASE_URL`; exact error `UZMAX_RLS_DATABASE_URL is required`. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript no-emit check passed. |
 | `npm run lint` | pass | ESLint passed after splitting input validation complexity. |
@@ -108,22 +115,22 @@ The support runner is ready to execute same-tenant positive and wrong-tenant/mis
 
 ## Source Budget
 
-Manual source budget from `git diff --cached --numstat` before final evidence update:
+Manual source budget from `git diff --numstat origin/main` after the quality-review fix and before final evidence update:
 
 | Metric | Value | Budget status |
 |---|---:|---|
 | changed source files | 6 | within target `<= 8` |
-| net source LOC | +540 | within target `<= 600` |
+| net source LOC | +589 | within target `<= 600` |
 | new source files | 4 | within target `<= 4` |
-| test LOC | +408 | test, not source budget |
+| test LOC | +475 | test, not source budget |
 | docs/incident LOC before final evidence update | +315 / -3 | docs, not source budget |
 
 Source files counted:
 
 - `apps/api/scripts/runtime-compiler.mjs`: +39 / -1
 - `apps/api/src/app.module.ts`: +23 / -0
-- `apps/api/src/template-copy-runtime.contracts.ts`: +222 / -0
-- `apps/api/src/template-copy-runtime.repository.ts`: +174 / -0
+- `apps/api/src/template-copy-runtime.contracts.ts`: +235 / -0
+- `apps/api/src/template-copy-runtime.repository.ts`: +210 / -0
 - `apps/api/src/template-copy-runtime.ts`: +74 / -0
 - `packages/db/scripts/run-m5r-template-copy-true-db-smoke.mjs`: +9 / -0
 
@@ -148,7 +155,7 @@ Pass.
 Pass.
 
 - Runtime mode is explicit and fail-closed: default disabled, `rls_prisma_gateway` only, bare `prisma_gateway` rejected.
-- Contracts reject unsafe raw/customer/order/prompt/secret/file/url-like payload keys and inline blob/URL/base64-like refs before repository calls.
+- Contracts reject unsafe raw/customer/order/prompt/completion/secret/blob/file/url/base64-like payload keys and controlled-ref body/path material before repository calls.
 - RLS transaction setup mirrors prior M5R patterns while avoiding duplicate helper shapes caught by `jscpd`.
 - The repository keeps copy behavior narrow: previous version lookup, DRAFT config-version create and audit-log create only.
 - Focused tests cover disabled/default mode, RLS transaction shape, supported kind validation, unsafe payload rejection, no schema/ops-assets expansion and missing-env true DB failure.

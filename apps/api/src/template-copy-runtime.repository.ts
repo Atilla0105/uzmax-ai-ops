@@ -123,13 +123,7 @@ function audit(
         sourceTemplateRef: input.sourceTemplateRef,
         templateKind: input.templateKind
       },
-      before: previous
-        ? {
-            configVersionId: previous.id,
-            payload: previous.payload,
-            version: previous.version
-          }
-        : null
+      before: previous ? previousAuditSnapshot(previous) : null
     },
     eventType: "template_copy.copied",
     id,
@@ -141,6 +135,42 @@ function audit(
     tenantId: ctx.selectedTenantId,
     traceId: input.traceId ?? `template-copy:${input.targetKey}`
   };
+}
+
+function previousAuditSnapshot(previous: c.Row) {
+  const payload = optionalRow(previous.payload);
+  return clean({
+    configVersionId: previous.id,
+    configVersionRef: versionRef(previous.id),
+    sourceSnapshotRef: previousPayloadRef(payload.sourceSnapshotRef),
+    sourceTemplateRef: previousPayloadRef(payload.sourceTemplateRef),
+    sourceUpdatedRef: previousPayloadRef(payload.sourceUpdatedRef),
+    templateKind: c.text(payload.templateKind),
+    version: previous.version
+  });
+}
+
+function optionalRow(value: unknown): c.Row {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as c.Row)
+    : {};
+}
+
+function previousPayloadRef(value: unknown) {
+  const out = c.text(value);
+  if (!out || !/^(controlled|manifest|storage):\/\/[a-z0-9][\w:/.-]{0,180}$/i.test(out))
+    return undefined;
+  const body = out.slice(out.indexOf("://") + 3);
+  const compactBody = body.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (
+    /raw|prompt|completion|customer|telegram|order|phone|payment|secret|blob|url|file|base64/.test(
+      compactBody
+    )
+  )
+    return undefined;
+  return body.split(/[/:.]+/).some((segment) => /^[A-Za-z0-9_-]{40,}$/.test(segment))
+    ? undefined
+    : out;
 }
 
 function result(
@@ -161,6 +191,12 @@ function result(
     tenantVersionRef: `controlled://tenant-template-copy/${row.id}`,
     version: row.version
   };
+}
+
+function clean<T extends c.Row>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, item]) => item !== undefined)
+  ) as T;
 }
 
 function versionRef(id: unknown) {

@@ -121,6 +121,73 @@ describe("M5R-06 template copy runtime", () => {
         }),
       /forbidden/
     );
+
+    const longEncodedSegment = "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-AbCd";
+    const badRefs = [
+      ["sourceTemplateRef", "controlled://group-template/quick_reply/customer-profile"],
+      ["sourceTemplateRef", "controlled://group-template/raw-prompt"],
+      [
+        "sourceTemplateRef",
+        `controlled://group-template/quick_reply/${longEncodedSegment}`
+      ],
+      ["sourceSnapshotRef", "controlled://group-template/quick_reply/secret"],
+      [
+        "sourceSnapshotRef",
+        `controlled://group-template/quick_reply/${longEncodedSegment}`
+      ],
+      ["sourceUpdatedRef", "controlled://group-template/quick_reply/blob"],
+      [
+        "sourceUpdatedRef",
+        `controlled://group-template/quick_reply/${longEncodedSegment}`
+      ],
+      ["reasonRef", "controlled://template-copy/m5r-06/order-status"],
+      ["reasonRef", `controlled://template-copy/m5r-06/${longEncodedSegment}`],
+      ["controlRefs", ["controlled://template-copy/m5r-06/completion"]],
+      ["controlRefs", [`controlled://template-copy/m5r-06/${longEncodedSegment}`]]
+    ];
+    for (const [field, value] of badRefs) {
+      const input =
+        field === "controlRefs"
+          ? { ...validInput(), controlRefs: value }
+          : { ...validInput(), [field]: value };
+      assert.throws(() => runtime.copyInput(input), /forbidden|encoded/);
+    }
+  });
+
+  it("keeps audit before scoped to previous copy metadata", async () => {
+    const previous = {
+      id: "55555555-5555-4555-8555-555555555506",
+      payload: {
+        arbitraryCustomerProfile: { name: "do not copy" },
+        rawPrompt: "do not copy",
+        sourceSnapshotRef: "controlled://group-template/quick_reply/m5r-06/v0",
+        sourceTemplateRef: "controlled://group-template/quick_reply/m5r-06",
+        templateKind: "quick_reply"
+      },
+      version: 7
+    };
+    const fake = fakePrisma(previous);
+    const repository = runtime.createTemplateCopyRuntimeRepositoryProviderFromEnv({
+      mode: "rls_prisma_gateway",
+      prismaClient: fake
+    });
+
+    const result = await repository.copyToTenant(context(), validInput());
+    const before = fake.audits[0].content.before;
+    assert.equal(result.version, 8);
+    assert.equal(fake.configs[0].previousVersionId, previous.id);
+    assert.equal(before.configVersionId, previous.id);
+    assert.equal(
+      before.configVersionRef,
+      `controlled://config-version/template_copy/${previous.id}`
+    );
+    assert.equal(before.version, previous.version);
+    assert.equal(before.templateKind, "quick_reply");
+    assert.equal(before.sourceSnapshotRef, previous.payload.sourceSnapshotRef);
+    assert.equal(before.sourceTemplateRef, previous.payload.sourceTemplateRef);
+    assert.equal(Object.hasOwn(before, "payload"), false);
+    assert.equal(Object.hasOwn(before, "arbitraryCustomerProfile"), false);
+    assert.equal(Object.hasOwn(before, "rawPrompt"), false);
   });
 
   it("documents no schema or ops-assets expansion and true DB smoke boundaries", async () => {
@@ -164,15 +231,15 @@ async function importTemplateCopyRuntime() {
   return { ...contracts, ...api };
 }
 
-function fakePrisma() {
-  const fake = { audits: [], configs: [], transactions: [] };
+function fakePrisma(previous) {
+  const fake = { audits: [], configs: [], previous, transactions: [] };
   fake.configVersion = {
     create: async ({ data }) => {
       const row = { ...data, id: data.id, version: data.version };
       fake.configs.push(row);
       return row;
     },
-    findFirst: async () => undefined
+    findFirst: async () => fake.previous
   };
   fake.auditLog = {
     create: async ({ data }) => {

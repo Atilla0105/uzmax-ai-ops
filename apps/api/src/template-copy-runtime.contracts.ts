@@ -53,8 +53,11 @@ const KINDS = ["ai_member", "config", "eval", "quick_reply"] as const;
 const KEY = /^[a-z0-9][a-z0-9_.:-]{0,120}$/i;
 const REF = /^(controlled|manifest|storage):\/\/[a-z0-9][\w:/.-]{0,180}$/i;
 const INLINE_REF = /^[A-Za-z0-9+/_-]{40,}={0,2}$/;
+const ENCODED_REF_SEGMENT = /^[A-Za-z0-9_-]{40,}$/;
+const BAD_REF_BODY =
+  /raw|prompt|completion|customer|telegram|order|phone|payment|secret|blob|url|file|base64/;
 const BAD_KEY =
-  /raw|prompt|completion|customer|telegram|order|phone|payment|secret|url|body|content|file/i;
+  /raw|prompt|completion|customer|telegram|order|phone|payment|secret|url|body|content|file|blob|base64/i;
 
 export class TemplateCopyRuntimeError extends Error {
   constructor(
@@ -182,12 +185,22 @@ function trimText(value: unknown) {
 
 function ref(value: unknown, name: string) {
   const out = requiredText(value, name);
-  if (isControlledRef(out)) return out;
-  throw bad(name + " must be a controlled ref");
+  if (!isControlledRef(out)) throw bad(name + " must be a controlled ref");
+  assertSafeRefBody(out, name);
+  return out;
 }
 
 function isControlledRef(value: string) {
   return REF.test(value) && !INLINE_REF.test(value);
+}
+
+function assertSafeRefBody(value: string, name: string) {
+  const body = value.slice(value.indexOf("://") + 3);
+  const compactBody = body.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (BAD_REF_BODY.test(compactBody))
+    throw bad(name + " contains forbidden ref material");
+  if (body.split(/[/:.]+/).some((segment) => ENCODED_REF_SEGMENT.test(segment)))
+    throw bad(name + " contains encoded ref material");
 }
 
 function groupTemplateRef(value: unknown) {

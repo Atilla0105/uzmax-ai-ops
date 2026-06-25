@@ -31,7 +31,14 @@ test("M5R-07 spec and evidence keep admin-only runtime boundaries explicit", () 
     files.readme,
     /M5R-06 Template Copy Runtime \| `runtime_contract_passed_true_db_blocked_missing_env_not_owner_accepted`/
   );
-  assert.match(files.readme, /M5R-07 Admin Runtime Wiring \| `active/);
+  assert.match(
+    files.readme,
+    /M5R-07 Admin Runtime Wiring \| `admin_runtime_wiring_supported_not_true_closeout_not_owner_accepted`/
+  );
+  assert.match(
+    files.readme,
+    /M5R-08 True Integration Closeout \| `m5r_08_runtime_evidence_ready_for_owner_review__true_db_closeout_blocked_missing_env__not_owner_accepted`/
+  );
 });
 
 test("runtime mode is opt-in and wires the four existing admin shells", () => {

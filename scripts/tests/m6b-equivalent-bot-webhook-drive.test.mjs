@@ -55,6 +55,7 @@ describe("M6B-05b equivalent Bot webhook drive", () => {
       channels.module.telegramBotConversationQueueDefaults.jobName
     );
     assert.equal(queued[0][2].jobId, queued[1][2].jobId);
+    assert.equal(queued[0][2].jobId.includes(":"), false);
     assert.equal(queued[0][1].providerUpdateId, "6506");
     assert.equal(queued[0][1].text, "synthetic text must not be stored raw");
 

@@ -69,7 +69,7 @@ export function createTelegramBotConversationJobId(
     uuidText(payload.tenantId, "tenantId"),
     uuidText(payload.channelConnectionId, "channelConnectionId"),
     controlledText(payload.providerUpdateId, "providerUpdateId")
-  ].join(":");
+  ].join("__");
 }
 
 type UnknownRecord = Record<string, unknown>;

@@ -1,3 +1,5 @@
+import { pathToFileURL } from "node:url";
+
 import {
   createOrderImportBatchContract,
   type OrderImportBatchResult,
@@ -387,4 +389,13 @@ function orderImportSourceRef(value: string): string {
     throw new Error("sourceRef must be a controlled import ref");
   }
   return sourceRef;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  void import("./worker-service-shell.ts")
+    .then(({ runWorkerServiceShellFromCli }) => runWorkerServiceShellFromCli())
+    .catch((error: unknown) => {
+      console.error(error);
+      process.exitCode = 1;
+    });
 }

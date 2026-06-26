@@ -29,7 +29,11 @@ test("M6-02 runtime baseline reports partial J-01/J-04 status from repo files", 
 
   assert.equal(baseline.surfaces.api.healthChecks.healthz, true);
   assert.equal(baseline.surfaces.api.healthChecks.readyz, true);
-  assert.equal(baseline.surfaces.worker.packageStartPlaceholder, true);
+  assert.equal(baseline.surfaces.worker.packageStartPlaceholder, false);
+  assert.equal(
+    baseline.surfaces.worker.status,
+    "worker_baseline_supported_real_rollback_drill_pending"
+  );
   assert.equal(baseline.surfaces.cron.packageStartPlaceholder, true);
   assert.equal(baseline.surfaces.admin.deploymentPendingOwner, true);
 
@@ -39,7 +43,10 @@ test("M6-02 runtime baseline reports partial J-01/J-04 status from repo files", 
     cron: true,
     worker: true
   });
-  assert.ok(baseline.blockers.includes("worker_start_command_m0_placeholder"));
+  assert.equal(
+    baseline.blockers.includes("worker_start_command_m0_placeholder"),
+    false
+  );
   assert.ok(baseline.blockers.includes("cron_start_command_m0_placeholder"));
   assert.ok(
     baseline.blockers.includes(
@@ -52,7 +59,7 @@ test("M6-02 docs keep runtime baseline evidence visible without release approval
   assert.match(files.spec, /M6-02 Runtime Deploy And Rollback Baseline/);
   assert.match(files.spec, /scripts\/guards\/m6-runtime-baseline-check\.mjs/);
   assert.match(files.evidence, /baseline_recorded_j01_j04_partial_blockers_open/);
-  assert.match(files.evidence, /worker_start_command_m0_placeholder/);
+  assert.match(files.evidence, /worker_baseline_supported_real_rollback_drill_pending/);
   assert.match(files.evidence, /cron_start_command_m0_placeholder/);
   assert.match(files.m6Index, /M6-02 Runtime deploy and rollback baseline/);
   assert.match(files.releaseDoc, /M6-02 Runtime Baseline/);

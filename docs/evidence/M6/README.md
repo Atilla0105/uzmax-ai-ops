@@ -114,7 +114,7 @@ Current high-level M6 entry posture:
 - M6-08 Backup restore and asset safety is merged and records J-03 as blocked by missing owner-approved safe restore target while adding backup/restore runbook detail and H-05/H-06 partial asset-safety evidence.
 - M6-09 Final acceptance rollup is active and records a GA-0 no-go recommended decision package for owner review without approving GA-0 or 1.0.
 - M6 has not yet closed J-01/J-03/J-04/J-05/L-01/L-02.
-- J-01 remains open because real Render/Vercel rollback drills are pending and worker/cron starts are still placeholders.
+- J-01 remains open because real Render/Vercel rollback drills are pending, cron start is still a placeholder, and the M6B-02 worker artifact proof has not been exercised as a real Render deploy/rollback drill.
 - J-02 has synthetic release-drill evidence from the M4-45 Redis smoke and M6-03 runbook, but production Redis/worker deployment and formal alert-channel routing remain not approved.
 - J-04 deploy/rollback runbook coverage is improved; remaining fault drills stay open for later M6 slices.
 - B-01 through B-05 have release-matrix support recorded by M6-04, but production DB/RLS, production customer-plaintext review and final high-risk audit rollup remain release-gate concerns.

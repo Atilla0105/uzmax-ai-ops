@@ -1,7 +1,12 @@
 import {
+  createTelegramBotConversationJobId,
+  createTelegramBotConversationJobPayload,
   normalizeTelegramBotUpdate,
+  telegramBotConversationQueueDefaults,
   type NormalizedTelegramBotIngress
 } from "../../../packages/channels/src/index.ts";
+import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 
 export const TELEGRAM_BOT_INGRESS_QUEUE = "TELEGRAM_BOT_INGRESS_QUEUE";
 export const TELEGRAM_BOT_SECRET_HEADER = "x-telegram-bot-api-secret-token";
@@ -19,6 +24,24 @@ export type TelegramBotQueueResult = {
 export type TelegramBotIngressQueuePort = {
   enqueue(update: NormalizedTelegramBotIngress): Promise<TelegramBotQueueResult>;
 };
+
+type TelegramBotIngressQueueRuntimeMode = "bullmq" | "disabled";
+type BullmqConnection = { url: string };
+type BullmqQueuePort = {
+  add(name: string, payload: unknown, options: unknown): Promise<unknown>;
+  name: string;
+};
+export type TelegramBotIngressRuntimeEnv = Partial<
+  Record<
+    | "UZMAX_REDIS_URL"
+    | "UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID"
+    | "UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE"
+    | "UZMAX_TELEGRAM_BOT_ORG_ID"
+    | "UZMAX_TELEGRAM_BOT_TENANT_ID"
+    | typeof TELEGRAM_BOT_WEBHOOK_SECRET,
+    string
+  >
+>;
 
 export type TelegramBotWebhookInput = {
   body: unknown;
@@ -71,6 +94,45 @@ export class DisabledTelegramBotIngressQueue implements TelegramBotIngressQueueP
   }
 }
 
+class BullmqTelegramBotIngressQueue implements TelegramBotIngressQueuePort {
+  constructor(
+    private readonly options: {
+      channelConnectionId: string;
+      orgId: string;
+      queue: BullmqQueuePort;
+      tenantId: string;
+    }
+  ) {}
+
+  async enqueue(update: NormalizedTelegramBotIngress): Promise<TelegramBotQueueResult> {
+    if (update.contentKind === "unsupported") return queueResult(update, "unsupported");
+
+    const payload = createTelegramBotConversationJobPayload({
+      channelConnectionId: this.options.channelConnectionId,
+      orgId: this.options.orgId,
+      tenantId: this.options.tenantId,
+      traceId: `trace:${randomUUID()}`,
+      update
+    });
+    await this.options.queue.add(
+      telegramBotConversationQueueDefaults.jobName,
+      payload,
+      {
+        attempts: 3,
+        backoff: { delay: 1_000, type: "fixed" },
+        jobId: createTelegramBotConversationJobId(payload),
+        removeOnComplete: 1_000,
+        removeOnFail: 1_000
+      }
+    );
+    return queueResult(update, "accepted");
+  }
+
+  readinessStatus() {
+    return "bullmq" as const;
+  }
+}
+
 export class TelegramBotWebhookCore {
   constructor(
     private readonly options: {
@@ -120,6 +182,41 @@ export class TelegramBotWebhookService {
   }
 }
 
+export function createTelegramBotWebhookServiceFromEnv(
+  queue: TelegramBotIngressQueuePort,
+  env: TelegramBotIngressRuntimeEnv = process.env
+) {
+  return new TelegramBotWebhookService(
+    new TelegramBotWebhookCore({
+      queue,
+      secretToken: env[TELEGRAM_BOT_WEBHOOK_SECRET]
+    })
+  );
+}
+
+export function createTelegramBotIngressQueueProviderFromEnv(
+  options: {
+    env?: TelegramBotIngressRuntimeEnv;
+    queue?: BullmqQueuePort;
+  } = {}
+): TelegramBotIngressQueuePort {
+  const env = options.env ?? process.env;
+  const mode = readIngressQueueRuntimeMode(env);
+  if (mode === "disabled") return new DisabledTelegramBotIngressQueue();
+
+  return new BullmqTelegramBotIngressQueue({
+    channelConnectionId: requiredEnv(env, "UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID"),
+    orgId: requiredEnv(env, "UZMAX_TELEGRAM_BOT_ORG_ID"),
+    queue:
+      options.queue ??
+      createBullmqQueue({
+        connection: redisConnectionFromEnv(env),
+        queueName: telegramBotConversationQueueDefaults.queueName
+      }),
+    tenantId: requiredEnv(env, "UZMAX_TELEGRAM_BOT_TENANT_ID")
+  });
+}
+
 function queueResult(
   update: NormalizedTelegramBotIngress,
   status: TelegramBotQueueStatus
@@ -141,4 +238,40 @@ function readHeader(
   );
   const value = entry?.[1];
   return Array.isArray(value) ? value[0] : value;
+}
+
+function readIngressQueueRuntimeMode(
+  env: TelegramBotIngressRuntimeEnv
+): TelegramBotIngressQueueRuntimeMode {
+  const mode = env.UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE?.trim() ?? "disabled";
+  if (mode === "disabled" || mode === "bullmq") return mode;
+  throw new Error(`unsupported telegram bot ingress queue mode: ${mode}`);
+}
+
+function redisConnectionFromEnv(env: TelegramBotIngressRuntimeEnv): BullmqConnection {
+  const url = requiredEnv(env, "UZMAX_REDIS_URL");
+  return { url };
+}
+
+function createBullmqQueue(options: {
+  connection: BullmqConnection;
+  queueName: string;
+}): BullmqQueuePort {
+  const require = createRequire(import.meta.url);
+  const bullmq = require("bullmq") as {
+    Queue: new (
+      name: string,
+      options: { connection: BullmqConnection }
+    ) => BullmqQueuePort;
+  };
+  return new bullmq.Queue(options.queueName, { connection: options.connection });
+}
+
+function requiredEnv(
+  env: TelegramBotIngressRuntimeEnv,
+  key: keyof TelegramBotIngressRuntimeEnv
+): string {
+  const value = env[key]?.trim();
+  if (!value) throw new Error(`${key} is required`);
+  return value;
 }

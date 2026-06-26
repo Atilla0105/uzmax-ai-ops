@@ -11,6 +11,7 @@ import { m4OrderImportContracts } from "../../../packages/db/src/m4-order-import
 export * from "./order-import-dispatch.ts";
 export * from "./order-import-file-intake.ts";
 export * from "./order-import-prisma-persistence.ts";
+export * from "./conversation-runtime.ts";
 
 export const processName = "worker";
 

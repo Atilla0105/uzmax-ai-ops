@@ -210,6 +210,10 @@ export async function compileApiRuntime(options = {}) {
     );
   }
   await writeModule(outDir, "packages/db/src/prisma-runtime.ts", "prisma-runtime.mjs");
+  await writeModule(outDir, "packages/channels/src/index.ts", "channels-index.mjs");
+  await writeModule(outDir, "apps/api/src/telegram-bot.ts", "telegram-bot.mjs", {
+    "../../../packages/channels/src/index.ts": "./channels-index.mjs"
+  });
   for (const [sourcePath, outputName, replacements] of orderImportModules()) {
     await writeModule(outDir, sourcePath, outputName, replacements);
   }
@@ -232,6 +236,7 @@ export async function compileApiRuntime(options = {}) {
     "./logs-analytics-runtime.ts": "./logs-analytics-runtime.mjs",
     "./order-import.ts": "./order-import.mjs",
     "./order-import.runtime.ts": "./order-import.runtime.mjs",
+    "./telegram-bot.ts": "./telegram-bot.mjs",
     "./template-copy-runtime.ts": "./template-copy-runtime.mjs"
   });
   await writeModule(outDir, "apps/api/src/main.ts", "main.mjs", {

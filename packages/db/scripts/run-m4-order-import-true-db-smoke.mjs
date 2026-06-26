@@ -228,6 +228,7 @@ async function importWorkerEntrypoint() {
       .replaceAll('export * from "./order-import-dispatch.ts";', "")
       .replaceAll('export * from "./order-import-file-intake.ts";', "")
       .replaceAll('export * from "./order-import-prisma-persistence.ts";', "")
+      .replaceAll('export * from "./conversation-runtime.ts";', "")
       .replaceAll(
         "../../../packages/capabilities/order-read/src/index.ts",
         orderReadUrl

@@ -10,6 +10,7 @@ This document records the current repo release-gate contract. It is not a produc
 | GA-0 rules | `UZMAX智能运营系统-技术架构-v1.1.md` §11.1 |
 | Admin release console | `UZMAX智能运营系统-后台设计与前端架构-v1.1.md` |
 | Current M6 entry | `docs/evidence/M6/README.md` |
+| Current M6B runtime rollup | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` |
 | Admin gate contract | `apps/admin/src/releaseGateContracts.ts` |
 
 ## Current Boundary
@@ -37,14 +38,27 @@ Evidence links in the admin shell are repo paths only. They are not sensitive ar
 
 ## M6-02 Runtime Baseline
 
-The M6-02 runtime baseline records deploy/rollback readiness from repo manifests and app package commands:
+The M6-02 runtime baseline records deploy/rollback readiness from repo manifests and app package commands. M6B later replaced the API/worker/cron placeholder starts with emitted-artifact starts, but real staging deploy and rollback drills remain blocked:
 
-- api: Render service definition, package start command and `/healthz`/`/readyz` are present; real rollback drill is still pending.
-- worker: Render service definition exists, but package `start` is still an M0 deployment placeholder.
-- cron: Render service definition exists, but package `start` is still an M0 deployment placeholder.
+- api: Render service definition exists; `@uzmax/api` now builds an emitted artifact and `start` boots `dist/apps/api/src/main.js`; local `/healthz` and fail-closed `/readyz` evidence is recorded by M6B-01; real staging deploy/rollback is still pending.
+- worker: Render service definition exists; `@uzmax/worker` now builds an emitted artifact and `start` boots `dist/apps/worker/src/main.js`; local Redis-backed worker evidence is recorded by M6B-02; staging worker deploy/rollback is still pending.
+- cron: Render service definition exists; `@uzmax/cron` now builds an emitted artifact and `start` boots `dist/apps/cron/src/main.js`; local one-shot/idempotency evidence is recorded by M6B-03; staging cron deploy/rollback is still pending.
 - admin: Vercel project and app build/start scripts exist; deployment strategy and rollback drill remain owner-pending.
 
 `docs/runbooks/deploy-rollback.md` now covers api, worker, cron and admin rollback dry-run evidence. This does not close J-01, because real rollback drills and owner/platform decisions remain open.
+
+## M6B Runtime Rollup
+
+Current status token: `m6b_09_runtime_evidence_rollup_recorded_no_go_blocked_owner_inputs_missing_not_ga0`.
+
+The M6B runtime rollup records the current post-M6 bring-up state:
+
+- M6B-01, M6B-02 and M6B-03 have local emitted-artifact evidence for API, worker and cron.
+- M6B-05a has CI true DB/RLS Bot conversation runtime evidence.
+- M6B-05b has local webhook-equivalent contract evidence without claiming webhook-driven true DB closure.
+- M6B-04, M6B-06, M6B-07 and M6B-08 remain blocked by missing owner-gated staging, Telegram, rollback and restore inputs.
+
+This rollup does not approve GA-0, production deployment, real Telegram traffic, outbound Bot sending, backup/restore execution, real customer/order data, customer LLM/provider use, P1/P2 risk classification or 1.0 release.
 
 ## M6-03 Queue Failure Injection
 

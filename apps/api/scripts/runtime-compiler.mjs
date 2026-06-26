@@ -73,6 +73,7 @@ export async function compileApiRuntime(options = {}) {
     }
   );
   await writeModule(outDir, "apps/api/src/access-context.ts", "access-context.mjs", {
+    "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
     "./access-context-core.ts": "./access-context-core.mjs"
   });
   for (const [sourcePath, outputName, replacements] of conversationTicketModules()) {

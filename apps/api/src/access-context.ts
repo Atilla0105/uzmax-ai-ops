@@ -20,8 +20,16 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type {
   AccessContext,
-  AuthzRepository
+  AccessContextFacts,
+  AuthzRepository,
+  MembershipStatus,
+  PermissionGrant,
+  TenantMembership
 } from "../../../packages/authz/src/index.ts";
+import {
+  createUzmaxPrismaClientFromEnv,
+  type UzmaxPrismaRuntimeEnv
+} from "../../../packages/db/src/prisma-runtime.ts";
 import {
   ApiAccessContextCore,
   ApiAccessError,
@@ -37,6 +45,20 @@ export const API_AUDIT_SINK = "API_AUDIT_SINK";
 export const API_AUTHZ_REPOSITORY = "API_AUTHZ_REPOSITORY";
 export const API_IDENTITY_VERIFIER = "API_IDENTITY_VERIFIER";
 const REQUIRED_PERMISSION_METADATA = "uzmax:required-permission";
+type ApiAuthzRepositoryRuntimeEnv = UzmaxPrismaRuntimeEnv &
+  Partial<Record<"UZMAX_API_AUTHZ_REPOSITORY_MODE", string>>;
+type ApiAuthzRepositoryRuntimeMode = "disabled" | "rls_prisma_gateway";
+type PrismaAuthzRow = Record<string, unknown>;
+type PrismaAuthzDelegate = {
+  findMany(args: Record<string, unknown>): Promise<PrismaAuthzRow[]>;
+};
+type PrismaAuthzClientPort = {
+  permissionGrant: PrismaAuthzDelegate;
+  tenantMember: PrismaAuthzDelegate;
+  $transaction(
+    operations: readonly Promise<PrismaAuthzRow[]>[]
+  ): Promise<[PrismaAuthzRow[], PrismaAuthzRow[]]>;
+};
 
 function RequirePermission(permission: string) {
   return SetMetadata(REQUIRED_PERMISSION_METADATA, permission);
@@ -79,6 +101,54 @@ export class DisabledAuthzRepository implements AuthzRepository {
 
   readinessStatus() {
     return "not_configured" as const;
+  }
+}
+
+@Injectable()
+export class RlsPrismaAuthzRepository implements AuthzRepository {
+  constructor(private readonly prisma: PrismaAuthzClientPort) {}
+
+  async loadAccessContextFacts(request: {
+    selectedTenantId: string;
+    userId: string;
+  }): Promise<AccessContextFacts> {
+    const [memberships, grants] = await this.prisma.$transaction([
+      this.prisma.tenantMember.findMany({
+        orderBy: [{ orgId: "asc" }, { tenantId: "asc" }],
+        select: {
+          cacheVersion: true,
+          orgId: true,
+          role: true,
+          status: true,
+          tenantId: true,
+          userId: true
+        },
+        where: { userId: request.userId }
+      }),
+      this.prisma.permissionGrant.findMany({
+        orderBy: [{ permission: "asc" }],
+        select: {
+          orgId: true,
+          permission: true,
+          tenantId: true,
+          userId: true
+        },
+        where: {
+          tenantId: request.selectedTenantId,
+          tenantMember: { status: "ACTIVE" },
+          userId: request.userId
+        }
+      })
+    ]);
+
+    return {
+      permissionGrants: grants.map(toPermissionGrant),
+      tenantMemberships: memberships.map(toTenantMembership)
+    };
+  }
+
+  readinessStatus() {
+    return "configured" as const;
   }
 }
 
@@ -206,6 +276,25 @@ export function createIdentityVerifierFromEnv(
   );
 }
 
+export function createAuthzRepositoryProviderFromEnv(
+  options: {
+    env?: ApiAuthzRepositoryRuntimeEnv;
+    mode?: ApiAuthzRepositoryRuntimeMode;
+    prismaClient?: PrismaAuthzClientPort;
+    repository?: AuthzRepository;
+  } = {}
+): AuthzRepository {
+  const env = options.env ?? process.env;
+  const mode = options.mode ?? readApiAuthzRepositoryRuntimeMode(env);
+
+  if (mode === "disabled") return options.repository ?? new DisabledAuthzRepository();
+
+  const prisma =
+    options.prismaClient ??
+    (createUzmaxPrismaClientFromEnv(env) as unknown as PrismaAuthzClientPort);
+  return new RlsPrismaAuthzRepository(prisma);
+}
+
 function toHttpException(error: unknown): Error {
   if (error instanceof ApiAccessError) {
     if (error.statusCode === 400) return new BadRequestException(error.message);
@@ -214,4 +303,38 @@ function toHttpException(error: unknown): Error {
   }
 
   return error instanceof Error ? error : new ForbiddenException("access denied");
+}
+
+function readApiAuthzRepositoryRuntimeMode(
+  env: ApiAuthzRepositoryRuntimeEnv = process.env
+): ApiAuthzRepositoryRuntimeMode {
+  const mode = env.UZMAX_API_AUTHZ_REPOSITORY_MODE?.trim() || "disabled";
+  if (mode === "prisma_gateway")
+    throw new Error("API authz repository env must use RLS Prisma gateway");
+  if (mode === "disabled" || mode === "rls_prisma_gateway") return mode;
+  throw new Error(`unsupported API authz repository mode: ${mode}`);
+}
+
+function toTenantMembership(row: PrismaAuthzRow): TenantMembership {
+  return {
+    cacheVersion: Number(row.cacheVersion),
+    orgId: String(row.orgId),
+    role: String(row.role),
+    status: authzMembershipStatus(row.status),
+    tenantId: String(row.tenantId),
+    userId: String(row.userId)
+  };
+}
+
+function toPermissionGrant(row: PrismaAuthzRow): PermissionGrant {
+  return {
+    orgId: String(row.orgId),
+    permission: String(row.permission),
+    tenantId: String(row.tenantId),
+    userId: String(row.userId)
+  };
+}
+
+function authzMembershipStatus(value: unknown): MembershipStatus {
+  return String(value).toLowerCase() === "active" ? "active" : "revoked";
 }

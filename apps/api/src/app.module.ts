@@ -162,6 +162,12 @@ type ApiAuditPersistenceContractAnchor = {
   prismaClient: AuditLogPrismaClientPort;
   prismaSink: typeof PrismaAuditSink;
 };
+type ApiAuthzRepositoryContractAnchor = {
+  disabledRepository: typeof api.DisabledAuthzRepository;
+  provider: typeof api.createAuthzRepositoryProviderFromEnv;
+  rlsPrismaRepository: typeof api.RlsPrismaAuthzRepository;
+  token: typeof api.API_AUTHZ_REPOSITORY;
+};
 type AiMemberRuntimeContractAnchor = {
   controller: typeof AiMemberRuntimeController;
   repository: AiMemberRuntimeRepositoryPort;
@@ -232,6 +238,13 @@ function apiAuditPersistenceContractAnchor(
   void contract;
 }
 void apiAuditPersistenceContractAnchor;
+const apiAuthzRepositoryContractAnchor: ApiAuthzRepositoryContractAnchor = {
+  disabledRepository: api.DisabledAuthzRepository,
+  provider: api.createAuthzRepositoryProviderFromEnv,
+  rlsPrismaRepository: api.RlsPrismaAuthzRepository,
+  token: api.API_AUTHZ_REPOSITORY
+};
+void apiAuthzRepositoryContractAnchor;
 function aiMemberRuntimeContractAnchor(contract: AiMemberRuntimeContractAnchor) {
   void contract;
 }
@@ -347,7 +360,10 @@ class TelegramBotWebhookController {
         })
     },
     { provide: api.API_AUDIT_SINK, useClass: api.InMemoryAuditSink },
-    { provide: api.API_AUTHZ_REPOSITORY, useClass: api.DisabledAuthzRepository },
+    {
+      provide: api.API_AUTHZ_REPOSITORY,
+      useFactory: () => api.createAuthzRepositoryProviderFromEnv()
+    },
     {
       provide: api.API_IDENTITY_VERIFIER,
       useFactory: () => api.createIdentityVerifierFromEnv()

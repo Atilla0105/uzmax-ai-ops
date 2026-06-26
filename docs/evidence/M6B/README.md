@@ -32,6 +32,7 @@
 | M6B-08 | none | `blocked_owner_gated_safe_restore_target_missing_no_pass` | Missing owner-approved safe restore target, backup snapshot and restore command evidence; not pass. |
 | M6B-09 | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` | `no_go_blocked_owner_inputs_missing_not_ga0` | Runtime rollup recorded before M6B-09a; post-live evidence is now synced separately, but remaining blockers still keep GA-0 locked. |
 | M6B-09a | `docs/evidence/M6B/M6B-09a-post-live-staging-evidence-sync.md` | `ready_for_review_post_live_staging_evidence_synced_not_ga0` | Docs-only post-live sync: LAY-22 and LAY-27 are Done within scope; durable staging API and test bot webhook hygiene are recorded; `/readyz`, worker/cron heartbeat, alert fire proof, rollback, restore and GA-0 remain open. |
+| M6B-10 | `docs/evidence/M6B/M6B-10-api-staging-identity-authz-readiness.md` | `implementation_ready_live_env_blocked_not_ga0` | API authz repository wiring is env-selected instead of hard-wired disabled; default remains fail-closed. Live `/readyz` 200 is not claimed without owner-gated Supabase/Auth/RLS env and fact rows. |
 
 ## Summary
 

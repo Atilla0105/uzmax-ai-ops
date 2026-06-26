@@ -243,6 +243,12 @@ jobs:
           node packages/db/scripts/run-m4-order-import-storage-backed-true-db-smoke.mjs
           node packages/db/scripts/run-m4-order-import-operator-workflow-smoke.mjs
           node packages/db/scripts/run-m4-customer-asset-runtime-workflow-smoke.mjs
+      - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
+        name: M6B conversation runtime true DB smoke
+        env:
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
+        run: node packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs
       - if: steps.path-scope.outputs.run_m5r_true_db_closeout == 'true'
         name: Apply M5R dev smoke migrations
         env:

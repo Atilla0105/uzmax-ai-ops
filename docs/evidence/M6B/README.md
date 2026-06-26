@@ -21,6 +21,7 @@
 | M6B-01 | `docs/evidence/M6B/M6B-01-api-production-artifact.md` | `ready_for_review` | API artifact builds and boots; `/healthz` 200; `/readyz` exercised as default fail-closed 503. |
 | M6B-02 | `docs/evidence/M6B/M6B-02-worker-service-shell.md` | `ready_for_review` | Worker artifact builds and boots; Redis-backed order-import job consumed once; BullMQ `jobId` dedupe only, not Telegram `update_id` dedupe. |
 | M6B-03 | `docs/evidence/M6B/M6B-03-cron-service-shell.md` | `ready_for_review` | Cron artifact builds and runs one-shot distill daily health; repeated same-day invocation skips; local smoke is file-backed artifact evidence, not true DB/staging/production evidence. |
+| M6B-05a | `docs/evidence/M6B/M6B-05a-conversation-runtime-build.md` | `ci_passed_owner_review_pending` | Bot conversation runtime source, local contract tests and GitHub Actions run `28232360471` true DB/RLS smoke passed; merge still requires owner review for the declared `large_change_exception`. |
 
 ## Summary
 
@@ -61,9 +62,9 @@ Recorded at M6B-00 entry on 2026-06-26.
 | Worker build/start | `apps/worker/package.json` has `build = tsc --noEmit`; `start` prints M0 deployment placeholder. | M6B-02 must replace placeholder with a real worker shell. |
 | Cron build/start | M6B-03 changes `apps/cron/package.json` so `build` emits an artifact and `start` boots `apps/cron/dist/apps/cron/src/main.js`. | Placeholder is closed for cron artifact proof; real Render deploy/rollback remains M6B-04/M6B-07. |
 | Render | `render.yaml` declares api, worker, cron and `uzmax-redis`; cron schedule is `*/15 * * * *`; auto deploy is off. | M6B-04 can stage once owner infra/env exists. |
-| Bot webhook | `apps/api/src/app.module.ts` wires webhook service to `DisabledTelegramBotIngressQueue`. | M6B-05a must switch to an env-selected BullMQ queue adapter. |
-| Bot dedupe | `apps/api/src/telegram-bot.ts` has in-memory `providerUpdateId` dedupe. | In-memory dedupe is contract support only; DB-backed dedupe remains M6B-05a/05b/06. |
-| Conversation/ticket | AppModule provides `InMemoryConversationTicketRepository`. | M6B-05a must add true DB/RLS conversation/ticket gateway for Bot runtime. |
+| Bot webhook | M6B-05a branch wires webhook service to an env-selected queue provider that defaults to disabled/fail-closed and can explicitly use BullMQ. | Real Telegram webhook/setWebhook remains M6B-06. |
+| Bot dedupe | M6B-05a branch adds stable Bot conversation job payload IDs and a DB-backed `telegram_update_dedupe` persistence gateway; GitHub Actions run `28232360471` passed the true DB/RLS smoke. | In-memory dedupe remains contract support only; BullMQ `jobId` proof is not accepted as Telegram `update_id` proof. |
+| Conversation/ticket | M6B-05a branch adds a worker-side Bot conversation processor and Prisma/RLS persistence gateway for conversation/message/ticket/ticket_event rows. | True DB/RLS smoke passed in CI; owner review is still required before merge because of `large_change_exception`. |
 | Existing BullMQ runtime | `apps/worker/src/order-import-bullmq-runtime.ts` covers order-import jobs. | Order-import worker proof cannot be treated as Bot conversation runtime proof. |
 | DB/RLS schema | Migration `0003` and Prisma schema include conversation/message/ticket and `telegram_update_dedupe`. | Schema exists; runtime gateway and smoke are still missing. |
 | CI secrets pattern | `.github/workflows/ci.yml` uses masked `UZMAX_RLS_DATABASE_URL` and Redis patterns. | Later M6B slices should reuse fail-closed secret behavior. |

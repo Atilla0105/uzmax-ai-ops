@@ -26,6 +26,52 @@ export type NormalizedTelegramBotIngress = {
   updateKind: TelegramBotUpdateKind;
 };
 
+export const telegramBotConversationQueueDefaults = {
+  jobName: "telegram-bot.conversation.ingress",
+  queueName: "telegram-bot-conversation"
+} as const;
+
+export type TelegramBotConversationJobPayload = NormalizedTelegramBotIngress & {
+  channelConnectionId: string;
+  enqueuedAt: string;
+  orgId: string;
+  tenantId: string;
+  traceId: string;
+};
+
+export function createTelegramBotConversationJobPayload(input: {
+  channelConnectionId: string;
+  enqueuedAt?: string;
+  orgId: string;
+  tenantId: string;
+  traceId: string;
+  update: NormalizedTelegramBotIngress;
+}): TelegramBotConversationJobPayload {
+  return {
+    ...input.update,
+    channelConnectionId: uuidText(input.channelConnectionId, "channelConnectionId"),
+    enqueuedAt: input.enqueuedAt ?? new Date().toISOString(),
+    orgId: uuidText(input.orgId, "orgId"),
+    tenantId: uuidText(input.tenantId, "tenantId"),
+    traceId: controlledText(input.traceId, "traceId")
+  };
+}
+
+export function createTelegramBotConversationJobId(
+  payload: Pick<
+    TelegramBotConversationJobPayload,
+    "channelConnectionId" | "orgId" | "providerUpdateId" | "tenantId"
+  >
+): string {
+  return [
+    "telegram-bot",
+    uuidText(payload.orgId, "orgId"),
+    uuidText(payload.tenantId, "tenantId"),
+    uuidText(payload.channelConnectionId, "channelConnectionId"),
+    controlledText(payload.providerUpdateId, "providerUpdateId")
+  ].join(":");
+}
+
 type UnknownRecord = Record<string, unknown>;
 
 const businessUpdateKeys = new Set([
@@ -209,6 +255,29 @@ function boundedString(value: unknown, maxLength: number): string | undefined {
 
   const trimmed = value.trim();
   return trimmed ? trimmed.slice(0, maxLength) : undefined;
+}
+
+function controlledText(value: unknown, label: string): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`${label} is required`);
+  }
+  const trimmed = value.trim();
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,180}$/.test(trimmed)) {
+    throw new Error(`${label} must be a controlled ref`);
+  }
+  return trimmed;
+}
+
+function uuidText(value: unknown, label: string): string {
+  const text = controlledText(value, label);
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      text
+    )
+  ) {
+    throw new Error(`${label} must be a UUID`);
+  }
+  return text;
 }
 
 function readPhotoFileIds(value: unknown): string[] {

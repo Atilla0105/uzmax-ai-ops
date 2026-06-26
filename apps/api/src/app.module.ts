@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Injectable,
-  Module,
-  Post,
-  ServiceUnavailableException
-} from "@nestjs/common";
+import { Body, Controller, Headers, HttpException, Module, Post } from "@nestjs/common";
 
 import * as api from "./access-context.ts";
 import type {
@@ -97,19 +90,21 @@ import {
   type OrderImportPersistenceScope
 } from "./order-import.ts";
 import { createOrderImportRepositoryProviderFromEnv } from "./order-import.runtime.ts";
-import type {
+import {
   DisabledTelegramBotIngressQueue as ContractDisabledTelegramBotIngressQueue,
   InMemoryTelegramBotIngressQueue,
   TELEGRAM_BOT_INGRESS_QUEUE,
   TELEGRAM_BOT_SECRET_HEADER,
   TELEGRAM_BOT_WEBHOOK_SECRET,
+  TelegramBotWebhookCore,
+  TelegramBotWebhookError,
+  TelegramBotWebhookService as ContractTelegramBotWebhookService,
+  createTelegramBotIngressQueueProviderFromEnv,
+  createTelegramBotWebhookServiceFromEnv,
   TelegramBotIngressQueuePort,
   TelegramBotQueueResult,
   TelegramBotQueueStatus,
-  TelegramBotWebhookCore,
-  TelegramBotWebhookError,
-  TelegramBotWebhookInput,
-  TelegramBotWebhookService as ContractTelegramBotWebhookService
+  TelegramBotWebhookInput
 } from "./telegram-bot.ts";
 
 type TelegramBotContractAnchor = {
@@ -254,32 +249,23 @@ function templateCopyRuntimeContractAnchor(
 }
 void templateCopyRuntimeContractAnchor;
 
-@Injectable()
-class DisabledTelegramBotIngressQueue {
-  async enqueue(): Promise<never> {
-    throw new ServiceUnavailableException(
-      "telegram bot ingress queue is not configured"
-    );
-  }
-}
-
-@Injectable()
-class TelegramBotWebhookService {
-  constructor(private readonly queue: DisabledTelegramBotIngressQueue) {}
-
-  async handleWebhook() {
-    return this.queue.enqueue();
-  }
-}
-
 @Controller("telegram/bot")
 class TelegramBotWebhookController {
-  constructor(private readonly webhookService: TelegramBotWebhookService) {}
+  constructor(private readonly webhookService: ContractTelegramBotWebhookService) {}
 
   @Post("webhook")
-  webhook(@Body() body: TelegramBotWebhookBody) {
-    void body;
-    return this.webhookService.handleWebhook();
+  async webhook(
+    @Body() body: TelegramBotWebhookBody,
+    @Headers() headers: TelegramBotWebhookInput["headers"]
+  ) {
+    try {
+      return await this.webhookService.handleWebhook({ body, headers });
+    } catch (error) {
+      if (error instanceof TelegramBotWebhookError) {
+        throw new HttpException(error.message, error.statusCode);
+      }
+      throw error;
+    }
   }
 }
 
@@ -310,8 +296,16 @@ class TelegramBotWebhookController {
     ConversationTicketService,
     CustomerAssetService,
     OrderImportService,
-    TelegramBotWebhookService,
-    DisabledTelegramBotIngressQueue,
+    {
+      provide: TELEGRAM_BOT_INGRESS_QUEUE,
+      useFactory: () => createTelegramBotIngressQueueProviderFromEnv()
+    },
+    {
+      inject: [TELEGRAM_BOT_INGRESS_QUEUE],
+      provide: ContractTelegramBotWebhookService,
+      useFactory: (queue: TelegramBotIngressQueuePort) =>
+        createTelegramBotWebhookServiceFromEnv(queue)
+    },
     InMemoryConfirmationQueueRepository,
     {
       inject: [InMemoryConfirmationQueueRepository],

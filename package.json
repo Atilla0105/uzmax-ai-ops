@@ -15,7 +15,7 @@
   "scripts": {
     "build": "npm run build:api && npm run build:worker && npm run build:cron && npm run build:admin",
     "build:admin": "node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir",
-    "build:api": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json",
+    "build:api": "npm --workspace @uzmax/api run build",
     "build:cron": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json",
     "build:worker": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json",
     "check": "npm run format:check && npm run guard:prettier-ignore && npm run typecheck && npm run lint && npm run depcruise && npm run jscpd && npm run knip && npm run guard:forbidden-terms && npm run guard:eval-triggers && npm run guard:doc-triggers && npm run guard:workspace && npm run guard:worker-boundary && npm run guard:pr-shape -- --base origin/main && npm run test && npm run build && npm run size && npm run playwright",

@@ -13,6 +13,13 @@
 > review_notes: M6B-00 records the runtime bring-up contract after M6 no-go; it does not implement runtime behavior or approve GA-0/1.0
 > signoff: pending owner review of this M6B-00 PR
 
+## M6B Slice Index
+
+| Slice | Evidence | Status | Notes |
+|---|---|---|---|
+| M6B-00 | This README and `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md` | `ready_for_review` | Runtime bring-up contract only; not GA-0. |
+| M6B-01 | `docs/evidence/M6B/M6B-01-api-production-artifact.md` | `ready_for_review` | API artifact builds and boots; `/healthz` 200; `/readyz` exercised as default fail-closed 503. |
+
 ## Summary
 
 M6B exists because M6 completed the GA-0 decision package but did not produce a runnable GA-0 runtime closed loop. Current M6 status remains:

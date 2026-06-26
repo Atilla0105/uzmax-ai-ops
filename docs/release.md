@@ -11,6 +11,7 @@ This document records the current repo release-gate contract. It is not a produc
 | Admin release console | `UZMAX智能运营系统-后台设计与前端架构-v1.1.md` |
 | Current M6 entry | `docs/evidence/M6/README.md` |
 | Current M6B runtime rollup | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` |
+| Current M6 no-go closeout | `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
 | Admin gate contract | `apps/admin/src/releaseGateContracts.ts` |
 
 ## Current Boundary
@@ -24,13 +25,15 @@ GA-0 remains locked. The admin console may show current gate state and evidence 
 
 1.0 remains blocked until all P0 acceptance items pass and P1/P2 handling matches the acceptance matrix.
 
+M6 is closed as an evidence/runtime-hardening package. This closeout is not a GA-0 open decision and not a 1.0 readiness decision. Remaining LAY-19, LAY-23 and LAY-24 work is tracked as GA-0 Activation / Runtime Owner-Gated, not as unfinished M6 execution.
+
 ## M6-01 Console Contract
 
 The M6-01 admin contract renders M0-M6, GA-0 and 1.0 status from one maintained source:
 
 - M0-M4: accepted milestone evidence.
 - M5: owner accepted for milestone/runtime evidence only.
-- M6: release hardening in progress.
+- M6: evidence/runtime-hardening package closed as no-go.
 - GA-0: locked by L-01 checklist and owner decision.
 - 1.0: blocked by final P0/P1/P2 rollup.
 
@@ -49,7 +52,7 @@ The M6-02 runtime baseline records deploy/rollback readiness from repo manifests
 
 ## M6B Runtime Rollup
 
-Current status token: `m6b_09_runtime_evidence_rollup_recorded_no_go_blocked_owner_inputs_missing_not_ga0`.
+Current status token: `m6_closed_as_evidence_runtime_hardening_package_ga0_no_go`.
 
 The M6B runtime rollup records the current post-M6 bring-up state:
 
@@ -59,6 +62,8 @@ The M6B runtime rollup records the current post-M6 bring-up state:
 - M6B-04, M6B-06, M6B-07 and M6B-08 remain blocked by missing owner-gated staging, Telegram, rollback and restore inputs.
 
 This rollup does not approve GA-0, production deployment, real Telegram traffic, outbound Bot sending, backup/restore execution, real customer/order data, customer LLM/provider use, P1/P2 risk classification or 1.0 release.
+
+M6B-11 records the closeout boundary: M6/M6B are closed for the current evidence/runtime-hardening package, while LAY-19, LAY-23 and LAY-24 remain open as GA-0 Activation / Runtime Owner-Gated blockers. LAY-30 remains a LAY-19 child blocker for live `/readyz` identity/authz activation and is not a replacement mainline task.
 
 ## M6-03 Queue Failure Injection
 

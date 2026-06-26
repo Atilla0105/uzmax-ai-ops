@@ -4,10 +4,11 @@ M6 evidence tracks release hardening, final fault drills, GA-0 readiness evidenc
 
 Current M6 readiness spec: `docs/specs/M6-00-m5-signoff-and-m6-readiness-pack.md`.
 Current M6 entry evidence: `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md`.
-Current active M6 implementation spec: `docs/specs/M6-09-final-acceptance-rollup.md`.
-Current active M6 evidence: `docs/evidence/M6/M6-09-final-acceptance-rollup.md`.
+Current M6 final rollup spec: `docs/specs/M6-09-final-acceptance-rollup.md`.
+Current M6 final rollup evidence: `docs/evidence/M6/M6-09-final-acceptance-rollup.md`.
+Current M6 no-go closeout evidence: `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md`.
 
-M6 current status: `m6_final_acceptance_rollup_recorded_no_go_recommended_owner_decision_pending_not_ga0`. Project owner accepted M5 milestone/runtime evidence in the Codex thread on 2026-06-25 with "同意签收m5，可以启动m6". That acceptance allows the repo to open M6 planning and future spec-governed M6 work. It does not approve GA-0 opening, production deployment, real customer/order-data use, customer LLM, real provider calls, real LLM/provider keys or cost risk, external SaaS onboarding, Telegram Business automatic reply, P1 risk acceptance, or 1.0 release.
+M6 current status: `m6_closed_as_evidence_runtime_hardening_package_ga0_no_go`. Project owner accepted M5 milestone/runtime evidence in the Codex thread on 2026-06-25 with "同意签收m5，可以启动m6". The M6/M6B package has now closed at the current verifiable boundary: M6 is closed as an evidence/runtime-hardening package; GA-0 remains no-go. This closeout does not approve GA-0 opening, production deployment, real customer/order-data use, customer LLM, real provider calls, real LLM/provider keys or cost risk, external SaaS onboarding, Telegram Business automatic reply, P1 risk acceptance, or 1.0 release.
 
 GA-0 is not open. Production DB/RLS approval is not granted. Customer LLM is not approved. Real provider calls are not approved. Real customer traffic is not approved. Telegram Business automatic reply is not approved.
 
@@ -28,7 +29,7 @@ The M5/M5R README files remain historical M5R-08 closeout inputs and may still c
 
 ## M6 Execution Queue
 
-M6-09 is the active M6 slice in this branch. Future blocker fixes after this rollup must each create or update a dedicated spec before implementation.
+M6-09 and M6B-11 close the M6 evidence/runtime-hardening package as a no-go package. Future blocker fixes after this closeout belong to GA-0 Activation / Runtime Owner-Gated tracking and must each create or update a dedicated spec before implementation.
 
 | Order | Slice | Status | Evidence / expected next source |
 |---:|---|---|---|
@@ -41,7 +42,8 @@ M6-09 is the active M6 slice in this branch. Future blocker fixes after this rol
 | 6 | M6-06 Telegram Bot GA-0 main path | `merged_ready_for_owner_review` | `docs/specs/M6-06-telegram-bot-ga0-main-path.md`; `docs/evidence/M6/M6-06-telegram-bot-ga0-main-path.md` |
 | 7 | M6-07 Core operations synthetic E2E | `m6_core_ops_synthetic_e2e_recorded_a_d_e_h_i_supported_not_ga0`; `merged_ready_for_owner_review` | `docs/specs/M6-07-core-ops-synthetic-e2e.md`; `docs/evidence/M6/M6-07-core-ops-synthetic-e2e.md` |
 | 8 | M6-08 Backup restore and asset safety drills | `m6_backup_restore_asset_safety_recorded_j03_external_blocker_h05_h06_partial_not_ga0`; `merged_ready_for_owner_review` | `docs/specs/M6-08-backup-restore-asset-safety.md`; `docs/evidence/M6/M6-08-backup-restore-asset-safety.md` |
-| 9 | M6-09 Final Acceptance Rollup | `active` | `docs/specs/M6-09-final-acceptance-rollup.md`; `docs/evidence/M6/M6-09-final-acceptance-rollup.md` |
+| 9 | M6-09 Final Acceptance Rollup | `m6_final_acceptance_rollup_recorded_no_go_recommended_owner_decision_pending_not_ga0`; `merged_ready_for_owner_review` | `docs/specs/M6-09-final-acceptance-rollup.md`; `docs/evidence/M6/M6-09-final-acceptance-rollup.md` |
+| 10 | M6B-11 M6 No-Go Closeout Boundary Sync | `m6_closed_as_evidence_runtime_hardening_package_ga0_no_go`; `ready_for_review` | `docs/specs/M6B-11-m6-no-go-closeout.md`; `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
 
 ## Readiness Boundary
 
@@ -112,8 +114,9 @@ Current high-level M6 entry posture:
 - M6-06 Telegram Bot GA-0 main path is merged and records C-01/C-02/C-03b/C-06/J-04/L-01/L-02 support from M2 Bot ingress, M2 handoff/ticket, ADR-B01, M6 queue and M6 AI-safety evidence without approving GA-0, real customer traffic or Business auto-reply.
 - M6-07 Core operations synthetic E2E is merged and records A/D/E/H/I synthetic golden-path support from existing M2/M4/M5/M5R/M6 evidence without approving a new live production E2E, real customer/order data, GA-0 or 1.0.
 - M6-08 Backup restore and asset safety is merged and records J-03 as blocked by missing owner-approved safe restore target while adding backup/restore runbook detail and H-05/H-06 partial asset-safety evidence.
-- M6-09 Final acceptance rollup is active and records a GA-0 no-go recommended decision package for owner review without approving GA-0 or 1.0.
-- M6 has not yet closed J-01/J-03/J-04/J-05/L-01/L-02.
+- M6-09 Final acceptance rollup is merged and records a GA-0 no-go recommended decision package for owner review without approving GA-0 or 1.0.
+- M6B-11 closes M6 as an evidence/runtime-hardening package at the current verifiable no-go boundary and moves remaining runtime blockers to GA-0 Activation / Runtime Owner-Gated tracking.
+- M6 has closed its evidence/runtime-hardening package, but it has not closed the GA-0 activation blockers for J-01/J-03/J-04/J-05/L-01/L-02.
 - J-01 remains open because real Render/Vercel rollback drills are pending, and the M6B-02 worker plus M6B-03 cron artifact proofs have not been exercised as real Render deploy/rollback drills.
 - J-02 has synthetic release-drill evidence from the M4-45 Redis smoke and M6-03 runbook, but production Redis/worker deployment and formal alert-channel routing remain not approved.
 - J-04 deploy/rollback runbook coverage is improved; remaining fault drills stay open for later M6 slices.

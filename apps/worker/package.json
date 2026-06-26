@@ -9,6 +9,7 @@
     "start": "node dist/apps/worker/src/main.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "bullmq": "^5.79.1",
     "ioredis": "^5.11.1"
   }

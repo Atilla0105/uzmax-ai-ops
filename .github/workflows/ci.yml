@@ -249,6 +249,28 @@ jobs:
           UZMAX_RLS_DATABASE_URL: >-
             ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
         run: node packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs
+      - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
+        name: Start M6B webhook worker Redis smoke container
+        run: |
+          docker run -d --name uzmax-m6b-06b-redis -p 6379:6379 redis:7-alpine
+          for attempt in $(seq 1 30); do
+            if docker exec uzmax-m6b-06b-redis redis-cli ping | grep -q PONG; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs uzmax-m6b-06b-redis
+          exit 1
+      - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
+        name: M6B webhook to worker true DB smoke
+        env:
+          UZMAX_REDIS_URL: redis://127.0.0.1:6379
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
+        run: node packages/db/scripts/run-m6b-webhook-worker-true-db-smoke.mjs
+      - if: always() && steps.path-scope.outputs.run_true_db_smoke == 'true'
+        name: Stop M6B webhook worker Redis smoke container
+        run: docker rm -f uzmax-m6b-06b-redis || true
       - if: steps.path-scope.outputs.run_m5r_true_db_closeout == 'true'
         name: Apply M5R dev smoke migrations
         env:

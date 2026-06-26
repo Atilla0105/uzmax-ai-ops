@@ -37,7 +37,11 @@ describe("M6B-05a conversation runtime", () => {
     assert.equal(payload.providerUpdateId, "5001");
     assert.equal(
       channels.module.createTelegramBotConversationJobId(payload),
-      "telegram-bot:11111111-1111-4111-8111-111111111405:22222222-2222-4222-8222-222222222405:44444444-4444-4444-8444-444444444405:5001"
+      "telegram-bot__11111111-1111-4111-8111-111111111405__22222222-2222-4222-8222-222222222405__44444444-4444-4444-8444-444444444405__5001"
+    );
+    assert.equal(
+      channels.module.createTelegramBotConversationJobId(payload).includes(":"),
+      false
     );
     assert.equal(JSON.stringify(payload).includes("raw"), false);
   });
@@ -87,7 +91,8 @@ describe("M6B-05a conversation runtime", () => {
       added[0][0],
       channels.module.telegramBotConversationQueueDefaults.jobName
     );
-    assert.equal(added[0][2].jobId.endsWith(":5001"), true);
+    assert.equal(added[0][2].jobId.endsWith("__5001"), true);
+    assert.equal(added[0][2].jobId.includes(":"), false);
   });
 
   it("worker processor turns one accepted Bot update into controlled persistence input", async () => {

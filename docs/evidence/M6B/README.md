@@ -7,10 +7,10 @@
 > status: no_go_blocked_owner_inputs_missing_not_ga0
 > created_at: 2026-06-26
 > updated_at: 2026-06-26
-> source_files: `AGENTS.md`, four v1.1 source-of-truth docs, `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md`, `docs/specs/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md`, existing M6B slice specs/evidence, `docs/evidence/M6/README.md`, `docs/evidence/M6/M6-09-final-acceptance-rollup.md`, `docs/release.md`, `render.yaml`, `.github/workflows/ci.yml`, `apps/api/package.json`, `apps/worker/package.json`, `apps/cron/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/telegram-bot.ts`, `apps/worker/src/order-import-bullmq-runtime.ts`, `packages/db/prisma/schema.prisma`, `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
+> source_files: `AGENTS.md`, four v1.1 source-of-truth docs, `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md`, `docs/specs/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/specs/M6B-07a-deploy-rollback-runbook-sync.md`, `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/evidence/M6B/M6B-07a-deploy-rollback-runbook-sync.md`, existing M6B slice specs/evidence, `docs/runbooks/deploy-rollback.md`, `docs/evidence/M6/README.md`, `docs/evidence/M6/M6-09-final-acceptance-rollup.md`, `docs/release.md`, `render.yaml`, `.github/workflows/ci.yml`, `apps/api/package.json`, `apps/worker/package.json`, `apps/cron/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/telegram-bot.ts`, `apps/worker/src/order-import-bullmq-runtime.ts`, `packages/db/prisma/schema.prisma`, `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
 > sensitive_data_location: none; this file contains no customer/order/message/provider secret material
 > redaction_status: no raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, LLM keys, Bot tokens, webhook secrets or DB URLs
-> review_notes: M6B index now includes the M6B-09 GA-0 runtime evidence rollup; owner-gated M6B-04/06/07/08 remain blocked and GA-0 is No-Go / locked
+> review_notes: M6B index now includes the M6B-09 GA-0 runtime evidence rollup and the M6B-07a deploy rollback runbook sync; owner-gated M6B-04/06/07/08 remain blocked and GA-0 is No-Go / locked
 > signoff: no owner GA-0 approval recorded; owner decision remains required
 
 ## M6B Slice Index
@@ -26,6 +26,7 @@
 | M6B-05b | `docs/evidence/M6B/M6B-05b-equivalent-bot-webhook-drive.md` | `merged_local_webhook_equivalent_contract_passed_true_db_webhook_drive_not_claimed_not_ga0` | Merged on main via #144; narrow webhook-equivalent local contract passed. No local true DB/RLS webhook-driven pass claimed. |
 | M6B-06 | none | `blocked_owner_gated_telegram_staging_inputs_missing_no_pass` | Missing Telegram test bot token, webhook secret, setWebhook authorization, staging endpoint and outbound test-account decision; not pass. |
 | M6B-07 | none | `blocked_owner_gated_staging_rollback_inputs_missing_no_pass` | Missing owner-approved deploy/rollback targets and A-to-B-to-A evidence; not pass. |
+| M6B-07a | `docs/evidence/M6B/M6B-07a-deploy-rollback-runbook-sync.md` | `ready_for_review_not_j01_pass` | Docs-only runbook sync for current emitted-artifact start facts; does not close M6B-07/J-01. |
 | M6B-08 | none | `blocked_owner_gated_safe_restore_target_missing_no_pass` | Missing owner-approved safe restore target, backup snapshot and restore command evidence; not pass. |
 | M6B-09 | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` | `no_go_blocked_owner_inputs_missing_not_ga0` | Runtime rollup recorded: inner evidence counted within boundaries; M6B-04/06/07/08 remain no-go blockers; no owner GA-0 approval recorded. |
 

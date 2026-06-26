@@ -19,12 +19,19 @@ API、worker、cron、admin 部署失败，或 GA-0/正式发布前需要执行 
 
 ## Surface Matrix
 
-| Surface | Platform | Current entry | Health / recovery check | Rollback dry-run expectation | Current M6-02 state |
+| Surface | Platform | Current entry | Health / recovery check | Rollback dry-run expectation | Current repo state |
 |---|---|---|---|---|---|
-| api | Render `uzmax-api` | `npm --workspace @uzmax/api run start` | `/healthz`, `/readyz`, access-context readiness, logs with traceId | Identify previous stable deploy, redeploy/rollback through Render dashboard, verify health endpoints before reopening traffic | baseline supported; real Render service and rollback drill pending |
-| worker | Render `uzmax-worker` | `npm --workspace @uzmax/worker run start` | worker process health, queue backlog/failed counts, idempotent retry evidence | Pause consumers, redeploy/rollback worker, verify backlog does not duplicate customer sends | blocked: package `start` is still M0 deployment placeholder |
-| cron | Render `uzmax-cron` | `npm --workspace @uzmax/cron run start` | scheduled job heartbeat, distill/import/archive job status, logs with traceId | disable schedule if needed, rollback/redeploy cron service, verify next safe heartbeat/job plan | blocked: package `start` is still M0 deployment placeholder |
+| api | Render `uzmax-api` | `npm --workspace @uzmax/api run start` -> `node dist/apps/api/src/main.js` | `/healthz`, `/readyz`, access-context readiness, logs with traceId | Identify previous stable deploy, redeploy/rollback through Render dashboard, verify health endpoints before reopening traffic | emitted-artifact start supported by M6B-01 local artifact evidence; real Render service and rollback drill pending |
+| worker | Render `uzmax-worker` | `npm --workspace @uzmax/worker run start` -> `node dist/apps/worker/src/main.js` | worker process health, queue backlog/failed counts, idempotent retry evidence | Pause consumers, redeploy/rollback worker, verify backlog does not duplicate customer sends | emitted-artifact start supported by M6B-02 local Redis worker evidence; real Render service and rollback drill pending |
+| cron | Render `uzmax-cron` | `npm --workspace @uzmax/cron run start` -> `node dist/apps/cron/src/main.js` | scheduled job heartbeat, distill/import/archive job status, logs with traceId | disable schedule if needed, rollback/redeploy cron service, verify next safe heartbeat/job plan | emitted-artifact start supported by M6B-03 local one-shot/idempotency evidence; real Render service and rollback drill pending |
 | admin | Vercel `uzmax-admin` | Vite build/preview scripts | preview/prod URL loads, release gate remains locked, API base URL env present in platform only | rollback to previous Vercel deployment, verify owner-facing release console and no enabled GA-0 open action | baseline supported; Vercel deployment/strategy pending owner |
+
+## Current Artifact Facts
+
+- API, worker and cron package `start` scripts currently boot emitted JavaScript artifacts from `dist/apps/.../src/main.js`.
+- M6B-01, M6B-02 and M6B-03 provide local artifact evidence only: API health/fail-closed readiness, Redis-backed worker job proof and file-backed cron one-shot/idempotency proof.
+- Local artifact evidence is not real Render/Vercel deploy or rollback evidence.
+- J-01 / M6B-07 remains blocked until owner-approved staging or equivalent deploy/rollback targets exist and api, worker, cron and admin have A-to-B-to-A version trace plus health/heartbeat recovery evidence.
 
 ## Deploy / Rollback Procedure
 
@@ -63,9 +70,8 @@ API、worker、cron、admin 部署失败，或 GA-0/正式发布前需要执行 
 | Failure | Required result |
 |---|---|
 | Any core surface cannot identify a rollback target | J-01 remains failed/open; GA-0 and 1.0 stay locked |
-| worker or cron start command is still a placeholder | J-01 remains blocked for that surface; split implementation before real drill |
+| Any core package start command regresses to a non-artifact placeholder | J-01 remains blocked for that surface; split implementation before real drill |
 | queue backlog state is unknown during worker rollback | keep queue consumers paused; record J-02/J-04 blocker |
 | `/healthz` or `/readyz` cannot prove API recovery | keep api rollback open; record blocker and incident if customer-facing |
 | Vercel admin rollback cannot preserve locked release gate | keep GA-0 locked; split admin/release gate fix |
 | platform access, service creation, env or cost decision is missing | record owner/external blocker; do not fake closure |
-

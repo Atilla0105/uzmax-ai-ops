@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "../..",
+    "rewriteRelativeImportExtensions": true,
+    "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
+  },
+  "include": [
+    "src/**/*.ts",
+    "../../packages/capabilities/order-read/src/**/*.ts",
+    "../../packages/db/src/**/*.ts"
+  ],
+  "exclude": ["dist", "../../apps/admin/dist"]
+}

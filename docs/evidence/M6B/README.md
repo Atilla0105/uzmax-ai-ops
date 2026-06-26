@@ -19,6 +19,7 @@
 |---|---|---|---|
 | M6B-00 | This README and `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md` | `ready_for_review` | Runtime bring-up contract only; not GA-0. |
 | M6B-01 | `docs/evidence/M6B/M6B-01-api-production-artifact.md` | `ready_for_review` | API artifact builds and boots; `/healthz` 200; `/readyz` exercised as default fail-closed 503. |
+| M6B-02 | `docs/evidence/M6B/M6B-02-worker-service-shell.md` | `ready_for_review` | Worker artifact builds and boots; Redis-backed order-import job consumed once; BullMQ `jobId` dedupe only, not Telegram `update_id` dedupe. |
 
 ## Summary
 

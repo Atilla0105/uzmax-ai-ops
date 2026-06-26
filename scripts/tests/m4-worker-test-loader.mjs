@@ -81,10 +81,19 @@ function compileWorkerEntrypointUrl() {
   );
   const moduleUrl = compileTsModuleUrl(
     readRepoText("apps/worker/src/main.ts")
+      .replaceAll(
+        'import { runWorkerServiceShellFromCli } from "./worker-service-shell.ts";',
+        ""
+      )
       .replaceAll('export * from "./order-import-dispatch.ts";', "")
       .replaceAll('export * from "./order-import-file-intake.ts";', "")
       .replaceAll('export * from "./order-import-prisma-persistence.ts";', "")
       .replaceAll('export * from "./order-import-bullmq-runtime.ts";', "")
+      .replaceAll('export * from "./worker-service-shell.ts";', "")
+      .replace(
+        /\nif \(process\.argv\[1\][\s\S]*?await runWorkerServiceShellFromCli\(\);\n}\n?$/,
+        "\n"
+      )
       .replaceAll(
         "../../../packages/capabilities/order-read/src/index.ts",
         orderReadUrl

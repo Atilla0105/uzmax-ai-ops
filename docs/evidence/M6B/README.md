@@ -4,13 +4,13 @@
 > milestone: M6B
 > acceptance_items: J-01, J-02, J-03, J-04, J-05, K-03, K-04, L-01, L-02
 > owner: project owner owns staging infra, real Bot/alert/restore/outbound inputs, GA-0, production, real data, customer LLM, provider/cost/risk and 1.0 decisions; AI agents own execution, review and evidence honesty
-> status: no_go_blocked_owner_inputs_missing_not_ga0
+> status: m6_closed_as_evidence_runtime_hardening_package_ga0_no_go
 > created_at: 2026-06-26
 > updated_at: 2026-06-26
-> source_files: `AGENTS.md`, four v1.1 source-of-truth docs, `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md`, `docs/specs/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/specs/M6B-09a-post-live-staging-evidence-sync.md`, `docs/specs/M6B-07a-deploy-rollback-runbook-sync.md`, `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/evidence/M6B/M6B-09a-post-live-staging-evidence-sync.md`, `docs/evidence/M6B/M6B-07a-deploy-rollback-runbook-sync.md`, existing M6B slice specs/evidence, `docs/runbooks/deploy-rollback.md`, `docs/evidence/M6/README.md`, `docs/evidence/M6/M6-09-final-acceptance-rollup.md`, `docs/release.md`, `render.yaml`, `.github/workflows/ci.yml`, `apps/api/package.json`, `apps/worker/package.json`, `apps/cron/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/telegram-bot.ts`, `apps/worker/src/order-import-bullmq-runtime.ts`, `packages/db/prisma/schema.prisma`, `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
+> source_files: `AGENTS.md`, four v1.1 source-of-truth docs, `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md`, `docs/specs/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/specs/M6B-09a-post-live-staging-evidence-sync.md`, `docs/specs/M6B-10-api-staging-identity-authz-readiness.md`, `docs/specs/M6B-11-m6-no-go-closeout.md`, `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/evidence/M6B/M6B-09a-post-live-staging-evidence-sync.md`, `docs/evidence/M6B/M6B-10-api-staging-identity-authz-readiness.md`, `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md`, existing M6B slice specs/evidence, `docs/runbooks/deploy-rollback.md`, `docs/evidence/M6/README.md`, `docs/evidence/M6/M6-09-final-acceptance-rollup.md`, `docs/release.md`, `render.yaml`, `.github/workflows/ci.yml`, `apps/api/package.json`, `apps/worker/package.json`, `apps/cron/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/telegram-bot.ts`, `apps/worker/src/order-import-bullmq-runtime.ts`, `packages/db/prisma/schema.prisma`, `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
 > sensitive_data_location: none; this file contains no customer/order/message/provider secret material
 > redaction_status: no raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, LLM keys, Bot tokens, webhook secrets or DB URLs
-> review_notes: M6B index now includes post-live M6B-09a staging evidence sync: durable Render API base, `/healthz` 200, missing-secret webhook 401 and Telegram test bot webhook hygiene are recorded; `/readyz`, worker/cron heartbeat, alert fire proof, rollback, restore and GA-0/1.0 remain not pass
+> review_notes: M6B index now includes M6B-11 no-go closeout: M6 is closed as an evidence/runtime-hardening package; remaining LAY-19/LAY-23/LAY-24 blockers move to GA-0 Activation / Runtime Owner-Gated and GA-0/1.0 remain not pass
 > signoff: no owner GA-0 approval recorded; owner decision remains required
 
 ## M6B Slice Index
@@ -33,6 +33,7 @@
 | M6B-09 | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` | `no_go_blocked_owner_inputs_missing_not_ga0` | Runtime rollup recorded before M6B-09a; post-live evidence is now synced separately, but remaining blockers still keep GA-0 locked. |
 | M6B-09a | `docs/evidence/M6B/M6B-09a-post-live-staging-evidence-sync.md` | `ready_for_review_post_live_staging_evidence_synced_not_ga0` | Docs-only post-live sync: LAY-22 and LAY-27 are Done within scope; durable staging API and test bot webhook hygiene are recorded; `/readyz`, worker/cron heartbeat, alert fire proof, rollback, restore and GA-0 remain open. |
 | M6B-10 | `docs/evidence/M6B/M6B-10-api-staging-identity-authz-readiness.md` | `implementation_ready_live_env_blocked_not_ga0` | API authz repository wiring is env-selected instead of hard-wired disabled; default remains fail-closed. Live `/readyz` 200 is not claimed without owner-gated Supabase/Auth/RLS env and fact rows. |
+| M6B-11 | `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` | `m6_closed_as_evidence_runtime_hardening_package_ga0_no_go` | Docs-only closeout sync: M6/M6B close as the current evidence/runtime-hardening package; LAY-19, LAY-23 and LAY-24 move forward as GA-0 Activation / Runtime Owner-Gated blockers. |
 
 ## Summary
 
@@ -40,11 +41,11 @@ M6B exists because M6 completed the GA-0 decision package but did not produce a 
 
 `m6_final_acceptance_rollup_recorded_no_go_recommended_owner_decision_pending_not_ga0`
 
-GA-0 is not open. Production deployment, real customer/order data, customer LLM, real provider calls, Telegram Business auto-reply, P1 risk acceptance and 1.0 release are not approved.
+M6 is closed as an evidence/runtime-hardening package; GA-0 remains no-go. Production deployment, real customer/order data, customer LLM, real provider calls, Telegram Business auto-reply, P1 risk acceptance and 1.0 release are not approved.
 
 M6B-00 is docs-only. It creates the runtime bring-up contract and queue so later slices can close gaps with runnable evidence instead of documentation assertions.
 
-M6B-04 now has a durable Render API carrier for the Telegram test bot path: `https://uzmax-api-staging.onrender.com`, `/healthz` HTTP 200 and fail-closed missing-secret webhook HTTP 401 are recorded. M6B-09a records the post-live sync: LAY-22 and LAY-27 are Done within their scoped boundaries, while `/readyz`, worker/cron heartbeat, alert fire proof, M6B-07 rollback and M6B-08 restore remain explicitly not pass. GA-0 recommendation remains No-Go / keep locked.
+M6B-04 now has a durable Render API carrier for the Telegram test bot path: `https://uzmax-api-staging.onrender.com`, `/healthz` HTTP 200 and fail-closed missing-secret webhook HTTP 401 are recorded. M6B-09a records the post-live sync: LAY-22 and LAY-27 are Done within their scoped boundaries, while `/readyz`, worker/cron heartbeat, alert fire proof, M6B-07 rollback and M6B-08 restore remain explicitly not pass. M6B-11 records that these are GA-0 Activation / Runtime Owner-Gated blockers rather than reasons to keep M6 execution open. GA-0 recommendation remains No-Go / keep locked.
 
 ## Start Audit
 
@@ -203,6 +204,7 @@ Sentry is optional/deferred through `UZMAX_SENTRY_DSN`. Until the ops alert bot 
 | Owner-gated staging/deploy/Telegram/restore | `partial_api_and_test_bot_only` | M6B-09a records durable API/test bot hygiene; `/readyz`, worker/cron, alert, rollback and restore remain blocked/no-pass. |
 | Evidence honesty red line | `enforced` | Synthetic, in-memory, doc-only or file-backed proof is not counted as staging, production or true DB proof. |
 | GA-0 decision | `no_go_keep_locked` | Checklist is not green and no owner explicit GA-0 approval is recorded. |
+| M6 closeout | `closed_no_go` | M6/M6B close as the evidence/runtime-hardening package; LAY-19/LAY-23/LAY-24 remain next-phase GA-0 Activation blockers. |
 
 ## Dependencies And Serial Points
 
@@ -251,4 +253,4 @@ M6B as currently indexed through M6B-09 does not approve:
 
 ## Closeout / Incident Record
 
-No new incident was recorded by M6B-00. M6B-09 records the current rollup and keeps GA-0 locked pending owner-gated M6B-04/06/07/08 evidence and explicit owner approval.
+No new incident was recorded by M6B-00. M6B-09 records the runtime rollup and keeps GA-0 locked pending owner-gated M6B-04/06/07/08 evidence and explicit owner approval. M6B-11 closes M6 at the no-go evidence boundary and carries the remaining LAY-19, LAY-23 and LAY-24 work into GA-0 Activation / Runtime Owner-Gated tracking.

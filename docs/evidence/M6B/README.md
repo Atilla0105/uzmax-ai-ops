@@ -20,6 +20,7 @@
 | M6B-00 | This README and `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md` | `ready_for_review` | Runtime bring-up contract only; not GA-0. |
 | M6B-01 | `docs/evidence/M6B/M6B-01-api-production-artifact.md` | `ready_for_review` | API artifact builds and boots; `/healthz` 200; `/readyz` exercised as default fail-closed 503. |
 | M6B-02 | `docs/evidence/M6B/M6B-02-worker-service-shell.md` | `ready_for_review` | Worker artifact builds and boots; Redis-backed order-import job consumed once; BullMQ `jobId` dedupe only, not Telegram `update_id` dedupe. |
+| M6B-03 | `docs/evidence/M6B/M6B-03-cron-service-shell.md` | `ready_for_review` | Cron artifact builds and runs one-shot distill daily health; repeated same-day invocation skips; local smoke is file-backed artifact evidence, not true DB/staging/production evidence. |
 
 ## Summary
 
@@ -58,7 +59,7 @@ Recorded at M6B-00 entry on 2026-06-26.
 | M6 rollup | `docs/evidence/M6/M6-09-final-acceptance-rollup.md` records GA-0 `no_go_recommended_owner_decision_pending` and 1.0 `blocked_p0_gaps_open`. | M6B starts from no-go, not release readiness. |
 | API build/start | `apps/api/package.json` has `build = tsc --noEmit`; `start` imports `scripts/runtime-compiler.mjs`. | M6B-01 must produce and boot a real artifact. |
 | Worker build/start | `apps/worker/package.json` has `build = tsc --noEmit`; `start` prints M0 deployment placeholder. | M6B-02 must replace placeholder with a real worker shell. |
-| Cron build/start | `apps/cron/package.json` has `build = tsc --noEmit`; `start` prints M0 deployment placeholder. | M6B-03 must replace placeholder with one-shot cron behavior. |
+| Cron build/start | M6B-03 changes `apps/cron/package.json` so `build` emits an artifact and `start` boots `apps/cron/dist/apps/cron/src/main.js`. | Placeholder is closed for cron artifact proof; real Render deploy/rollback remains M6B-04/M6B-07. |
 | Render | `render.yaml` declares api, worker, cron and `uzmax-redis`; cron schedule is `*/15 * * * *`; auto deploy is off. | M6B-04 can stage once owner infra/env exists. |
 | Bot webhook | `apps/api/src/app.module.ts` wires webhook service to `DisabledTelegramBotIngressQueue`. | M6B-05a must switch to an env-selected BullMQ queue adapter. |
 | Bot dedupe | `apps/api/src/telegram-bot.ts` has in-memory `providerUpdateId` dedupe. | In-memory dedupe is contract support only; DB-backed dedupe remains M6B-05a/05b/06. |

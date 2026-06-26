@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node ../../node_modules/typescript/lib/tsc.js --noEmit -p ../../tsconfig.json",
-    "start": "node -e \"console.log('@uzmax/cron M0 deployment placeholder')\""
+    "build": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { force: true, recursive: true }))\" && node ../../node_modules/typescript/lib/tsc.js -p tsconfig.build.json",
+    "smoke:m6b-artifact": "node scripts/run-m6b-cron-artifact-smoke.mjs",
+    "start": "node dist/apps/cron/src/main.js"
   }
 }

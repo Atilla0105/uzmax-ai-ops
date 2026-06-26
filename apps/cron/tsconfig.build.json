@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "../..",
+    "rewriteRelativeImportExtensions": true,
+    "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
+  },
+  "include": [
+    "src/**/*.ts",
+    "../worker/src/distill-runtime.ts",
+    "../worker/src/distill-runtime-contracts.ts",
+    "../../packages/db/src/**/*.ts",
+    "../../packages/distill/src/**/*.ts"
+  ],
+  "exclude": ["dist", "../../apps/admin/dist"]
+}

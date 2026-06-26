@@ -21,7 +21,7 @@ Current checker status:
 
 `baseline_recorded_j01_j04_partial_blockers_open`
 
-J-01 is not closed because real deploy/rollback drills have not been executed, Render service creation remains owner-pending, and the cron package start command is still an M0 deployment placeholder. M6B-02 replaces the worker package placeholder with an emitted-artifact worker service shell, but that does not by itself prove a real Render deploy/rollback drill.
+J-01 is not closed because real deploy/rollback drills have not been executed and Render service creation remains owner-pending. M6B-02 replaces the worker package placeholder with an emitted-artifact worker service shell, and M6B-03 replaces the cron package placeholder with an emitted-artifact one-shot cron shell, but those do not by themselves prove a real Render deploy/rollback drill.
 
 J-04 is improved for deploy/rollback coverage because `docs/runbooks/deploy-rollback.md` now has per-surface rollback, health, dry-run evidence and failure-branch steps. Later M6 slices still need model-all-down, redline bad send, order/import abnormal and RLS misconfig drills.
 
@@ -63,7 +63,7 @@ Recorded at M6-02 entry on 2026-06-26.
 |---|---|---|---|
 | api | Render `uzmax-api` | `render.yaml` service exists; `apps/api/package.json` has build/start; API exposes `/healthz` and `/readyz` | `api_baseline_supported_real_rollback_drill_pending` |
 | worker | Render `uzmax-worker` | `render.yaml` service exists; `apps/worker/src/main.ts` exports `processName = "worker"`; M6B-02 changes `apps/worker/package.json` `start` to boot the emitted artifact | `worker_baseline_supported_real_rollback_drill_pending`: worker artifact start is present, but real Render deploy/rollback drill remains pending |
-| cron | Render `uzmax-cron` | `render.yaml` service exists; `apps/cron/src/main.ts` exports `processName = "cron"` | `blocked_cron_runtime_baseline_incomplete`: package `start` is M0 deployment placeholder |
+| cron | Render `uzmax-cron` | `render.yaml` service exists; `apps/cron/src/main.ts` exports `processName = "cron"`; M6B-03 changes `apps/cron/package.json` `start` to boot the emitted artifact | `cron_baseline_supported_real_rollback_drill_pending`: cron artifact start is present, but real Render deploy/rollback drill remains pending |
 | admin | Vercel `uzmax-admin` | Vercel manifest project exists; `apps/admin/package.json` has build/start | `admin_baseline_supported_vercel_deployment_pending_owner` |
 
 ## Manifest Status
@@ -79,7 +79,6 @@ Recorded at M6-02 entry on 2026-06-26.
 | Blocker | Release impact |
 |---|---|
 | `render_real_service_creation_pending_owner` | J-01 cannot close until real or owner-approved staging/equivalent Render services exist. |
-| `cron_start_command_m0_placeholder` | Cron rollback cannot be drilled until cron `start` runs real scheduler behavior. |
 | `admin_vercel_deployment_pending_owner` | Admin deploy/rollback cannot close until Vercel deployment strategy is owner-approved and exercised. |
 | `observability_alert_channel_pending_owner` | GA-0 operations readiness remains blocked until alert channel is decided and verified. |
 | `real_deploy_and_rollback_drills_not_executed_in_this_pr` | This PR is baseline evidence only; it does not close J-01 real rollback drills. |

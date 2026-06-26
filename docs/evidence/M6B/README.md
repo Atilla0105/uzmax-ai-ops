@@ -22,6 +22,7 @@
 | M6B-02 | `docs/evidence/M6B/M6B-02-worker-service-shell.md` | `ready_for_review` | Worker artifact builds and boots; Redis-backed order-import job consumed once; BullMQ `jobId` dedupe only, not Telegram `update_id` dedupe. |
 | M6B-03 | `docs/evidence/M6B/M6B-03-cron-service-shell.md` | `ready_for_review` | Cron artifact builds and runs one-shot distill daily health; repeated same-day invocation skips; local smoke is file-backed artifact evidence, not true DB/staging/production evidence. |
 | M6B-05a | `docs/evidence/M6B/M6B-05a-conversation-runtime-build.md` | `ci_passed_owner_review_pending` | Bot conversation runtime source, local contract tests and GitHub Actions run `28232360471` true DB/RLS smoke passed; merge still requires owner review for the declared `large_change_exception`. |
+| M6B-05b | `docs/evidence/M6B/M6B-05b-equivalent-bot-webhook-drive.md` | `local_contract_passed_true_db_webhook_drive_not_claimed` | Narrow webhook-equivalent local contract passed: synthetic webhook core -> injected BullMQ queue payload -> worker processor duplicate dedupe; no local true DB/RLS webhook-driven pass claimed. |
 
 ## Summary
 

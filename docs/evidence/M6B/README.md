@@ -10,7 +10,7 @@
 > source_files: `AGENTS.md`, four v1.1 source-of-truth docs, `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md`, `docs/specs/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/specs/M6B-07a-deploy-rollback-runbook-sync.md`, `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/evidence/M6B/M6B-07a-deploy-rollback-runbook-sync.md`, existing M6B slice specs/evidence, `docs/runbooks/deploy-rollback.md`, `docs/evidence/M6/README.md`, `docs/evidence/M6/M6-09-final-acceptance-rollup.md`, `docs/release.md`, `render.yaml`, `.github/workflows/ci.yml`, `apps/api/package.json`, `apps/worker/package.json`, `apps/cron/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/telegram-bot.ts`, `apps/worker/src/order-import-bullmq-runtime.ts`, `packages/db/prisma/schema.prisma`, `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
 > sensitive_data_location: none; this file contains no customer/order/message/provider secret material
 > redaction_status: no raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, LLM keys, Bot tokens, webhook secrets or DB URLs
-> review_notes: M6B index now includes the M6B-09 GA-0 runtime evidence rollup and the M6B-07a deploy rollback runbook sync; owner-gated M6B-04/06/07/08 remain blocked and GA-0 is No-Go / locked
+> review_notes: M6B index now includes the M6B-04 thin Render staging env wiring evidence, the M6B-09 GA-0 runtime evidence rollup and the M6B-07a deploy rollback runbook sync; owner-gated live M6B-04 deploy verification plus M6B-06/07/08 remain blocked and GA-0 is No-Go / locked
 > signoff: no owner GA-0 approval recorded; owner decision remains required
 
 ## M6B Slice Index
@@ -21,7 +21,7 @@
 | M6B-01 | `docs/evidence/M6B/M6B-01-api-production-artifact.md` | `merged_local_artifact_health_pass_readyz_fail_closed_not_ga0` | API artifact builds and boots; `/healthz` 200; `/readyz` exercised as default fail-closed 503. |
 | M6B-02 | `docs/evidence/M6B/M6B-02-worker-service-shell.md` | `merged_local_redis_worker_artifact_pass_not_ga0` | Worker artifact builds and boots; Redis-backed order-import job consumed once; BullMQ `jobId` dedupe only, not Telegram `update_id` dedupe. |
 | M6B-03 | `docs/evidence/M6B/M6B-03-cron-service-shell.md` | `merged_local_cron_artifact_one_shot_idempotent_not_ga0` | Cron artifact builds and runs one-shot distill daily health; repeated same-day invocation skips; local smoke is file-backed artifact evidence, not true DB/staging/production evidence. |
-| M6B-04 | none | `blocked_owner_gated_staging_inputs_missing_no_pass` | No owner-provided staging Render/Vercel/Redis/env/alert evidence; not pass. |
+| M6B-04 | `docs/evidence/M6B/M6B-04-thin-staging-render-env.md` | `repo_wiring_ready_live_render_deploy_pending_no_pass` | Render API/worker Redis env wiring is ready for Blueprint creation; live URL, `/healthz`, webhook synthetic acceptance, worker/cron heartbeat and alerts are not yet pass. |
 | M6B-05a | `docs/evidence/M6B/M6B-05a-conversation-runtime-build.md` | `merged_ci_true_db_rls_smoke_passed_not_ga0` | Merged on main via #143; local contract tests and GitHub Actions run `28232360471` true DB/RLS smoke passed. Not real Telegram/staging/outbound. |
 | M6B-05b | `docs/evidence/M6B/M6B-05b-equivalent-bot-webhook-drive.md` | `merged_local_webhook_equivalent_contract_passed_true_db_webhook_drive_not_claimed_not_ga0` | Merged on main via #144; narrow webhook-equivalent local contract passed. No local true DB/RLS webhook-driven pass claimed. |
 | M6B-06 | none | `blocked_owner_gated_telegram_staging_inputs_missing_no_pass` | Missing Telegram test bot token, webhook secret, setWebhook authorization, staging endpoint and outbound test-account decision; not pass. |
@@ -40,7 +40,7 @@ GA-0 is not open. Production deployment, real customer/order data, customer LLM,
 
 M6B-00 is docs-only. It creates the runtime bring-up contract and queue so later slices can close gaps with runnable evidence instead of documentation assertions.
 
-M6B-09 now records the current rollup: M6B-01/02/03/05a/05b have runnable local/CI evidence within their own boundaries, while M6B-04/06/07/08 remain explicitly blocked by missing owner-gated inputs. GA-0 recommendation remains No-Go / keep locked.
+M6B-04 now has repo-level Render staging env wiring ready for platform execution. M6B-09 still records the current rollup: M6B-01/02/03/05a/05b have runnable local/CI evidence within their own boundaries, while live M6B-04 deploy verification and M6B-06/07/08 remain explicitly blocked until platform/runtime evidence exists. GA-0 recommendation remains No-Go / keep locked.
 
 ## Start Audit
 

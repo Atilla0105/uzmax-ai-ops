@@ -1,28 +1,33 @@
 # M6B Evidence
 
-> evidence_id: M6B-00-ga0-runtime-bring-up-contract
+> evidence_id: M6B-runtime-evidence-index
 > milestone: M6B
 > acceptance_items: J-01, J-02, J-03, J-04, J-05, K-03, K-04, L-01, L-02
 > owner: project owner owns staging infra, real Bot/alert/restore/outbound inputs, GA-0, production, real data, customer LLM, provider/cost/risk and 1.0 decisions; AI agents own execution, review and evidence honesty
-> status: ready_for_review
+> status: no_go_blocked_owner_inputs_missing_not_ga0
 > created_at: 2026-06-26
 > updated_at: 2026-06-26
-> source_files: `AGENTS.md`, four v1.1 source-of-truth docs, `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md`, `docs/evidence/M6/README.md`, `docs/evidence/M6/M6-09-final-acceptance-rollup.md`, `docs/release.md`, `render.yaml`, `.github/workflows/ci.yml`, `apps/api/package.json`, `apps/worker/package.json`, `apps/cron/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/telegram-bot.ts`, `apps/worker/src/order-import-bullmq-runtime.ts`, `packages/db/prisma/schema.prisma`, `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
+> source_files: `AGENTS.md`, four v1.1 source-of-truth docs, `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md`, `docs/specs/M6B-09-ga0-runtime-evidence-rollup.md`, `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md`, existing M6B slice specs/evidence, `docs/evidence/M6/README.md`, `docs/evidence/M6/M6-09-final-acceptance-rollup.md`, `docs/release.md`, `render.yaml`, `.github/workflows/ci.yml`, `apps/api/package.json`, `apps/worker/package.json`, `apps/cron/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/telegram-bot.ts`, `apps/worker/src/order-import-bullmq-runtime.ts`, `packages/db/prisma/schema.prisma`, `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
 > sensitive_data_location: none; this file contains no customer/order/message/provider secret material
 > redaction_status: no raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, LLM keys, Bot tokens, webhook secrets or DB URLs
-> review_notes: M6B-00 records the runtime bring-up contract after M6 no-go; it does not implement runtime behavior or approve GA-0/1.0
-> signoff: pending owner review of this M6B-00 PR
+> review_notes: M6B index now includes the M6B-09 GA-0 runtime evidence rollup; owner-gated M6B-04/06/07/08 remain blocked and GA-0 is No-Go / locked
+> signoff: no owner GA-0 approval recorded; owner decision remains required
 
 ## M6B Slice Index
 
 | Slice | Evidence | Status | Notes |
 |---|---|---|---|
 | M6B-00 | This README and `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md` | `ready_for_review` | Runtime bring-up contract only; not GA-0. |
-| M6B-01 | `docs/evidence/M6B/M6B-01-api-production-artifact.md` | `ready_for_review` | API artifact builds and boots; `/healthz` 200; `/readyz` exercised as default fail-closed 503. |
-| M6B-02 | `docs/evidence/M6B/M6B-02-worker-service-shell.md` | `ready_for_review` | Worker artifact builds and boots; Redis-backed order-import job consumed once; BullMQ `jobId` dedupe only, not Telegram `update_id` dedupe. |
-| M6B-03 | `docs/evidence/M6B/M6B-03-cron-service-shell.md` | `ready_for_review` | Cron artifact builds and runs one-shot distill daily health; repeated same-day invocation skips; local smoke is file-backed artifact evidence, not true DB/staging/production evidence. |
-| M6B-05a | `docs/evidence/M6B/M6B-05a-conversation-runtime-build.md` | `ci_passed_owner_review_pending` | Bot conversation runtime source, local contract tests and GitHub Actions run `28232360471` true DB/RLS smoke passed; merge still requires owner review for the declared `large_change_exception`. |
-| M6B-05b | `docs/evidence/M6B/M6B-05b-equivalent-bot-webhook-drive.md` | `local_contract_passed_true_db_webhook_drive_not_claimed` | Narrow webhook-equivalent local contract passed: synthetic webhook core -> injected BullMQ queue payload -> worker processor duplicate dedupe; no local true DB/RLS webhook-driven pass claimed. |
+| M6B-01 | `docs/evidence/M6B/M6B-01-api-production-artifact.md` | `merged_local_artifact_health_pass_readyz_fail_closed_not_ga0` | API artifact builds and boots; `/healthz` 200; `/readyz` exercised as default fail-closed 503. |
+| M6B-02 | `docs/evidence/M6B/M6B-02-worker-service-shell.md` | `merged_local_redis_worker_artifact_pass_not_ga0` | Worker artifact builds and boots; Redis-backed order-import job consumed once; BullMQ `jobId` dedupe only, not Telegram `update_id` dedupe. |
+| M6B-03 | `docs/evidence/M6B/M6B-03-cron-service-shell.md` | `merged_local_cron_artifact_one_shot_idempotent_not_ga0` | Cron artifact builds and runs one-shot distill daily health; repeated same-day invocation skips; local smoke is file-backed artifact evidence, not true DB/staging/production evidence. |
+| M6B-04 | none | `blocked_owner_gated_staging_inputs_missing_no_pass` | No owner-provided staging Render/Vercel/Redis/env/alert evidence; not pass. |
+| M6B-05a | `docs/evidence/M6B/M6B-05a-conversation-runtime-build.md` | `merged_ci_true_db_rls_smoke_passed_not_ga0` | Merged on main via #143; local contract tests and GitHub Actions run `28232360471` true DB/RLS smoke passed. Not real Telegram/staging/outbound. |
+| M6B-05b | `docs/evidence/M6B/M6B-05b-equivalent-bot-webhook-drive.md` | `merged_local_webhook_equivalent_contract_passed_true_db_webhook_drive_not_claimed_not_ga0` | Merged on main via #144; narrow webhook-equivalent local contract passed. No local true DB/RLS webhook-driven pass claimed. |
+| M6B-06 | none | `blocked_owner_gated_telegram_staging_inputs_missing_no_pass` | Missing Telegram test bot token, webhook secret, setWebhook authorization, staging endpoint and outbound test-account decision; not pass. |
+| M6B-07 | none | `blocked_owner_gated_staging_rollback_inputs_missing_no_pass` | Missing owner-approved deploy/rollback targets and A-to-B-to-A evidence; not pass. |
+| M6B-08 | none | `blocked_owner_gated_safe_restore_target_missing_no_pass` | Missing owner-approved safe restore target, backup snapshot and restore command evidence; not pass. |
+| M6B-09 | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` | `no_go_blocked_owner_inputs_missing_not_ga0` | Runtime rollup recorded: inner evidence counted within boundaries; M6B-04/06/07/08 remain no-go blockers; no owner GA-0 approval recorded. |
 
 ## Summary
 
@@ -33,6 +38,8 @@ M6B exists because M6 completed the GA-0 decision package but did not produce a 
 GA-0 is not open. Production deployment, real customer/order data, customer LLM, real provider calls, Telegram Business auto-reply, P1 risk acceptance and 1.0 release are not approved.
 
 M6B-00 is docs-only. It creates the runtime bring-up contract and queue so later slices can close gaps with runnable evidence instead of documentation assertions.
+
+M6B-09 now records the current rollup: M6B-01/02/03/05a/05b have runnable local/CI evidence within their own boundaries, while M6B-04/06/07/08 remain explicitly blocked by missing owner-gated inputs. GA-0 recommendation remains No-Go / keep locked.
 
 ## Start Audit
 
@@ -59,15 +66,15 @@ Recorded at M6B-00 entry on 2026-06-26.
 | Area | Current repo fact | M6B implication |
 |---|---|---|
 | M6 rollup | `docs/evidence/M6/M6-09-final-acceptance-rollup.md` records GA-0 `no_go_recommended_owner_decision_pending` and 1.0 `blocked_p0_gaps_open`. | M6B starts from no-go, not release readiness. |
-| API build/start | `apps/api/package.json` has `build = tsc --noEmit`; `start` imports `scripts/runtime-compiler.mjs`. | M6B-01 must produce and boot a real artifact. |
-| Worker build/start | `apps/worker/package.json` has `build = tsc --noEmit`; `start` prints M0 deployment placeholder. | M6B-02 must replace placeholder with a real worker shell. |
-| Cron build/start | M6B-03 changes `apps/cron/package.json` so `build` emits an artifact and `start` boots `apps/cron/dist/apps/cron/src/main.js`. | Placeholder is closed for cron artifact proof; real Render deploy/rollback remains M6B-04/M6B-07. |
+| API build/start | Current main emits an API artifact and `@uzmax/api` start boots `apps/api/dist/apps/api/src/main.js`. | M6B-01 local artifact proof is merged; real staging deploy/rollback remains M6B-04/M6B-07. |
+| Worker build/start | Current main emits a worker artifact and `@uzmax/worker` start boots `apps/worker/dist/apps/worker/src/main.js`. | M6B-02 local Redis/order-import proof is merged; production/staging worker and Bot runtime staging proof remain blocked. |
+| Cron build/start | Current main emits a cron artifact and `@uzmax/cron` start boots `apps/cron/dist/apps/cron/src/main.js`. | M6B-03 local one-shot/idempotency proof is merged; real Render deploy/rollback remains M6B-04/M6B-07. |
 | Render | `render.yaml` declares api, worker, cron and `uzmax-redis`; cron schedule is `*/15 * * * *`; auto deploy is off. | M6B-04 can stage once owner infra/env exists. |
-| Bot webhook | M6B-05a branch wires webhook service to an env-selected queue provider that defaults to disabled/fail-closed and can explicitly use BullMQ. | Real Telegram webhook/setWebhook remains M6B-06. |
-| Bot dedupe | M6B-05a branch adds stable Bot conversation job payload IDs and a DB-backed `telegram_update_dedupe` persistence gateway; GitHub Actions run `28232360471` passed the true DB/RLS smoke. | In-memory dedupe remains contract support only; BullMQ `jobId` proof is not accepted as Telegram `update_id` proof. |
-| Conversation/ticket | M6B-05a branch adds a worker-side Bot conversation processor and Prisma/RLS persistence gateway for conversation/message/ticket/ticket_event rows. | True DB/RLS smoke passed in CI; owner review is still required before merge because of `large_change_exception`. |
+| Bot webhook | Current main wires webhook service to an env-selected queue provider that defaults to disabled/fail-closed and can explicitly use BullMQ. | Real Telegram webhook/setWebhook remains M6B-06. |
+| Bot dedupe | Current main has stable Bot conversation job payload IDs and a DB-backed `telegram_update_dedupe` persistence gateway; GitHub Actions run `28232360471` passed the true DB/RLS smoke. | In-memory dedupe remains contract support only; BullMQ `jobId` proof is not accepted as Telegram `update_id` proof. |
+| Conversation/ticket | Current main has a worker-side Bot conversation processor and Prisma/RLS persistence gateway for conversation/message/ticket/ticket_event rows. | True DB/RLS smoke passed in CI; real Telegram/staging/outbound proof remains owner-gated. |
 | Existing BullMQ runtime | `apps/worker/src/order-import-bullmq-runtime.ts` covers order-import jobs. | Order-import worker proof cannot be treated as Bot conversation runtime proof. |
-| DB/RLS schema | Migration `0003` and Prisma schema include conversation/message/ticket and `telegram_update_dedupe`. | Schema exists; runtime gateway and smoke are still missing. |
+| DB/RLS schema | Migration `0003` and Prisma schema include conversation/message/ticket and `telegram_update_dedupe`; current main includes the M6B-05a Prisma/RLS runtime gateway and CI smoke. | Schema and inner-ring runtime gateway exist; real Telegram/staging/outbound and restore proof remain owner-gated. |
 | CI secrets pattern | `.github/workflows/ci.yml` uses masked `UZMAX_RLS_DATABASE_URL` and Redis patterns. | Later M6B slices should reuse fail-closed secret behavior. |
 
 ## Runnable Evidence Red Line
@@ -169,6 +176,15 @@ Sentry is optional/deferred through `UZMAX_SENTRY_DSN`. Until the ops alert bot 
 | 9 | M6B-08 Backup/Restore Drill | outer | restore on safe target | snapshot id; restore command class; post-restore RLS smoke; asset-ref safety; residue clean |
 | 10 | M6B-09 GA-0 Runtime Rollup | inner | aggregate runnable evidence and re-judge GA-0 | only real M6B evidence; honest go/no-go; blocker specs if not green |
 
+## M6B-09 Current Rollup
+
+| Area | Status | Notes |
+|---|---|---|
+| Inner runtime evidence | `partial_pass_with_boundaries` | M6B-01/02/03 local artifact proofs, M6B-05a CI true DB/RLS proof and M6B-05b local webhook-equivalent contract proof are counted only as recorded. |
+| Owner-gated staging/deploy/Telegram/restore | `blocked_no_pass` | M6B-04/06/07/08 have no owner-provided staging, Telegram, rollback or restore inputs/evidence. |
+| Evidence honesty red line | `enforced` | Synthetic, in-memory, doc-only or file-backed proof is not counted as staging, production or true DB proof. |
+| GA-0 decision | `no_go_keep_locked` | Checklist is not green and no owner explicit GA-0 approval is recorded. |
+
 ## Dependencies And Serial Points
 
 - M6B-01 precedes M6B-02 and M6B-03.
@@ -178,9 +194,9 @@ Sentry is optional/deferred through `UZMAX_SENTRY_DSN`. Until the ops alert bot 
 - DB schema, migrations, RLS policy, lockfile, shared config, CI/guard, generated artifacts and release gates remain global serial points.
 - M6B-05a is serial with anything touching `apps/api`, `apps/worker` or DB gateway paths.
 
-## Validation
+## Historical M6B-00 Validation
 
-Recorded from the assigned worktree on 2026-06-26.
+The following table is the original M6B-00 contract PR validation record from 2026-06-26. It is preserved as history and is not the current M6B rollup validation. Current M6B-09 validation lives in `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md`.
 
 | Command | Result | Notes |
 |---|---|---|
@@ -192,16 +208,15 @@ Recorded from the assigned worktree on 2026-06-26.
 | `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/forbidden-terms.mjs` | pass | `forbidden-terms: ok`. |
 | `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/prettier-ignore-boundary.mjs --base origin/main` | pass | Baseline and monitored diff checks passed. |
 | `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /Users/atilla/Applications/UZMAX智能运营/node_modules/prettier/bin/prettier.cjs --check docs/specs/M6B-00-ga0-runtime-bring-up-contract.md docs/evidence/M6B/README.md` | pass | Both Markdown files use Prettier style. |
-| `rg --files docs/specs docs/evidence \| rg 'M6B-0[1-9]\|m6b-0[1-9]'` | pass | No M6B-01 through M6B-09 spec/evidence files were created. |
+| `rg --files docs/specs docs/evidence \| rg 'M6B-0[1-9]\|m6b-0[1-9]'` | pass | Historical M6B-00-only check: no M6B-01 through M6B-09 spec/evidence files existed before later M6B slices. |
 | `git diff --cached --name-status` | pass | Only `docs/evidence/M6B/README.md` and `docs/specs/M6B-00-ga0-runtime-bring-up-contract.md` are staged. |
 | `git diff --cached --check` | pass | No whitespace errors. |
 | `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M6B-00-ga0-runtime-bring-up-contract.md` | pass | Diff has 2 docs files, 0 source files, 0 net source LOC and 0 new source files. |
 
-## Boundaries
+## Current Boundaries
 
-M6B-00 does not approve:
+M6B as currently indexed through M6B-09 does not approve:
 
-- M6B-01 through M6B-09 implementation;
 - GA-0 opening;
 - production deployment;
 - real customer/order data;
@@ -209,10 +224,12 @@ M6B-00 does not approve:
 - production Redis/worker/cron deployment;
 - real Bot token/webhook secret;
 - Telegram Business automatic reply;
+- real Telegram staging webhook/setWebhook;
+- backup/restore execution;
 - outbound Bot sending;
 - P1 risk acceptance or P2 backlog classification;
 - 1.0 release.
 
 ## Closeout / Incident Record
 
-No new incident was created by M6B-00. Final PR closeout must confirm branch hygiene and open PR audit before merge.
+No new incident was recorded by M6B-00. M6B-09 records the current rollup and keeps GA-0 locked pending owner-gated M6B-04/06/07/08 evidence and explicit owner approval.

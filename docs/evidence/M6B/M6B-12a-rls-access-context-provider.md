@@ -24,6 +24,7 @@ This is code unblock evidence only. It does not claim live Render `/readyz` 200 
 | Authz request contract | pass | `AccessContextRequest` now accepts optional `selectedOrgId`; `buildAccessContext` rejects an org mismatch. |
 | API request parsing | pass | API reads `org_id` from `x-org-id`, query, or body while preserving existing `tenant_id` behavior. |
 | RLS Prisma authz provider | pass | `RlsPrismaAuthzRepository` requires `org_id`, creates the existing RLS transaction context, runs `SET LOCAL ROLE`, sets `app.org_id` and `app.tenant_id`, then reads `tenant_member` and `permission_grant`. |
+| Runtime compiler mapping | pass | API runtime compiler maps the new `access-context.ts` imports for `packages/authz/src/index.ts` and `packages/db/src/index.ts` into the compiled smoke module directory. |
 | Fail-closed missing org | pass | Focused test rejects DB-backed authz facts without `org_id`. |
 | Default disabled runtime | pass | Default authz/identity readiness remains fail-closed without env. |
 | Regression coverage | pass | M1 access-context shell regression still passes. |

@@ -37,6 +37,7 @@ AI agent: keep the change scoped to API authz context generation, preserve fail-
 
 - `apps/api/src/access-context.ts`
 - `apps/api/src/access-context-core.ts`
+- `apps/api/scripts/runtime-compiler.mjs`
 - `packages/authz/src/index.ts`
 - `scripts/tests/m6b-api-authz-readiness.test.mjs`
 - `docs/specs/M6B-12a-rls-access-context-provider.md`
@@ -45,7 +46,7 @@ AI agent: keep the change scoped to API authz context generation, preserve fail-
 
 ## 变更预算与路径分类
 
-- Source budget: changed source files <= 3, net source LOC <= 160, new source files = 0.
+- Source budget: changed source files <= 4, net source LOC <= 180, new source files = 0.
 - Test budget: changed test files <= 1.
 - Docs budget: 3 files.
 - Generated/lock/config: none.
@@ -57,7 +58,8 @@ AI agent: keep the change scoped to API authz context generation, preserve fail-
 2. Read `org_id` from `x-org-id`, query, or body while keeping tenant selection unchanged.
 3. Make the RLS Prisma authz repository require `org_id` and set `SET LOCAL ROLE` plus `app.org_id` / `app.tenant_id` in the same Prisma transaction before reading authz facts.
 4. Preserve default disabled/fail-closed authz and identity behavior.
-5. Update focused tests for explicit RLS setup and missing org fail-closed behavior.
+5. Keep API runtime compiler mappings in sync for smoke harnesses that import compiled runtime modules.
+6. Update focused tests for explicit RLS setup and missing org fail-closed behavior.
 
 ## 通过条件
 

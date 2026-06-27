@@ -73,6 +73,8 @@ export async function compileApiRuntime(options = {}) {
     }
   );
   await writeModule(outDir, "apps/api/src/access-context.ts", "access-context.mjs", {
+    "../../../packages/authz/src/index.ts": "./authz-index.mjs",
+    "../../../packages/db/src/index.ts": "./db-index.mjs",
     "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
     "./access-context-core.ts": "./access-context-core.mjs"
   });

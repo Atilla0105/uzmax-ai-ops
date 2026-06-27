@@ -65,6 +65,8 @@ This rollup does not approve GA-0, production deployment, real Telegram traffic,
 
 M6B-11 records the closeout boundary: M6/M6B are closed for the current evidence/runtime-hardening package, while LAY-19, LAY-23 and LAY-24 remain open as GA-0 Activation / Runtime Owner-Gated blockers. LAY-30 remains a LAY-19 child blocker for live `/readyz` identity/authz activation and is not a replacement mainline task.
 
+M6B-12a and M6B-12b are follow-up unblocking slices for LAY-30: M6B-12a wires the RLS-backed access-context provider, and M6B-12b adds Prisma generation to Render Node service build commands after staging deploy `dep-d8voptlaeets73daij5g` failed on ungenerated `@prisma/client`. They do not open GA-0 and do not close LAY-30 without live `/readyz` 200 plus synthetic authz proof.
+
 ## M6-03 Queue Failure Injection
 
 The M6-03 queue drill records J-02 support from the existing M4-45 BullMQ/Redis order-import smoke:

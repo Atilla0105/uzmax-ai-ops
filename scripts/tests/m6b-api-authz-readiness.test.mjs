@@ -65,6 +65,7 @@ const apiAdapterUrl = await transpileModule("apps/api/src/access-context.ts", {
   "@nestjs/core": nestCoreUrl,
   "@supabase/supabase-js": supabaseUrl,
   "../../../packages/authz/src/index.ts": authzUrl,
+  "../../../packages/db/src/index.ts": dbIndexUrl,
   "../../../packages/db/src/prisma-runtime.ts": dbRuntimeUrl,
   "./access-context-core.ts": apiCoreUrl
 });
@@ -136,6 +137,7 @@ describe("M6B-10 API authz readiness provider wiring", () => {
     });
 
     const facts = await repository.loadAccessContextFacts({
+      selectedOrgId: ORG_ID,
       selectedTenantId: TENANT_A,
       userId: USER_ID
     });
@@ -154,6 +156,7 @@ describe("M6B-10 API authz readiness provider wiring", () => {
     });
 
     const context = await authz.resolveAccessContext(repository, {
+      selectedOrgId: ORG_ID,
       selectedTenantId: TENANT_A,
       userId: USER_ID
     });
@@ -163,21 +166,38 @@ describe("M6B-10 API authz readiness provider wiring", () => {
     await assert.rejects(
       () =>
         authz.resolveAccessContext(repository, {
+          selectedOrgId: ORG_ID,
           selectedTenantId: TENANT_B,
           userId: USER_ID
         }),
       /tenant membership is not active/
     );
+    await assert.rejects(
+      () =>
+        repository.loadAccessContextFacts({
+          selectedTenantId: TENANT_A,
+          userId: USER_ID
+        }),
+      /org_id is required/
+    );
     assert.deepEqual(
       prisma.calls.permissionQueries.map((where) => where.tenantId),
       [TENANT_A, TENANT_A, TENANT_B]
     );
+    assert.deepEqual(prisma.calls.transactionSetup.slice(-3), [
+      'set local role "uzmax_app_runtime"',
+      ["app.org_id", ORG_ID],
+      ["app.tenant_id", TENANT_B]
+    ]);
   });
 
   it("documents and wires AppModule through the env-selected provider", () => {
     assert.match(accessContextSource, /createAuthzRepositoryProviderFromEnv/);
     assert.match(accessContextSource, /tenantMember\.findMany/);
     assert.match(accessContextSource, /permissionGrant\.findMany/);
+    assert.match(accessContextSource, /createRlsTransactionContext/);
+    assert.match(accessContextSource, /\$executeRawUnsafe\(context\.roleSql\)/);
+    assert.match(accessContextSource, /set_config/);
     assert.match(accessContextSource, /UZMAX_API_AUTHZ_REPOSITORY_MODE/);
     assert.match(appModuleSource, /createAuthzRepositoryProviderFromEnv/);
     assert.doesNotMatch(
@@ -195,7 +215,7 @@ describe("M6B-10 API authz readiness provider wiring", () => {
 });
 
 function fakePrisma() {
-  const calls = { permissionQueries: [] };
+  const calls = { permissionQueries: [], transactionSetup: [] };
   const memberships = [
     {
       cacheVersion: 7,
@@ -238,6 +258,14 @@ function fakePrisma() {
           memberships.filter((row) => row.userId === args.where.userId)
         );
       }
+    },
+    $executeRawUnsafe(sql) {
+      calls.transactionSetup.push(sql);
+      return Promise.resolve(1);
+    },
+    $queryRaw(strings, ...values) {
+      calls.transactionSetup.push([values[0], values[1]]);
+      return Promise.resolve([{ set_config: values[1] }]);
     },
     async $transaction(operations) {
       return Promise.all(operations);

@@ -117,7 +117,11 @@ export class ApiAccessContextCore {
     delete request.accessContext;
     const token = readBearerToken(request.headers.authorization);
     const identity = await this.identityVerifier.verifyBearerToken(token);
-    const accessContext = await this.resolveContextOrDeny(identity, selectedTenantId);
+    const accessContext = await this.resolveContextOrDeny(
+      identity,
+      selectedTenantId,
+      readOptionalOrgId(request)
+    );
     request.accessContext = accessContext;
     return accessContext;
   }
@@ -130,6 +134,7 @@ export class ApiAccessContextCore {
 
     try {
       accessContext = await resolveAccessContext(this.authzRepository, {
+        selectedOrgId: readOptionalOrgId(request),
         selectedTenantId: requireTenantId(targetTenantId),
         userId: identity.userId
       });
@@ -255,10 +260,12 @@ export class ApiAccessContextCore {
 
   private async resolveContextOrDeny(
     identity: { userId: string },
-    selectedTenantId: string
+    selectedTenantId: string,
+    selectedOrgId?: string
   ): Promise<AccessContext> {
     try {
       return await resolveAccessContext(this.authzRepository, {
+        selectedOrgId,
         selectedTenantId: requireTenantId(selectedTenantId),
         userId: identity.userId
       });
@@ -322,6 +329,7 @@ export class ApiAccessContextCore {
   ) {
     try {
       return await resolveAccessContext(this.authzRepository, {
+        selectedOrgId: readOptionalOrgId(request),
         selectedTenantId: readTenantId(request),
         userId: actorUserId
       });
@@ -347,6 +355,28 @@ function readTenantId(request: ApiRequest): string {
   const value = Array.isArray(header) ? header[0] : header;
   const fallback = Array.isArray(query) ? query[0] : query;
   return requireTenantId(value ?? fallback ?? readTenantIdFromBody(request.body));
+}
+
+function readOptionalOrgId(request: ApiRequest): string | undefined {
+  const candidate =
+    readFirstValue(request.headers["x-org-id"]) ??
+    readFirstValue(request.query?.org_id) ??
+    readBodyOrgId(request.body);
+  if (candidate === undefined) return undefined;
+  if (typeof candidate !== "string") {
+    throw new ApiAccessError(400, "org_id must be a string");
+  }
+  const trimmed = candidate.trim();
+  return trimmed || undefined;
+}
+
+function readFirstValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function readBodyOrgId(body: unknown): unknown {
+  if (!body || typeof body !== "object") return undefined;
+  return (body as { org_id?: unknown }).org_id;
 }
 
 export function readTenantIdFromBody(body: unknown): string {

@@ -34,6 +34,7 @@
 | M6B-09a | `docs/evidence/M6B/M6B-09a-post-live-staging-evidence-sync.md` | `ready_for_review_post_live_staging_evidence_synced_not_ga0` | Docs-only post-live sync: LAY-22 and LAY-27 are Done within scope; durable staging API and test bot webhook hygiene are recorded; `/readyz`, worker/cron heartbeat, alert fire proof, rollback, restore and GA-0 remain open. |
 | M6B-10 | `docs/evidence/M6B/M6B-10-api-staging-identity-authz-readiness.md` | `implementation_ready_live_env_blocked_not_ga0` | API authz repository wiring is env-selected instead of hard-wired disabled; default remains fail-closed. Live `/readyz` 200 is not claimed without owner-gated Supabase/Auth/RLS env and fact rows. |
 | M6B-11 | `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` | `m6_closed_as_evidence_runtime_hardening_package_ga0_no_go` | Docs-only closeout sync: M6/M6B close as the current evidence/runtime-hardening package; LAY-19, LAY-23 and LAY-24 move forward as GA-0 Activation / Runtime Owner-Gated blockers. |
+| M6B-12a | `docs/evidence/M6B/M6B-12a-rls-access-context-provider.md` | `code_unblock_passed_live_render_validation_pending_not_ga0` | Code fix for the RLS-backed API authz provider: request org context is read and the Prisma authz repository sets RLS role/context before reading facts. Live Render `/readyz` and synthetic access-context smoke remain pending. |
 
 ## Summary
 

@@ -70,6 +70,8 @@ M6B-12a and M6B-12b are follow-up unblocking slices for LAY-30: M6B-12a wires th
 
 M6B-14 added the minimal Vercel project configuration needed for the admin deploy target. Vercel deployment `dpl_FUymF9iFuZ8WMRe17UTDHLbp7Prg` reached READY for `uzmax-admin`, the admin HTML loaded from the preview URL, and the protected bundle still contained the locked/disabled GA-0 action state. This was prerequisite evidence for LAY-23; M6B-17 later records the full API/worker/cron/admin rollback drill closure. Neither slice opens GA-0.
 
+M6B-16 records a safe restore target drill for LAY-24 using a Supabase branch restore target with `with_data=false`. The branch schema/RLS smoke passed with synthetic rows and wrong-tenant isolation, then the temporary branch was deleted to stop ongoing cost and avoid any runtime attachment. This closes the safe branch target proof but does not claim PITR, production backup restore, production data restore, GA-0 or 1.0 approval.
+
 ## M6-03 Queue Failure Injection
 
 The M6-03 queue drill records J-02 support from the existing M4-45 BullMQ/Redis order-import smoke:

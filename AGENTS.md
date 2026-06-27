@@ -17,6 +17,13 @@
 - 技术、AI、运营、设计/前端、DevOps 是检查视角和工作类型，不是多人签字卡点。
 - AI agents 不得替项目 owner 做最终范围、发布、真实账号、真实客户数据、LLM key、成本和合规风险决策。
 
+### 2A. Design Skill Layer
+
+- UZMAX 缺省设计能力层是项目级 Impeccable / Design Skill Layer；它不是普通 lint，也不是项目 owner。
+- 后台 UI 的布局、密度、视觉层级、交互状态、loading/empty/error/permission/degraded、移动兜底、组件表达和微文案形态，默认采纳 Design Skill Layer 的判断。
+- 若 Design Skill Layer 与本文件、PRD v1.1、技术架构 v1.1、后台设计与前端架构 v1.1、验收矩阵 v1.1、权限、安全、RLS、发布 gate、真实业务事实、真实账号/客户数据、LLM key、成本或合规边界冲突，UZMAX source-of-truth 和项目 owner 决策边界优先。
+- UI spec 必须记录 Impeccable shape/critique/detect 或等价设计审计的采纳、拒绝和拒绝理由；拒绝设计建议只能基于明确治理、安全、权限、验收、性能或业务事实边界。
+
 ## 3. Dependency Rules
 
 本节是 `UZMAX智能运营系统-技术架构-v1.1.md` §2.1 的高频执行镜像；若发生冲突，以技术架构 §2.1 为准，并在 M0-01 校准本节。

@@ -1,0 +1,21 @@
+{
+  "hook": {
+    "enabled": false,
+    "quiet": true,
+    "auditLog": ".impeccable/hook.ndjson"
+  },
+  "detector": {
+    "designSystem": {
+      "enabled": true
+    },
+    "ignoreFiles": [
+      ".agents/**",
+      ".codex/**",
+      ".impeccable/**",
+      "apps/admin/dist/**",
+      "node_modules/**"
+    ],
+    "ignoreRules": [],
+    "ignoreValues": []
+  }
+}

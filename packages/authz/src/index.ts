@@ -26,6 +26,7 @@ export type AccessContext = {
 };
 
 export type AccessContextRequest = {
+  selectedOrgId?: string;
   selectedTenantId: string;
   userId: string;
 };
@@ -73,6 +74,9 @@ export function buildAccessContext(
 
   if (!selected) {
     throw new AuthzError("tenant_access_denied", "tenant membership is not active");
+  }
+  if (request.selectedOrgId && selected.orgId !== request.selectedOrgId) {
+    throw new AuthzError("tenant_access_denied", "tenant org does not match");
   }
 
   return {

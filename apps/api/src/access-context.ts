@@ -30,6 +30,7 @@ import {
   createUzmaxPrismaClientFromEnv,
   type UzmaxPrismaRuntimeEnv
 } from "../../../packages/db/src/prisma-runtime.ts";
+import { createRlsTransactionContext } from "../../../packages/db/src/index.ts";
 import {
   ApiAccessContextCore,
   ApiAccessError,
@@ -53,11 +54,14 @@ type PrismaAuthzDelegate = {
   findMany(args: Record<string, unknown>): Promise<PrismaAuthzRow[]>;
 };
 type PrismaAuthzClientPort = {
+  $executeRawUnsafe(sql: string): Promise<unknown>;
+  $queryRaw(
+    strings: TemplateStringsArray,
+    ...values: readonly unknown[]
+  ): Promise<unknown>;
   permissionGrant: PrismaAuthzDelegate;
   tenantMember: PrismaAuthzDelegate;
-  $transaction(
-    operations: readonly Promise<PrismaAuthzRow[]>[]
-  ): Promise<[PrismaAuthzRow[], PrismaAuthzRow[]]>;
+  $transaction(operations: readonly Promise<unknown>[]): Promise<unknown[]>;
 };
 
 function RequirePermission(permission: string) {
@@ -109,37 +113,47 @@ export class RlsPrismaAuthzRepository implements AuthzRepository {
   constructor(private readonly prisma: PrismaAuthzClientPort) {}
 
   async loadAccessContextFacts(request: {
+    selectedOrgId?: string;
     selectedTenantId: string;
     userId: string;
   }): Promise<AccessContextFacts> {
-    const [memberships, grants] = await this.prisma.$transaction([
-      this.prisma.tenantMember.findMany({
-        orderBy: [{ orgId: "asc" }, { tenantId: "asc" }],
-        select: {
-          cacheVersion: true,
-          orgId: true,
-          role: true,
-          status: true,
-          tenantId: true,
-          userId: true
-        },
-        where: { userId: request.userId }
-      }),
-      this.prisma.permissionGrant.findMany({
-        orderBy: [{ permission: "asc" }],
-        select: {
-          orgId: true,
-          permission: true,
-          tenantId: true,
-          userId: true
-        },
-        where: {
-          tenantId: request.selectedTenantId,
-          tenantMember: { status: "ACTIVE" },
-          userId: request.userId
-        }
-      })
-    ]);
+    const selectedOrgId = requireSelectedOrgId(request.selectedOrgId);
+    const context = createRlsTransactionContext({
+      orgId: selectedOrgId,
+      tenantId: request.selectedTenantId
+    });
+    const [memberships, grants] = (
+      await this.prisma.$transaction([
+        this.prisma.$executeRawUnsafe(context.roleSql),
+        ...context.settings.map((setting) => setRlsConfig(this.prisma, setting)),
+        this.prisma.tenantMember.findMany({
+          orderBy: [{ orgId: "asc" }, { tenantId: "asc" }],
+          select: {
+            cacheVersion: true,
+            orgId: true,
+            role: true,
+            status: true,
+            tenantId: true,
+            userId: true
+          },
+          where: { userId: request.userId }
+        }),
+        this.prisma.permissionGrant.findMany({
+          orderBy: [{ permission: "asc" }],
+          select: {
+            orgId: true,
+            permission: true,
+            tenantId: true,
+            userId: true
+          },
+          where: {
+            tenantId: request.selectedTenantId,
+            tenantMember: { status: "ACTIVE" },
+            userId: request.userId
+          }
+        })
+      ])
+    ).slice(-2) as [PrismaAuthzRow[], PrismaAuthzRow[]];
 
     return {
       permissionGrants: grants.map(toPermissionGrant),
@@ -150,6 +164,24 @@ export class RlsPrismaAuthzRepository implements AuthzRepository {
   readinessStatus() {
     return "configured" as const;
   }
+}
+
+function requireSelectedOrgId(value: string | undefined): string {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    throw new ApiAccessError(400, "org_id is required for RLS authz repository");
+  }
+  return trimmed;
+}
+
+function setRlsConfig(
+  prisma: Pick<PrismaAuthzClientPort, "$queryRaw">,
+  setting: { key: string; value: string }
+) {
+  if (setting.key !== "app.org_id" && setting.key !== "app.tenant_id") {
+    throw new Error("API authz RLS setting is required");
+  }
+  return prisma.$queryRaw`select set_config(${setting.key}, ${setting.value}, true)`;
 }
 
 @Injectable()

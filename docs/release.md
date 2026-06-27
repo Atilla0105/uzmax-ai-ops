@@ -68,6 +68,8 @@ M6B-11 records the historical closeout boundary. M6B-17 updates the current trut
 
 M6B-12a and M6B-12b are follow-up unblocking slices for LAY-30: M6B-12a wires the RLS-backed access-context provider, and M6B-12b adds Prisma generation to Render Node service build commands after staging deploy `dep-d8voptlaeets73daij5g` failed on ungenerated `@prisma/client`. LAY-30 is now Done with live `/readyz` 200 plus synthetic authz proof recorded outside git; these slices still do not open GA-0.
 
+M6B-14 added the minimal Vercel project configuration needed for the admin deploy target. Vercel deployment `dpl_FUymF9iFuZ8WMRe17UTDHLbp7Prg` reached READY for `uzmax-admin`, the admin HTML loaded from the preview URL, and the protected bundle still contained the locked/disabled GA-0 action state. This was prerequisite evidence for LAY-23; M6B-17 later records the full API/worker/cron/admin rollback drill closure. Neither slice opens GA-0.
+
 ## M6-03 Queue Failure Injection
 
 The M6-03 queue drill records J-02 support from the existing M4-45 BullMQ/Redis order-import smoke:

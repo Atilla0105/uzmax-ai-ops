@@ -12,6 +12,7 @@ This document records the current repo release-gate contract. It is not a produc
 | Current M6 entry | `docs/evidence/M6/README.md` |
 | Current M6B runtime rollup | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` |
 | Current M6 no-go closeout | `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
+| Current external-input closure | `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
 | Admin gate contract | `apps/admin/src/releaseGateContracts.ts` |
 
 ## Current Boundary
@@ -25,7 +26,7 @@ GA-0 remains locked. The admin console may show current gate state and evidence 
 
 1.0 remains blocked until all P0 acceptance items pass and P1/P2 handling matches the acceptance matrix.
 
-M6 is closed as an evidence/runtime-hardening package. This closeout is not a GA-0 open decision and not a 1.0 readiness decision. Remaining LAY-19, LAY-23 and LAY-24 work is tracked as GA-0 Activation / Runtime Owner-Gated, not as unfinished M6 execution.
+M6 is closed as an evidence/runtime-hardening package. This closeout is not a GA-0 open decision and not a 1.0 readiness decision. LAY-19, LAY-23, LAY-24 and LAY-30 are now Done from staging/test-only evidence; this clears the external-input blocker class, but it does not by itself open GA-0.
 
 ## M6-01 Console Contract
 
@@ -41,14 +42,14 @@ Evidence links in the admin shell are repo paths only. They are not sensitive ar
 
 ## M6-02 Runtime Baseline
 
-The M6-02 runtime baseline records deploy/rollback readiness from repo manifests and app package commands. M6B later replaced the API/worker/cron placeholder starts with emitted-artifact starts, but real staging deploy and rollback drills remain blocked:
+The M6-02 runtime baseline records deploy/rollback readiness from repo manifests and app package commands. M6B later replaced the API/worker/cron placeholder starts with emitted-artifact starts, and M6B-17 records the live staging deploy/rollback closure:
 
-- api: Render service definition exists; `@uzmax/api` now builds an emitted artifact and `start` boots `dist/apps/api/src/main.js`; local `/healthz` and fail-closed `/readyz` evidence is recorded by M6B-01; real staging deploy/rollback is still pending.
-- worker: Render service definition exists; `@uzmax/worker` now builds an emitted artifact and `start` boots `dist/apps/worker/src/main.js`; local Redis-backed worker evidence is recorded by M6B-02; staging worker deploy/rollback is still pending.
-- cron: Render service definition exists; `@uzmax/cron` now builds an emitted artifact and `start` boots `dist/apps/cron/src/main.js`; local one-shot/idempotency evidence is recorded by M6B-03; staging cron deploy/rollback is still pending.
-- admin: Vercel project and app build/start scripts exist; deployment strategy and rollback drill remain owner-pending.
+- api: Render `uzmax-api-staging` ends on `main` / `4de3f9a`; `/healthz` 200, `/readyz` 200 and missing-secret webhook 401 passed after A rollback.
+- worker: Render `uzmax-worker-staging` ends on `main` / `4de3f9a`; `worker.ready` and controlled webhook completion passed after A rollback.
+- cron: Render `uzmax-cron-staging` ends on `main` / `4de3f9a`; final A run preserved idempotency with `daily_unit_already_completed`.
+- admin: Vercel `uzmax-admin` preview rollback ended on deployment `dpl_FF8arhXgtBXmcr9p7T2LfQfSsQ4t`, `target=null`; no production promotion occurred.
 
-`docs/runbooks/deploy-rollback.md` now covers api, worker, cron and admin rollback dry-run evidence. This does not close J-01, because real rollback drills and owner/platform decisions remain open.
+`docs/runbooks/deploy-rollback.md` covers api, worker, cron and admin rollback paths. M6B-17 closes the staging/test rollback drill evidence; production release remains unapproved.
 
 ## M6B Runtime Rollup
 
@@ -59,13 +60,13 @@ The M6B runtime rollup records the current post-M6 bring-up state:
 - M6B-01, M6B-02 and M6B-03 have local emitted-artifact evidence for API, worker and cron.
 - M6B-05a has CI true DB/RLS Bot conversation runtime evidence.
 - M6B-05b has local webhook-equivalent contract evidence without claiming webhook-driven true DB closure.
-- M6B-04, M6B-06, M6B-07 and M6B-08 remain blocked by missing owner-gated staging, Telegram, rollback and restore inputs.
+- M6B-17 later clears the external-input blocker class: LAY-19, LAY-23, LAY-24 and LAY-30 are Done from staging/test-only evidence.
 
 This rollup does not approve GA-0, production deployment, real Telegram traffic, outbound Bot sending, backup/restore execution, real customer/order data, customer LLM/provider use, P1/P2 risk classification or 1.0 release.
 
-M6B-11 records the closeout boundary: M6/M6B are closed for the current evidence/runtime-hardening package, while LAY-19, LAY-23 and LAY-24 remain open as GA-0 Activation / Runtime Owner-Gated blockers. LAY-30 remains a LAY-19 child blocker for live `/readyz` identity/authz activation and is not a replacement mainline task.
+M6B-11 records the historical closeout boundary. M6B-17 updates the current truth: LAY-19, LAY-23, LAY-24 and LAY-30 are Done from live staging/test evidence, so the external-input blocker class is cleared. GA-0 remains locked until the project owner explicitly opens it and any remaining non-external release conditions are closed.
 
-M6B-12a and M6B-12b are follow-up unblocking slices for LAY-30: M6B-12a wires the RLS-backed access-context provider, and M6B-12b adds Prisma generation to Render Node service build commands after staging deploy `dep-d8voptlaeets73daij5g` failed on ungenerated `@prisma/client`. They do not open GA-0 and do not close LAY-30 without live `/readyz` 200 plus synthetic authz proof.
+M6B-12a and M6B-12b are follow-up unblocking slices for LAY-30: M6B-12a wires the RLS-backed access-context provider, and M6B-12b adds Prisma generation to Render Node service build commands after staging deploy `dep-d8voptlaeets73daij5g` failed on ungenerated `@prisma/client`. LAY-30 is now Done with live `/readyz` 200 plus synthetic authz proof recorded outside git; these slices still do not open GA-0.
 
 ## M6-03 Queue Failure Injection
 
@@ -154,7 +155,7 @@ The M6-09 final acceptance package records the owner-review posture from current
 - GA-0 status is `no_go_recommended_owner_decision_pending`; GA-0 remains closed.
 - 1.0 status is `blocked_p0_gaps_open`.
 - M6-00 through M6-08 evidence is linked from `docs/evidence/M6/M6-09-final-acceptance-rollup.md`.
-- J-01 real deploy/rollback drills, J-03 backup/restore, L-02 real Bot leave-ticket drill, staging Bot/worker/outbound behavior, G-04 blind review, G-06 full >=200 eval set, H-01/H-05/H-06 knowledge/asset gaps and D-06/I-03/I-04/I-05 final quality gates remain open or owner-decision-required.
+- L-02 real Bot leave-ticket/outbound behavior, G-04 blind review, G-06 full >=200 eval set, H-01/H-05/H-06 knowledge/asset gaps and D-06/I-03/I-04/I-05 final quality gates remain open or owner-decision-required. J-01 deploy/rollback and J-03 safe restore are no longer blocked on missing external input after M6B-17.
 - No P1 risk signoff, fix date, impact note or P2 backlog classification is recorded in repo evidence.
 - M6-09 validation is tracked in `docs/evidence/M6/M6-09-final-acceptance-rollup.md`.
 

@@ -21,3 +21,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .vercel
+
+# Impeccable local/runtime outputs. Shared detector config may be committed.
+.impeccable/config.local.json
+.impeccable/cache/
+.impeccable/hook.ndjson
+.impeccable/*.log
+
+# Vendored Impeccable tool scripts are committed as skill assets, not UZMAX source.
+.agents/skills/impeccable/scripts/**

@@ -9,6 +9,8 @@ const files = {
   spec: "docs/specs/M6-08-backup-restore-asset-safety.md",
   evidence: "docs/evidence/M6/M6-08-backup-restore-asset-safety.md",
   m6Readme: "docs/evidence/M6/README.md",
+  m6b16: "docs/evidence/M6B/M6B-16-safe-restore-drill.md",
+  m6b17: "docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md",
   release: "docs/release.md",
   runbook: "docs/runbooks/backup-restore.md",
   runbookIndex: "docs/runbooks/README.md",
@@ -74,14 +76,22 @@ test("M6-08 maps backup restore and asset safety acceptance items", () => {
   }
 });
 
-test("J-03 is blocked by missing safe restore target instead of overclaimed", () => {
+test("J-03 preserves M6-08 historical blocker and points to M6B closure", () => {
   assert.match(contents.supabaseManifest, /staging.*pending/s);
   assert.match(contents.supabaseManifest, /prod.*pending/s);
   assert.match(contents.evidence, /external_blocker_safe_restore_target_missing/);
+  assert.match(contents.evidence, /J-03 M6-08 snapshot status/);
   assert.match(contents.evidence, /safe restore target.*missing/i);
   assert.match(contents.evidence, /backup snapshot.*missing/i);
   assert.match(contents.evidence, /restore command.*not_run/i);
-  assert.doesNotMatch(contents.evidence, /J-03.*closed/i);
+  assert.match(
+    contents.evidence,
+    /M6B-16\/M6B-17 later close the safe branch target proof/
+  );
+  assert.match(contents.m6b16, /safe restore target/i);
+  assert.match(contents.m6b16, /not a PITR drill and does not restore production data/);
+  assert.match(contents.m6b17, /LAY-24\s*\|\s*Done/);
+  assert.match(contents.m6b17, /does not open GA-0/);
   assert.doesNotMatch(contents.evidence, /restore.*passed_true_db/i);
 });
 
@@ -163,7 +173,7 @@ test("M6-08 remains docs/test-only and records remaining gaps explicitly", () =>
     "H-01 full facts/journeys/stages/materials authoring",
     "H-05 real storage rebuild/token-rotation drill",
     "H-06 full quick-reply public/private library workflow",
-    "J-03 cannot close"
+    "Historical M6-08 gap"
   ]) {
     assert.match(contents.evidence, new RegExp(escaped(token)));
   }

@@ -4,10 +4,11 @@ Spec: `docs/specs/M6-08-backup-restore-asset-safety.md`
 Tracking issue: Linear LAY-13
 Status: `m6_backup_restore_asset_safety_recorded_j03_external_blocker_h05_h06_partial_not_ga0`
 Recorded: 2026-06-26
+Current-state note: this is historical M6 no-go evidence. M6B-16 and M6B-17 later supersede the missing safe restore target external-input blocker with an isolated Supabase safe branch drill. That later proof does not approve PITR, production backup restore, production data restore, GA-0 or 1.0 release.
 
 ## Boundary
 
-This evidence records current backup/restore and asset/material safety readiness from repo sources. It does not run a database restore or mutate Supabase. It does not approve production restore, GA-0, real customer/order data, customer LLM, real provider calls or 1.0 release.
+This evidence records the M6-08-time backup/restore and asset/material safety readiness from repo sources. It does not run a database restore or mutate Supabase. It does not approve production restore, GA-0, real customer/order data, customer LLM, real provider calls or 1.0 release.
 
 No raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, database URLs, service role keys, LLM keys, Bot tokens or webhook secrets are stored here.
 
@@ -31,13 +32,13 @@ No raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Tel
 
 ## Backup / Restore Status
 
-J-03 current status: `external_blocker_safe_restore_target_missing`.
+J-03 M6-08 snapshot status: `external_blocker_safe_restore_target_missing`.
 
 The repo has a dev Supabase project recorded as `uzmax-dev`, while staging and production are still `pending` in `docs/evidence/M0/infra/supabase-env-manifest.md`. No owner-approved safe restore target, backup snapshot ref, restore command output or post-restore validation output is recorded in repo evidence.
 
-Therefore M6-08 does not close J-03. It records the concrete blocker and the required safe drill evidence.
+Therefore M6-08 did not close J-03 at the time. It records the concrete blocker and the required safe drill evidence. Current GA-0 activation tracking must use M6B-16/M6B-17 for the later safe branch target proof; future PITR/production backup-specific restore evidence remains separate.
 
-| Required J-03 proof | Current repo status | Required next evidence |
+| Required J-03 proof | M6-08 snapshot status | Required next evidence |
 |---|---|---|
 | Owner-approved safe restore target | `missing` | Target project/ref, environment class and owner approval that it is safe to overwrite. |
 | Backup snapshot/source | `missing` | Backup snapshot/PITR marker, timestamp and source environment, with no secret values. |
@@ -70,7 +71,7 @@ No formal knowledge write occurs without the confirmation queue or a named appro
 | H-04 | `template_copy_runtime_supported_not_final_rollup` | M5R-06 proves DRAFT tenant-owned template-copy versions and no auto-overwrite. |
 | H-05 | `storage_ref_contract_supported_real_rebuild_drill_open` | M3/M6-08 runbook records `storageRef` as durable material body and Telegram `file_id` as cache/provider metadata; no real token-rotation/storage rebuild drill is recorded. |
 | H-06 | `quick_reply_template_copy_supported_full_library_open` | Quick-reply template copy path exists; full public/private quick-reply search/classification/import/export/permission flow remains open. |
-| J-03 | `external_blocker_safe_restore_target_missing` | Safe restore target, backup snapshot ref and restore command evidence are not recorded. |
+| J-03 | `historical_external_blocker_safe_restore_target_missing_superseded_by_m6b16_m6b17_for_safe_branch_target` | M6-08 did not record safe restore target, backup snapshot ref or restore command evidence. M6B-16/M6B-17 later close the safe branch target proof for GA-0 activation, not PITR or production restore. |
 | J-04 | `backup_restore_runbook_updated_partial` | `docs/runbooks/backup-restore.md` now covers safe target, validation, asset/material safety and failure branches. |
 | L-01 | `ga0_locked` | Backup/restore and asset-safety gaps keep GA-0 closed. |
 
@@ -78,7 +79,7 @@ No formal knowledge write occurs without the confirmation queue or a named appro
 
 | Class | Gap | Next owner |
 |---|---|---|
-| P0 before release | J-03 cannot close until owner provides or approves a safe restore target and backup snapshot/restore evidence. | Project owner + M6-09 or separate restore drill spec |
+| P0 before release | Historical M6-08 gap: J-03 could not close until owner provided or approved a safe restore target and backup snapshot/restore evidence. Current M6B-16/M6B-17 evidence closes the safe branch target branch only; PITR/production backup-specific restore evidence remains separate. | Project owner + future restore drill spec if production/PITR scope is opened |
 | P0/P1 classification | H-01 full facts/journeys/stages/materials authoring remains outside the limited config/template proof path. | M6-09 owner scope decision or future implementation spec |
 | P0/P1 classification | H-05 real storage rebuild/token-rotation drill is not recorded. | M6-09 owner scope decision or future asset recovery spec |
 | P0/P1 classification | H-06 full quick-reply public/private library workflow remains open. | M6-09 owner scope decision or future quick-reply spec |

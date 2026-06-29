@@ -2,6 +2,8 @@
 
 来源对齐：M0 架构与治理、SPK-03、SPK-04、LLM 数据处理、部署与运维验收。基础设施不是“后补条件”，是 Gate 0 前置输入。
 
+Current-state note（M7-01）：本清单记录 Gate 0/M0 前置 provisioning 口径。当前 staging/runtime/external-input closure truth 以后续 evidence 为准，尤其是 `docs/evidence/M6B/README.md` 和 `docs/release.md`；不得把这里的早期截止闸门文案当作当前阶段 blocker。
+
 ## 控制原则
 
 - 项目 owner 决定账号、密钥、成本和真实环境风险；AI agent 负责填 manifest、检查缺口、提出失败分支。

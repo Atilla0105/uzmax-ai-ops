@@ -2,13 +2,15 @@
 
 本目录保存里程碑、spike、评测、演练和项目 owner 确认证据的索引。真实敏感文件可以放在受控存储中，但这里必须保留 manifest、证据链接和确认状态。
 
+Evidence is append-only by default. Older milestone files may preserve historical no-go, blocked or owner-pending snapshots even after later evidence supersedes a blocker. Current release truth must be read from `docs/release.md` plus the latest relevant milestone index, currently `docs/evidence/M6B/README.md` for M6B runtime/external-input closure and `docs/evidence/M6/README.md` for the historical M6 package.
+
 ## Manifest 必填字段
 
 - `evidence_id`
 - `milestone`
 - `acceptance_items`
 - `owner`：项目 owner 决策点与 AI agent 产证据责任
-- `status`：`draft` / `ready_for_review` / `accepted` / `rejected` / `superseded`
+- `status`：`draft` / `ready_for_review` / `accepted` / `rejected` / `superseded`，或更精确的机器状态 token；索引文件必须说明 current truth 和 superseded boundary
 - `created_at`
 - `updated_at`
 - `source_files`
@@ -39,6 +41,10 @@
 - `GA-0/`：生产内测开闸 checklist、真实流量证据。
 - `M4/`：订单 API spike、导入主路径、客户资产。
 - `M5/`：蒸馏、确认队列、分析日志。
-- `M6/`：全链路演练、残项清零、正式发布签收。
+- `M5R/`：M5 运行时补证据、true integration closeout。
+- `M6/`：全链路演练、残项清零、历史 no-go/owner review package。
+- `M6B/`：GA-0 runtime bring-up、staging/test closure、external-input blocker rollup。
+- `M7/`：post-M6B current-state alignment、release-gate/docs/admin hygiene。
+- `incidents/`：写入越界、门禁绕过、secret/customer-data 边界等过程事故记录。
 
 每个里程碑关闭时必须归档证据；不得集中堆到 M6。

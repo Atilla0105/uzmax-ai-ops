@@ -20,18 +20,26 @@ test("release gate contract reflects M6 entry without stale milestone state", ()
   const state = releaseContracts.releaseGateConsoleState;
   assert.equal(state.ga0Action.disabled, true);
   assert.match(state.summary, /M5 evidence is owner accepted/);
+  assert.match(
+    state.summary,
+    /M6 is closed as an evidence\/runtime-hardening no-go package/
+  );
+  assert.match(state.summary, /external-input blockers are cleared/);
   assert.match(state.summary, /GA-0 and 1\.0 remain locked/);
+  assert.doesNotMatch(state.summary, /M6 release hardening is in progress/);
 
   const gates = new Map(state.rows.map((row) => [row.gate, row]));
-  assert.equal(gates.get("M1")?.state, "Accepted");
-  assert.equal(gates.get("M5")?.owner, "accepted for milestone evidence");
-  assert.equal(gates.get("M6")?.state, "In progress");
-  assert.match(gates.get("GA-0")?.blocker ?? "", /L-01 checklist not green/);
-  assert.match(gates.get("1.0")?.blocker ?? "", /P0\/P1\/P2 rollup/);
+  assert.equal(getGate(gates, "M1").state, "Accepted");
+  assert.equal(getGate(gates, "M5").owner, "accepted for milestone evidence");
+  assert.equal(getGate(gates, "M6").state, "Closed");
+  assert.match(getGate(gates, "M6").blocker, /GA-0 remains locked/);
+  assert.match(getGate(gates, "M6").source, /M6B-17 external-input rollup/);
+  assert.match(getGate(gates, "GA-0").blocker, /L-01 checklist not green/);
+  assert.match(getGate(gates, "1.0").blocker, /P0\/P1\/P2 rollup/);
 
   for (const gate of ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "GA-0", "1.0"]) {
     assert.ok(gates.has(gate), `missing ${gate}`);
-    assert.ok(gates.get(gate)?.evidenceHref, `missing evidence for ${gate}`);
+    assert.ok(getGate(gates, gate).evidenceHref, `missing evidence for ${gate}`);
   }
 });
 
@@ -56,6 +64,12 @@ test("M6-01 docs record release-console scope and boundaries", () => {
 
 function read(relativePath) {
   return readFileSync(path.join(repoRoot, relativePath), "utf8");
+}
+
+function getGate(gates, gate) {
+  const row = gates.get(gate);
+  assert.ok(row, `missing ${gate}`);
+  return row;
 }
 
 async function tsModule(relativePath) {

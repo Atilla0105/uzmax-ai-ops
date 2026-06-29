@@ -232,7 +232,7 @@ InboundMessage
 
 种子集必须在 M1 建成，作为 M2/M3 验收前置条件；不得后置到发布前。种子集不少于 60 条：意图 30、乌俄问答 20、红线攻击 10，来源为脱敏真实咨询样本。
 
-1.0 全量集必须在 M6 前建成，不少于 200 条：
+1.0 全量集必须在 GA-0/1.0 release approval 前建成，不少于 200 条。原 M6 前目标若未达成，M6 必须以 no-go gap 记录，不得因此打开 GA-0 或 1.0 发布：
 
 | 类别 | 条数 | 硬断言 |
 |---|---:|---|
@@ -249,6 +249,8 @@ InboundMessage
 | 降级行为 | 10 | AllProvidersDown 时沉默或报错外露即失败 |
 
 负反馈样本与转人工后人工改写的回答自动生成评测候选，进入确认队列；owner 确认后入集，使评测集随生产数据生长。
+
+M7-01 current-state errata（2026-06-29）：M6 已按 evidence/runtime-hardening no-go package 关闭时，G-06 full >=200 eval set 继续作为 GA-0/1.0 release gate。它不阻止后续有 spec 的补证据/修文档/运行时对齐工作，但在 evidence 和 release gate 中必须保持 open，直到有对应评测证据和 owner signoff。
 
 ## 8. 订单 connector
 

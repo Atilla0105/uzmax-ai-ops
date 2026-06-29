@@ -136,25 +136,26 @@ The M6-07 core operations record maps A/D/E/H/I release-readiness status to one 
 
 This record does not approve a new live production E2E, GA-0, real customer/order data, production worker/queue deployment, customer LLM, external SaaS onboarding or 1.0 release. D-06 anonymization, H-01 broad authoring, H-05 asset recovery, H-06 full quick-reply flow, I-03 performance, I-04 realtime, I-05 visual/token release evidence, backup/restore and final P0/P1/P2 owner rollup remain open release gaps.
 
-## M6-08 Backup Restore And Asset Safety
+## M6-08 Backup Restore And Asset Safety (Historical M6 Snapshot)
 
-Current status token: `m6_backup_restore_asset_safety_recorded_j03_external_blocker_h05_h06_partial_not_ga0`.
+Historical M6 status token: `m6_backup_restore_asset_safety_recorded_j03_external_blocker_h05_h06_partial_not_ga0`.
 
-The M6-08 record maps backup/restore and asset/material safety status to current repo evidence:
+The M6-08 record preserves the M6-time backup/restore and asset/material safety snapshot. Its J-03 external-input blocker conclusion is superseded for current GA-0 activation tracking by M6B-16 and M6B-17, which record a staging/test-only safe restore target proof. M6-08 still remains valid historical no-go evidence and does not claim PITR, production backup restore, production data restore, GA-0 or 1.0 approval.
 
-- J-03 remains blocked because no owner-approved safe restore target, backup snapshot ref or restore command output is recorded in repo evidence.
+- At M6-08 recording time, J-03 was blocked because no owner-approved safe restore target, backup snapshot ref or restore command output was recorded in repo evidence.
+- M6B-16/M6B-17 later clear the missing safe restore target external-input blocker for GA-0 activation evidence with an isolated Supabase safe branch drill.
 - `docs/runbooks/backup-restore.md` now records safe target requirements, forbidden production overwrite, post-restore RLS/audit/config/storage checks and failure branches.
 - M3 media/vision contracts keep `storageRef` as the durable material body pointer; Telegram `file_id` remains cache/provider metadata.
 - M5R-02 and M5R-06 record confirmation/formal-write and template-copy DRAFT safety: no broad formal knowledge/config/template write is approved without confirmation or a named proof path.
 - H-01/H-05/H-06 remain partial/open where the repo lacks full authoring, real storage rebuild/token-rotation drill and full quick-reply public/private library workflow.
 
-This record does not approve a database restore, production mutation, GA-0, real customer/order data, customer LLM, external SaaS onboarding or 1.0 release. A future real J-03 drill requires an owner-approved safe restore target and sanitized restore evidence.
+This record does not approve a database restore, production mutation, GA-0, real customer/order data, customer LLM, external SaaS onboarding or 1.0 release. Future PITR/production backup-specific restore evidence remains separate from the M6B-16/M6B-17 safe branch proof.
 
 ## M6-09 Final Acceptance Rollup
 
 Current status token: `m6_final_acceptance_rollup_recorded_no_go_recommended_owner_decision_pending_not_ga0`.
 
-The M6-09 final acceptance package records the owner-review posture from current repo evidence:
+The M6-09 final acceptance package is the historical M6 owner-review no-go snapshot. M6B-17 later amends the current external-input truth for J-01/J-03: those items are no longer blocked on missing owner/platform input, while GA-0 and 1.0 remain locked by owner decision and remaining non-external release conditions.
 
 - GA-0 status is `no_go_recommended_owner_decision_pending`; GA-0 remains closed.
 - 1.0 status is `blocked_p0_gaps_open`.

@@ -1,4 +1,4 @@
-type ReleaseGateState = "Accepted" | "In progress" | "Locked" | "Blocked";
+type ReleaseGateState = "Accepted" | "Closed" | "In progress" | "Locked" | "Blocked";
 
 export type ReleaseGateRow = {
   blocker: string;
@@ -17,7 +17,7 @@ export const releaseGateConsoleState = {
     label: "GA-0 open action locked"
   },
   summary:
-    "M5 evidence is owner accepted for milestone progress; M6 release hardening is in progress; GA-0 and 1.0 remain locked.",
+    "M5 evidence is owner accepted for milestone progress; M6 is closed as an evidence/runtime-hardening no-go package; external-input blockers are cleared; GA-0 and 1.0 remain locked.",
   rows: [
     {
       blocker: "none",
@@ -74,13 +74,14 @@ export const releaseGateConsoleState = {
       state: "Accepted"
     },
     {
-      blocker: "M6-02..M6-09 release drills open",
-      evidenceHref: "docs/evidence/M6/README.md",
-      evidenceLabel: "M6 readiness",
+      blocker:
+        "GA-0 remains locked; remaining non-external release conditions require owner decision or evidence",
+      evidenceHref: "docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md",
+      evidenceLabel: "M6B-17 closure",
       gate: "M6",
-      owner: "not signed off",
-      source: "Release hardening queue",
-      state: "In progress"
+      owner: "closed as no-go package",
+      source: "M6B-17 external-input rollup",
+      state: "Closed"
     },
     {
       blocker: "L-01 checklist not green; owner has not opened GA-0",

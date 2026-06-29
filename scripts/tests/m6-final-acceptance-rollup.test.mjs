@@ -21,7 +21,8 @@ const files = {
   m605: "docs/evidence/M6/M6-05-ai-safety-eval-gates.md",
   m606: "docs/evidence/M6/M6-06-telegram-bot-ga0-main-path.md",
   m607: "docs/evidence/M6/M6-07-core-ops-synthetic-e2e.md",
-  m608: "docs/evidence/M6/M6-08-backup-restore-asset-safety.md"
+  m608: "docs/evidence/M6/M6-08-backup-restore-asset-safety.md",
+  m6b17: "docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md"
 };
 
 const contents = Object.fromEntries(
@@ -70,7 +71,7 @@ test("GA-0 and 1.0 remain closed from repo evidence", () => {
   }
 });
 
-test("No-go blockers cover current open M6 release gaps", () => {
+test("No-go blockers preserve historical gaps and current M6B overlay", () => {
   for (const token of [
     "J-01",
     "J-03",
@@ -91,6 +92,24 @@ test("No-go blockers cover current open M6 release gaps", () => {
   ]) {
     assert.match(contents.evidence, new RegExp(escaped(token), "i"));
   }
+
+  assert.match(
+    contents.evidence,
+    /historical_blocked_real_rollback_drills_pending_external_input_cleared_by_m6b17/
+  );
+  assert.match(
+    contents.evidence,
+    /historical_blocked_safe_restore_target_missing_external_input_cleared_by_m6b16_m6b17/
+  );
+  assert.match(
+    contents.evidence,
+    /M6B-17 later clears the missing external input blocker class/
+  );
+  assert.match(
+    contents.m6b17,
+    /This clears the "missing external input" class of blockers/
+  );
+  assert.match(contents.m6b17, /GA-0 remains locked/);
 });
 
 test("P1 and P2 decisions are not fabricated", () => {
@@ -112,6 +131,8 @@ test("M6 index and release boundary reflect final rollup", () => {
     assert.match(doc, /m6_final_acceptance_rollup_recorded_no_go_recommended/);
     assert.match(doc, /M6-08/);
     assert.match(doc, /M6-09 validation/);
+    assert.match(doc, /M6B-17/);
+    assert.doesNotMatch(doc, /J-03 remains blocked/);
   }
 });
 

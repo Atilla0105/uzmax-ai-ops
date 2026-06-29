@@ -4,10 +4,11 @@ Spec: `docs/specs/M6-09-final-acceptance-rollup.md`
 Tracking issue: Linear LAY-14
 Status: `m6_final_acceptance_rollup_recorded_no_go_recommended_owner_decision_pending_not_ga0`
 Recorded: 2026-06-26
+Current-state note: this is historical M6 no-go evidence. M6B-17 later supersedes the J-01/J-03 missing-external-input blocker class with staging/test-only rollback and safe restore evidence. GA-0, production, real customer/order data, customer LLM and 1.0 release remain locked.
 
 ## Boundary
 
-This evidence is the final M6 owner decision package. It rolls up repo evidence and blockers; it does not approve GA-0, production deployment, real customer/order data, customer LLM, real provider calls, P1 risk acceptance, external SaaS onboarding or 1.0 release.
+This evidence is the historical final M6 owner decision package. It rolls up repo evidence and blockers as of M6-09; it does not approve GA-0, production deployment, real customer/order data, customer LLM, real provider calls, P1 risk acceptance, external SaaS onboarding or 1.0 release.
 
 No raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Telegram payloads, order IDs, phone/address/payment data, support personal accounts, raw prompts/completions, database URLs, service role keys, LLM keys, Bot tokens or webhook secrets are stored here.
 
@@ -21,6 +22,7 @@ No raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Tel
 | Admin/release boundary | `UZMAX智能运营系统-后台设计与前端架构-v1.1.md` |
 | Acceptance matrix | `UZMAX智能运营系统-1.0验收矩阵-v1.1.md` |
 | Evidence index | `docs/evidence/README.md`; `docs/evidence/M6/README.md` |
+| Current external-input closure overlay | `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
 | M6 entry and plan | `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md` |
 | M6 slice evidence | `docs/evidence/M6/M6-01-release-gate-console.md`; `docs/evidence/M6/M6-02-runtime-deploy-baseline.md`; `docs/evidence/M6/M6-03-queue-failure-injection-drills.md`; `docs/evidence/M6/M6-04-rls-authz-release-matrix.md`; `docs/evidence/M6/M6-05-ai-safety-eval-gates.md`; `docs/evidence/M6/M6-06-telegram-bot-ga0-main-path.md`; `docs/evidence/M6/M6-07-core-ops-synthetic-e2e.md`; `docs/evidence/M6/M6-08-backup-restore-asset-safety.md` |
 | Release boundary | `docs/release.md` |
@@ -38,6 +40,8 @@ No raw/export/jsonl/csv, screenshots, voice transcripts, customer plaintext, Tel
 
 The v1.1 acceptance matrix defines P0/P1/P2 levels but does not tag every row with an item-level priority. Therefore this rollup does not silently downgrade open rows. Any future P1 or P2 treatment must be explicit and must include owner signoff, fix date, impact note or backlog classification as required by the matrix.
 
+M6B-17 later clears the missing external input blocker class for LAY-19, LAY-23, LAY-24 and LAY-30. That overlay changes current J-01/J-03 external-input posture only; it does not change this file's historical no-go decision, GA-0 lock, P1/P2 register or remaining non-external release conditions.
+
 ## GA-0 Checklist Rollup
 
 Technical architecture v1.1 §11.1 says GA-0 opens only when all entry conditions are met. Current repo evidence does not meet that bar.
@@ -49,7 +53,7 @@ Technical architecture v1.1 §11.1 says GA-0 opens only when all entry condition
 | User-level fuse drill passes | `synthetic_support_real_bot_leave_ticket_pending` | M6-05/M6-06 record fuse and handoff contracts; real Bot leave-ticket behavior remains open. |
 | AI member emergency stop/recovery accepted | `runtime_contract_supported_not_ga0` | M5R/M6-05 support emergency/recovery controls without opening GA-0. |
 | Heartbeat, Sentry, traceId, alert channel online | `partial_alert_channel_pending_owner` | M6-02 records Sentry project ready but alert channel remains owner-pending. |
-| API and worker rollback drill | `blocked_real_rollback_drills_pending` | M6-02 records J-01 blocker: real api/worker/cron/admin rollback drills are not executed. |
+| API and worker rollback drill | `historical_blocked_real_rollback_drills_pending_external_input_cleared_by_m6b17` | M6-02/M6-09 recorded the J-01 blocker at the time. M6B-17 later records staging/test-only api/worker/cron/admin rollback closure; GA-0 still requires owner opening and remaining non-external conditions. |
 | Confirmation queue available | `supported` | M5/M5R/M6-07 record confirmation queue and named formal-write proof path. |
 | Bilingual guidance/templates delivered | `owner_input_pending` | M6-00 records owner-provided GA-0 bilingual guidance/template final copy as pending. |
 | Owner explicitly opens GA-0 | `not_approved` | No owner GA-0 open decision is recorded. |
@@ -70,9 +74,9 @@ GA-0 result from repo evidence: `no_go_recommended_owner_decision_pending`.
 | G-01..G-06 LLM/eval governance | `repo_supported_g04_g06_production_rollup_open` | Routing/eval gates are supported; G-04 blind review and G-06 full >=200 eval set remain open owner/release items. |
 | H-01..H-07 knowledge, assets, templates and distill | `h02_h03_h04_h07_supported_h01_h05_h06_open` | Confirmation/template/distill safety is supported; broad authoring, real storage rebuild and full quick-reply library remain open. |
 | I-01..I-07 admin quality | `synthetic_supported_i03_i04_i05_and_final_visual_release_open` | Core admin visibility is supported; performance, realtime and final visual/token release gates remain open. |
-| J-01 deploy/rollback | `blocked_real_rollback_drills_pending` | Blocks GA-0 and 1.0 until real or owner-approved equivalent drills exist. |
+| J-01 deploy/rollback | `historical_blocked_real_rollback_drills_pending_external_input_cleared_by_m6b17` | M6-09 recorded missing real rollback drills. M6B-17 later clears the external-input blocker with staging/test-only rollback evidence; production/release approval remains separate. |
 | J-02 queue drill | `synthetic_supported_production_worker_alerting_not_approved` | M6-03 supports synthetic J-02; production Redis/worker and formal alert-channel routing remain not approved. |
-| J-03 backup/restore | `blocked_safe_restore_target_missing` | M6-08 records no safe restore target, backup snapshot or restore command evidence. |
+| J-03 backup/restore | `historical_blocked_safe_restore_target_missing_external_input_cleared_by_m6b16_m6b17` | M6-08 recorded no safe restore target, backup snapshot or restore command evidence. M6B-16/M6B-17 later close the safe branch target proof; PITR/production backup-specific restore remains separate. |
 | J-04 runbooks/fault drills | `partial` | Runbooks improved across M6, but full owner drill/review closure is not recorded. |
 | J-05 release gate evidence | `rollup_recorded_not_release_approved` | This file records the rollup; owner signoff is still required. |
 | J-06 ADR/spike governance | `supported_by_m0_adr_spike_evidence` | ADR-001/002 and SPK-03 evidence are linked by M6-04; final release owner review remains separate. |
@@ -84,8 +88,8 @@ GA-0 result from repo evidence: `no_go_recommended_owner_decision_pending`.
 
 | Blocker | Impact | Required next evidence |
 |---|---|---|
-| J-01 real deploy/rollback drills missing | GA-0 and 1.0 stay closed. | Owner-approved real or equivalent api/worker/cron/admin deploy/rollback evidence. |
-| J-03 backup/restore drill missing | 1.0 and release hardening stay blocked. | Safe restore target, backup snapshot ref, restore command class and post-restore validation evidence. |
+| J-01 real deploy/rollback drills missing | Historical M6-09 blocker; current external-input branch is cleared by M6B-17, but GA-0 and 1.0 stay closed. | Future production or broader rollback evidence only if explicitly opened by owner/spec. |
+| J-03 backup/restore drill missing | Historical M6-09 blocker; current safe branch target branch is cleared by M6B-16/M6B-17, but GA-0 and 1.0 stay closed. | Future PITR/production backup-specific restore evidence only if explicitly opened by owner/spec. |
 | L-02 real Bot leave-ticket path pending | GA-0 incident path is not proven. | Real or owner-approved staging redline/fuse Bot leave-ticket drill. |
 | C-01/C-02 real staging Bot and worker/engine runtime gaps | GA-0 Bot channel cannot be treated as live-ready. | Staging Bot webhook, DB-backed dedupe/order restore, worker consumer and outbound behavior evidence. |
 | G-04 / G-06 owner quality and full eval set open | AI quality release gate remains owner-dependent. | Blind review result and full >=200 eval-set quota/signoff evidence. |

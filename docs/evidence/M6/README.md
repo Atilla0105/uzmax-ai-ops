@@ -7,6 +7,7 @@ Current M6 entry evidence: `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-p
 Current M6 final rollup spec: `docs/specs/M6-09-final-acceptance-rollup.md`.
 Current M6 final rollup evidence: `docs/evidence/M6/M6-09-final-acceptance-rollup.md`.
 Current M6 no-go closeout evidence: `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md`.
+Current external-input closure evidence: `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md`.
 
 M6 current status: `m6_closed_as_evidence_runtime_hardening_package_ga0_no_go`. Project owner accepted M5 milestone/runtime evidence in the Codex thread on 2026-06-25 with "同意签收m5，可以启动m6". The M6/M6B package has now closed at the current verifiable boundary: M6 is closed as an evidence/runtime-hardening package; GA-0 remains no-go. This closeout does not approve GA-0 opening, production deployment, real customer/order-data use, customer LLM, real provider calls, real LLM/provider keys or cost risk, external SaaS onboarding, Telegram Business automatic reply, P1 risk acceptance, or 1.0 release.
 
@@ -26,6 +27,7 @@ The M5/M5R README files remain historical M5R-08 closeout inputs and may still c
 | M6 readiness spec | `docs/specs/M6-00-m5-signoff-and-m6-readiness-pack.md` |
 | M6 entry evidence | `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md` |
 | M5 milestone/runtime evidence | `docs/evidence/M5/README.md`; `docs/evidence/M5R/README.md` |
+| Current M6B external-input closure | `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
 
 ## M6 Execution Queue
 
@@ -43,7 +45,8 @@ M6-09 and M6B-11 close the M6 evidence/runtime-hardening package as a no-go pack
 | 7 | M6-07 Core operations synthetic E2E | `m6_core_ops_synthetic_e2e_recorded_a_d_e_h_i_supported_not_ga0`; `merged_ready_for_owner_review` | `docs/specs/M6-07-core-ops-synthetic-e2e.md`; `docs/evidence/M6/M6-07-core-ops-synthetic-e2e.md` |
 | 8 | M6-08 Backup restore and asset safety drills | `m6_backup_restore_asset_safety_recorded_j03_external_blocker_h05_h06_partial_not_ga0`; `merged_ready_for_owner_review` | `docs/specs/M6-08-backup-restore-asset-safety.md`; `docs/evidence/M6/M6-08-backup-restore-asset-safety.md` |
 | 9 | M6-09 Final Acceptance Rollup | `m6_final_acceptance_rollup_recorded_no_go_recommended_owner_decision_pending_not_ga0`; `merged_ready_for_owner_review` | `docs/specs/M6-09-final-acceptance-rollup.md`; `docs/evidence/M6/M6-09-final-acceptance-rollup.md` |
-| 10 | M6B-11 M6 No-Go Closeout Boundary Sync | `m6_closed_as_evidence_runtime_hardening_package_ga0_no_go`; `ready_for_review` | `docs/specs/M6B-11-m6-no-go-closeout.md`; `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
+| 10 | M6B-11 M6 No-Go Closeout Boundary Sync | `historical_m6_no_go_closeout_superseded_by_m6b17_for_external_inputs` | `docs/specs/M6B-11-m6-no-go-closeout.md`; `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
+| 11 | M6B-17 GA-0 External Blocker Rollup | `external_input_blockers_cleared_ga0_still_locked_not_release` | `docs/specs/M6B-17-ga0-external-blocker-rollup.md`; `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
 
 ## Readiness Boundary
 
@@ -80,7 +83,7 @@ M6 does not approve:
 | M5R final runtime closeout | `m5r_08_true_integration_closeout_passed_true_db_owner_accepted_for_m5_runtime_evidence` | `docs/evidence/M5R/M5R-08-true-integration-closeout.md`; latest main CI run #28185173893 |
 | Production / GA / release | `not_approved` | v1.1 PRD, architecture and acceptance matrix boundaries |
 
-## Current Main / CI / PR / Branch State
+## Historical M6-09 Main / CI / PR / Branch State
 
 Recorded at M6-09 entry on 2026-06-26.
 
@@ -102,7 +105,7 @@ Recorded at M6-09 entry on 2026-06-26.
 
 The detailed gap table is in `docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md`.
 
-Current high-level M6 entry posture:
+Historical M6-09 entry posture:
 
 - M0-M4 milestone evidence is accepted in prior evidence records.
 - M5/M5R runtime evidence is now owner accepted for milestone evidence only.
@@ -113,18 +116,19 @@ Current high-level M6 entry posture:
 - M6-05 AI safety/eval gates is merged and records F-01 through F-06, G-01 through G-06, J-04 and L-02 support from ADR-003, M3 eval/LLM/engine evidence, M4 no-fabrication evidence and M5R AI member runtime evidence without approving customer LLM, real provider calls or GA-0.
 - M6-06 Telegram Bot GA-0 main path is merged and records C-01/C-02/C-03b/C-06/J-04/L-01/L-02 support from M2 Bot ingress, M2 handoff/ticket, ADR-B01, M6 queue and M6 AI-safety evidence without approving GA-0, real customer traffic or Business auto-reply.
 - M6-07 Core operations synthetic E2E is merged and records A/D/E/H/I synthetic golden-path support from existing M2/M4/M5/M5R/M6 evidence without approving a new live production E2E, real customer/order data, GA-0 or 1.0.
-- M6-08 Backup restore and asset safety is merged and records J-03 as blocked by missing owner-approved safe restore target while adding backup/restore runbook detail and H-05/H-06 partial asset-safety evidence.
+- M6-08 Backup restore and asset safety is merged and, at M6-08 recording time, recorded J-03 as blocked by missing owner-approved safe restore target while adding backup/restore runbook detail and H-05/H-06 partial asset-safety evidence.
 - M6-09 Final acceptance rollup is merged and records a GA-0 no-go recommended decision package for owner review without approving GA-0 or 1.0.
-- M6B-11 closes M6 as an evidence/runtime-hardening package at the current verifiable no-go boundary and moves remaining runtime blockers to GA-0 Activation / Runtime Owner-Gated tracking.
-- M6 has closed its evidence/runtime-hardening package, but it has not closed the GA-0 activation blockers for J-01/J-03/J-04/J-05/L-01/L-02.
-- J-01 remains open because real Render/Vercel rollback drills are pending, and the M6B-02 worker plus M6B-03 cron artifact proofs have not been exercised as real Render deploy/rollback drills.
+- M6B-11 closes M6 as an evidence/runtime-hardening package at the then-current verifiable no-go boundary and moves remaining runtime blockers to GA-0 Activation / Runtime Owner-Gated tracking.
+- M6B-17 supersedes M6-08/M6-09 external-input blockers for current GA-0 activation tracking: LAY-19, LAY-23, LAY-24 and LAY-30 are Done from staging/test-only evidence; GA-0 remains locked.
+- M6 has closed its evidence/runtime-hardening package, but it has not opened GA-0 or closed the owner decision and non-external release conditions for J-01/J-03/J-04/J-05/L-01/L-02.
+- The old J-01 external-input blocker is no longer current after M6B-17's Render/Vercel staging rollback closure; future rollback evidence beyond that staging/test scope remains a separate release decision.
 - J-02 has synthetic release-drill evidence from the M4-45 Redis smoke and M6-03 runbook, but production Redis/worker deployment and formal alert-channel routing remain not approved.
 - J-04 deploy/rollback runbook coverage is improved; remaining fault drills stay open for later M6 slices.
 - B-01 through B-05 have release-matrix support recorded by M6-04, but production DB/RLS, production customer-plaintext review and final high-risk audit rollup remain release-gate concerns.
 - F/G/J-04/L-02 have release-support evidence recorded by M6-05, but G-04 owner blind review, G-06 full >=200 eval set, L-02 real Bot leave-ticket drill and production `llm_call_log` rollup remain release-gate concerns.
 - C-01/C-02/C-03b/C-06/J-04/L-01/L-02 have Bot-only synthetic/test support recorded by M6-06, but real staging Bot webhook evidence, DB-backed dedupe/order restore, worker/engine consumer processing, outbound leave-ticket behavior and final owner GA-0 open decision remain release-gate concerns.
 - A/D/E/H/I have core-operations synthetic E2E support recorded by M6-07, but D-06 anonymization, H-01/H-05/H-06 asset/authoring/quick-reply gaps, I-03 performance, I-04 realtime, I-05 final visual/token evidence and final owner release decisions remain open.
-- M6-08 records concrete J-03 external blockers: owner-approved safe restore target, backup snapshot ref and restore command evidence are missing. It also records `storageRef` as durable material source and Telegram `file_id` as cache/provider metadata, but real storage rebuild/token-rotation drill and full quick-reply public/private workflow remain open.
+- M6-08 records the historical J-03 external blockers that existed before M6B-16/M6B-17. Current GA-0 activation tracking treats the missing safe restore target branch as cleared by the isolated safe branch drill, while PITR/production backup restore, real storage rebuild/token-rotation drill and full quick-reply public/private workflow remain separate release gaps.
 - M6-09 records no explicit P1 risk signoffs and no P2 backlog decisions in repo evidence. Open items must remain blockers or owner-decision-required until the owner records fix dates, impact notes or backlog classification.
 - GA-0 remains closed until its checklist is green and owner explicitly opens it.
 - 1.0 release remains blocked until all P0 items pass and P1/P2 handling matches the acceptance matrix.

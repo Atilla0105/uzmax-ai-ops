@@ -44,7 +44,7 @@ Evidence is append-only by default. Older milestone files may preserve historica
 - `M5R/`：M5 运行时补证据、true integration closeout。
 - `M6/`：全链路演练、残项清零、历史 no-go/owner review package。
 - `M6B/`：GA-0 runtime bring-up、staging/test closure、external-input blocker rollup。
-- `M7/`：post-M6B current-state alignment、release-gate/docs/admin hygiene。
+- `M7/`：post-M6B current-state alignment、release-gate/docs/admin hygiene、Design Skill Layer / visual-system evidence and follow-up UI queue。
 - `incidents/`：写入越界、门禁绕过、secret/customer-data 边界等过程事故记录。
 
 每个里程碑关闭时必须归档证据；不得集中堆到 M6。

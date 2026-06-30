@@ -10,8 +10,9 @@ The design system source hierarchy is:
 
 1. `UZMAX智能运营系统-后台设计与前端架构-v1.1.md`
 2. `AGENTS.md`
-3. `packages/ui-tokens/src/tokens.css`
-4. Existing admin primitives, patterns and pages
+3. `docs/admin-design-system.md`
+4. `packages/ui-tokens/src/tokens.css`
+5. Existing admin primitives, patterns and pages
 
 If code and this file disagree, refresh this file or the tokens through a dedicated spec; do not silently invent a parallel system.
 
@@ -48,7 +49,9 @@ Canonical target palette from backend design v1.1:
 | Offline state | `--state-off` | `#7A828C` |
 | Data accent | `--accent-data` | `#2FA6A0` |
 
-Current implementation tokens use the `--uzmax-*` namespace in `packages/ui-tokens/src/tokens.css`. Treat the current namespace as the implementation bridge and the canonical target palette above as the design direction for future token extraction.
+Current implementation tokens use the `--uzmax-*` namespace in `packages/ui-tokens/src/tokens.css`. Treat the current namespace as the implementation bridge and the canonical target palette above as the design direction for future token extraction. `docs/admin-design-system.md` is the M7-03 standard source draft for detailed token/component/pattern guidance.
+
+Do not mix the canonical `--ink-*` / `--state-*` names directly into admin source until a dedicated token/UI spec maps aliases, updates `packages/ui-tokens/src/tokens.css`, and records visual-regression evidence. Before that extraction lands, UI work should use the existing `--uzmax-*` bridge and keep the target palette visible in this file and `docs/admin-design-system.md`.
 
 ## Typography
 
@@ -134,3 +137,4 @@ Every core screen must define:
 - Pages must not introduce raw native styling when a token, primitive or pattern exists.
 - Impeccable recommendations are design-defaults, not permission to bypass AGENTS, specs, PR budgets, tests, source boundaries or acceptance evidence.
 - Detector findings from existing code are baseline until M7 follow-up adopts no-new-design-debt.
+- The current `side-tab` detector findings are known design debt, not I-05 closure evidence. Future UI slices must not add new detector debt, and I-05 remains open until lint plus visual-regression evidence proves the core screens comply.

@@ -58,34 +58,36 @@ Result: exit code `2`, expected for findings. Baseline is non-blocking for M7-00
 |---|---:|---|
 | `side-tab` | 12 | `apps/admin/src/m2-conversation-ticket-shell.css`, `apps/admin/src/m3-knowledge-eval-shell.css`, `apps/admin/src/m4-order-path-status-shell.css`, `apps/admin/src/m5-ai-member-console-shell.css`, `apps/admin/src/m5-confirmation-queue-shell.css`, `apps/admin/src/m5-logs-analytics-shell.css`, `apps/admin/src/m5-template-center-shell.css`, `apps/admin/src/styles.css` |
 
-Detector interpretation: the current admin shell repeatedly uses thick colored side borders as state/accent markers. This is now known design debt. It must not be fixed in M7-00; it should be addressed in the first UI slice that extracts a proper status/accent pattern.
+Detector interpretation: the current admin shell repeatedly uses thick colored side borders as state/accent markers. This is now known design debt. It must not be fixed in M7-00; it should be addressed in the first UI slice that extracts a proper status/accent pattern. This baseline does not close acceptance item I-05; I-05 still requires later lint and visual-regression evidence for the core screens.
 
 ## Admin UX Map
 
 | Surface | Current category | Reason | Follow-up |
 |---|---|---|---|
-| Global admin frame | `needs interaction redesign` | Existing rail/topbar exposes the required shell but uses placeholder one-letter buttons, disabled tools and shallow tenant switcher behavior. | M7-01 global frame spec |
-| Tenant switcher / environment state | `needs interaction redesign` | Tenant selection exists, but searchable health-aware switcher, environment contrast and heartbeat behavior are not yet full operator UI. | M7-01 |
-| Conversation + ticket workbench | `needs token/pattern extraction` | Three-column/list/detail concepts and state coverage exist, but shell copy and side-tab styling show evidence-oriented UI rather than finished operator workflow. | Later conversation workbench spec after M7-01/M7-02 |
-| Confirmation queue | `needs interaction redesign` | Keyboard `J/K/A/E/D`, amber health, conflict diff and daily review flow exist; this is the best bounded slice to prove high-density design improvement. | M7-02 confirmation queue spec |
+| Global admin frame | `needs interaction redesign` | Existing rail/topbar exposes the required shell but uses placeholder one-letter buttons, disabled tools and shallow tenant switcher behavior. | M7-UI-01 global frame spec |
+| Tenant switcher / environment state | `needs interaction redesign` | Tenant selection exists, but searchable health-aware switcher, environment contrast and heartbeat behavior are not yet full operator UI. | M7-UI-01 |
+| Conversation + ticket workbench | `needs token/pattern extraction` | Three-column/list/detail concepts and state coverage exist, but shell copy and side-tab styling show evidence-oriented UI rather than finished operator workflow. | Later conversation workbench spec after M7-UI-01/M7-UI-02 |
+| Confirmation queue | `needs interaction redesign` | Keyboard `J/K/A/E/D`, amber health, conflict diff and daily review flow exist; this is the best bounded slice to prove high-density design improvement. | M7-UI-02 confirmation queue spec |
 | Release + acceptance console | `operator-ready` | Gate state is contract-driven and conservative after M6-01; broad redesign is not needed before design debt cleanup. | Keep as evidence-first console; only polish with M7 patterns |
 | Knowledge + eval | `needs token/pattern extraction` | Gate and resource concepts exist, but hierarchy and visual state treatment need system patterns before production polish. | Later pattern extraction |
 | Orders / import path | `operator-ready` | It correctly states import snapshot as the primary path and avoids fake API degradation; styling debt remains. | Pattern cleanup only |
 | Customer assets | `needs interaction redesign` | Runtime state coverage exists, but customer search/asset workflows need real information architecture beyond shell presentation. | Later customer asset UX spec |
-| AI member console | `needs token/pattern extraction` | Runtime control concepts exist; status cards and warning presentation share detector debt. | Pattern cleanup after M7-02 |
+| AI member console | `needs token/pattern extraction` | Runtime control concepts exist; status cards and warning presentation share detector debt. | Pattern cleanup after M7-UI-02 |
 | Logs + analytics | `needs token/pattern extraction` | Log/analytics shell exists; table density, filters and metric hierarchy need durable primitives. | Later analytics/log pattern spec |
 | Template center | `needs token/pattern extraction` | Template copy flow exists; cards and state accents need design-system treatment. | Later template pattern cleanup |
 | Mobile fallback | `needs interaction redesign` | Mobile is covered by tests and constraints, but there is no dedicated emergency-first mobile operator surface yet. | Dedicated mobile fallback spec after desktop core slices |
 
 ## Follow-up UI Slices
 
-1. `M7-01-admin-global-frame-design-skill-slice`
+M7-01 was later used for current-state release-doc alignment, and M7-03 is now the visual-system standard source from owner prototype. UI follow-up specs therefore use the `M7-UI-*` prefix to avoid conflicting with existing M7 docs/governance slice numbers.
+
+1. `M7-UI-01-admin-global-frame-design-skill-slice`
    - Scope: `apps/admin/src/App.tsx`, `apps/admin/src/styles.css`, `packages/ui-tokens/**`, focused Playwright design tests and evidence.
    - Goal: replace placeholder global shell with real operator frame: icon rail, label expansion behavior, searchable tenant switcher, environment marker, heartbeat, search/notifications/user controls and stable desktop/mobile layout.
    - Impeccable responsibility: shape layout, density, hierarchy, interaction states and mobile fallback.
    - UZMAX vetoes: no backend API, no real tenant/customer data, no release gate approval changes.
 
-2. `M7-02-confirmation-queue-interaction-design-skill-slice`
+2. `M7-UI-02-confirmation-queue-interaction-design-skill-slice`
    - Scope: `apps/admin/src/M5ConfirmationQueueShell.tsx`, `apps/admin/src/m5-confirmation-queue-shell.css`, confirmation queue tests/evidence and token/pattern extraction if needed.
    - Goal: upgrade the confirmation queue from shell/evidence UI to a high-density daily review tool with clear selected state, keyboard-first flow, compact conflict diff, visible pending/decision states and mobile pass/discard fallback.
    - Impeccable responsibility: shape task flow, card density, keyboard affordances, status hierarchy and empty/loading/error/degraded states.

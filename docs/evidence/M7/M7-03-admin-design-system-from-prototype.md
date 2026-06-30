@@ -118,7 +118,7 @@ I-05 remains open until token implementation, `/design` living spec, lint and vi
 
 Per project owner direction, M7-03 is the higher-priority visual-system standard. Earlier visual-doc alignment work should defer to this branch: keep only non-conflicting entrypoint, numbering and boundary fixes after they are ported into M7-03; do not maintain a parallel M7-02 visual-system standard.
 
-The lower-priority `codex/m7-design-doc-alignment` worktree/branch was cleaned after M7-03 absorbed the useful entrypoint, numbering, token-bridge and I-05 boundary fixes. Current visual-system follow-up work should proceed from `codex/m7-03-admin-design-system` / M7-03, not the deleted M7-02 alignment branch.
+The lower-priority `codex/m7-design-doc-alignment` worktree/branch was cleaned after M7-03 absorbed the useful entrypoint, numbering, token-bridge and I-05 boundary fixes. Current visual-system follow-up work should proceed from `main` after M7-03 is present there, using new `M7-UI-*` specs/branches, not the deleted M7-02 alignment branch or the now-merged M7-03 worker branch.
 
 ## Post-Priority Verification
 

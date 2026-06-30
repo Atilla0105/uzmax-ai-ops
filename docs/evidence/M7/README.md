@@ -25,9 +25,10 @@ M7 does not approve GA-0, production deployment, real customer/order-data use, c
 
 | Order | Slice | Status | Evidence |
 |---:|---|---|---|
-| 0 | M7-00 Design Skill Layer | `ready_for_review` | `docs/evidence/M7/M7-00-uzmax-design-skill-layer.md` |
+| 0 | M7-00 Design Skill Layer | `merged_to_main` | `docs/evidence/M7/M7-00-uzmax-design-skill-layer.md` |
 | 1 | M7-01 Current State Release Doc Alignment | `merged_to_main` | docs/spec records current-state alignment; no GA-0/1.0 approval |
-| 3 | M7-03 Admin Design System From Prototype | `active` | `docs/evidence/M7/M7-03-admin-design-system-from-prototype.md` |
+| 3 | M7-03 Admin Design System From Prototype | `merged_to_main` | `docs/evidence/M7/M7-03-admin-design-system-from-prototype.md` |
+| 4 | M7-04 Post-Merge Status Cleanup | `merged_to_main` | `docs/evidence/M7/M7-04-postmerge-status-cleanup.md` |
 | UI-1 | M7-UI-01 Global Admin Frame | `planned_after_m7_03` | follow-up spec required |
 | UI-2 | M7-UI-02 Confirmation Queue Interaction Upgrade | `planned_after_m7_03` | follow-up spec required |
 

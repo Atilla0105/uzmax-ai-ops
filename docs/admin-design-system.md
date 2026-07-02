@@ -1,11 +1,13 @@
 # UZMAX Admin Design System
 
-> Status: design-system source draft for M7-03.
+> Status: M7-05 visual implementation standard for prototype-derived admin UI.
 > Scope: UZMAX admin / operations tower.
-> Derived from: `UZMAX智能运营系统-PRD-v1.1.md`, `UZMAX智能运营系统-技术架构-v1.1.md`, `UZMAX智能运营系统-后台设计与前端架构-v1.1.md`, `UZMAX智能运营系统-1.0验收矩阵-v1.1.md`, `AGENTS.md`, `PRODUCT.md`, `DESIGN.md`, `packages/ui-tokens/src/tokens.css`, and the owner-provided prototype files:
+> Visual source: owner current prototype and prototype-derived source package:
 >
-> - `/Users/atilla/Downloads/uzmax需求的原型设计/UZMAX 运营塔台.dc.html`
-> - `/Users/atilla/Downloads/uzmax需求的原型设计/support.js`
+> - `/Users/atilla/Downloads/运营塔台1.0.html`
+> - `/Users/atilla/源码/unpacked 6`
+>
+> Governance sources: `AGENTS.md`, PRD v1.1, technical architecture v1.1, backend design/frontend architecture v1.1 and acceptance matrix v1.1 still control product scope, IA, permission, security, release and acceptance boundaries. Their old visual-shell values do not override the current prototype.
 
 If this file conflicts with AGENTS, PRD v1.1, technical architecture v1.1, backend design/frontend architecture v1.1, acceptance matrix v1.1, permissions, security, RLS, release gates, real business facts, real customer/order data, LLM keys, cost or compliance boundaries, those source-of-truth files and owner decisions win.
 
@@ -28,16 +30,16 @@ UZMAX admin is an operations tower, not a marketing site, chat toy or decorative
 
 ### Prototype Adoption Notes
 
-The prototype provides a strong direction for information architecture, density, token palette, Lucide icon usage, three-column conversation workbench, high-density confirmation queue, group overview, release gate and modal confirmation patterns.
+The current prototype and `/Users/atilla/源码/unpacked 6` are the visual implementation source for information density, token palette, typography, component expression, Lucide icon usage, three-column conversation workbench, high-density confirmation queue, group overview, release gate and modal confirmation patterns.
 
 The following prototype expressions are adapted rather than copied:
 
 | Prototype Expression | Decision | Reason |
 |---|---|---|
-| Inline styles throughout `.dc.html` | Reject for implementation | Production code must use tokens, primitives and scoped CSS/classes. |
+| Inline styles throughout `.dc.html` / `unpacked 6` | Preserve values, not mechanics | Production code must move the same visual values into tokens, primitives and scoped CSS/classes. |
 | 3px colored side bars on list rows/cards | Reject | M7 detector and Impeccable classify side stripes as design debt. Use status badges, icons, row tint, full border or dot indicators. |
-| One-off colors `#1F8A84`, `#E6F4F3`, `#CDE6D7` | Normalize | Map to data teal / ok state token ramp; no component-local color drift. |
-| 10px panel radius in several cards | Normalize to 8px | Backend design v1.1 defines standard panel/card radius as 8px. |
+| One-off colors `#1F8A84`, `#E6F4F3`, `#CDE6D7` | Normalize inside prototype token ramps | Map to data teal / ok state token ramp; no component-local color drift. |
+| 9-12px panel radius in prototype/source package | Preserve through token scale | Use prototype-derived radius tokens; do not revert to the old shell radius just because existing code used it. |
 | Runtime shimmer gradient in `support.js` | Do not adopt as product motion | `support.js` is generated dc-runtime support; product skeletons use tokenized static/pulse states without decorative gradients. |
 
 ## 2. Design Tokens
@@ -46,29 +48,29 @@ The following prototype expressions are adapted rather than copied:
 
 | Layer | Naming | Purpose |
 |---|---|---|
-| Canonical design tokens | `--ink-*`, `--state-*`, `--s-*`, `--radius-*` | Product design source from backend design v1.1 and this document. |
-| Implementation bridge | `--uzmax-*` | Existing current CSS namespace in `packages/ui-tokens/src/tokens.css`. |
-| Component aliases | `--button-bg`, `--table-border`, etc. | Allowed inside primitives/patterns only; must resolve to canonical/bridge tokens. |
+| Canonical design tokens | `--ink-*`, `--state-*`, `--s-*`, `--radius-*` | Product design source from current prototype, `unpacked 6` and this document. |
+| Legacy implementation namespace | `--uzmax-*` | Existing shell-only CSS namespace in `packages/ui-tokens/src/tokens.css`; not a source for new UI. |
+| Component aliases | `--button-bg`, `--table-border`, etc. | Allowed inside primitives/patterns only; must resolve to canonical prototype-derived tokens. |
 | Prototype-only literals | raw hex/px in `.dc.html` | Not allowed in production source. Convert to tokens before implementation. |
 
 ### 2.2 Color Tokens
 
-| Role | Canonical Token | Value | Existing Bridge |
+| Role | Canonical Token | Value | Legacy Note |
 |---|---|---:|---|
-| Ink strong | `--ink-900` | `#1A1D21` | `--uzmax-color-ink: #182322` until aligned |
-| Ink body | `--ink-700` | `#3F454D` | `--uzmax-color-muted: #52615F` for body-muted bridge |
+| Ink strong | `--ink-900` | `#1A1D21` | replaces old `--uzmax-color-ink` visual target |
+| Ink body | `--ink-700` | `#3F454D` | body text target; old muted bridge is legacy |
 | Ink muted | `--ink-500` | `#7A828C` | use for metadata only |
-| Border | `--ink-300` | `#C9CDD2` | `--uzmax-color-border: #D7DFDC` until aligned |
-| Hairline | `--ink-150` | `#E8EAEC` | no exact current bridge |
-| Muted surface | `--ink-075` | `#F2F3F4` | `--uzmax-color-surface-muted: #EAF0EE` until aligned |
-| Page background | `--paper` | `#FAFAF8` | `--uzmax-color-bg: #F4F7F6` until aligned |
+| Border | `--ink-300` | `#C9CDD2` | replaces old border bridge |
+| Hairline | `--ink-150` | `#E8EAEC` | prototype hairline |
+| Muted surface | `--ink-075` | `#F2F3F4` | prototype muted surface |
+| Page background | `--paper` | `#FAFAF8` | prototype canvas |
 | Surface | `--card` | `#FFFFFF` | `--uzmax-color-surface: #FFFFFF` |
-| AI / model | `--state-ai` | `#30518C` | no exact current bridge |
-| Human / blocking | `--state-human` | `#D4502B` | `--uzmax-color-danger: #B34228` until aligned |
-| OK | `--state-ok` | `#2E7D4F` | no exact current bridge |
-| Warning | `--state-warn` | `#C98A1B` | `--uzmax-color-warn: #9C6B13` until aligned |
-| Offline | `--state-off` | `#7A828C` | muted bridge |
-| Data accent | `--accent-data` | `#2FA6A0` | `--uzmax-color-accent: #2F6F73` until aligned |
+| AI / model | `--state-ai` | `#30518C` | prototype semantic state |
+| Human / blocking | `--state-human` | `#D4502B` | replaces old danger bridge |
+| OK | `--state-ok` | `#2E7D4F` | prototype semantic state |
+| Warning | `--state-warn` | `#C98A1B` | replaces old warn bridge |
+| Offline | `--state-off` | `#7A828C` | prototype neutral/offline |
+| Data accent | `--accent-data` | `#2FA6A0` | replaces old accent bridge |
 
 ### 2.3 State Background Tokens
 
@@ -133,7 +135,7 @@ Spacing uses a 4px base scale.
 | `--radius-m` | `8px` | standard panels/cards/dialogs |
 | `--radius-pill` | `999px` | avatars, status dots, pill chips only |
 
-Cards and panels top out at `8px` unless a future owner-approved visual refresh changes the system. Do not use 24/32px rounded cards.
+Cards and panels follow the prototype-derived radius scale (`7px`, `9px`, `10px`, `12px` where present in `unpacked 6`). Do not use 24/32px rounded cards or revert to the old shell radius when migrating new UI.
 
 ### 2.7 Shadow / Elevation Tokens
 
@@ -142,7 +144,7 @@ UZMAX should read as a serious control room. Prefer borders, density and surface
 | Token | Value | Use |
 |---|---|---|
 | `--shadow-none` | `none` | most page panels |
-| `--shadow-focus` | `0 0 0 3px rgb(47 111 115 / 18%)` | existing bridge focus ring until canonical ring is extracted |
+| `--shadow-focus` | `0 0 0 1px #1A1D21` | prototype focus ring from `unpacked 6` |
 | `--shadow-raised` | `0 1px 2px rgb(26 29 33 / 6%)` | selected queue card, compact raised tool |
 | `--shadow-overlay` | `0 4px 12px rgb(26 29 33 / 10%)` | dropdowns, popovers, dialogs |
 
@@ -191,7 +193,7 @@ No arbitrary `999`/`9999`.
 
 | Region | Desktop Rule |
 |---|---|
-| Left rail collapsed | `64px` target, prototype used `68px`; canonical is `64px` from backend design. |
+| Left rail collapsed | `68px` from `unpacked 6`; old `64px` shell value is legacy. |
 | Left rail expanded | `232px` tokenized max; labels visible. |
 | Topbar | `52px`, white surface, bottom hairline. |
 | Staging strip | `3px`, warn token, top of content. |
@@ -863,7 +865,7 @@ Rules:
 
 ### 15.2 Token Implementation
 
-Production CSS should eventually align `packages/ui-tokens/src/tokens.css` with this design system. Until then, bridge tokens may map canonical roles to existing `--uzmax-*` values.
+Production CSS should align `packages/ui-tokens/src/tokens.css` with this design system before or as part of the first real UI migration slice. Existing `--uzmax-*` values may remain only for untouched legacy shell code; they must not be used as the visual target for new components.
 
 Example:
 
@@ -914,7 +916,7 @@ The `/design` page should eventually show:
 - mobile fallback examples;
 - accessibility and visual regression anchors.
 
-This M7-03 document is the visual-system standard source draft for that future living spec. It does not implement `/design`.
+This M7-05-updated document is the visual-system standard source for that future living spec. It does not implement `/design`.
 
 ### 15.6 Forbidden Implementation Patterns
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Checkbox } from "../primitives";
+import { Button, Checkbox } from "../primitives";
 
 function cx(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -23,11 +23,18 @@ export interface DataTableSelection<Row> {
   selectedKeys: ReadonlySet<string>;
 }
 
+export interface DataTableRowAction<Row> {
+  getLabel: (row: Row) => string;
+  header?: ReactNode;
+  onActivate: (row: Row) => void;
+  renderLabel?: (row: Row) => ReactNode;
+}
+
 export interface DataTableProps<Row> {
   columns: Array<DataTableColumn<Row>>;
   density?: Density;
   emptyState?: ReactNode;
-  onRowClick?: (row: Row) => void;
+  rowAction?: DataTableRowAction<Row>;
   rowKey: (row: Row) => string;
   rows: Row[];
   selection?: DataTableSelection<Row>;
@@ -37,7 +44,7 @@ export function DataTable<Row>({
   columns,
   density = "standard",
   emptyState,
-  onRowClick,
+  rowAction,
   rowKey,
   rows,
   selection
@@ -59,14 +66,20 @@ export function DataTable<Row>({
           {columns.map((column) => (
             <col key={column.key} style={column.width ? { width: column.width } : undefined} />
           ))}
+          {rowAction ? <col className="uz-data-table__action-col" /> : null}
         </colgroup>
         <thead>
           <tr>
             {selection ? (
               <th scope="col">
                 <Checkbox
-                  aria-label="Select all rows"
+                  aria-label={
+                    selection.onToggleAll
+                      ? "Select all rows"
+                      : "Select all rows unavailable"
+                  }
                   checked={allSelected}
+                  disabled={!selection.onToggleAll}
                   indeterminate={!allSelected && someSelected}
                   onClick={() => selection.onToggleAll?.()}
                 />
@@ -81,17 +94,14 @@ export function DataTable<Row>({
                 {column.header}
               </th>
             ))}
+            {rowAction ? <th scope="col">{rowAction.header ?? "Action"}</th> : null}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, index) => {
             const key = rowKey(row);
             return (
-              <tr
-                className={cx(onRowClick && "is-clickable")}
-                key={key}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-              >
+              <tr key={key}>
                 {selection ? (
                   <td>
                     <Checkbox
@@ -109,6 +119,17 @@ export function DataTable<Row>({
                     {column.render(row, index)}
                   </td>
                 ))}
+                {rowAction ? (
+                  <td>
+                    <Button
+                      aria-label={rowAction.getLabel(row)}
+                      onClick={() => rowAction.onActivate(row)}
+                      variant="secondary"
+                    >
+                      {rowAction.renderLabel?.(row) ?? "Open"}
+                    </Button>
+                  </td>
+                ) : null}
               </tr>
             );
           })}

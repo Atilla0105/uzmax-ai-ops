@@ -181,16 +181,16 @@ export type {
 } from "./data-table";
 export {
   BatchActionBar,
-  ConfirmModal,
   FilterBar,
   PageToolbar,
   SidePanel
 } from "./operational-patterns";
 export type {
   BatchAction,
-  FilterBarSelect,
-  ConfirmReason
+  FilterBarSelect
 } from "./operational-patterns";
+export { ConfirmModal } from "./confirm-modal";
+export type { ConfirmReason } from "./confirm-modal";
 export {
   MessageBubble,
   ToastHost,

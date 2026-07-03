@@ -157,7 +157,17 @@ export function FoundationPreview({
           Shared degraded state remains a reusable warning pattern.
         </DegradedBar>
         <FilterBar
-          actions={<Button onClick={() => toast.show("Filter preview updated", "info")} variant="secondary">Apply</Button>}
+          actions={
+            <Button
+              onClick={() => {
+                toast.show("Filter preview updated", "info");
+                toast.show("Filter preview saved", "success");
+              }}
+              variant="secondary"
+            >
+              Apply
+            </Button>
+          }
           filters={[
             {
               children: (
@@ -178,6 +188,12 @@ export function FoundationPreview({
               <DataTable
                 columns={operationalColumns}
                 density="compact"
+                rowAction={{
+                  getLabel: (row) => `Open ${row.area}`,
+                  header: "Open",
+                  onActivate: (row) =>
+                    toast.show(`Row action preview: ${row.area}`, "info")
+                }}
                 rowKey={(row) => row.id}
                 rows={operationalRows}
                 selection={{

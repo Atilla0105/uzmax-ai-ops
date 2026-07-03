@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
 import { Avatar, IconSlot, StatusBadge } from "../primitives";
 
@@ -15,9 +15,10 @@ export interface ToastEntry {
 
 export function useToast() {
   const [toasts, setToasts] = useState<ToastEntry[]>([]);
+  const idRef = useRef(0);
 
   const show = (message: ReactNode, tone: ToastTone = "info") => {
-    const id = Date.now();
+    const id = (idRef.current += 1);
     setToasts((current) => [...current, { id, message, tone }]);
     window.setTimeout(() => {
       setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -31,7 +32,11 @@ export function ToastHost({ toasts }: { toasts: ToastEntry[] }) {
   return (
     <div aria-live="polite" className="uz-toast-host" data-testid="m7-toast-host">
       {toasts.map((toast) => (
-        <div className={cx("uz-toast", `uz-toast--${toast.tone}`)} key={toast.id}>
+        <div
+          className={cx("uz-toast", `uz-toast--${toast.tone}`)}
+          data-toast-id={toast.id}
+          key={toast.id}
+        >
           <IconSlot icon={Info} />
           <span>{toast.message}</span>
         </div>

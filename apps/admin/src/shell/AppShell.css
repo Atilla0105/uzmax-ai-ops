@@ -891,10 +891,6 @@
   border-bottom: 0;
 }
 
-.uz-data-table tr.is-clickable {
-  cursor: pointer;
-}
-
 .uz-data-table tbody tr:hover,
 .uz-data-table tbody tr:focus-within {
   background: var(--ink-075);
@@ -910,6 +906,10 @@
 
 .uz-data-table__select-col {
   width: calc(var(--s-10) + var(--s-8));
+}
+
+.uz-data-table__action-col {
+  width: calc(var(--s-10) + var(--s-10) + var(--s-8));
 }
 
 .uz-batch-action-bar {

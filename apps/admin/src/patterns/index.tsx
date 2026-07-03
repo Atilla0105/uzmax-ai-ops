@@ -48,7 +48,7 @@ export function NavItem({
   );
 }
 
-export interface TabDef {
+interface TabDef {
   disabled?: boolean;
   key: string;
   label: ReactNode;
@@ -105,7 +105,7 @@ export function EmptyState({
   );
 }
 
-export type PageStateKind = "loading" | "empty" | "error" | "permission" | "degraded";
+type PageStateKind = "loading" | "empty" | "error" | "permission" | "degraded";
 
 export interface PageStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   action?: ReactNode;

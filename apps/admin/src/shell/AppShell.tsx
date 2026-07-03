@@ -3,9 +3,9 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Button, Heartbeat, IconSlot, SearchInput, StatusBadge } from "../primitives";
 import { NavItem } from "../patterns";
 
-export type TenantHealth = "healthy" | "degraded" | "attention";
+type TenantHealth = "healthy" | "degraded" | "attention";
 
-export interface AppShellTenant {
+interface AppShellTenant {
   health: TenantHealth;
   id: string;
   line: string;

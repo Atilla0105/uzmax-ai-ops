@@ -9,7 +9,7 @@ function cx(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export type IconSlotSize = "sm" | "md" | "lg";
+type IconSlotSize = "sm" | "md" | "lg";
 
 export interface IconSlotProps extends HTMLAttributes<HTMLSpanElement> {
   label?: string;
@@ -37,7 +37,7 @@ export function IconSlot({
   );
 }
 
-export type ButtonVariant = "primary" | "secondary" | "success" | "danger" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "success" | "danger" | "ghost";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode;
@@ -71,14 +71,7 @@ export function Button({
   );
 }
 
-export type StatusTone =
-  | "neutral"
-  | "needs"
-  | "warn"
-  | "info"
-  | "danger"
-  | "ok"
-  | "accent";
+type StatusTone = "neutral" | "needs" | "warn" | "info" | "danger" | "ok" | "accent";
 
 export interface StatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
   dot?: boolean;
@@ -138,7 +131,7 @@ export function CountBadge({ className, value, ...props }: CountBadgeProps) {
   );
 }
 
-export interface KbdProps extends HTMLAttributes<HTMLElement> {
+interface KbdProps extends HTMLAttributes<HTMLElement> {
   inverse?: boolean;
 }
 

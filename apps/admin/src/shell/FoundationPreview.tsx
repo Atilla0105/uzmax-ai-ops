@@ -2,6 +2,8 @@ import {
   Avatar,
   Button,
   Checkbox,
+  Input,
+  Kbd,
   SearchInput,
   StatusBadge,
   Toggle
@@ -59,9 +61,11 @@ export function FoundationPreview({
           placeholder="Search foundation"
           readOnly
         />
+        <Input aria-label="Foundation filter" kbdHint="/" readOnly value="Filter" />
         <StatusBadge dot tone="danger">
           Human needed
         </StatusBadge>
+        <Kbd>Esc</Kbd>
         <Avatar initial="AI" tone="ai" />
         <Toggle
           aria-label="Foundation toggle"

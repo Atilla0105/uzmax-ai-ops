@@ -327,23 +327,25 @@ export type PlannedAdminPageId = Exclude<AdminPageId, "legacy.evidence">;
 
 export const initialAdminPageId: AdminPageId = "legacy.evidence";
 
-type AdminPageRegistryItem = (typeof adminPageRegistry)[number];
-type NavigableAdminPageRegistryItem = Extract<
-  AdminPageRegistryItem,
-  { readonly navId: string; readonly navSection: AdminPageNavSection }
->;
+export type AdminPageNavigationEntry = AdminPageRegistryEntry & {
+  readonly id: PlannedAdminPageId;
+  readonly navId: string;
+  readonly navSection: AdminPageNavSection;
+};
 
 function isNavigableAdminPage(
-  page: AdminPageRegistryItem
-): page is NavigableAdminPageRegistryItem {
+  page: AdminPageRegistryEntry
+): page is AdminPageNavigationEntry {
   return (
-    "navId" in page &&
-    "navSection" in page &&
+    page.id !== initialAdminPageId &&
+    typeof page.navId === "string" &&
     (page.navSection === "group" || page.navSection === "tenant")
   );
 }
 
-const navigableAdminPages = adminPageRegistry.filter(isNavigableAdminPage);
+const navigableAdminPages = (
+  adminPageRegistry as readonly AdminPageRegistryEntry[]
+).filter(isNavigableAdminPage);
 
 export const adminPageNavigation = {
   group: navigableAdminPages.filter((page) => page.navSection === "group"),

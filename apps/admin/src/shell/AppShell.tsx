@@ -26,10 +26,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Button, Heartbeat, IconSlot, SearchInput, StatusBadge } from "../primitives";
 import { NavItem } from "../patterns";
-import {
-  adminPageNavigation,
-  type AdminPageId
-} from "../pages/registry";
+import { adminPageNavigation, type AdminPageId } from "../pages/registry";
 
 type TenantHealth = "healthy" | "degraded" | "attention";
 
@@ -128,7 +125,9 @@ export function AppShell({
 
   return (
     <main
-      className={`admin-shell m2-admin-shell uz-app-shell${expanded ? "" : " is-nav-collapsed"}`}
+      className={`admin-shell m2-admin-shell uz-app-shell${
+        expanded ? "" : " is-nav-collapsed"
+      }`}
       data-testid="admin-shell"
     >
       <aside

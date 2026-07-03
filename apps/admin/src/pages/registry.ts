@@ -149,7 +149,8 @@ export const adminPageRegistry = [
     navSection: "tenant",
     order: 8,
     requiredStates: [...stateMatrix, "SLA risk"],
-    sourcePath: "/Users/atilla/源码/unpacked 6/pages/conversations/ConversationsPage.tsx",
+    sourcePath:
+      "/Users/atilla/源码/unpacked 6/pages/conversations/ConversationsPage.tsx",
     status: "not_started",
     targetPath: "apps/admin/src/pages/conversations/ConversationsPage.tsx",
     targetSpecId: "M7-UI-04H-tenant-conversations"

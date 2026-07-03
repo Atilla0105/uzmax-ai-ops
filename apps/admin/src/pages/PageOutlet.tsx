@@ -1,11 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
-import {
-  getAdminPage,
-  initialAdminPageId,
-  type AdminPageId
-} from "./registry";
+import { getAdminPage, initialAdminPageId, type AdminPageId } from "./registry";
 
 export interface PageOutletProps {
   activePageId: AdminPageId;
@@ -29,11 +25,7 @@ export function PageOutlet({
   }
 
   return (
-    <section
-      className="page-grid"
-      data-page-id={page.id}
-      data-testid="page-outlet"
-    >
+    <section className="page-grid" data-page-id={page.id} data-testid="page-outlet">
       <section className="panel release-panel" data-testid="page-scaffold">
         <div className="section-heading">
           <p className="eyebrow">M7-UI page route</p>
@@ -41,7 +33,10 @@ export function PageOutlet({
         </div>
         <PageState
           action={
-            <Button onClick={() => onPageChange(initialAdminPageId)} variant="secondary">
+            <Button
+              onClick={() => onPageChange(initialAdminPageId)}
+              variant="secondary"
+            >
               Open legacy evidence route
             </Button>
           }

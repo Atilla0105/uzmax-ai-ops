@@ -42,6 +42,7 @@ feature
 - 触碰模块集合（机器可读 glob/path，一行一个；禁止散文；`guard:pr-shape` 唯一读取本列表）：
   - `docs/specs/M7-UI-05-layered-navigation-shell.md`
   - `apps/admin/src/shell/AppShell.tsx`
+  - `apps/admin/src/shell/AppShellIcons.ts`
   - `apps/admin/src/shell/AppShell.css`
   - `apps/admin/src/pages/registry.ts`
   - `apps/admin/src/pages/PageOutlet.tsx`
@@ -57,14 +58,15 @@ feature
 
 Implementation PR budget:
 
-- source changed files: <= 5
+- source changed files: <= 6
 - source net LOC: <= 600
-- new source files: 0
+- new source files: <= 1
 - test files changed: <= 2 focused Playwright specs
 - docs changed: <= 4
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - binary screenshots/artifacts committed: 0
 - external API/SDK/provider/connector/adapter basis: none; frontend route state only.
+- new source file ownership: `apps/admin/src/shell/AppShellIcons.ts` is a shell-local helper for tree-shakeable lucide icon mapping; it avoids bloating `AppShell.tsx` past the React file-length lint limit and avoids namespace-import bundle growth.
 - exceptions: `apps/admin/src/pages/PageOutlet.tsx` is included only to decouple the legacy evidence route from `initialAdminPageId` after admin/home changes to `group.overview`.
 
 ## 文档触发检查

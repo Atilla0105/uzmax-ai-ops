@@ -1,15 +1,10 @@
 import "./AppShell.css";
 import { useMemo, useState, type ReactNode } from "react";
-import * as Icons from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Bell, PanelLeftClose, UserCircle } from "lucide-react";
 import { Button, Heartbeat, IconSlot, SearchInput, StatusBadge } from "../primitives";
 import { NavItem } from "../patterns";
-import {
-  adminPageIcon,
-  adminPageNavigation,
-  getAdminPage,
-  type AdminPageId
-} from "../pages/registry";
+import { adminPageNavigation, getAdminPage, type AdminPageId } from "../pages/registry";
+import { appShellIcons } from "./AppShellIcons";
 
 type TenantHealth = "healthy" | "degraded" | "attention";
 interface AppShellTenant extends Record<"id" | "name" | "status", string> {
@@ -105,7 +100,7 @@ export function AppShell({
         <Button
           aria-label={navToggle.aria}
           className="uz-nav-collapse"
-          icon={<IconSlot icon={Icons.PanelLeftClose} />}
+          icon={<IconSlot icon={PanelLeftClose} />}
           onClick={() => setExpanded((current) => !current)}
           variant="ghost"
         >
@@ -169,10 +164,10 @@ export function AppShell({
               <span>68ms</span>
             </span>
             <button aria-label="Notifications" type="button" disabled>
-              <IconSlot icon={Icons.Bell} />
+              <IconSlot icon={Bell} />
             </button>
             <button aria-label="User menu" type="button" disabled>
-              <IconSlot icon={Icons.UserCircle} />
+              <IconSlot icon={UserCircle} />
             </button>
           </div>
         </header>
@@ -211,7 +206,7 @@ function NavGroup({ activePageId, collapsed, items, label, onSelect }: NavGroupP
 function createNavEntry(page: AdminNavigationPage) {
   return {
     badge: navBadges[page.id],
-    icon: Icons[adminPageIcon[page.id]] as LucideIcon,
+    icon: appShellIcons[page.id],
     id: page.id,
     label: page.label,
     navId: page.navId ?? page.id

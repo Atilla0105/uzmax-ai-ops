@@ -1,5 +1,3 @@
-import type * as Icons from "lucide-react";
-
 type AdminPageLayer = "group" | "tenant" | "legacy";
 type AdminPageNavSection = "group" | "tenant";
 type AdminPageStatus =
@@ -330,28 +328,6 @@ type PlannedAdminPageId = Exclude<AdminPageId, "legacy.evidence">;
 
 export const initialAdminPageId: AdminPageId = "group.overview";
 export const legacyEvidencePageId: AdminPageId = "legacy.evidence";
-export const adminPageIcon = {
-  "group.connections": "Plug",
-  "group.logs": "ScrollText",
-  "group.modelRisk": "Cpu",
-  "group.overview": "LayoutDashboard",
-  "group.release": "Rocket",
-  "group.templates": "Copy",
-  "group.tenants": "Building2",
-  "legacy.evidence": "ScrollText",
-  "tenant.aiMembers": "Bot",
-  "tenant.analytics": "BarChart3",
-  "tenant.config": "SlidersHorizontal",
-  "tenant.conversations": "MessageSquare",
-  "tenant.customers": "Users",
-  "tenant.eval": "Gauge",
-  "tenant.knowledge": "BookOpen",
-  "tenant.logs": "ScrollText",
-  "tenant.orders": "Package",
-  "tenant.queue": "Inbox",
-  "tenant.team": "UsersRound",
-  "tenant.tickets": "ClipboardList"
-} satisfies Record<AdminPageId, keyof typeof Icons>;
 
 type AdminPageNavigationEntry = AdminPageRegistryEntry & {
   readonly id: PlannedAdminPageId;

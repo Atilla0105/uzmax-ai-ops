@@ -1,0 +1,45 @@
+import {
+  BarChart3,
+  BookOpen,
+  Bot,
+  Building2,
+  ClipboardList,
+  Copy,
+  Cpu,
+  Gauge,
+  Inbox,
+  LayoutDashboard,
+  MessageSquare,
+  Package,
+  Plug,
+  Rocket,
+  ScrollText,
+  SlidersHorizontal,
+  Users,
+  UsersRound,
+  type LucideIcon
+} from "lucide-react";
+import type { AdminPageId } from "../pages/registry";
+
+export const appShellIcons = {
+  "group.connections": Plug,
+  "group.logs": ScrollText,
+  "group.modelRisk": Cpu,
+  "group.overview": LayoutDashboard,
+  "group.release": Rocket,
+  "group.templates": Copy,
+  "group.tenants": Building2,
+  "legacy.evidence": ScrollText,
+  "tenant.aiMembers": Bot,
+  "tenant.analytics": BarChart3,
+  "tenant.config": SlidersHorizontal,
+  "tenant.conversations": MessageSquare,
+  "tenant.customers": Users,
+  "tenant.eval": Gauge,
+  "tenant.knowledge": BookOpen,
+  "tenant.logs": ScrollText,
+  "tenant.orders": Package,
+  "tenant.queue": Inbox,
+  "tenant.team": UsersRound,
+  "tenant.tickets": ClipboardList
+} satisfies Record<AdminPageId, LucideIcon>;

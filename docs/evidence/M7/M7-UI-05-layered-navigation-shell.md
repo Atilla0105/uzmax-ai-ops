@@ -71,6 +71,7 @@ Source mapping:
 | `apps/admin/src/pages/PageOutlet.tsx` | Uses `legacyEvidencePageId` instead of `initialAdminPageId` for the legacy evidence route so `/design` can open group overview. |
 | `apps/admin/src/App.tsx` | Owns an explicit `AdminShellRoute { level, pageId, tenantId? }`, normalizes route transitions by registry layer, and passes route state into AppShell/PageOutlet. |
 | `apps/admin/src/shell/AppShell.tsx` | Exports route types, derives active nav from `route.level`, renders exactly one `NavGroup`, implements tenant selection behavior, and adds breadcrumb/back-to-group plus active layer badge. |
+| `apps/admin/src/shell/AppShellIcons.ts` | Provides shell-local tree-shakeable lucide icon mapping for all registry page ids without bloating `AppShell.tsx`. |
 | `apps/admin/src/shell/AppShell.css` | Removes the existing `transition: width` layout animation so Impeccable no longer reports the prior `layout-transition` shell warning; existing 232px/68px dimensions remain. |
 | `apps/admin/tests/m7-ui-page-router.spec.ts` | Covers `/design` initial group-only route, tenant transition, group release with group-only nav, tenant queue with tenant-only nav, and back-to-group. |
 | `apps/admin/tests/m7-ui-foundation.spec.ts` | Covers shell anchors, collapse width 232 -> 68, active-layer icon counts 7/12, tenant default page and 320px no-overflow fallback. |
@@ -115,11 +116,11 @@ Screenshot artifacts are generated under `/tmp/uzmax-m7-ui-05-layered-navigation
 |---|---|---|
 | `git diff --check` | pass | No whitespace errors. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-05-layered-navigation-shell.md --include-worktree` | pass | 11 changed files: source 5, test 2, docs 4; source net LOC 0; new source files 0. |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-05-layered-navigation-shell.md --include-worktree` | pass | 12 changed files: source 6, test 2, docs 4; source net LOC 53; new source files 1. |
 | `npm run knip` | pass | No findings. |
 | `npm run lint` | pass | AppShell line count/complexity blocker fixed. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript no emit check passed. |
-| `npm run build:admin` | pass | Vite admin build succeeded; JS gzip about 99.49 kB. |
+| `npm run build:admin` | pass | Vite admin build succeeded; JS gzip about 99.44 kB after tree-shakeable shell icon helper extraction. |
 | `npx playwright test apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-foundation.spec.ts` | pass | 5 focused tests passed. |
 | screenshot capture | pass | Three screenshots captured under `/tmp/uzmax-m7-ui-05-layered-navigation-shell/`; screenshots are not committed. |
 | forbidden path check | pass | Changed files are limited to spec touch list; no backend/package/lock/CI/global config drift. |

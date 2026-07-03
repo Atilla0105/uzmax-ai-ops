@@ -47,6 +47,7 @@ feature
   - `apps/admin/src/pages/registry.ts`
   - `apps/admin/src/pages/PageOutlet.tsx`
   - `apps/admin/src/App.tsx`
+  - `apps/admin/tests/helpers/openLegacyEvidence.ts`
   - `apps/admin/tests/design.spec.ts`
   - `apps/admin/tests/m5-ai-member-console.spec.ts`
   - `apps/admin/tests/m5-confirmation-queue.spec.ts`
@@ -71,7 +72,7 @@ Implementation PR budget:
 - source changed files: <= 6
 - source net LOC: <= 600
 - new source files: <= 1
-- test files changed: <= 12 Playwright specs
+- test files changed: <= 13 Playwright/helper files
 - docs changed: <= 4
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - binary screenshots/artifacts committed: 0
@@ -253,6 +254,7 @@ Full validation before PR:
 - `npm run guard:doc-triggers`
 - `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-05-layered-navigation-shell.md --include-worktree`
 - `npm run knip`
+- `npm run jscpd`
 - `npm run lint`
 - `npm run typecheck -- --pretty false`
 - `npm run build:admin`

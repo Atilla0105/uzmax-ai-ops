@@ -1,4 +1,8 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import {
+  openLegacyEvidence,
+  openLegacyEvidenceFromCurrentPage
+} from "./helpers/openLegacyEvidence";
 
 test("loads the M1 admin group and tenant shell", async ({ page }) => {
   await openLegacyEvidence(page);
@@ -404,13 +408,3 @@ test("keeps the M1 shell usable at the tablet breakpoint", async ({ page }) => {
   await expect(page.getByTestId("m4-customer-detail")).toContainText("Customer detail");
   await expect(page.getByTestId("ticket-detail")).toContainText("SLA policy ref");
 });
-
-async function openLegacyEvidence(page: Page) {
-  await page.goto("/design");
-  await openLegacyEvidenceFromCurrentPage(page);
-}
-
-async function openLegacyEvidenceFromCurrentPage(page: Page) {
-  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
-  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
-}

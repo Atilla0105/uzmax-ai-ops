@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 test("spans the M5 operations loop closeout on desktop", async ({ page }) => {
   await openLegacyEvidence(page);
@@ -83,9 +84,3 @@ test("keeps M5 closeout essentials usable at 320px", async ({ page }) => {
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(320);
 });
-
-async function openLegacyEvidence(page: Page) {
-  await page.goto("/design");
-  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
-  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
-}

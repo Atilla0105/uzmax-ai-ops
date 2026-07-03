@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 const memberId = "00000000-0000-4000-8000-000000000507";
 const evalGateId = "11111111-1111-4111-8111-111111111507";
@@ -176,12 +177,6 @@ test("keeps empty runtime queue empty without synthetic card fallback", async ({
     requests.filter((path) => path.includes("/confirmation-queue/items/"))
   ).toHaveLength(0);
 });
-
-async function openLegacyEvidence(page: Page) {
-  await page.goto("/design");
-  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
-  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
-}
 
 async function routeRuntimeApis(page: Page) {
   await page.route("**/confirmation-queue/items?status=pending", async (route) => {

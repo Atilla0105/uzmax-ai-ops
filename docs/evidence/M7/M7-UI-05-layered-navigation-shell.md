@@ -75,7 +75,8 @@ Source mapping:
 | `apps/admin/src/shell/AppShell.css` | Removes the existing `transition: width` layout animation so Impeccable no longer reports the prior `layout-transition` shell warning; existing 232px/68px dimensions remain. |
 | `apps/admin/tests/m7-ui-page-router.spec.ts` | Covers `/design` initial group-only route, tenant transition, group release with group-only nav, tenant queue with tenant-only nav, and back-to-group. |
 | `apps/admin/tests/m7-ui-foundation.spec.ts` | Covers shell anchors, collapse width 232 -> 68, active-layer icon counts 7/12, tenant default page and 320px no-overflow fallback. |
-| legacy evidence Playwright specs | Migrates older M2/M5/M6/M7 pattern specs to explicitly click `Open legacy evidence route` after `/design` instead of assuming legacy panels are initial DOM. |
+| `apps/admin/tests/helpers/openLegacyEvidence.ts` | Centralizes the explicit legacy evidence route helper used by older M2/M5/M6/M7 pattern specs, avoiding duplicated local Playwright setup blocks. |
+| legacy evidence Playwright specs | Import the shared helper and explicitly click `Open legacy evidence route` after `/design` instead of assuming legacy panels are initial DOM. |
 | `apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | Updates `openQueue` to enter the tenant layer via the tenant switcher before clicking the tenant-only 确认队列 nav item. |
 | `docs/specs/M7-UI-05-layered-navigation-shell.md` | Updates the previously docs-only contract to the actual focused implementation scope and validation contract. |
 | `docs/evidence/M7/README.md` | Records UI-05 as implementation pending PR review. |
@@ -119,8 +120,9 @@ Screenshot artifacts are generated under `/tmp/uzmax-m7-ui-05-layered-navigation
 |---|---|---|
 | `git diff --check` | pass | No whitespace errors. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-05-layered-navigation-shell.md --include-worktree` | pass | 22 changed files: source 6, test 12, docs 4; source net LOC 53; new source files 1. |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-05-layered-navigation-shell.md --include-worktree` | pass | 23 changed files: source 6, test 13, docs 4; source net LOC 53; new source files 1. |
 | `npm run knip` | pass | No findings. |
+| `npm run jscpd` | pass | No duplicate blocks reported after shared legacy evidence helper extraction. |
 | `npm run lint` | pass | AppShell line count/complexity blocker fixed. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript no emit check passed. |
 | `npm run build:admin` | pass | Vite admin build succeeded; JS gzip about 99.44 kB after tree-shakeable shell icon helper extraction. |

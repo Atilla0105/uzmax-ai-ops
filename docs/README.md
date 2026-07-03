@@ -15,7 +15,7 @@
 - 技术选型、包边界、RLS/鉴权/LLM/部署治理：只以技术架构为准。
 - 后台信息架构、设计语言、前端质量预算：只以后台设计与前端架构为准。
 - P0/P1/P2、验收项、条件式 spike 分支：只以 1.0 验收矩阵为准。
-- 视觉系统标准源：`admin-design-system.md` 是 M7-03 从 owner 原型、v1.1 文档和 Design Skill Layer 派生的后台 design system 源稿；`../PRODUCT.md`、`../DESIGN.md` 和 `evidence/M7/` 记录 Impeccable brief、当前 token bridge、detector baseline 和 UI follow-up 队列。它们不得替代四份 v1.1 真源。
+- 视觉系统标准源：M7+ 字体、颜色、组件、布局密度、动效、交互状态和微文案形态以 owner 当前原型 `/Users/atilla/Downloads/运营塔台1.0.html`、`/Users/atilla/源码/unpacked 6`、`admin-design-system.md` 和 `../DESIGN.md` 为准；旧 `--uzmax-*` token 与旧后台 shell 视觉只作为 legacy implementation evidence，不得作为新 UI 的视觉判断依据。四份 v1.1 真源仍控制产品范围、技术边界、后台 IA、权限、安全、验收与发布门禁。
 - 开工闸门顺序、Gate 0/Gate 1 判定条件：只以 `preflight/00-opening-control-matrix.md` 为准。
 - 单项任务的执行步骤、通过条件、失败分支：只以 `specs/` 对应 spec 为准。
 - 文档何时必须新增或更新：以 `doc-gates.md` 的触发矩阵为准；PR/spec 字段只做提醒，不复写规则。
@@ -33,7 +33,7 @@
 - `preflight/`：开工前控制矩阵、项目输入、外部依赖 spike 清单。
 - `specs/`：每个可执行任务的边界、Owner、时间盒、通过条件和失败分支。
 - `doc-gates.md`：真实能力、路径或闸门出现后，哪些文档必须存在或更新。
-- `admin-design-system.md`：M7-03 视觉系统标准源稿；仅作为后台视觉执行层和后续 `/design` / token / UI specs 的输入。
+- `admin-design-system.md`：M7-05 后的视觉系统标准源；作为后台视觉执行层和后续 `/design` / token / UI specs 的输入。
 - `adr/`：不可逆或高风险技术/产品决策。
 - `runbooks/`：部署、回滚、故障、GA-0 与发布演练步骤。
 - `evidence/`：里程碑、spike、评测、演练和项目 owner 确认证据索引。

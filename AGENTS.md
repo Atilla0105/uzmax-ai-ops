@@ -8,6 +8,8 @@
 - 技术边界以 `UZMAX智能运营系统-技术架构-v1.1.md` 为准。
 - 后台体验以 `UZMAX智能运营系统-后台设计与前端架构-v1.1.md` 为准。
 - 发布阻断以 `UZMAX智能运营系统-1.0验收矩阵-v1.1.md` 为准。
+- M7+ 后台视觉实现以 owner 当前原型 `/Users/atilla/Downloads/运营塔台1.0.html`、解包源码 `/Users/atilla/源码/unpacked 6` 和 `docs/admin-design-system.md` 为准；旧后台 shell、旧 `--uzmax-*` token 与早期视觉措辞只作为 legacy implementation / historical evidence，不得作为新 UI 的视觉判断依据。
+- 若当前原型视觉与 v1.1 后台文档中的旧视觉细节冲突，字体、颜色、组件、布局密度、动效、交互状态与微文案形态以当前原型体系为准；产品范围、信息架构、权限、安全、RLS、技术边界、验收和发布门禁仍以 v1.1/AGENTS/owner 决策边界为准。
 - 新增工作必须先有 `docs/specs/` 下的 spec；一个 PR 只实现一个 spec。
 
 ## 2. Governance Roles
@@ -20,8 +22,9 @@
 ### 2A. Design Skill Layer
 
 - UZMAX 缺省设计能力层是项目级 Impeccable / Design Skill Layer；它不是普通 lint，也不是项目 owner。
-- 后台 UI 的布局、密度、视觉层级、交互状态、loading/empty/error/permission/degraded、移动兜底、组件表达和微文案形态，默认采纳 Design Skill Layer 的判断。
+- 后台 UI 的布局、密度、视觉层级、交互状态、loading/empty/error/permission/degraded、移动兜底、组件表达和微文案形态，默认采纳 Design Skill Layer 对当前 owner 原型体系的判断。
 - 若 Design Skill Layer 与本文件、PRD v1.1、技术架构 v1.1、后台设计与前端架构 v1.1、验收矩阵 v1.1、权限、安全、RLS、发布 gate、真实业务事实、真实账号/客户数据、LLM key、成本或合规边界冲突，UZMAX source-of-truth 和项目 owner 决策边界优先。
+- Design Skill Layer 不得把旧后台 shell、旧 `--uzmax-*` bridge 或旧视觉文档措辞重新提升为新 UI 的设计源；这些内容只能用于识别迁移差异和 legacy debt。
 - UI spec 必须记录 Impeccable shape/critique/detect 或等价设计审计的采纳、拒绝和拒绝理由；拒绝设计建议只能基于明确治理、安全、权限、验收、性能或业务事实边界。
 
 ## 3. Dependency Rules

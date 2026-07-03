@@ -89,7 +89,10 @@ test("supports table selection, keyboard row action and stacked toasts", async (
   await page.keyboard.press("Enter");
   await expect(toastHost).toContainText("Row action preview: Queue review");
 
-  await page.getByRole("button", { name: "Apply" }).click();
+  await page
+    .getByTestId("m7-filter-bar")
+    .getByRole("button", { name: "Apply filters" })
+    .click();
   await expect(toastHost).toContainText("Filter preview updated");
   await expect(toastHost).toContainText("Filter preview saved");
 

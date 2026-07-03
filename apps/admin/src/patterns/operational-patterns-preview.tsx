@@ -128,7 +128,7 @@ export function OperationalPatternsPreview() {
               }}
               variant="secondary"
             >
-              Apply
+              Apply filters
             </Button>
           }
           filters={[
@@ -143,7 +143,8 @@ export function OperationalPatternsPreview() {
               defaultValue: "all"
             }
           ]}
-          searchLabel="Operational pattern search"
+          searchLabel="Operational pattern lookup"
+          searchPlaceholder="Find pattern"
         />
         <div className="operational-patterns__grid">
           <div className="operational-patterns__stack">

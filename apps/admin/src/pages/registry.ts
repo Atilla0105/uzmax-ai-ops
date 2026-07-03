@@ -1,8 +1,8 @@
-export type AdminPageLayer = "group" | "tenant" | "legacy";
-export type AdminPageNavSection = "group" | "tenant";
-export type AdminPageStatus = "not_started" | "legacy_evidence";
+type AdminPageLayer = "group" | "tenant" | "legacy";
+type AdminPageNavSection = "group" | "tenant";
+type AdminPageStatus = "not_started" | "legacy_evidence";
 
-export interface AdminPageRegistryEntry {
+interface AdminPageRegistryEntry {
   evidenceStatus: string;
   iaPage: string;
   id: string;
@@ -20,7 +20,7 @@ export interface AdminPageRegistryEntry {
 
 const stateMatrix = ["loading", "empty", "error", "permission", "degraded"] as const;
 
-export const adminPageRegistry = [
+const adminPageRegistry = [
   {
     evidenceStatus: "legacy_evidence_route",
     iaPage: "M2-M6 legacy evidence",
@@ -323,11 +323,11 @@ export const adminPageRegistry = [
 ] as const satisfies readonly AdminPageRegistryEntry[];
 
 export type AdminPageId = (typeof adminPageRegistry)[number]["id"];
-export type PlannedAdminPageId = Exclude<AdminPageId, "legacy.evidence">;
+type PlannedAdminPageId = Exclude<AdminPageId, "legacy.evidence">;
 
 export const initialAdminPageId: AdminPageId = "legacy.evidence";
 
-export type AdminPageNavigationEntry = AdminPageRegistryEntry & {
+type AdminPageNavigationEntry = AdminPageRegistryEntry & {
   readonly id: PlannedAdminPageId;
   readonly navId: string;
   readonly navSection: AdminPageNavSection;

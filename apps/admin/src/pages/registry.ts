@@ -108,7 +108,7 @@ const adminPageRegistry = [
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupReleasePage.tsx",
     status: "not_started",
     targetPath: "apps/admin/src/pages/group/GroupReleasePage.tsx",
-    targetSpecId: "M7-UI-04E-group-release"
+    targetSpecId: "M7-UI-11-release-acceptance-page"
   },
   {
     evidenceStatus: "not_started",
@@ -179,7 +179,7 @@ const adminPageRegistry = [
     layer: "tenant",
     navId: "customers",
     navSection: "tenant",
-    order: 10,
+    order: 11,
     requiredStates: [...stateMatrix, "privacy boundary"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/customers/CustomersPage.tsx",
     status: "not_started",
@@ -194,7 +194,7 @@ const adminPageRegistry = [
     layer: "tenant",
     navId: "orders",
     navSection: "tenant",
-    order: 11,
+    order: 12,
     requiredStates: [...stateMatrix, "stale snapshot"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/orders/OrdersPage.tsx",
     status: "not_started",
@@ -209,7 +209,7 @@ const adminPageRegistry = [
     layer: "tenant",
     navId: "knowledge",
     navSection: "tenant",
-    order: 12,
+    order: 13,
     requiredStates: [...stateMatrix, "eval-gated publish"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/knowledge/KnowledgePage.tsx",
     status: "not_started",
@@ -224,7 +224,7 @@ const adminPageRegistry = [
     layer: "tenant",
     navId: "queue",
     navSection: "tenant",
-    order: 13,
+    order: 10,
     requiredStates: [...stateMatrix, "conflict diff"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/queue/QueuePage.tsx",
     status: "implemented_in_worker_pending_pr",
@@ -326,7 +326,8 @@ const adminPageRegistry = [
 export type AdminPageId = (typeof adminPageRegistry)[number]["id"];
 type PlannedAdminPageId = Exclude<AdminPageId, "legacy.evidence">;
 
-export const initialAdminPageId: AdminPageId = "legacy.evidence";
+export const initialAdminPageId: AdminPageId = "group.overview";
+export const legacyEvidencePageId: AdminPageId = "legacy.evidence";
 
 type AdminPageNavigationEntry = AdminPageRegistryEntry & {
   readonly id: PlannedAdminPageId;
@@ -338,15 +339,15 @@ function isNavigableAdminPage(
   page: AdminPageRegistryEntry
 ): page is AdminPageNavigationEntry {
   return (
-    page.id !== initialAdminPageId &&
+    page.layer !== "legacy" &&
     typeof page.navId === "string" &&
     (page.navSection === "group" || page.navSection === "tenant")
   );
 }
 
-const navigableAdminPages = (
-  adminPageRegistry as readonly AdminPageRegistryEntry[]
-).filter(isNavigableAdminPage);
+const navigableAdminPages = (adminPageRegistry as readonly AdminPageRegistryEntry[])
+  .filter(isNavigableAdminPage)
+  .sort((left, right) => left.order - right.order);
 
 export const adminPageNavigation = {
   group: navigableAdminPages.filter((page) => page.navSection === "group"),

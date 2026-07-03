@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 test("renders the M5-07 template center desktop flow", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-template-center-shell");
   const tabs = page.getByTestId("m5-template-tabs");
   await expect(shell).toBeVisible();
@@ -38,7 +39,7 @@ test("renders the M5-07 template center desktop flow", async ({ page }) => {
 
 test("keeps M5-07 template copy usable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-template-center-shell");
   const tabs = page.getByTestId("m5-template-tabs");
   await expect(shell).toBeVisible();

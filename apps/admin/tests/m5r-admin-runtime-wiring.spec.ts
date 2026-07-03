@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 const memberId = "00000000-0000-4000-8000-000000000507";
 const evalGateId = "11111111-1111-4111-8111-111111111507";
@@ -21,7 +22,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("wires M5 admin shells to runtime API clients", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-runtime-result")).toContainText(
     "API loaded 1 confirmation items"
@@ -94,7 +95,7 @@ test("routes 320px confirmation and AI emergency controls through API", async ({
   page
 }) => {
   await page.setViewportSize({ width: 320, height: 980 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await page.getByRole("button", { name: "Approve" }).first().click();
   await page.getByRole("button", { name: "Discard" }).first().click();
@@ -135,7 +136,7 @@ test("blocks runtime capability enable when config evidence is missing", async (
     });
   });
 
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-ai-runtime-result")).toContainText(
     "Runtime state breaker_offline"
@@ -160,7 +161,7 @@ test("keeps empty runtime queue empty without synthetic card fallback", async ({
     await route.fulfill({ json: { items: [] } });
   });
 
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-runtime-result")).toContainText(
     "API loaded 0 confirmation items"

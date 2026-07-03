@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
 import { QueuePage } from "./queue/QueuePage";
-import { getAdminPage, initialAdminPageId, type AdminPageId } from "./registry";
+import { getAdminPage, legacyEvidencePageId, type AdminPageId } from "./registry";
 
 export interface PageOutletProps {
   activePageId: AdminPageId;
@@ -17,7 +17,7 @@ export function PageOutlet({
 }: PageOutletProps) {
   const page = getAdminPage(activePageId);
 
-  if (page.id === initialAdminPageId) {
+  if (page.id === legacyEvidencePageId) {
     return (
       <section data-page-id={page.id} data-testid="legacy-evidence-route">
         {legacyEvidence}
@@ -43,7 +43,7 @@ export function PageOutlet({
         <PageState
           action={
             <Button
-              onClick={() => onPageChange(initialAdminPageId)}
+              onClick={() => onPageChange(legacyEvidencePageId)}
               variant="secondary"
             >
               Open legacy evidence route

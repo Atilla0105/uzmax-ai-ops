@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 test("renders the M6-01 evidence-driven release gate console", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   const release = page.getByTestId("release-readiness");
   await expect(release).toContainText("M5 evidence is owner accepted");

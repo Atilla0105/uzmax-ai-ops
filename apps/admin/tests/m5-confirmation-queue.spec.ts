@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 test("renders the M5-04 confirmation queue desktop flow", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-confirmation-queue-shell");
   await expect(shell).toBeVisible();
   await expect(page.getByTestId("m5-queue-health")).toContainText(
@@ -47,7 +48,7 @@ test("keeps the M5-04 confirmation queue usable on mobile fallback", async ({
   page
 }) => {
   await page.setViewportSize({ width: 320, height: 860 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("m5-confirmation-queue-shell")).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Discard" }).first()).toBeVisible();

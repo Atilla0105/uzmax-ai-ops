@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 test("renders the M5-05 AI member console desktop flow", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-ai-member-console-shell");
   await expect(shell).toBeVisible();
   await expect(page.getByTestId("m5-ai-member-summary")).toContainText(
@@ -52,7 +53,7 @@ test("keeps the M5-05 AI member console usable on mobile fallback", async ({
   page
 }) => {
   await page.setViewportSize({ width: 320, height: 860 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-ai-member-console-shell");
   const fallback = page.getByTestId("m5-ai-mobile-fallback");
   await expect(shell).toBeVisible();

@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 test("renders the M5-06 logs analytics desktop flow", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-logs-analytics-shell");
   const filters = page.getByTestId("m5-log-filters");
   await expect(shell).toBeVisible();
@@ -56,7 +57,7 @@ test("renders the M5-06 logs analytics desktop flow", async ({ page }) => {
 
 test("keeps M5-06 logs and essential metrics usable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-logs-analytics-shell");
   const filters = page.getByTestId("m5-log-filters");
   await expect(shell).toBeVisible();

@@ -84,8 +84,8 @@ Reviewer remediation update: the PR remains Draft. UI-06 shell/topbar blocker is
 - Changed source remains inside the allowed page-local scope: `apps/admin/src/pages/conversations/**`, `PageOutlet`, and `registry`.
 - `conversationWorkbenchPanels.tsx` is intentionally added as a page-local support file. Reason: Prettier-expanded JSX/CSS pushed `conversationWorkbenchStyles.tsx` over the React file-length limit and concentrated right-rail/state complexity; splitting the rail/state support keeps lintable code without touching shared primitives, patterns, tokens or shell.
 - Coordinator-approved test-scope expansion is recorded in the spec: `apps/admin/tests/helpers/openLegacyEvidence.ts` and `apps/admin/tests/m7-ui-foundation.spec.ts` are allowed only for full-suite compatibility after `tenant.conversations` stopped being a scaffold. This is test/helper compatibility only and is not permission to touch shared shell, tokens, primitives, patterns, `AppShell`, global config, backend/API, WebSocket, package/lock, CI/guard or DB/schema.
-- Post-UI-06 `pr-shape` without PR metadata fails on source budget: `net source LOC 1080 > 600`.
-- Post-UI-06 `pr-shape` with PR-body metadata and `Exception: large_change_exception` passes and reports `source.changedFiles=6`, `source.netLoc=1080`, `source.newFiles=4`.
+- Post-UI-06 `pr-shape` without PR metadata fails on source budget: `net source LOC 1145 > 600`.
+- Post-UI-06 `pr-shape` with PR-body metadata and `Exception: large_change_exception` passes and reports `source.changedFiles=6`, `source.netLoc=1145`, `source.newFiles=4`.
 - The `large_change_exception` is source-size governance only and still requires coordinator/owner review before merge; it is not page acceptance, runtime closure or release approval.
 - No package/lock, backend/API, DB/schema, shared token, shared primitive, shared pattern, shell architecture, CI/guard or PR #178 files were touched. `apps/admin/tests/helpers/openLegacyEvidence.ts` has a narrow full-suite compatibility update so legacy evidence specs can open the explicit legacy route after tenant-layer navigation.
 
@@ -108,7 +108,7 @@ Post-UI-06 reviewer-remediation validation run from `/Users/atilla/.codex/worktr
 - `git diff --check` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run format:check` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run guard:doc-triggers` - pass.
-- `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: 14 changed files, categories source 6 / test 4 / docs 4, source net LOC 1080, new source files 4.
+- `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: 14 changed files, categories source 6 / test 4 / docs 4, source net LOC 1145, new source files 4.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run lint` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run typecheck -- --pretty false` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run build:admin` - pass.

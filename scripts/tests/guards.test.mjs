@@ -29,6 +29,23 @@ describe("pr-shape guard", () => {
     assert.doesNotThrow(() => runPrShape(repo));
   });
 
+  it("matches non-ASCII paths when Git quotePath is enabled", () => {
+    const file = "UZMAX智能运营系统-PRD-v1.1.md";
+    const repo = createGitFixture({ spec: specContent("docs", [file]) });
+    run("git", ["config", "core.quotePath", "true"], repo);
+    write(repo, file, "# PRD\n");
+    commitFeature(repo);
+
+    const rawPath = execFileSync("git", ["diff", "--name-only", "main...HEAD"], {
+      cwd: repo,
+      encoding: "utf8"
+    }).trim();
+    assert.notEqual(rawPath, file);
+    assert.match(rawPath, /^"/);
+
+    assert.doesNotThrow(() => runPrShape(repo));
+  });
+
   it("blocks files outside the spec touch list", () => {
     const repo = createGitFixture();
     write(repo, "outside.ts", "export const nope = true;\n");
@@ -378,7 +395,12 @@ function outputIncludes(text) {
   };
 }
 
-function specContent(specType = "feature") {
+function specContent(
+  specType = "feature",
+  touchPatterns = ["src/**", "packages/evals/**"]
+) {
+  const touchList = touchPatterns.map((pattern) => `- \`${pattern}\``).join("\n");
+
   return `# REQ-01
 
 ## Spec 类型
@@ -387,8 +409,7 @@ ${specType}
 
 ## 触碰模块/文件
 
-- \`src/**\`
-- \`packages/evals/**\`
+${touchList}
 `;
 }
 

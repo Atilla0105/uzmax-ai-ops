@@ -7,15 +7,30 @@ type MessageDirection = "inbound" | "internal" | "outbound";
 export type ConversationRow = {
   aiState?: "active" | "suspended";
   awaitingReply?: boolean;
+  channel?: string;
+  customerRef?: string;
+  customFields?: Array<{ label: string; value: string }>;
+  displayRef?: string;
+  dualTracks?: Array<{ stage: string; time: string; via: string }>;
   externalConversationRef: string;
+  journeyStage?: string;
+  language?: string;
   id: string;
   inFlightAiMessages?: Array<{ id: string; status: string }>;
   lastMessageAt?: string;
+  lastPreview?: string;
+  memberLabel?: string;
+  notes?: Array<{ text: string; time: string; who: string }>;
+  orderRef?: string;
   participantExternalRef: string;
+  quoteRef?: string;
   slaRisk?: boolean;
+  slaText?: string;
   status: ConversationStatus;
   subject?: string;
+  tags?: string[];
   tenantId: string;
+  ticketRef?: string;
   unreadCount: number;
 };
 
@@ -55,13 +70,58 @@ function bool(value: unknown) {
   return value === true;
 }
 
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function pairArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter(isRecord).map((item) => ({
+        label: text(item.label, "字段"),
+        value: text(item.value, "—")
+      }))
+    : [];
+}
+
+function notesArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter(isRecord).map((item) => ({
+        text: text(item.text, "—"),
+        time: text(item.time, "刚刚"),
+        who: text(item.who, "运营")
+      }))
+    : [];
+}
+
+function tracksArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter(isRecord).map((item) => ({
+        stage: text(item.stage, "引导节点"),
+        time: text(item.time, "—"),
+        via: text(item.via, "对话")
+      }))
+    : [];
+}
+
 function readConversation(value: unknown): ConversationRow {
   const record = isRecord(value) ? value : {};
   const status = text(record.status, "open") as ConversationStatus;
   return {
     aiState: record.aiState === "suspended" ? "suspended" : "active",
     awaitingReply: bool(record.awaitingReply),
-    externalConversationRef: text(record.externalConversationRef, "external-ref-unavailable"),
+    channel: text(record.channel, "Business"),
+    customerRef: text(record.customerRef),
+    customFields: pairArray(record.customFields),
+    displayRef: text(record.displayRef),
+    dualTracks: tracksArray(record.dualTracks),
+    externalConversationRef: text(
+      record.externalConversationRef,
+      "external-ref-unavailable"
+    ),
+    journeyStage: text(record.journeyStage),
+    language: text(record.language, "中 / ru"),
     id: text(record.id, "conversation-unavailable"),
     inFlightAiMessages: Array.isArray(record.inFlightAiMessages)
       ? record.inFlightAiMessages.filter(isRecord).map((message) => ({
@@ -70,13 +130,24 @@ function readConversation(value: unknown): ConversationRow {
         }))
       : [],
     lastMessageAt: text(record.lastMessageAt),
-    participantExternalRef: text(record.participantExternalRef, "customer-ref-unavailable"),
+    lastPreview: text(record.lastPreview),
+    memberLabel: text(record.memberLabel),
+    notes: notesArray(record.notes),
+    orderRef: text(record.orderRef),
+    participantExternalRef: text(
+      record.participantExternalRef,
+      "customer-ref-unavailable"
+    ),
+    quoteRef: text(record.quoteRef),
     slaRisk: bool(record.slaRisk),
+    slaText: text(record.slaText),
     status: ["closed", "handoff", "open", "pending_handoff"].includes(status)
       ? status
       : "open",
     subject: text(record.subject),
+    tags: stringArray(record.tags),
     tenantId: text(record.tenantId, "tenant-unavailable"),
+    ticketRef: text(record.ticketRef),
     unreadCount: numberValue(record.unreadCount)
   };
 }
@@ -95,11 +166,19 @@ function readMessage(value: unknown): MessageRow {
   };
 }
 
-async function readJson(fetcher: ApiFetcher, path: string, init: Parameters<ApiFetcher>[1] = { method: "GET" }) {
+async function readJson(
+  fetcher: ApiFetcher,
+  path: string,
+  init: Parameters<ApiFetcher>[1] = { method: "GET" }
+) {
   const response = await fetcher(path, init);
-  if (!response.ok) throw new Error(`conversation-ticket request failed with status ${response.status}`);
+  if (!response.ok)
+    throw new Error(
+      `conversation-ticket request failed with status ${response.status}`
+    );
   const payload = await response.json();
-  if (!isRecord(payload)) throw new Error("conversation-ticket response must be an object");
+  if (!isRecord(payload))
+    throw new Error("conversation-ticket response must be an object");
   return payload;
 }
 
@@ -112,7 +191,9 @@ function createConversationClient(fetcher: ApiFetcher = browserFetcher) {
       );
       return {
         conversation: readConversation(payload.conversation),
-        messages: Array.isArray(payload.messages) ? payload.messages.map(readMessage) : []
+        messages: Array.isArray(payload.messages)
+          ? payload.messages.map(readMessage)
+          : []
       };
     },
     async handoff(conversationId: string) {
@@ -163,7 +244,9 @@ export function useConversationWorkbenchRuntime() {
       setActiveId((current) => current || ordered[0]?.id || "");
       setStatus(ordered.length === 0 ? "empty" : "ready");
     } catch (error) {
-      setLastError(error instanceof Error ? error.message : "conversation workbench failed");
+      setLastError(
+        error instanceof Error ? error.message : "conversation workbench failed"
+      );
       setConversations([]);
       setStatus(statusForError(error));
     }
@@ -174,7 +257,9 @@ export function useConversationWorkbenchRuntime() {
     try {
       setDetail(await client.detail(activeId));
     } catch (error) {
-      setLastError(error instanceof Error ? error.message : "conversation detail failed");
+      setLastError(
+        error instanceof Error ? error.message : "conversation detail failed"
+      );
       setDetail(null);
     }
   }, [activeId, client, status]);
@@ -198,7 +283,9 @@ export function useConversationWorkbenchRuntime() {
       );
       setDetail((current) => current && { ...current, conversation });
     } catch (error) {
-      setLastError(error instanceof Error ? error.message : "handoff runtime unavailable");
+      setLastError(
+        error instanceof Error ? error.message : "handoff runtime unavailable"
+      );
     } finally {
       setHandoffPending(false);
     }
@@ -233,15 +320,20 @@ function degradedReason(
   lastError: string,
   detail: ConversationDetail | null
 ) {
-  if (status === "error") return "conversation-ticket API 不可用；页面保持只读，不回退到 fixture。";
-  if (status === "permission") return "缺少 conversation:read 或 ticket:write；后端权限仍是最终边界。";
+  if (status === "error")
+    return "conversation-ticket API 不可用；页面保持只读，不回退到 fixture。";
+  if (status === "permission")
+    return "缺少 conversation:read 或 ticket:write；后端权限仍是最终边界。";
   if (lastError) return lastError;
-  if (!detail) return "详情、AI 轨迹或客户上下文运行时尚未返回；操作保持降级。";
-  return "Business draft、human send、customer context 聚合和 WS 尚无已批准 M7 合约。";
+  if (!detail) return "详情/客户上下文未返回，操作降级。";
+  return "发送、客户聚合和实时 WS 未接入，保持只读确认。";
 }
 
 export function contentText(message: MessageRow) {
-  return text(message.content.text, text(message.content.preview, "[unsupported content]"));
+  return text(
+    message.content.text,
+    text(message.content.preview, "[unsupported content]")
+  );
 }
 
 export function displayName(conversation: ConversationRow) {

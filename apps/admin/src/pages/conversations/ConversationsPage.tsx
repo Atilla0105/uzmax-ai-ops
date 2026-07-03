@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { Avatar, Button, IconSlot, StatusBadge } from "../../primitives";
-import { DegradedBar } from "../../patterns";
+import {
+  ContextRail,
+  renderConversationState,
+  type RailTab
+} from "./conversationWorkbenchPanels";
 import {
   displayName,
   type ConversationRow,
@@ -9,15 +13,12 @@ import {
 } from "./conversationWorkbenchRuntime";
 import {
   Composer,
-  ContextRail,
   ConversationWorkbenchStyles,
   MessageBody,
-  ThreadHeader,
-  renderConversationState
+  ThreadHeader
 } from "./conversationWorkbenchStyles";
 
 type FilterId = "all" | "unread" | "awaiting" | "needs" | "sla" | "closed";
-type RailTab = "profile" | "tickets" | "orders" | "quotes";
 const filters: Array<{ id: FilterId; label: string }> = [
   { id: "all", label: "全部" },
   { id: "unread", label: "未读" },
@@ -70,18 +71,13 @@ export function ConversationsPage() {
           requestHandoff={() => void runtime.requestHandoff()}
         />
         {runtime.status === "ready" ? (
-          <DegradedBar data-testid="m7-conversation-degraded">
-            {runtime.degradedReason}
-          </DegradedBar>
-        ) : null}
-        {runtime.status === "ready" ? (
           <>
             <MessageBody
               messages={runtime.detail?.messages ?? []}
               toggleTrace={runtime.toggleTrace}
               traceOpen={runtime.traceOpen}
             />
-            <Composer active={active} />
+            <Composer active={active} degradedReason={runtime.degradedReason} />
           </>
         ) : null}
       </section>
@@ -112,7 +108,9 @@ function ConversationList({
     <aside className="uz-conv-list" data-testid="m7-conversation-list">
       <header className="uz-conv-list__head">
         <h2>会话</h2>
-        <StatusBadge>{rows.length} / {counts.all}</StatusBadge>
+        <StatusBadge>
+          {rows.length} / {counts.all}
+        </StatusBadge>
         <IconSlot icon={MessageSquare} />
       </header>
       <nav aria-label="Conversation filters" className="uz-conv-filters">
@@ -129,41 +127,90 @@ function ConversationList({
       </nav>
       <div className="uz-conv-rows">
         {rows.map((row) => (
-          <button
-            className={`uz-conv-row ${row.id === activeId ? "is-selected" : ""}`}
-            data-testid={`m7-conversation-row-${row.id}`}
+          <ConversationListRow
+            active={row.id === activeId}
             key={row.id}
-            onClick={() => select(row.id)}
-            type="button"
-          >
-            <span className="uz-conv-row__top">
-              <Avatar
-                initial={displayName(row)}
-                tone={row.aiState === "suspended" ? "human" : "ai"}
-              />
-              <strong>{displayName(row)}</strong>
-              <span className="mono">{timeLabel(row.lastMessageAt)}</span>
-            </span>
-            <span className="uz-conv-row__preview">
-              {row.externalConversationRef} · {row.participantExternalRef}
-            </span>
-            <span className="uz-conv-row__meta">
-              <span className={`uz-conv-dot ${row.slaRisk ? "is-risk" : ""}`} />
-              <ConversationStatusBadge row={row} />
-              {row.slaRisk ? <StatusBadge tone="danger">SLA risk</StatusBadge> : null}
-              {row.awaitingReply ? <StatusBadge tone="warn">待回复</StatusBadge> : null}
-            </span>
-          </button>
+            row={row}
+            select={select}
+          />
         ))}
       </div>
     </aside>
   );
 }
 
+function ConversationListRow({
+  active,
+  row,
+  select
+}: {
+  active: boolean;
+  row: ConversationRow;
+  select: (id: string) => void;
+}) {
+  return (
+    <button
+      className={rowClassName(active)}
+      data-testid={`m7-conversation-row-${row.id}`}
+      onClick={() => select(row.id)}
+      type="button"
+    >
+      <span className="uz-conv-row__top">
+        <Avatar initial={displayName(row)} tone={avatarTone(row)} />
+        <strong>{displayName(row)}</strong>
+        <span className="mono">{timeLabel(row.lastMessageAt)}</span>
+      </span>
+      <span className="uz-conv-row__preview">{previewLabel(row)}</span>
+      <span className="uz-conv-row__meta">
+        <span className={dotClassName(row)} />
+        <ConversationStatusBadge row={row} />
+        <OptionalLanguage row={row} />
+        <OptionalSla row={row} />
+        <OptionalAwaiting row={row} />
+      </span>
+    </button>
+  );
+}
+
+function rowClassName(active: boolean) {
+  return `uz-conv-row ${active ? "is-selected" : ""}`;
+}
+
+function avatarTone(row: ConversationRow) {
+  return row.aiState === "suspended" ? "human" : "ai";
+}
+
+function previewLabel(row: ConversationRow) {
+  return (
+    row.lastPreview || `${row.channel ?? "Business"} · ${row.displayRef || row.id}`
+  );
+}
+
+function dotClassName(row: ConversationRow) {
+  return `uz-conv-dot ${row.slaRisk ? "is-risk" : ""}`;
+}
+
+function OptionalLanguage({ row }: { row: ConversationRow }) {
+  return row.language ? (
+    <span className="uz-conv-row__lang">{row.language}</span>
+  ) : null;
+}
+
+function OptionalSla({ row }: { row: ConversationRow }) {
+  return row.slaRisk ? (
+    <StatusBadge tone="danger">{row.slaText || "SLA 16m"}</StatusBadge>
+  ) : null;
+}
+
+function OptionalAwaiting({ row }: { row: ConversationRow }) {
+  return row.awaitingReply ? <StatusBadge tone="warn">待回复</StatusBadge> : null;
+}
+
 function matchesFilter(row: ConversationRow, filter: FilterId) {
   if (filter === "unread") return row.unreadCount > 0;
   if (filter === "awaiting") return row.awaitingReply;
-  if (filter === "needs") return row.status === "pending_handoff" || row.aiState === "suspended";
+  if (filter === "needs")
+    return row.status === "pending_handoff" || row.aiState === "suspended";
   if (filter === "sla") return row.slaRisk;
   if (filter === "closed") return row.status === "closed";
   return true;
@@ -171,22 +218,34 @@ function matchesFilter(row: ConversationRow, filter: FilterId) {
 
 function countFilters(rows: ConversationRow[]): Record<FilterId, number> {
   return filters.reduce(
-    (acc, filter) => ({ ...acc, [filter.id]: rows.filter((row) => matchesFilter(row, filter.id)).length }),
+    (acc, filter) => ({
+      ...acc,
+      [filter.id]: rows.filter((row) => matchesFilter(row, filter.id)).length
+    }),
     {} as Record<FilterId, number>
   );
 }
 
 function ConversationStatusBadge({ row }: { row: ConversationRow }) {
-  if (row.status === "pending_handoff") return <StatusBadge tone="danger">待人工</StatusBadge>;
-  if (row.status === "handoff") return <StatusBadge tone="warn">handoff</StatusBadge>;
+  if (row.status === "pending_handoff")
+    return <StatusBadge tone="danger">待人工</StatusBadge>;
+  if (row.status === "handoff") return <StatusBadge tone="warn">人工中</StatusBadge>;
   if (row.status === "closed") return <StatusBadge tone="ok">已解决</StatusBadge>;
-  return <StatusBadge tone="info">AI active</StatusBadge>;
+  return <StatusBadge tone="info">AI 处理中</StatusBadge>;
 }
 
 function timeLabel(value?: string) {
-  return value ? value.replace("T", " ").slice(0, 16) : "—";
+  if (!value) return "—";
+  const minutes = Math.max(1, Math.round((Date.now() - Date.parse(value)) / 60000));
+  if (!Number.isFinite(minutes) || minutes > 1440)
+    return value.replace("T", " ").slice(5, 16);
+  if (minutes >= 60) return `${Math.round(minutes / 60)}h`;
+  return `${minutes}m`;
 }
 
 function isEditableTarget(target: EventTarget | null) {
-  return target instanceof HTMLElement && ["input", "select", "textarea"].includes(target.tagName.toLowerCase());
+  return (
+    target instanceof HTMLElement &&
+    ["input", "select", "textarea"].includes(target.tagName.toLowerCase())
+  );
 }

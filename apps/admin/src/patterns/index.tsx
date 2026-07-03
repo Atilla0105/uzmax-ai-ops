@@ -172,3 +172,32 @@ export function DegradedBar({
     </div>
   );
 }
+
+export { DataTable } from "./data-table";
+export type {
+  DataTableColumn,
+  DataTableProps,
+  DataTableSelection
+} from "./data-table";
+export {
+  BatchActionBar,
+  ConfirmModal,
+  FilterBar,
+  PageToolbar,
+  SidePanel
+} from "./operational-patterns";
+export type {
+  BatchAction,
+  FilterBarSelect,
+  ConfirmReason
+} from "./operational-patterns";
+export {
+  MessageBubble,
+  ToastHost,
+  useToast
+} from "./feedback-patterns";
+export type {
+  MessageBubbleRole,
+  ToastEntry,
+  ToastTone
+} from "./feedback-patterns";

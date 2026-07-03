@@ -39,8 +39,9 @@ M7 does not approve GA-0, production deployment, real customer/order-data use, c
 | UI-00B | M7-UI-00B Token Foundation Contract | `merged_to_main` | `docs/evidence/M7/M7-UI-00B-token-foundation-contract.md` |
 | UI-01 | M7-UI-01 Foundation Layer | `merged_to_main` | `docs/evidence/M7/M7-UI-01-foundation-layer.md` |
 | UI-02 | M7-UI-02 Icon Shell Calibration | `merged_to_main` | `docs/evidence/M7/M7-UI-02-icon-shell-calibration.md` |
-| UI-03 | M7-UI-03 Page Migration Ledger And Router | `in_progress_in_worker` | `docs/evidence/M7/M7-UI-03-page-migration-ledger-and-router.md` |
-| UI-04 | Page migration implementation queue | `queued_after_M7_UI_03` | page-specific specs required; all 19 page rows remain `not_started` |
+| UI-03 | M7-UI-03 Page Migration Ledger And Router | `merged_to_main` | `docs/evidence/M7/M7-UI-03-page-migration-ledger-and-router.md` |
+| UI-04 | M7-UI-04 Shared Operational Patterns | `implemented_in_worker` | `docs/evidence/M7/M7-UI-04-shared-operational-patterns.md` |
+| UI-04A+ | Page migration implementation queue | `blocked_until_M7_UI_04_merge` | page-specific specs required; all 19 page rows remain `not_started` |
 
 ## Boundary
 
@@ -58,4 +59,4 @@ The M7-00 detector baseline still has `side-tab` findings in current admin CSS. 
 
 ## Current M7 UI Queue Boundary
 
-M7-UI-00 through M7-UI-02 establish the migration index, fixture safety, token/foundation contract, shared foundation layer and shell icon calibration on `main`. M7-UI-03 adds only the permanent page ledger, typed admin page registry and router/page-outlet scaffold. M7-UI-04 remains a future page migration queue: no page is migrated until a page-specific spec, real runtime/API or documented read-only contract, full state matrix, synthetic tests and evidence are present.
+M7-UI-00 through M7-UI-02 establish the migration index, fixture safety, token/foundation contract, shared foundation layer and shell icon calibration on `main`. M7-UI-03 adds only the permanent page ledger, typed admin page registry and router/page-outlet scaffold. M7-UI-04 adds shared operational patterns for later page workers; it still does not migrate a page. M7-UI-04A+ page workers remain blocked until M7-UI-04 is merged, then still require page-specific specs, real runtime/API or documented read-only contracts, full state matrices, synthetic tests and evidence before any ledger row can move beyond `not_started`.

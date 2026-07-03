@@ -110,9 +110,8 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
     .toEqual(["运营", "数据", "智能", "管理", "洞察"]);
   await expect(page.getByText("TENANT", { exact: true })).toHaveCount(0);
   await expect(page.getByTestId("environment-marker")).toContainText("PRODUCTION");
-  await expect(page.getByTestId("page-scaffold")).toContainText(
-    "M7-UI-04H-tenant-conversations"
-  );
+  await expect(page.getByTestId("m7-conversation-workbench-page")).toBeVisible();
+  await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
 });
 
 test("keeps the M7 foundation shell within the 320px fallback width", async ({

@@ -9,8 +9,9 @@ test("loads the M1 admin group and tenant shell", async ({ page }) => {
   await expect(page.getByTestId("admin-shell")).toBeVisible();
   await expect(page.getByTestId("tenant-switcher")).toBeVisible();
   await expect(page.getByLabel("Search")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Notifications" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "User menu" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Notifications" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "User menu" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "User menu" })).toContainText("韩雪");
   await expect(page.getByTestId("group-layer")).toContainText("Tenant health");
   await expect(page.getByTestId("tenant-layer")).toContainText("Authorized workspace");
   await expect(page.getByTestId("authz-entry")).toContainText(
@@ -19,9 +20,8 @@ test("loads the M1 admin group and tenant shell", async ({ page }) => {
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
   await openLegacyEvidenceFromCurrentPage(page);
   await expect(page.getByTestId("tenant-switcher")).toHaveValue("tenant-b");
-  await expect(page.getByTestId("tenant-health-entry")).toContainText(
-    "Connector degraded"
-  );
+  await expect(page.getByTestId("tenant-health-entry")).toContainText("丝路数码");
+  await expect(page.getByTestId("tenant-health-entry")).toContainText("降级");
   await expect(page.getByTestId("audit-config-entry")).toContainText(
     "config save and rollback"
   );
@@ -42,7 +42,7 @@ test("renders the M2-04 conversation and ticket shell on desktop", async ({ page
   await expect(page.getByTestId("m2-conversation-ticket-shell")).toBeVisible();
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
   await openLegacyEvidenceFromCurrentPage(page);
-  await expect(page.getByTestId("m2-shell-tenant")).toContainText("Tenant B");
+  await expect(page.getByTestId("m2-shell-tenant")).toContainText("丝路数码");
 
   await expect(page.getByTestId("conversation-filters")).toContainText("Unread");
   await expect(page.getByTestId("conversation-filters")).toContainText(
@@ -299,7 +299,7 @@ test("renders the M4-16 customer asset admin shell", async ({ page }) => {
   await expect(page.getByTestId("m4-customer-asset-shell")).toBeVisible();
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
   await openLegacyEvidenceFromCurrentPage(page);
-  await expect(page.getByTestId("m4-customer-shell-mode")).toContainText("Tenant B");
+  await expect(page.getByTestId("m4-customer-shell-mode")).toContainText("丝路数码");
   await expect(page.getByTestId("m4-customer-runtime-state")).toHaveCount(0);
 
   await expect(page.getByTestId("m4-customer-filters")).toContainText("Language");

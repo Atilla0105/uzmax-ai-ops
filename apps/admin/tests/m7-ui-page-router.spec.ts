@@ -76,7 +76,7 @@ test("tenant selection enters tenant conversations with tenant-only navigation",
     "tenant.conversations"
   );
   await expect(page.getByTestId("active-layer-badge")).toContainText("租户层");
-  await expect(page.getByTestId("route-breadcrumb")).toContainText("Tenant B");
+  await expect(page.getByTestId("route-breadcrumb")).toContainText("丝路数码");
   await expectLayerNav(page, tenantLabels, groupLabels);
 });
 

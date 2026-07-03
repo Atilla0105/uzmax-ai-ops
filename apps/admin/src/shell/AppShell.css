@@ -135,6 +135,7 @@
 .uz-toggle:focus-visible,
 .uz-checkbox:focus-visible,
 .uz-topbar-actions button:focus-visible,
+.uz-tenant-select:focus-within .uz-tenant-capsule,
 .uz-tenant-select select:focus-visible,
 .uz-breadcrumb button:focus-visible {
   box-shadow: var(--shadow-focus);
@@ -174,14 +175,12 @@
 }
 
 .uz-topbar {
-  display: grid;
-  grid-template-columns:
-    minmax(150px, auto) minmax(220px, 300px) minmax(180px, 1fr)
-    auto;
+  display: flex;
   gap: var(--s-8);
   align-items: center;
-  min-height: var(--topbar-height);
-  padding: var(--s-4) var(--s-8);
+  height: var(--topbar-height);
+  min-width: 0;
+  padding: 0 var(--s-8);
   border-bottom: 1px solid var(--ink-150);
   background: var(--card);
 }
@@ -196,6 +195,7 @@
 }
 
 .uz-breadcrumb {
+  flex: none;
   gap: var(--s-4);
   min-width: 0;
   color: var(--ink-500);
@@ -221,6 +221,11 @@
   cursor: pointer;
 }
 
+.uz-breadcrumb button.is-active {
+  color: var(--ink-900);
+  font-weight: 600;
+}
+
 .uz-breadcrumb strong {
   overflow: hidden;
   color: var(--ink-900);
@@ -229,33 +234,112 @@
 }
 
 .uz-tenant-select {
-  gap: var(--s-4);
+  position: relative;
+  display: inline-flex;
+  flex: none;
   min-width: 0;
 }
 
-.uz-tenant-select > span:first-child {
+.uz-tenant-capsule {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  max-width: 220px;
+  min-height: 34px;
+  border: 1px solid var(--ink-150);
+  border-radius: var(--radius-md);
+  padding: 0 var(--s-5);
+  color: var(--ink-900);
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--easing-standard);
+}
+
+.uz-tenant-select:hover .uz-tenant-capsule {
+  border-color: var(--ink-300);
+}
+
+.uz-tenant-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--state-ok);
+}
+
+.uz-tenant-dot--degraded {
+  background: var(--state-warn);
+}
+
+.uz-tenant-dot--attention {
+  background: var(--state-human);
+}
+
+.uz-tenant-dot--breaker {
+  background: var(--ink-500);
+}
+
+.uz-tenant-copy {
+  display: grid;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.uz-tenant-copy strong,
+.uz-tenant-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uz-tenant-copy strong {
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.uz-tenant-copy span,
+.uz-breadcrumb-page {
   color: var(--ink-500);
   font-size: var(--text-xs);
-  font-weight: 700;
 }
 
 .uz-tenant-select select {
-  min-width: 132px;
-  max-width: 100%;
-  border: 1px solid var(--ink-150);
-  border-radius: var(--radius-md);
-  padding: var(--s-3) var(--s-6);
-  color: var(--ink-900);
-  background: var(--paper);
-  font: 600 var(--text-base) / 1.2 var(--font-body);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uz-layer-badge {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.uz-global-search {
+  flex: 1 1 340px;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.uz-global-search input::placeholder {
+  color: var(--ink-500);
 }
 
 .uz-topbar-actions {
+  flex: none;
   justify-content: end;
-  gap: var(--s-6);
+  gap: var(--s-7);
 }
 
 .uz-topbar-actions button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -267,12 +351,32 @@
   color: var(--ink-700);
   background: var(--card);
   font: 600 var(--text-sm) / 1 var(--font-body);
+  cursor: pointer;
 }
 
-.uz-topbar-actions button:disabled {
-  color: var(--ink-500);
-  background: var(--ink-075);
-  cursor: not-allowed;
+.uz-env-marker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--s-4);
+  font: 700 var(--text-xs) / 1 var(--font-data);
+  letter-spacing: 0.5px;
+}
+
+.uz-env-marker--production {
+  color: var(--card);
+  background: var(--ink-900);
+}
+
+.uz-env-marker--staging {
+  color: var(--state-warn);
+  background: var(--state-warn-bg);
+}
+
+.uz-env-marker--local {
+  color: var(--state-ai);
+  background: var(--state-ai-bg);
 }
 
 .uz-heartbeat-label {
@@ -280,6 +384,58 @@
   color: var(--ink-500);
   font: 600 var(--text-xs) / 1 var(--font-data);
   white-space: nowrap;
+}
+
+.uz-notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 14px;
+  border-radius: var(--radius-pill);
+  padding: 0 var(--s-2);
+  color: var(--card);
+  background: var(--state-human);
+  font: 700 9px / 14px var(--font-data);
+  text-align: center;
+}
+
+.uz-user-button {
+  width: auto !important;
+  gap: var(--s-4);
+  border: 0 !important;
+  border-left: 1px solid var(--ink-150) !important;
+  border-radius: 0 !important;
+  padding: 0 0 0 var(--s-6) !important;
+}
+
+.uz-user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  color: var(--state-ai);
+  background: var(--state-ai-bg);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.uz-user-copy {
+  display: grid;
+  gap: var(--s-1);
+  line-height: 1.1;
+  text-align: left;
+}
+
+.uz-user-copy strong {
+  color: var(--ink-900);
+  font-size: var(--text-sm);
+}
+
+.uz-user-copy span {
+  color: var(--ink-500);
+  font-size: var(--text-2xs);
 }
 
 .uz-shell-workspace {

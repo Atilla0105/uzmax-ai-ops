@@ -54,7 +54,7 @@ export interface TabDef {
   label: ReactNode;
 }
 
-export interface TabsProps extends HTMLAttributes<HTMLDivElement> {
+export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
   active: string;
   onChange: (key: string) => void;
   tabs: TabDef[];
@@ -80,7 +80,7 @@ export function Tabs({ active, className, onChange, tabs, ...props }: TabsProps)
   );
 }
 
-export interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
+export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   action?: ReactNode;
   description?: ReactNode;
   iconText?: string;
@@ -107,7 +107,7 @@ export function EmptyState({
 
 export type PageStateKind = "loading" | "empty" | "error" | "permission" | "degraded";
 
-export interface PageStateProps extends HTMLAttributes<HTMLDivElement> {
+export interface PageStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   action?: ReactNode;
   kind: PageStateKind;
   message?: ReactNode;

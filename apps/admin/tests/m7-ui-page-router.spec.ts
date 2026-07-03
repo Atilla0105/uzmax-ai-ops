@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 test("switches AppShell nav into the M7 page outlet without losing legacy evidence", async ({
   page
 }) => {
+  await page.route("**/confirmation-queue/items?status=pending", async (route) => {
+    await route.fulfill({ json: { items: [] } });
+  });
   await page.goto("/design");
 
   await expect(page.getByTestId("admin-shell")).toBeVisible();
@@ -19,15 +22,9 @@ test("switches AppShell nav into the M7 page outlet without losing legacy eviden
     "data-page-id",
     "tenant.queue"
   );
-  await expect(page.getByTestId("planned-page-state")).toContainText(
-    "Page migration not started"
-  );
-  await expect(page.getByTestId("page-scaffold")).toContainText(
-    "M7-UI-04M-tenant-queue"
-  );
-  await expect(page.getByTestId("page-scaffold")).toContainText(
-    "docs/admin-ui-page-migration-ledger.md"
-  );
+  await expect(page.getByTestId("m7-confirmation-queue-page")).toBeVisible();
+  await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
+  await expect(page.getByTestId("planned-page-state")).toHaveCount(0);
   await expect(page.getByTestId("group-layer")).toHaveCount(0);
 
   await page.getByRole("button", { name: "发布与验收" }).click();

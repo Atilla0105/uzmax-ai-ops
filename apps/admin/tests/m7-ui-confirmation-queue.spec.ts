@@ -18,7 +18,11 @@ test("renders tenant.queue as the M7 confirmation queue page", async ({ page }) 
   );
   await expect(page.getByTestId("m7-confirmation-queue-page")).toBeVisible();
   await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
-  await expect(page.getByTestId("m7-queue-stats")).toContainText("今日候选");
+  await expect(page.getByTestId("m7-queue-stats")).toContainText("待确认候选");
+  await expect(page.getByTestId("m7-queue-stats")).toContainText("健康 API 未接入");
+  await expect(page.getByTestId("m7-queue-stats")).not.toContainText(
+    /\/10|7日通过率|蒸馏频率/
+  );
   await expect(page.getByTestId("m7-queue-degraded")).toContainText(
     "缺少已批准 API 合约"
   );
@@ -28,6 +32,17 @@ test("renders tenant.queue as the M7 confirmation queue page", async ({ page }) 
   await expect(page.getByTestId("m7-queue-diff-m7-conflict")).toContainText(
     /当前值引用[\s\S]*候选值引用/
   );
+  await expect(
+    page.getByTestId("m7-queue-card-m7-normal").getByRole("button", {
+      name: "通过 A"
+    })
+  ).toBeVisible();
+  await expect(
+    page.getByTestId("m7-queue-card-m7-conflict").getByRole("button", {
+      name: "采纳候选值"
+    })
+  ).toHaveCount(0);
+  await page.getByTestId("m7-queue-card-m7-conflict").click();
   await expect(page.getByRole("button", { name: "保留当前值" })).toBeDisabled();
   await expect(page.getByTestId("m7-confirmation-queue-page")).not.toContainText(
     /Dilnoza|Madina|塔什干|ORD-|PAY-|TG-|phone|address|payment|secret/i
@@ -40,24 +55,37 @@ test("uses the existing API client paths for decisions and blocks conflict keybo
   await openQueue(page);
   await expect(page.getByTestId("m7-queue-card-m7-normal")).toBeVisible();
 
-  await page.keyboard.press("j");
-  await expect(page.getByTestId("m7-queue-card-m7-conflict")).toHaveAttribute(
-    "aria-current",
-    "true"
+  const normalCard = page.getByTestId("m7-queue-card-m7-normal");
+  const conflictCard = page.getByTestId("m7-queue-card-m7-conflict");
+  const pendingConflictBackground = await conflictCard.evaluate(
+    (element) => getComputedStyle(element).backgroundColor
   );
+  await normalCard.focus();
+  await page.keyboard.press("j");
+  await expect(conflictCard).toHaveAttribute("aria-current", "true");
+  await expect(conflictCard.getByRole("button", { name: "采纳候选值" })).toBeVisible();
+  await expect(normalCard.getByRole("button", { name: "通过 A" })).toHaveCount(0);
   await page.keyboard.press("a");
   await page.keyboard.press("d");
   expect(decisions).toHaveLength(0);
-  await page.getByRole("button", { name: "采纳候选值" }).click();
+  await conflictCard.getByRole("button", { name: "采纳候选值" }).click();
   expect(decisions).toContainEqual(expect.objectContaining({ action: "approve" }));
+  await expect(conflictCard).toHaveClass(/is-decided/);
+  await expect(conflictCard).toContainText("已通过");
+  await expect(conflictCard).toBeVisible();
+  await expect
+    .poll(() =>
+      conflictCard.evaluate((element) => getComputedStyle(element).backgroundColor)
+    )
+    .not.toBe(pendingConflictBackground);
 
-  await page.keyboard.press("k");
   await page.keyboard.press("d");
   expect(decisions).toContainEqual(expect.objectContaining({ action: "discard" }));
 
   await resetNormalRoute(page);
   await openQueue(page);
   await expect(page.getByTestId("m7-queue-card-m7-normal")).toBeVisible();
+  await page.getByTestId("m7-queue-card-m7-normal").focus();
   await page.keyboard.press("e");
   await page.getByLabel("edited payload ref").fill("controlled://m7-ui-10/edit/ref");
   await page.keyboard.press("a");
@@ -75,7 +103,9 @@ test("uses the existing API client paths for decisions and blocks conflict keybo
   await resetNormalRoute(page);
   await openQueue(page);
   await page.getByRole("button", { name: "拦截" }).first().click();
+  await expect(page.getByRole("button", { name: "确认拦截并写审计" })).toBeDisabled();
   await page.getByLabel("拦截原因").fill("controlled reason note");
+  await expect(page.getByRole("button", { name: "确认拦截并写审计" })).toBeEnabled();
   await page.getByRole("button", { name: "确认拦截并写审计" }).click();
   expect(decisions).toContainEqual(expect.objectContaining({ action: "block" }));
   expect(requests).toEqual(

@@ -10,7 +10,6 @@ import {
 
 type Item = ConfirmationQueueItem;
 type Props = QueueHandlers & { focused: boolean; item: Item; submitting: boolean };
-type Tone = "danger" | "neutral" | "ok" | "warn";
 
 export const controlledRefPattern = /^(controlled|manifest|storage):\/\/[^\s]+$/i;
 
@@ -20,13 +19,13 @@ const kindCopy: Record<Item["kind"], string> = {
   knowledge_candidate: "知识候选",
   profile_candidate: "档案候选"
 };
-const statusCopy: Record<Item["status"], { label: string; tone: Tone }> = {
-  approved: { label: "已通过", tone: "ok" },
-  blocked: { label: "已拦截", tone: "danger" },
-  discarded: { label: "已丢弃", tone: "neutral" },
-  edited: { label: "已编辑通过", tone: "ok" },
-  pending: { label: "待确认", tone: "warn" }
-};
+const statusCopy = {
+  approved: { className: "is-decided", label: "已通过", tone: "ok" },
+  blocked: { className: "is-decided", label: "已拦截", tone: "danger" },
+  discarded: { className: "is-decided", label: "已丢弃", tone: "neutral" },
+  edited: { className: "is-decided", label: "已编辑通过", tone: "ok" },
+  pending: { className: undefined, label: "待确认", tone: "warn" }
+} as const;
 
 function collectRefs(value: unknown, refs: string[] = []): string[] {
   if (refs.length >= 4) return refs;
@@ -67,13 +66,12 @@ export function reasonRef(action: "approve" | "block" | "discard" | "edit") {
 }
 
 export function queueStats(items: Item[]) {
+  const pending = items.filter((item) => item.status === "pending").length;
   const conflicts = items.filter((item) => item.kind === "conflict_candidate").length;
   return [
-    { label: "今日候选", value: `${items.length}/10` },
-    { label: "7日通过率", tone: "warn", value: "健康 API 未接入" },
-    { label: "蒸馏频率", value: "只读阻断" },
+    { label: "待确认候选", value: String(pending) },
     { label: "冲突待处理", tone: "danger", value: String(conflicts) },
-    { label: "最近降频", tone: "muted", value: "需运行时合约" }
+    { label: "蒸馏健康", tone: "warn", value: "健康 API 未接入" }
   ];
 }
 
@@ -83,7 +81,7 @@ export function QueueCard({ focused, item, submitting, ...handlers }: Props) {
   const classes = [
     "uz-queue-card",
     focused && "is-focused",
-    !pending && "is-decided",
+    statusCopy[item.status].className,
     isConflict && "is-conflict"
   ]
     .filter(Boolean)
@@ -100,7 +98,8 @@ export function QueueCard({ focused, item, submitting, ...handlers }: Props) {
       className: classes,
       "data-kind": item.kind,
       "data-testid": `m7-queue-card-${item.id}`,
-      onClick: handlers.onFocus
+      onClick: handlers.onFocus,
+      tabIndex: pending ? 0 : undefined
     },
     h(
       "header",
@@ -125,7 +124,7 @@ export function QueueCard({ focused, item, submitting, ...handlers }: Props) {
       )
     ),
     isConflict ? h(ConflictDiff, { item }) : null,
-    pending
+    pending && focused
       ? h(
           "footer",
           { className: "uz-queue-actions" },

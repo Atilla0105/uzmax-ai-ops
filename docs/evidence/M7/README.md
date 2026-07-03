@@ -40,8 +40,9 @@ M7 does not approve GA-0, production deployment, real customer/order-data use, c
 | UI-01 | M7-UI-01 Foundation Layer | `merged_to_main` | `docs/evidence/M7/M7-UI-01-foundation-layer.md` |
 | UI-02 | M7-UI-02 Icon Shell Calibration | `merged_to_main` | `docs/evidence/M7/M7-UI-02-icon-shell-calibration.md` |
 | UI-03 | M7-UI-03 Page Migration Ledger And Router | `merged_to_main` | `docs/evidence/M7/M7-UI-03-page-migration-ledger-and-router.md` |
-| UI-04 | M7-UI-04 Shared Operational Patterns | `implemented_in_worker` | `docs/evidence/M7/M7-UI-04-shared-operational-patterns.md` |
-| UI-04A+ | Page migration implementation queue | `blocked_until_M7_UI_04_merge` | page-specific specs required; all 19 page rows remain `not_started` |
+| UI-04 | M7-UI-04 Shared Operational Patterns | `merged_to_main` | `docs/evidence/M7/M7-UI-04-shared-operational-patterns.md`; base includes commit `5877029` / PR #173 |
+| UI-10 | M7-UI-10 Confirmation Queue Page | `spec_drafted_pending_coordinator_approval` | `docs/specs/M7-UI-10-confirmation-queue-page.md`; `docs/evidence/M7/M7-UI-10-confirmation-queue-page.md` |
+| UI-04A+ | Page migration implementation queue | `page_specific_specs_required` | all 19 page rows remain implementation `not_started`; page implementation still requires approved page-specific spec, runtime contract, state matrix, tests and evidence |
 
 ## Boundary
 
@@ -59,4 +60,4 @@ The M7-00 detector baseline still has `side-tab` findings in current admin CSS. 
 
 ## Current M7 UI Queue Boundary
 
-M7-UI-00 through M7-UI-02 establish the migration index, fixture safety, token/foundation contract, shared foundation layer and shell icon calibration on `main`. M7-UI-03 adds only the permanent page ledger, typed admin page registry and router/page-outlet scaffold. M7-UI-04 adds shared operational patterns for later page workers; it still does not migrate a page. M7-UI-04A+ page workers remain blocked until M7-UI-04 is merged, then still require page-specific specs, real runtime/API or documented read-only contracts, full state matrices, synthetic tests and evidence before any ledger row can move beyond `not_started`.
+M7-UI-00 through M7-UI-02 establish the migration index, fixture safety, token/foundation contract, shared foundation layer and shell icon calibration on `main`. M7-UI-03 adds only the permanent page ledger, typed admin page registry and router/page-outlet scaffold. M7-UI-04 adds shared operational patterns for later page workers; it still does not migrate a page. M7-UI-10 is a confirmation-queue page spec draft only. Page implementation still requires coordinator approval, real runtime/API or documented read-only contracts, full state matrices, synthetic tests and evidence before any ledger row can move beyond implementation `not_started`.

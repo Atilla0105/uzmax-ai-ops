@@ -8,6 +8,7 @@
 }
 
 .uz-app-nav {
+  box-sizing: border-box;
   display: flex;
   flex: none;
   flex-direction: column;

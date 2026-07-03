@@ -99,7 +99,7 @@ export function App() {
           <h2>Tenant health and risk</h2>
         </div>
         <div className="metric-grid" aria-label="Group health metrics">
-          <Metric label="Tenants" value="3" />
+          <Metric label="Tenants" value={String(tenants.length)} />
           <Metric label="Needs attention" value="2" tone="warn" />
           <Metric label="AI fuse" value="off" />
           <Metric label="Connector issues" value="1" tone="warn" />

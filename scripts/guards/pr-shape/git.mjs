@@ -1,7 +1,10 @@
 import { execFileSync } from "node:child_process";
 
 function git(argsForGit, cwd = process.cwd()) {
-  return execFileSync("git", argsForGit, { cwd, encoding: "utf8" });
+  return execFileSync("git", ["-c", "core.quotePath=false", ...argsForGit], {
+    cwd,
+    encoding: "utf8"
+  });
 }
 
 function safeGit(argsForGit, cwd = process.cwd()) {

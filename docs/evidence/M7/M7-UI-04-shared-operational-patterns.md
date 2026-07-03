@@ -7,7 +7,7 @@
 - Base confirmed: `main` at `b9ede1f50d5875f27ad6aca66f9cde8ce183ba90`
 - Scope: shared operational patterns only; no page migration, runtime API/hook wiring, token mutation or raw prototype fixture copy.
 - Page worker boundary: M7-UI-04A+ page workers remain blocked until this shared-pattern PR is merged.
-- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns plus `/design` preview CSS and can exceed the default 600 net source LOC budget. The worker does not self-approve that exception.
+- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns plus `/design` preview CSS. The branch-specific spec budget is <= 1000 net source LOC, but the default repo guard still fails at 600 net source LOC unless PR metadata declares `Exception: large_change_exception`. The worker does not self-approve that exception.
 
 ## Entry / Workspace Evidence
 
@@ -84,7 +84,7 @@ Searches before adding source files:
 | Prototype source | Repo pattern | Decision |
 |---|---|---|
 | `patterns/DataTable.tsx` | `DataTable` in `apps/admin/src/patterns/data-table.tsx` | Adopt anatomy: stable columns, compact density, optional selection, empty state. Replace inline styles/raw literals with classes and canonical tokens. |
-| `patterns/MessageBubble.tsx` | `MessageBubble` in `apps/admin/src/patterns/operational-patterns.tsx` | Adopt role variants: system/customer/AI/human. Use token classes and generic synthetic preview copy only. |
+| `patterns/MessageBubble.tsx` | `MessageBubble` in `apps/admin/src/patterns/feedback-patterns.tsx` | Adopt role variants: system/customer/AI/human. Use token classes and generic synthetic preview copy only. |
 | `patterns/ConfirmModal.tsx` | `ConfirmModal` in `apps/admin/src/patterns/operational-patterns.tsx` | Adopt confirmation + optional reason field; keep button affordances primitive-based and gate/destructive copy explicit. |
 | `patterns/Toast.tsx` | `useToast` + `ToastHost` | Adopt minimal host/hook shape. Toast is feedback only, not audit evidence. |
 | `patterns/BatchBar.tsx` | `BatchActionBar` | Adopt selected-count + actions pattern. Use `Button` primitives and no inline raw colors. |
@@ -122,9 +122,11 @@ Rejected:
 
 Source budget caveat:
 
-- The exact local `pr-shape --include-worktree` command below passed before commit, but the guard's local worktree mode reports changed files while its LOC/new-file counters are based on committed `main...HEAD` diff.
-- Staged source numstat before commit showed 1008 added source lines and 84 deleted source lines, for net source LOC 924.
-- Because this branch will commit new source files, PR metadata should include `Exception: large_change_exception` and owner/coordinator review must approve or reject it before merge.
+- Branch-specific spec budget: net source LOC <= 1000.
+- Committed branch source numstat: 1008 added source lines and 84 deleted source lines, net source LOC 924.
+- Default repo guard budget: net source LOC <= 600.
+- Therefore the current committed branch intentionally fails local `pr-shape --include-worktree` with `net source LOC 924 > 600` unless PR metadata declares `Exception: large_change_exception`.
+- `large_change_exception` still requires owner/coordinator approval before merge; this worker does not self-approve it.
 
 ```text
 git diff --check
@@ -133,29 +135,36 @@ exit 0
 
 ```text
 /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-04-shared-operational-patterns.md --include-worktree
-exit 0
-{
-  "base": "main",
-  "specPath": "docs/specs/M7-UI-04-shared-operational-patterns.md",
-  "specType": "feature",
-  "bootstrapException": false,
-  "changedFiles": 10,
-  "categories": {
-    "source": 6,
-    "docs": 3,
-    "test": 1
-  },
-  "source": {
-    "changedFiles": 6,
-    "netLoc": 0,
-    "newFiles": 0
-  }
-}
+exit 1
+guard:pr-shape failed:
+net source LOC 924 > 600
+```
+
+Docs/evidence fix rerun:
+
+```text
+git diff --check
+EXIT:0
 ```
 
 ```text
-git diff --cached --check
-exit 0
+/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-04-shared-operational-patterns.md --include-worktree
+guard:pr-shape failed:
+net source LOC 924 > 600
+EXIT:1
+```
+
+```text
+git status --short --branch
+## codex/m7-ui-04-shared-operational-patterns
+ M docs/evidence/M7/M7-UI-04-shared-operational-patterns.md
+ M docs/specs/M7-UI-04-shared-operational-patterns.md
+```
+
+```text
+cwd=/Users/atilla/Applications/UZMAX智能运营
+git status --short --branch
+## main...origin/main
 ```
 
 ```text

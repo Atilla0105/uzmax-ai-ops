@@ -30,7 +30,7 @@ This is not M7 closeout, M5 owner acceptance, GA-0, production, real customer/or
 |---|---|
 | `apps/admin/src/pages/queue/QueuePage.tsx` | M7 page body, runtime list/decision state, keyboard handling, edit/block side paths, loading/empty/error/permission/degraded states. |
 | `apps/admin/src/pages/queue/QueueCard.tsx` | Queue card, conflict diff, controlled-ref preview, disabled keep-current affordance, mobile edit handoff. |
-| `apps/admin/src/pages/queue/QueuePage.css` | Page-local token-consuming layout for stats, queue stream, cards, diff and 320px fallback. |
+| `apps/admin/src/pages/queue/QueueSupport.tsx` | Page-local runtime hook wrapper, action helpers, state rendering and token-consuming queue styles. |
 | `apps/admin/src/pages/PageOutlet.tsx` | Renders `QueuePage` for `tenant.queue`; other routes remain scaffold/legacy behavior. |
 | `apps/admin/src/pages/registry.ts` | Corrects queue target spec id to `M7-UI-10-confirmation-queue-page`. |
 | `apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | Focused synthetic route fixtures for render, decisions, state coverage, conflict keyboard blocking and mobile fallback. |
@@ -49,12 +49,13 @@ This is not M7 closeout, M5 owner acceptance, GA-0, production, real customer/or
 |---|---|---|
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm ci` | pass | Installed isolated worktree dependencies; 361 packages, 0 vulnerabilities. |
 | `npm run format:check` | pass | Prettier reported all matched files use code style. |
+| `npm run guard:prettier-ignore -- --base origin/main` | pass | `prettier-ignore-boundary: ok (8 baseline file(s), 89/89 marker(s))`; monitored source/test diff check passed. |
 | `npm run typecheck` | pass | `tsc --noEmit -p tsconfig.json`. |
 | `npm run lint` | pass | ESLint/dependency-cruiser command completed with 0 problems. |
 | `npm run build:admin` | pass | Vite admin production build completed. |
 | `npm run playwright -- apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | pass | 4/4 focused tests passed, including conflict keyboard blocking, state coverage and 320px mobile fallback. |
 | `git diff --check` / `git diff --cached --check` / `git diff --check origin/main...HEAD` | pass | Working, staged and committed diff whitespace checks returned no output. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-10-confirmation-queue-page.md --include-worktree` | pass | Guard reported 9 changed files: source 5, test 1, docs 3; source changed files 5, net LOC 598, new source files 3. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-10-confirmation-queue-page.md --include-worktree` | pass | Guard reported 9 changed files: source 5, test 1, docs 3; source changed files 5, net LOC 599, new source files 3. |
 
 ## Boundary
 

@@ -1,10 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Keyboard } from "lucide-react";
-import {
-  createConfirmationQueueApiClient,
-  type ConfirmationDecisionRequest,
-  type ConfirmationQueueApiFetcher
-} from "../../confirmationQueueApiClient";
 import { Button, IconSlot, Input, Kbd, StatusBadge } from "../../primitives";
 import {
   ConfirmModal,
@@ -15,88 +10,28 @@ import {
   useToast
 } from "../../patterns";
 import {
-  EditActions,
   QueueCard,
-  QueueStats,
   controlledRefPattern,
   firstRef,
   isEditableTarget,
   nextPending,
   queueStats,
-  reasonRef,
-  renderQueueState
+  reasonRef
 } from "./QueueCard";
-import "./QueuePage.css";
+import {
+  EditActions,
+  QueueStats,
+  QueueStyles,
+  renderQueueState,
+  useQueueRuntime,
+  type ConfirmationQueueItem,
+  type SubmitAction
+} from "./QueueSupport";
 
-type QueueClient = ReturnType<typeof createConfirmationQueueApiClient>;
-export type ConfirmationQueueItem = Awaited<
-  ReturnType<QueueClient["listItems"]>
->[number];
-type LoadStatus = "empty" | "error" | "loading" | "permission" | "ready";
-type SubmitAction = "approve" | "block" | "discard";
-
-const browserFetcher: ConfirmationQueueApiFetcher = (input, init) =>
-  window.fetch(input, init as RequestInit);
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "confirmation queue request failed";
-}
-
-function useQueueRuntime() {
-  const client = useMemo(
-    () => createConfirmationQueueApiClient({ fetcher: browserFetcher }),
-    []
-  );
-  const [items, setItems] = useState<ConfirmationQueueItem[]>([]);
-  const [lastError, setLastError] = useState("");
-  const [status, setStatus] = useState<LoadStatus>("loading");
-  const [submittingId, setSubmittingId] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    setStatus("loading");
-    setLastError("");
-    try {
-      const next = await client.listItems({ status: "pending" });
-      setItems(next);
-      setStatus(next.length === 0 ? "empty" : "ready");
-    } catch (error) {
-      const message = errorMessage(error);
-      setItems([]);
-      setLastError(message);
-      setStatus(message.includes("status 403") ? "permission" : "error");
-    }
-  }, [client]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  const submit = useCallback(
-    async (itemId: string, decision: ConfirmationDecisionRequest) => {
-      setSubmittingId(itemId);
-      setLastError("");
-      try {
-        const result = await client.submitDecision(itemId, decision);
-        setItems((current) =>
-          current.map((item) => (item.id === itemId ? result.item : item))
-        );
-        return result;
-      } catch (error) {
-        setLastError(errorMessage(error));
-        throw error;
-      } finally {
-        setSubmittingId(null);
-      }
-    },
-    [client]
-  );
-
-  return { items, lastError, reload, status, submit, submittingId };
-}
+const focusMove: Record<string, number> = { arrowdown: 1, arrowup: -1, j: 1, k: -1 };
 
 function moveForKey(key: string) {
-  // prettier-ignore
-  return key === "j" || key === "arrowdown" ? 1 : key === "k" || key === "arrowup" ? -1 : 0;
+  return focusMove[key] ?? 0;
 }
 
 function actionForKey(key: string): SubmitAction | undefined {
@@ -196,29 +131,89 @@ export function QueuePage() {
   const state = renderQueueState(queue.status, queue.lastError, queue.reload);
 
   return (
-    // prettier-ignore
     <section className="uz-page-queue" data-testid="m7-confirmation-queue-page">
-      <PageToolbar eyebrow="tenant.queue" meta="人工确认、编辑、丢弃和拦截候选；冲突候选必须查看并排 diff。" status={<StatusBadge tone="warn">M7-UI-10 runtime page</StatusBadge>} title="确认队列" />
+      <QueueStyles />
+      <PageToolbar
+        eyebrow="tenant.queue"
+        meta="人工确认、编辑、丢弃和拦截候选；冲突候选必须查看并排 diff。"
+        status={<StatusBadge tone="warn">M7-UI-10 runtime page</StatusBadge>}
+        title="确认队列"
+      />
       <QueueStats stats={stats} />
       <div className="uz-queue-keyboard" data-testid="m7-queue-keyboard">
         <IconSlot icon={Keyboard} />
-        <span><Kbd>J</Kbd>/<Kbd>K</Kbd> 移动 <Kbd>A</Kbd> 通过 <Kbd>E</Kbd> 编辑 <Kbd>D</Kbd> 丢弃</span>
+        <span>
+          <Kbd>J</Kbd>/<Kbd>K</Kbd> 移动 <Kbd>A</Kbd> 通过 <Kbd>E</Kbd> 编辑{" "}
+          <Kbd>D</Kbd> 丢弃
+        </span>
       </div>
-      <DegradedBar action={<Button disabled>恢复每日不可用</Button>} data-testid="m7-queue-degraded">蒸馏健康摘要和人工恢复每日频率缺少已批准 API 合约；本页只读呈现阻断，不伪造恢复动作。</DegradedBar>
+      <DegradedBar
+        action={<Button disabled>恢复每日不可用</Button>}
+        data-testid="m7-queue-degraded"
+      >
+        蒸馏健康摘要和人工恢复每日频率缺少已批准 API
+        合约；本页只读呈现阻断，不伪造恢复动作。
+      </DegradedBar>
       {state ?? (
         <div className="uz-queue-flow" data-testid="m7-queue-flow">
           {queue.items.map((item, index) => (
-            <QueueCard focused={index === focusedIndex} item={item} key={item.id} onApprove={() => void decide(item, "approve")} onBlock={() => { setBlockId(item.id); setBlockReason(""); }} onDiscard={() => void decide(item, "discard")} onEdit={() => startEdit(item)} onFocus={() => setFocusedIndex(index)} submitting={queue.submittingId === item.id} />
+            <QueueCard
+              focused={index === focusedIndex}
+              item={item}
+              key={item.id}
+              onApprove={() => void decide(item, "approve")}
+              onBlock={() => {
+                setBlockId(item.id);
+                setBlockReason("");
+              }}
+              onDiscard={() => void decide(item, "discard")}
+              onEdit={() => startEdit(item)}
+              onFocus={() => setFocusedIndex(index)}
+              submitting={queue.submittingId === item.id}
+            />
           ))}
         </div>
       )}
-      <SidePanel actions={<EditActions canSave={controlledRefPattern.test(editRef)} onCancel={() => setEditingId(null)} onSave={() => void saveEdit()} />} meta="仅接受 controlled/manifest/storage 引用；不提交 raw 内容。" onClose={() => setEditingId(null)} open={Boolean(editingItem)} title="编辑候选引用">
+      <SidePanel
+        actions={
+          <EditActions
+            canSave={controlledRefPattern.test(editRef)}
+            onCancel={() => setEditingId(null)}
+            onSave={() => void saveEdit()}
+          />
+        }
+        meta="仅接受 controlled/manifest/storage 引用；不提交 raw 内容。"
+        onClose={() => setEditingId(null)}
+        open={Boolean(editingItem)}
+        title="编辑候选引用"
+      >
         <label className="uz-queue-edit-ref">
           <span>editedPayloadRef</span>
-          <Input aria-label="edited payload ref" onChange={(event) => setEditRef(event.currentTarget.value)} value={editRef} />
+          <Input
+            aria-label="edited payload ref"
+            onChange={(event) => setEditRef(event.currentTarget.value)}
+            value={editRef}
+          />
         </label>
       </SidePanel>
-      <ConfirmModal confirmLabel="确认拦截并写审计" danger description="拦截会调用现有 block 决策，并只提交受控 reasonRef；原因文本不作为 raw payload 写入 API。" onCancel={() => setBlockId(null)} onConfirm={() => { if (blockItem) void decide(blockItem, "block"); setBlockId(null); }} open={Boolean(blockItem)} reason={{ label: "拦截原因", onChange: setBlockReason, required: true, value: blockReason }} title="拦截该候选？" />
+      <ConfirmModal
+        confirmLabel="确认拦截并写审计"
+        danger
+        description="拦截会调用现有 block 决策，并只提交受控 reasonRef；原因文本不作为 raw payload 写入 API。"
+        onCancel={() => setBlockId(null)}
+        onConfirm={() => {
+          if (blockItem) void decide(blockItem, "block");
+          setBlockId(null);
+        }}
+        open={Boolean(blockItem)}
+        reason={{
+          label: "拦截原因",
+          onChange: setBlockReason,
+          required: true,
+          value: blockReason
+        }}
+        title="拦截该候选？"
+      />
       <ToastHost toasts={toast.toasts} />
     </section>
   );

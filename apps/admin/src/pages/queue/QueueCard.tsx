@@ -28,7 +28,7 @@ const statusCopy: Record<Item["status"], { label: string; tone: Tone }> = {
   pending: { label: "待确认", tone: "warn" }
 };
 
-export function collectRefs(value: unknown, refs: string[] = []): string[] {
+function collectRefs(value: unknown, refs: string[] = []): string[] {
   if (refs.length >= 4) return refs;
   if (typeof value === "string" && controlledRefPattern.test(value)) refs.push(value);
   else if (value && typeof value === "object") {

@@ -86,7 +86,7 @@ Future implementation budget after coordinator approval:
   - Found admin API-client patterns for confirmation queue, AI members, logs, template copy, customer assets and order import; no `conversationApiClient` / `useConversationWorkbench` in the repo admin source.
   - Conclusion: if the implementation needs an admin conversation client/hook, it must wrap the existing `conversation-ticket` API truth or declare read-only/degraded behavior; it must not create fixture runtime.
 - `rg -n "tenant\\.conversations|M7-UI-04H|M7-UI-20|M7-UI-11|M7-UI-10|UI-05" docs apps/admin/src`
-  - Found stale ledger/README wording: UI-05 still marked pending despite current `main` HEAD `8804414 Implement M7 UI layered navigation shell`; UI-10 is merged to main; UI-11 is spec-only and now owner/coordinator says it is Draft/Paused transitional.
+  - Found stale ledger/README wording: UI-05 still marked pending despite current `main` HEAD `8804414 Implement M7 UI layered navigation shell`; UI-10 is merged to main; UI-11 / PR #178 is a Draft/Paused transitional implementation candidate that is not merged to main or owner accepted.
   - Conclusion: this PR updates the ledger/index enough to make UI-05 mandatory baseline, UI-10 already merged, UI-11 paused, and `tenant.conversations` the next high-value target without claiming implementation.
 - `rg -n "对话工作台|会话|接管会话|AI 轨迹|Business 草稿|客户档案|SLA|待人工|tenant\\.conversations|conversations" /Users/atilla/Downloads/运营塔台1.0.html /Users/atilla/源码/unpacked\ 6/pages/conversations -S`
   - Found owner prototype conversation regions and behavior in the unpacked sources; owner HTML is bundled/compressed but includes the same conversation page state fields and route mapping.

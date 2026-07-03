@@ -1,40 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
-import { MessageSquare } from "lucide-react";
-import { Avatar, Button, IconSlot, StatusBadge } from "../../primitives";
+import { ArrowDownUp, MessageSquare } from "lucide-react";
+import { Avatar, Button, IconSlot, SearchInput, StatusBadge } from "../../primitives";
 import {
   ContextRail,
   renderConversationState,
   type RailTab
 } from "./conversationWorkbenchPanels";
 import {
+  conversationFilters,
+  countConversationFilters,
   displayName,
+  isEditableTarget,
+  matchesConversationFilter,
+  type ConversationFilterId,
   type ConversationRow,
   useConversationWorkbenchRuntime
 } from "./conversationWorkbenchRuntime";
 import {
   Composer,
+  ConversationRuntimeBar,
   ConversationWorkbenchStyles,
   MessageBody,
   ThreadHeader
 } from "./conversationWorkbenchStyles";
 
-type FilterId = "all" | "unread" | "awaiting" | "needs" | "sla" | "closed";
-const filters: Array<{ id: FilterId; label: string }> = [
-  { id: "all", label: "全部" },
-  { id: "unread", label: "未读" },
-  { id: "awaiting", label: "未回" },
-  { id: "needs", label: "待人工" },
-  { id: "sla", label: "SLA" },
-  { id: "closed", label: "已解决" }
-];
+const listQueryDegradedCopy =
+  "runtime 查询参数未接入，当前按 SLA、待人工和待回复固定优先级展示。";
 
 export function ConversationsPage() {
   const runtime = useConversationWorkbenchRuntime();
-  const [filter, setFilter] = useState<FilterId>("all");
+  const [filter, setFilter] = useState<ConversationFilterId>("all");
   const [railTab, setRailTab] = useState<RailTab>("profile");
   const active = runtime.detail?.conversation ?? runtime.conversations[0];
   const rows = useMemo(
-    () => runtime.conversations.filter((row) => matchesFilter(row, filter)),
+    () => runtime.conversations.filter((row) => matchesConversationFilter(row, filter)),
     [filter, runtime.conversations]
   );
 
@@ -52,12 +51,13 @@ export function ConversationsPage() {
   return (
     <section
       className="uz-page-conversations"
+      data-runtime-state={runtime.status === "ready" ? "degraded" : runtime.status}
       data-testid="m7-conversation-workbench-page"
     >
       <ConversationWorkbenchStyles />
       <ConversationList
         activeId={runtime.activeId}
-        counts={countFilters(runtime.conversations)}
+        counts={countConversationFilters(runtime.conversations)}
         filter={filter}
         rows={rows}
         select={runtime.select}
@@ -72,6 +72,7 @@ export function ConversationsPage() {
         />
         {runtime.status === "ready" ? (
           <>
+            <ConversationRuntimeBar reason={runtime.degradedReason} />
             <MessageBody
               messages={runtime.detail?.messages ?? []}
               toggleTrace={runtime.toggleTrace}
@@ -98,11 +99,11 @@ function ConversationList({
   setFilter
 }: {
   activeId: string;
-  counts: Record<FilterId, number>;
-  filter: FilterId;
+  counts: Record<ConversationFilterId, number>;
+  filter: ConversationFilterId;
   rows: ConversationRow[];
   select: (id: string) => void;
-  setFilter: (filter: FilterId) => void;
+  setFilter: (filter: ConversationFilterId) => void;
 }) {
   return (
     <aside className="uz-conv-list" data-testid="m7-conversation-list">
@@ -113,8 +114,34 @@ function ConversationList({
         </StatusBadge>
         <IconSlot icon={MessageSquare} />
       </header>
+      <div
+        aria-label="Conversation query degraded controls"
+        className="uz-conv-list__tools"
+        data-testid="m7-conversation-query-degraded"
+      >
+        <SearchInput
+          aria-label="搜索会话（降级：runtime 查询未接入）"
+          data-testid="m7-conversation-search-disabled"
+          disabled
+          placeholder="搜索会话"
+          title={listQueryDegradedCopy}
+        />
+        <Button
+          aria-label="排序菜单未接入，当前按 SLA、待人工和待回复固定优先级展示"
+          data-testid="m7-conversation-sort-disabled"
+          disabled
+          icon={<IconSlot icon={ArrowDownUp} />}
+          title={listQueryDegradedCopy}
+        >
+          排序
+        </Button>
+        <span className="uz-conv-query-copy">
+          <StatusBadge tone="warn">查询降级</StatusBadge>
+          runtime 查询未接入
+        </span>
+      </div>
       <nav aria-label="Conversation filters" className="uz-conv-filters">
-        {filters.map((item) => (
+        {conversationFilters.map((item) => (
           <Button
             className="uz-conv-filter"
             key={item.id}
@@ -206,26 +233,6 @@ function OptionalAwaiting({ row }: { row: ConversationRow }) {
   return row.awaitingReply ? <StatusBadge tone="warn">待回复</StatusBadge> : null;
 }
 
-function matchesFilter(row: ConversationRow, filter: FilterId) {
-  if (filter === "unread") return row.unreadCount > 0;
-  if (filter === "awaiting") return row.awaitingReply;
-  if (filter === "needs")
-    return row.status === "pending_handoff" || row.aiState === "suspended";
-  if (filter === "sla") return row.slaRisk;
-  if (filter === "closed") return row.status === "closed";
-  return true;
-}
-
-function countFilters(rows: ConversationRow[]): Record<FilterId, number> {
-  return filters.reduce(
-    (acc, filter) => ({
-      ...acc,
-      [filter.id]: rows.filter((row) => matchesFilter(row, filter.id)).length
-    }),
-    {} as Record<FilterId, number>
-  );
-}
-
 function ConversationStatusBadge({ row }: { row: ConversationRow }) {
   if (row.status === "pending_handoff")
     return <StatusBadge tone="danger">待人工</StatusBadge>;
@@ -241,11 +248,4 @@ function timeLabel(value?: string) {
     return value.replace("T", " ").slice(5, 16);
   if (minutes >= 60) return `${Math.round(minutes / 60)}h`;
   return `${minutes}m`;
-}
-
-function isEditableTarget(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    ["input", "select", "textarea"].includes(target.tagName.toLowerCase())
-  );
 }

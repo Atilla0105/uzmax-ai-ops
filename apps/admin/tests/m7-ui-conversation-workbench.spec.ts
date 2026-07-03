@@ -44,7 +44,26 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
   await expect(page.getByTestId("m7-conversation-list")).toBeVisible();
   await expect(page.getByTestId("m7-conversation-thread")).toBeVisible();
   await expect(page.getByTestId("m7-conversation-context-rail")).toBeVisible();
+  await expect(page.getByTestId("m7-conversation-workbench-page")).toHaveAttribute(
+    "data-runtime-state",
+    "degraded"
+  );
   await expect(page.getByTestId("m7-conversation-degraded")).toContainText("发送");
+  await expect(page.getByTestId("m7-conversation-degraded")).toContainText("WS");
+  await expect(page.getByTestId("m7-conversation-degraded")).toContainText("degraded");
+  await expect(page.getByTestId("m7-conversation-query-degraded")).toContainText(
+    "查询降级"
+  );
+  await expect(page.getByTestId("m7-conversation-search-disabled")).toBeDisabled();
+  await expect(page.getByTestId("m7-conversation-search-disabled")).toHaveAttribute(
+    "title",
+    /runtime 查询参数未接入/
+  );
+  await expect(page.getByTestId("m7-conversation-sort-disabled")).toBeDisabled();
+  await expect(page.getByTestId("m7-conversation-sort-disabled")).toHaveAttribute(
+    "aria-label",
+    /排序菜单未接入/
+  );
   await expect(page.getByText("SLA 即将超时")).toBeVisible();
   await expect(page.getByText("AI 已暂停", { exact: true })).toBeVisible();
   await expect(page.getByText("已撤回")).toBeVisible();

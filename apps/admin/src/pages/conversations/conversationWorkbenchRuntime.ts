@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type RuntimeStatus = "empty" | "error" | "loading" | "permission" | "ready";
+export type ConversationFilterId =
+  | "all"
+  | "unread"
+  | "awaiting"
+  | "needs"
+  | "sla"
+  | "closed";
 type ConversationStatus = "closed" | "handoff" | "open" | "pending_handoff";
 type MessageDirection = "inbound" | "internal" | "outbound";
 
@@ -47,6 +54,18 @@ export type ConversationDetail = {
   conversation: ConversationRow;
   messages: MessageRow[];
 };
+
+export const conversationFilters: Array<{
+  id: ConversationFilterId;
+  label: string;
+}> = [
+  { id: "all", label: "全部" },
+  { id: "unread", label: "未读" },
+  { id: "awaiting", label: "未回" },
+  { id: "needs", label: "待人工" },
+  { id: "sla", label: "SLA" },
+  { id: "closed", label: "已解决" }
+];
 
 type ApiFetcher = (
   input: string,
@@ -315,6 +334,39 @@ function riskRank(conversation: ConversationRow) {
   if (conversation.slaRisk) return 1;
   if (conversation.awaitingReply) return 2;
   return 3;
+}
+
+export function matchesConversationFilter(
+  row: ConversationRow,
+  filter: ConversationFilterId
+) {
+  if (filter === "unread") return row.unreadCount > 0;
+  if (filter === "awaiting") return row.awaitingReply;
+  if (filter === "needs")
+    return row.status === "pending_handoff" || row.aiState === "suspended";
+  if (filter === "sla") return row.slaRisk;
+  if (filter === "closed") return row.status === "closed";
+  return true;
+}
+
+export function countConversationFilters(
+  rows: ConversationRow[]
+): Record<ConversationFilterId, number> {
+  return conversationFilters.reduce(
+    (acc, filter) => ({
+      ...acc,
+      [filter.id]: rows.filter((row) => matchesConversationFilter(row, filter.id))
+        .length
+    }),
+    {} as Record<ConversationFilterId, number>
+  );
+}
+
+export function isEditableTarget(target: EventTarget | null) {
+  return (
+    target instanceof HTMLElement &&
+    ["input", "select", "textarea"].includes(target.tagName.toLowerCase())
+  );
 }
 
 function degradedReason(

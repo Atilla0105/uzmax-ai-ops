@@ -23,7 +23,7 @@ test("renders the M7 foundation AppShell frame and state matrix", async ({ page 
   await expect(page.getByRole("button", { name: "团队" })).toBeVisible();
   await expect(page.getByRole("button", { name: "配置" })).toBeVisible();
   await expect(page.getByRole("button", { name: "分析" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "日志" })).toBeVisible();
+  await expect(page.getByRole("button", { exact: true, name: "日志" })).toBeVisible();
 
   const expandedWidth = await page
     .getByTestId("app-shell-nav")

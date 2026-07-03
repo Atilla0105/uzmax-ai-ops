@@ -57,7 +57,7 @@ export function FoundationPreview({
           Loading
         </Button>
         <SearchInput
-          aria-label="Foundation search"
+          aria-label="Foundation lookup"
           placeholder="Search foundation"
           readOnly
         />

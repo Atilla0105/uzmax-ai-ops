@@ -83,15 +83,16 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
 test("requires actionable takeover status with runtime policy", async ({ page }) => {
   await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
   await openConversations(page);
-  await expect(takeover(page)).toBeEnabled();
-  await takeover(page).click();
-  await expect.poll(() => handoffTargets).toEqual(["conv-risk"]);
+  await expect(takeover(page)).toBeDisabled();
+  await expect(degraded(page)).toContainText("等待人工接管/分配");
+  await page.keyboard.press("t");
+  expect(handoffTargets).toEqual([]);
 
   await row(page, "conv-calm").click();
   await expect(composer(page)).toHaveValue(/ORD-REF-20419/);
   await expect(takeover(page)).toBeEnabled();
   await takeover(page).click();
-  await expect.poll(() => handoffTargets).toEqual(["conv-risk", "conv-calm"]);
+  await expect.poll(() => handoffTargets).toEqual(["conv-calm"]);
 
   await row(page, "conv-closed").click();
   await expect(composer(page)).toHaveValue(/ORD-REF-20429/);
@@ -104,7 +105,7 @@ test("requires actionable takeover status with runtime policy", async ({ page })
   await expect(takeover(page)).toBeDisabled();
   await expect(degraded(page)).toContainText("会话已由人工接管");
   await page.keyboard.press("t");
-  expect(handoffTargets).toEqual(["conv-risk", "conv-calm"]);
+  expect(handoffTargets).toEqual(["conv-calm"]);
 });
 
 test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
@@ -115,6 +116,8 @@ test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
 
   await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
   await openConversations(page);
+  await expect(takeover(page)).toBeDisabled();
+  await row(page, "conv-calm").click();
   await takeover(page).click();
   expect(handoffs).toContainEqual(
     expect.objectContaining({
@@ -124,7 +127,11 @@ test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
   );
   expect(JSON.stringify(handoffs)).not.toContain("controlled://m7-ui-20/sla/default");
   await expect(page.getByText("待人工").first()).toBeVisible();
+  await expect(takeover(page)).toBeDisabled();
+  await page.keyboard.press("t");
+  expect(handoffTargets).toEqual(["conv-calm"]);
 
+  await row(page, "conv-ai").click();
   await page.unroute("**/conversation-ticket/conversations/*/handoff");
   await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
     await route.fulfill({
@@ -139,38 +146,34 @@ test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
 
 test("ignores stale handoff response detail", async ({ page }) => {
   let release: (() => void) | undefined;
-  await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
+  const policyRoute = { slaPolicyRef: "tenant-b-sla-policy" };
+  await routeConversationReady(page, policyRoute);
   await page.unroute("**/conversation-ticket/conversations/*/handoff");
   await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
     const targetId = handoffTargetFromUrl(route.request().url());
-    const body = JSON.parse(route.request().postData() ?? "{}") as Record<
-      string,
-      unknown
-    >;
-    handoffs.push(body);
+    handoffs.push(JSON.parse(route.request().postData() ?? "{}"));
     handoffTargets.push(targetId);
     await new Promise<void>((resolve) => {
       release = resolve;
     });
     await route.fulfill({
       json: {
-        conversation: conversation(targetId, "pending_handoff", true, {
-          slaPolicyRef: "tenant-b-sla-policy"
-        })
+        conversation: conversation(targetId, "pending_handoff", true, policyRoute)
       }
     });
   });
 
   await openConversations(page);
-  await takeover(page).click();
-  await expect.poll(() => handoffTargets).toEqual(["conv-risk"]);
   await row(page, "conv-calm").click();
-  await expect(composer(page)).toHaveValue(/ORD-REF-20419/);
+  await takeover(page).click();
+  await expect.poll(() => handoffTargets).toEqual(["conv-calm"]);
+  await row(page, "conv-ai").click();
+  await expect(composer(page)).toHaveValue(/ORD-REF-20427/);
   release?.();
   await expect(takeover(page)).toBeEnabled();
-  await expect(composer(page)).toHaveValue(/ORD-REF-20419/);
-  await expect(composer(page)).not.toHaveValue(/ORD-REF-20413/);
-  await expect(rail(page)).toContainText("ORD-REF-20419");
+  await expect(composer(page)).toHaveValue(/ORD-REF-20427/);
+  await expect(composer(page)).not.toHaveValue(/ORD-REF-20419/);
+  await expect(rail(page)).toContainText("ORD-REF-20427");
 });
 
 test("keeps selected target safe when detail fails", async ({ page }) => {
@@ -280,12 +283,8 @@ async function routeConversationReady(page: Page, options: RouteOptions = {}) {
   });
   await page.unroute("**/conversation-ticket/conversations/*/handoff").catch(() => {});
   await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
-    const body = JSON.parse(route.request().postData() ?? "{}") as Record<
-      string,
-      unknown
-    >;
     const targetId = handoffTargetFromUrl(route.request().url());
-    handoffs.push(body);
+    handoffs.push(JSON.parse(route.request().postData() ?? "{}"));
     handoffTargets.push(targetId);
     await route.fulfill({
       json: {

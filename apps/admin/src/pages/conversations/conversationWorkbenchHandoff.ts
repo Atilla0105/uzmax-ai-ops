@@ -12,7 +12,7 @@ const statusBlockers: Record<ConversationRow["status"], string> = {
   closed: "已解决会话不可重复接管；如需重开需要 approved runtime。",
   handoff: "会话已由人工接管；重复接管/转派 runtime 未接入。",
   open: "",
-  pending_handoff: ""
+  pending_handoff: "会话已在等待人工接管/分配；重复接管保持禁用。"
 };
 
 export function degradedReason(

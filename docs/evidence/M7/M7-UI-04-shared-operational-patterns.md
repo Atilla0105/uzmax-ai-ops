@@ -7,7 +7,7 @@
 - Base confirmed: `main` at `b9ede1f50d5875f27ad6aca66f9cde8ce183ba90`
 - Scope: shared operational patterns only; no page migration, runtime API/hook wiring, token mutation or raw prototype fixture copy.
 - Page worker boundary: M7-UI-04A+ page workers remain blocked until this shared-pattern PR is merged.
-- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns, accessibility remediation, lint-remediation extraction and `/design` preview CSS. After the lint fixes, committed net source LOC is 1213 across eight source files; this exceeds the default repo guard budget of 600 and the earlier branch targets. Merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval; this worker does not self-approve that exception.
+- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns, accessibility remediation, lint-remediation extraction, knip public-export cleanup and `/design` preview CSS. After the knip fixes, committed net source LOC is 1215 across eight source files; this exceeds the default repo guard budget of 600 and the earlier branch targets. Merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval; this worker does not self-approve that exception.
 
 ## Entry / Workspace Evidence
 
@@ -133,6 +133,12 @@ Rejected:
 - The operational `/design` preview moved to `apps/admin/src/patterns/operational-patterns-preview.tsx`, which is inside the allowed `apps/admin/src/patterns/**` scope and remains 240 lines after formatting.
 - `apps/admin/src/patterns/data-table.tsx` is 246 lines after formatting.
 
+## Knip Review Fixes
+
+- `EmptyState` remains exported and is now genuinely used in the `/design` foundation preview via `m7-empty-state`.
+- `EmptyStateProps`, `DataTableProps`, `DataTableSelection`, `DataTableRowAction`, `FilterBarSelect`, `BatchAction`, `ConfirmReason`, `MessageBubbleRole`, `ToastEntry` and `ToastTone` were internalized or removed from the barrel export surface because no current code/tests import them.
+- `DataTableColumn` remains the only re-exported DataTable type because `OperationalPatternsPreview` imports it for current column typing.
+
 ## Validation
 
 Source budget caveat:
@@ -141,26 +147,26 @@ Source budget caveat:
   - `134  0  apps/admin/src/patterns/confirm-modal.tsx`
   - `246  0  apps/admin/src/patterns/data-table.tsx`
   - `91   0  apps/admin/src/patterns/feedback-patterns.tsx`
-  - `14   0  apps/admin/src/patterns/index.tsx`
+  - `12   1  apps/admin/src/patterns/index.tsx`
   - `240  0  apps/admin/src/patterns/operational-patterns-preview.tsx`
   - `149  0  apps/admin/src/patterns/operational-patterns.tsx`
   - `350  0  apps/admin/src/shell/AppShell.css`
-  - `75   86 apps/admin/src/shell/FoundationPreview.tsx`
-- Current committed branch net source LOC: 1213.
+  - `79   85 apps/admin/src/shell/FoundationPreview.tsx`
+- Current committed branch net source LOC: 1215.
 - Current committed branch source files changed: 8.
 - New source files: 5 (`confirm-modal.tsx`, `data-table.tsx`, `feedback-patterns.tsx`, `operational-patterns.tsx`, `operational-patterns-preview.tsx`).
 - Default repo guard budget: net source LOC <= 600.
-- Earlier branch targets are exceeded; lint remediation added one source file and increased the source net LOC.
-- Therefore the branch intentionally fails local `pr-shape --include-worktree` with `net source LOC 1213 > 600` unless PR metadata declares `Exception: large_change_exception`. The overage requires owner/coordinator approval before merge; this worker does not self-approve it.
+- Earlier branch targets are exceeded; lint remediation added one source file and knip remediation changed the source net LOC.
+- Therefore the branch intentionally fails local `pr-shape --include-worktree` with `net source LOC 1215 > 600` unless PR metadata declares `Exception: large_change_exception`. The overage requires owner/coordinator approval before merge; this worker does not self-approve it.
 
-Lint-remediation validation after source commit `2bc313f`:
+Knip-remediation validation after source commit `2259ffa`:
 
 ```text
 wc -l apps/admin/src/shell/FoundationPreview.tsx apps/admin/src/patterns/operational-patterns-preview.tsx apps/admin/src/patterns/data-table.tsx
-     107 apps/admin/src/shell/FoundationPreview.tsx
+     112 apps/admin/src/shell/FoundationPreview.tsx
      240 apps/admin/src/patterns/operational-patterns-preview.tsx
      246 apps/admin/src/patterns/data-table.tsx
-     593 total
+     598 total
 ```
 
 ```text
@@ -171,8 +177,8 @@ EXIT:0
 ```
 
 ```text
-targeted lint
-unavailable locally: npm not found; node_modules absent; apps/admin/node_modules absent; eslint binary absent in the isolated worktree shell.
+targeted knip
+unavailable locally: npm not found; node_modules absent; apps/admin/node_modules absent in the isolated worktree shell.
 ```
 
 ```text
@@ -194,7 +200,7 @@ EXIT:0
 ```text
 /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-04-shared-operational-patterns.md --include-worktree
 guard:pr-shape failed:
-net source LOC 1213 > 600
+net source LOC 1215 > 600
 EXIT:1
 ```
 

@@ -47,13 +47,13 @@ feature
 ## Change Budget / Path Classification
 
 - Source changed files: <= 8 after extracting the operational preview from `FoundationPreview.tsx` into `apps/admin/src/patterns/operational-patterns-preview.tsx` for lint max-lines compliance.
-- Source net LOC: lint-remediation refactor raised the committed branch to 1213 net source LOC. This exceeds the repo default `guard:pr-shape` source budget of 600 and the earlier branch targets, so merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval. If that exception is rejected, the branch must be split or shrunk before merge.
+- Source net LOC: knip-remediation cleanup raised the committed branch to 1215 net source LOC. This exceeds the repo default `guard:pr-shape` source budget of 600 and the earlier branch targets, so merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval. If that exception is rejected, the branch must be split or shrunk before merge.
 - New source files: <= 5
 - Test files changed: 1 focused Playwright spec
 - Docs files changed: 3
 - Package/lock/generated/config/backend/API/DB/worker/cron/CI changes: 0
 - External API/provider/connector/adapter basis: none
-- Exceptions: `large_change_exception` proposed for owner/coordinator review because this start-gate slice delivers eight shared operational patterns, accessibility remediation, lint-remediation extraction and `/design` preview CSS before page workers may start. This worker does not self-approve the exception; merge still requires owner/coordinator approval of the exception path.
+- Exceptions: `large_change_exception` proposed for owner/coordinator review because this start-gate slice delivers eight shared operational patterns, accessibility remediation, lint-remediation extraction, knip public-export cleanup and `/design` preview CSS before page workers may start. This worker does not self-approve the exception; merge still requires owner/coordinator approval of the exception path.
 
 ## Preconditions
 

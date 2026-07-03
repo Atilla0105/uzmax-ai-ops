@@ -257,9 +257,14 @@
 }
 
 .uz-topbar-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border: 1px solid var(--ink-150);
   border-radius: var(--radius-md);
-  padding: var(--s-3) var(--s-6);
+  padding: 0;
   color: var(--ink-700);
   background: var(--card);
   font: 600 var(--text-sm) / 1 var(--font-body);
@@ -287,26 +292,48 @@
 .uz-icon-slot {
   width: 16px;
   height: 16px;
-  border: 1px solid currentColor;
-  border-radius: var(--radius-xs);
   color: currentColor;
-  font: 700 var(--text-2xs) / 1 var(--font-body);
 }
 
 .uz-icon-slot--sm {
   width: 13px;
   height: 13px;
-  font-size: 8px;
 }
 
 .uz-icon-slot--lg {
   width: 48px;
   height: 48px;
+  border: 1px solid var(--ink-150);
   border-color: var(--ink-150);
   border-radius: var(--radius-xl);
   color: var(--ink-300);
   background: var(--ink-075);
-  font-size: var(--text-sm);
+}
+
+.uz-icon-slot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.75;
+}
+
+.uz-icon-slot--text {
+  border: 1px solid currentColor;
+  border-radius: var(--radius-xs);
+  font: 700 var(--text-2xs) / 1 var(--font-body);
+}
+
+.uz-nav-item .uz-icon-slot {
+  width: 19px;
+  height: 19px;
+}
+
+.uz-nav-collapse .uz-icon-slot {
+  transition: transform var(--duration-fast) var(--easing-standard);
+}
+
+.uz-app-shell.is-nav-collapsed .uz-nav-collapse .uz-icon-slot {
+  transform: rotate(180deg);
 }
 
 .uz-button {

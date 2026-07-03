@@ -112,6 +112,7 @@
     "eslint": "^10.5.0",
     "jscpd": "^5.0.9",
     "knip": "^6.16.1",
+    "lucide-react": "1.23.0",
     "prettier": "^3.8.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

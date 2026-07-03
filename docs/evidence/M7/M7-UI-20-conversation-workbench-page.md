@@ -56,6 +56,7 @@ Validation is recorded in the final worker report for this branch. Required comm
 - `git diff --check`
 - `npm run guard:doc-triggers`
 - `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree`
+- PR body includes `Spec ID` and `Spec file` metadata for CI `guard:pr-shape`.
 
 ## Boundary
 

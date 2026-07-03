@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
+import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, initialAdminPageId, type AdminPageId } from "./registry";
 
 export interface PageOutletProps {
@@ -20,6 +21,14 @@ export function PageOutlet({
     return (
       <section data-page-id={page.id} data-testid="legacy-evidence-route">
         {legacyEvidence}
+      </section>
+    );
+  }
+
+  if (page.id === "tenant.queue") {
+    return (
+      <section data-page-id={page.id} data-testid="page-outlet">
+        <QueuePage />
       </section>
     );
   }

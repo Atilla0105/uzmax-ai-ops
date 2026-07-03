@@ -2,51 +2,60 @@
 
 ## Status
 
-Phase 1 spec draft only. No page implementation, route wiring, API hook, CSS, test, package/lock, DB, backend/API, worker/cron, CI/global config or raw prototype file was changed.
+Implementation branch evidence for `tenant.queue`. This PR renders the M7 confirmation queue page through `PageOutlet`, wraps the existing `createConfirmationQueueApiClient` in page-local state, adds focused Playwright coverage, and updates the page ledger/index.
+
+This is not M7 closeout, M5 owner acceptance, GA-0, production, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
 
 ## Entry Evidence
 
 | Fact | Evidence |
 |---|---|
-| worker path | `/Users/atilla/.codex/worktrees/m7-ui-10-confirmation-queue-page` |
-| worker branch | `codex/m7-ui-10-confirmation-queue-page` |
-| worker status at entry | `## codex/m7-ui-10-confirmation-queue-page...origin/main` |
-| worker HEAD / origin main | `5877029adfb48d084ce53f8d6972b6356da0fb9a` / `5877029adfb48d084ce53f8d6972b6356da0fb9a` |
+| worker path | `/Users/atilla/.codex/worktrees/m7-ui-10-confirmation-queue-page-impl` |
+| worker branch | `codex/m7-ui-10-confirmation-queue-page-impl` |
+| worker status at entry | `## codex/m7-ui-10-confirmation-queue-page-impl...origin/main` |
+| worker HEAD / origin main | `e4e8e2bbeda3cc66ddc3d6017c7863aab68bb97f` / `e4e8e2bbeda3cc66ddc3d6017c7863aab68bb97f` |
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
-| root/main status at entry | `## main...origin/main` |
-| unmerged branch audit at entry | `git branch --no-merged main` returned no output |
+| root/main status | `## main...origin/main` |
 | open PR audit | `gh` unavailable in this shell |
 
 ## Required Reads / Mapping
 
-- Required v1.1 and M7 documents were read before drafting.
-- Exact prototype queue mapping is recorded in `docs/specs/M7-UI-10-confirmation-queue-page.md`.
-- Relevant repo anchors found: `apps/admin/src/confirmationQueueApiClient.ts`, `apps/admin/src/m5ConfirmationQueueRuntime.ts`, `apps/admin/src/M5ConfirmationQueueShell.tsx`, `apps/admin/src/pages/registry.ts`, M5/M5R confirmation queue specs/evidence and M7-UI-04 shared patterns.
+- Required reads completed before implementation: `AGENTS.md`, this spec, Phase 1 evidence, page migration ledger, M7 README, root-patch incident, M7-UI-04 shared operational patterns, current primitives/patterns, router/page outlet/registry, existing confirmation queue client/runtime, M5 tests/evidence as runtime contract reference, `/Users/atilla/源码/unpacked 6/pages/queue/QueuePage.tsx`, `/Users/atilla/源码/unpacked 6/hooks/useConfirmationQueue.ts`, `/Users/atilla/源码/unpacked 6/fixtures/queue.ts`, and `/Users/atilla/Downloads/运营塔台1.0.html` as visual/interaction reference only.
+- Adopted Impeccable/product-register guidance: dense operational page, status-first hierarchy, keyboard-first desktop flow, mobile approval fallback, no decorative visuals, no nested cards, no side stripes.
+- Rejected prototype-local behavior: inline raw styling, raw fixture/customer/order strings, local fixture runtime state, manual distill recovery fake, and runtime `kept` action.
 
-## Contract Summary
+## Implementation Summary
 
-- Source page: `/Users/atilla/源码/unpacked 6/pages/queue/QueuePage.tsx`.
-- Target page id/path: `tenant.queue` / `apps/admin/src/pages/queue/QueuePage.tsx`.
-- Existing M5 shell/runtime remains legacy evidence, not the M7 page target.
-- Existing API client supports `approve`, `edit`, `discard`, `block`; it does not support a distinct prototype `kept` action.
-- Distill health summary/manual recovery require runtime/API confirmation before enabling; otherwise the M7 page must show degraded/read-only blockers.
+| Path | Summary |
+|---|---|
+| `apps/admin/src/pages/queue/QueuePage.tsx` | M7 page body, runtime list/decision state, keyboard handling, edit/block side paths, loading/empty/error/permission/degraded states. |
+| `apps/admin/src/pages/queue/QueueCard.tsx` | Queue card, conflict diff, controlled-ref preview, disabled keep-current affordance, mobile edit handoff. |
+| `apps/admin/src/pages/queue/QueuePage.css` | Page-local token-consuming layout for stats, queue stream, cards, diff and 320px fallback. |
+| `apps/admin/src/pages/PageOutlet.tsx` | Renders `QueuePage` for `tenant.queue`; other routes remain scaffold/legacy behavior. |
+| `apps/admin/src/pages/registry.ts` | Corrects queue target spec id to `M7-UI-10-confirmation-queue-page`. |
+| `apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | Focused synthetic route fixtures for render, decisions, state coverage, conflict keyboard blocking and mobile fallback. |
+
+## Runtime / Contract Notes
+
+- Uses only the existing `createConfirmationQueueApiClient` contract: `listItems({ status: "pending" })` and `submitDecision` with `approve`, `edit`, `discard`, `block`.
+- Does not edit `apps/admin/src/confirmationQueueApiClient.ts`, backend/API, DB, distill runtime, tokens, package/lock, shared patterns or CI/global config.
+- `保留当前值` is visible but disabled because the existing API has no `keep_current` / `kept` action.
+- Distill health summary and manual restore-daily recovery render as degraded/read-only blockers because no approved admin API contract exists in this slice.
+- No fixture is used as runtime. Playwright route fixtures use controlled refs such as `controlled://m7-ui-10/...` only.
 
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
-| `git status --short --branch` | pass | Worker shows only the five allowed docs files changed/untracked. |
-| root `git status --short --branch` | pass | Root/main returned to `## main...origin/main` after incident cleanup. |
-| `git diff --check` | pass | No whitespace errors in tracked diff. |
-| `git diff --check --no-index /dev/null docs/specs/M7-UI-10-confirmation-queue-page.md` | pass | No diagnostics; exit 1 is expected because the file differs from `/dev/null`. |
-| `git diff --check --no-index /dev/null docs/evidence/M7/M7-UI-10-confirmation-queue-page.md` | pass | No diagnostics; exit 1 is expected because the file differs from `/dev/null`. |
-| `git diff --check --no-index /dev/null docs/incidents/INC-2026-07-03-m7-ui-10-root-patch-target.md` | pass | No diagnostics; exit 1 is expected because the file differs from `/dev/null`. |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-10-confirmation-queue-page.md --include-worktree` | pass | `changedFiles: 5`, `docs: 5`, source changed files `0`, source net LOC `0`, new source files `0`. |
-
-## Incident
-
-`docs/incidents/INC-2026-07-03-m7-ui-10-root-patch-target.md` records the Phase 1 root patch-target mistake. Containment copied the intended docs patch into the assigned worktree, reversed only the accidental root doc edits, removed only the accidental root untracked files, and confirmed root/main returned to `## main...origin/main`.
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm ci` | pass | Installed isolated worktree dependencies; 361 packages, 0 vulnerabilities. |
+| `npm run format:check` | pass | Prettier reported all matched files use code style. |
+| `npm run typecheck` | pass | `tsc --noEmit -p tsconfig.json`. |
+| `npm run lint` | pass | ESLint/dependency-cruiser command completed with 0 problems. |
+| `npm run build:admin` | pass | Vite admin production build completed. |
+| `npm run playwright -- apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | pass | 4/4 focused tests passed, including conflict keyboard blocking, state coverage and 320px mobile fallback. |
+| `git diff --check` / `git diff --cached --check` / `git diff --check origin/main...HEAD` | pass | Working, staged and committed diff whitespace checks returned no output. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-10-confirmation-queue-page.md --include-worktree` | pass | Guard reported 9 changed files: source 5, test 1, docs 3; source changed files 5, net LOC 598, new source files 3. |
 
 ## Boundary
 
-This evidence does not approve page implementation, M7 closeout, M5 owner acceptance, GA-0, production, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release.
+This evidence does not approve page acceptance, M7 closeout, M5 owner acceptance, GA-0, production, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release.

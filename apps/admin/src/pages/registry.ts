@@ -228,7 +228,7 @@ const adminPageRegistry = [
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/queue/QueuePage.tsx",
     status: "not_started",
     targetPath: "apps/admin/src/pages/queue/QueuePage.tsx",
-    targetSpecId: "M7-UI-04M-tenant-queue"
+    targetSpecId: "M7-UI-10-confirmation-queue-page"
   },
   {
     evidenceStatus: "not_started",

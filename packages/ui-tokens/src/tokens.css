@@ -1,22 +1,143 @@
 :root {
-  --uzmax-color-accent: #2f6f73;
-  --uzmax-color-bg: #f4f7f6;
-  --uzmax-color-border: #d7dfdc;
-  --uzmax-color-danger: #b34228;
-  --uzmax-color-ink: #182322;
-  --uzmax-color-muted: #52615f;
-  --uzmax-color-sidebar: #1f2a33;
-  --uzmax-color-surface: #ffffff;
-  --uzmax-color-surface-muted: #eaf0ee;
-  --uzmax-color-warn: #9c6b13;
-  --uzmax-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --uzmax-radius-sm: 6px;
-  --uzmax-shadow-focus: 0 0 0 3px rgb(47 111 115 / 18%);
-  --uzmax-sidebar-width: 64px;
-  --uzmax-space-1: 4px;
-  --uzmax-space-2: 8px;
-  --uzmax-space-3: 12px;
-  --uzmax-space-4: 16px;
-  --uzmax-space-5: 20px;
-  --uzmax-space-6: 24px;
+  --ink-900: #1a1d21;
+  --ink-700: #3f454d;
+  --ink-500: #7a828c;
+  --ink-300: #c9cdd2;
+  --ink-150: #e8eaec;
+  --ink-075: #f2f3f4;
+  --paper: #fafaf8;
+  --card: #ffffff;
+
+  --state-human: #d4502b;
+  --state-human-bg: #fceee8;
+  --state-human-border: #f3d8cb;
+  --state-human-hover: #bc421f;
+  --state-ai: #30518c;
+  --state-ai-bg: #ebf0f9;
+  --state-ai-border: #d8e2f2;
+  --state-ok: #2e7d4f;
+  --state-ok-bg: #eaf4ee;
+  --state-ok-border: #cde6d7;
+  --state-warn: #c98a1b;
+  --state-warn-bg: #faf3e3;
+  --state-warn-border: #ead9a8;
+  --state-off: #7a828c;
+  --accent-data: #2fa6a0;
+  --accent-data-strong: #1f8a84;
+  --accent-data-bg: #e3f4f3;
+
+  --font-display: "Manrope", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-data:
+    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-mono: var(--font-data);
+
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-body: 14px;
+  --text-title: 16px;
+  --text-heading: 20px;
+  --text-display: 24px;
+
+  --s-0: 0;
+  --s-1: 2px;
+  --s-2: 4px;
+  --s-3: 6px;
+  --s-4: 8px;
+  --s-5: 10px;
+  --s-6: 12px;
+  --s-7: 14px;
+  --s-8: 16px;
+  --s-9: 18px;
+  --s-10: 24px;
+
+  --radius-xs: 4px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 9px;
+  --radius-xl: 12px;
+  --radius-pill: 14px;
+
+  --shadow-none: none;
+  --shadow-focus: 0 0 0 1px #1a1d21;
+  --shadow-dropdown: 0 4px 12px rgb(26 29 33 / 10%);
+  --shadow-overlay: 0 12px 40px rgb(26 29 33 / 22%);
+  --shadow-toggle-dot: 0 1px 2px rgb(0 0 0 / 20%);
+
+  --duration-fast: 120ms;
+  --duration-base: 160ms;
+  --duration-panel: 220ms;
+  --easing-standard: ease;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --loop-pulse: 1800ms;
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 40;
+  --z-modal-backdrop: 70;
+  --z-modal: 80;
+  --z-toast: 90;
+  --z-tooltip: 100;
+
+  --opacity-disabled: 0.45;
+  --opacity-muted: 0.7;
+  --opacity-pulse-min: 0.35;
+  --opacity-scrim: 0.36;
+
+  --nav-collapsed-width: 68px;
+  --nav-expanded-width: 232px;
+  --topbar-height: 52px;
+  --env-strip-height: 3px;
+
+  /* Legacy aliases for unmigrated M2-M6 shell CSS only. */
+  --uzmax-color-accent: var(--accent-data);
+  --uzmax-color-bg: var(--paper);
+  --uzmax-color-border: var(--ink-150);
+  --uzmax-color-danger: var(--state-human);
+  --uzmax-color-ink: var(--ink-900);
+  --uzmax-color-muted: var(--ink-500);
+  --uzmax-color-sidebar: var(--ink-900);
+  --uzmax-color-surface: var(--card);
+  --uzmax-color-surface-muted: var(--ink-075);
+  --uzmax-color-warn: var(--state-warn);
+  --uzmax-font-mono: var(--font-data);
+  --uzmax-radius-sm: var(--radius-md);
+  --uzmax-shadow-focus: var(--shadow-focus);
+  --uzmax-sidebar-width: var(--nav-collapsed-width);
+  --uzmax-space-1: var(--s-2);
+  --uzmax-space-2: var(--s-4);
+  --uzmax-space-3: var(--s-6);
+  --uzmax-space-4: var(--s-8);
+  --uzmax-space-5: var(--s-9);
+  --uzmax-space-6: var(--s-10);
+}
+
+@keyframes uzpulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: var(--opacity-pulse-min);
+  }
+}
+
+@keyframes uzspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

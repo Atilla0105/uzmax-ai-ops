@@ -8,7 +8,7 @@ import {
   StatusBadge,
   Toggle
 } from "../primitives";
-import { DegradedBar, PageState, Tabs } from "../patterns";
+import { DegradedBar, EmptyState, PageState, Tabs } from "../patterns";
 import { OperationalPatternsPreview } from "../patterns/operational-patterns-preview";
 
 export interface FoundationPreviewProps {
@@ -89,6 +89,11 @@ export function FoundationPreview({
           />
         </div>
         <div className="foundation-preview__states" data-testid="m7-foundation-states">
+          <EmptyState
+            data-testid="m7-empty-state"
+            description="Empty work surfaces keep layout stable."
+            title="No records"
+          />
           {previewStates.map(([kind, message, testId]) => (
             <PageState
               data-testid={testId}

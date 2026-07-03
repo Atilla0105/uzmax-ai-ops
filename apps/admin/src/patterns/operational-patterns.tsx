@@ -6,7 +6,7 @@ function cx(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export interface FilterBarSelect extends SelectHTMLAttributes<HTMLSelectElement> {
+interface FilterBarSelect extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
 }
 
@@ -71,7 +71,7 @@ export function PageToolbar({
   );
 }
 
-export interface BatchAction {
+interface BatchAction {
   danger?: boolean;
   key: string;
   label: ReactNode;

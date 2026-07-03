@@ -16,21 +16,21 @@ export interface DataTableColumn<Row> {
   width?: string;
 }
 
-export interface DataTableSelection<Row> {
+interface DataTableSelection<Row> {
   getLabel?: (row: Row) => string;
   onToggle: (key: string, row: Row) => void;
   onToggleAll?: () => void;
   selectedKeys: ReadonlySet<string>;
 }
 
-export interface DataTableRowAction<Row> {
+interface DataTableRowAction<Row> {
   getLabel: (row: Row) => string;
   header?: ReactNode;
   onActivate: (row: Row) => void;
   renderLabel?: (row: Row) => ReactNode;
 }
 
-export interface DataTableProps<Row> {
+interface DataTableProps<Row> {
   columns: Array<DataTableColumn<Row>>;
   density?: Density;
   emptyState?: ReactNode;

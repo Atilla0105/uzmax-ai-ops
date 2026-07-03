@@ -6,8 +6,8 @@ function cx(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export type ToastTone = "info" | "success" | "warning" | "error";
-export interface ToastEntry {
+type ToastTone = "info" | "success" | "warning" | "error";
+interface ToastEntry {
   id: number;
   message: ReactNode;
   tone: ToastTone;
@@ -45,7 +45,7 @@ export function ToastHost({ toasts }: { toasts: ToastEntry[] }) {
   );
 }
 
-export type MessageBubbleRole = "system" | "customer" | "ai" | "human";
+type MessageBubbleRole = "system" | "customer" | "ai" | "human";
 
 export function MessageBubble({
   children,

@@ -13,7 +13,7 @@ function getFocusable(root: HTMLElement | null) {
   return Array.from(root?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []);
 }
 
-export interface ConfirmReason {
+interface ConfirmReason {
   label?: string;
   onChange: (value: string) => void;
   placeholder?: string;

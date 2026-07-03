@@ -81,7 +81,7 @@ export function Tabs({ active, className, onChange, tabs, ...props }: TabsProps)
   );
 }
 
-export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   action?: ReactNode;
   description?: ReactNode;
   icon?: IconSlotProps["icon"];
@@ -174,15 +174,12 @@ export function DegradedBar({
 }
 
 export { DataTable } from "./data-table";
-export type { DataTableColumn, DataTableProps, DataTableSelection } from "./data-table";
+export type { DataTableColumn } from "./data-table";
 export {
   BatchActionBar,
   FilterBar,
   PageToolbar,
   SidePanel
 } from "./operational-patterns";
-export type { BatchAction, FilterBarSelect } from "./operational-patterns";
 export { ConfirmModal } from "./confirm-modal";
-export type { ConfirmReason } from "./confirm-modal";
 export { MessageBubble, ToastHost, useToast } from "./feedback-patterns";
-export type { MessageBubbleRole, ToastEntry, ToastTone } from "./feedback-patterns";

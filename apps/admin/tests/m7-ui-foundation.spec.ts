@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const navWidth = async (page: Page) =>
+  Math.round(
+    await page
+      .getByTestId("app-shell-nav")
+      .evaluate((node) => node.getBoundingClientRect().width)
+  );
 
 test("renders the M7 foundation AppShell frame and state matrix", async ({ page }) => {
   await page.goto("/design");
@@ -25,16 +32,10 @@ test("renders the M7 foundation AppShell frame and state matrix", async ({ page 
   await expect(page.getByRole("button", { name: "分析" })).toBeVisible();
   await expect(page.getByRole("button", { exact: true, name: "日志" })).toBeVisible();
 
-  const expandedWidth = await page
-    .getByTestId("app-shell-nav")
-    .evaluate((node) => Math.round(node.getBoundingClientRect().width));
-  expect(expandedWidth).toBe(232);
+  await expect.poll(async () => navWidth(page)).toBe(232);
 
   await page.getByRole("button", { name: "Collapse navigation" }).click();
-  const collapsedWidth = await page
-    .getByTestId("app-shell-nav")
-    .evaluate((node) => Math.round(node.getBoundingClientRect().width));
-  expect(collapsedWidth).toBe(68);
+  await expect.poll(async () => navWidth(page)).toBe(68);
   await page.getByRole("button", { name: "Expand navigation" }).click();
 
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");

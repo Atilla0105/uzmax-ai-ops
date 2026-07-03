@@ -47,6 +47,7 @@ feature
   - `apps/admin/src/pages/registry.ts`
   - `apps/admin/tests/m7-ui-release-acceptance.spec.ts`
   - `apps/admin/tests/m7-ui-page-router.spec.ts`
+  - `apps/admin/tests/helpers/layerNavAssertions.ts`
 - 说明/备注：
   - This PR may touch only the docs paths above.
   - Future implementation may touch the listed `apps/admin` page/test paths only after coordinator approval.
@@ -70,7 +71,7 @@ Future implementation budget after coordinator approval:
 - source changed files: <= 5
 - source net LOC: <= 600
 - new source files: <= 3
-- test files changed: <= 2 focused Playwright specs
+- test files changed: <= 3 focused Playwright specs/helpers
 - docs changed: <= 3 evidence/ledger updates
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - external API/SDK/provider/connector/adapter basis: none; use existing internal admin API client contracts, repo evidence contracts and future approved release/acceptance APIs only.

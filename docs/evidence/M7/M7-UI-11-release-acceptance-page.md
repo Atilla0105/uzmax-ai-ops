@@ -132,6 +132,7 @@ Current UI-11 status:
 | `apps/admin/src/pages/registry.ts` | Marks `group.release` as `implemented_in_worker_pending_pr` with UI-11 target spec. |
 | `apps/admin/tests/m7-ui-release-acceptance.spec.ts` | Focused desktop, group-only nav, state, disabled-action and 320px mobile fallback coverage. |
 | `apps/admin/tests/m7-ui-page-router.spec.ts` | Keeps UI-05 group-only/tenant-only router coverage while asserting `group.release` no longer renders scaffold content and `tenant.queue` remains tenant-only. |
+| `apps/admin/tests/helpers/layerNavAssertions.ts` | Shared test-only group/tenant nav assertions used by release and router specs to avoid duplicate jscpd clones without weakening assertions. |
 
 ## Runtime / Contract Boundary
 
@@ -174,15 +175,17 @@ These artifacts were generated outside git and must not be committed:
 | Command | Result | Notes |
 |---|---|---|
 | dual status before validation | pass | Root/main stayed `## main...origin/main`; assigned worktree was on `codex/m7-ui-11-release-acceptance-page-impl` with only UI-11 follow-up edits after the UI-05 merge commit. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run jscpd` | pass | 0 clones found after extracting shared layer-nav assertions into `apps/admin/tests/helpers/layerNavAssertions.ts`. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npx playwright test apps/admin/tests/m7-ui-release-acceptance.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | pass | 10 focused tests passed; covers `group.release` group-only nav, `tenant.queue` tenant-only nav, route replacement, disabled release actions and mobile fallback. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run knip` | pass | CI knip gate passed; no unused `releaseCss` export. |
 | `git diff --check` | pass | No whitespace errors. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-11-release-acceptance-page.md --include-worktree` | pass | 9 changed files: 4 source, 2 test, 3 docs. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-11-release-acceptance-page.md --include-worktree` | pass | 11 changed files: 4 source, 3 test, 4 docs. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/group/GroupReleasePage.tsx apps/admin/src/pages/group/GroupReleaseSupport.tsx` | pass | Detector returned `[]`; no new local Impeccable findings. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run lint` | pass | ESLint/dependency-cruiser command completed. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run typecheck -- --pretty false` | pass | TypeScript passed. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run build:admin` | pass | Admin production build passed. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run playwright` | pass | 42 Playwright tests passed. |
 | owner HTML parity baseline screenshot | pass | Prototype navigated to `集团 -> 发布与验收`; saved `/tmp/uzmax-m7-ui-11-release-acceptance-page/owner-html-release-1440.png`. |
 | implementation screenshot generation | pass | Desktop/mobile parity screenshots generated under `/tmp/uzmax-m7-ui-11-release-acceptance-page/`; mobile `document.body.scrollWidth` was `320`. |
 | visual audit | pass with known gaps | Refreshed desktop artifact shows group-only left nav after UI-05; page body remains a parity candidate with degraded/runtime bar, disabled actions and read-only copy that intentionally diverge from the owner HTML. |

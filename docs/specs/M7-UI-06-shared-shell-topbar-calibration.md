@@ -51,6 +51,7 @@ feature
   - `apps/admin/src/App.tsx`
   - `apps/admin/src/shell/AppShell.tsx`
   - `apps/admin/src/shell/AppShell.css`
+  - `apps/admin/tests/design.spec.ts`
   - `apps/admin/tests/m7-ui-foundation.spec.ts`
   - `apps/admin/tests/m7-ui-page-router.spec.ts`
 - 未列出的模块默认不可改。
@@ -62,7 +63,7 @@ Implementation PR budget:
 - source changed files: <= 3
 - source net LOC: <= 300
 - new source files: 0
-- test files changed: <= 2
+- test files changed: <= 3
 - docs changed: <= 4
 - package/lock/generated/backend/API/DB/worker/cron/CI/guard/global config: 0
 - binary screenshots/artifacts committed: 0
@@ -90,6 +91,7 @@ Required reads before implementation:
 - `apps/admin/src/App.tsx`
 - `apps/admin/src/shell/AppShell.tsx`
 - `apps/admin/src/shell/AppShell.css`
+- `apps/admin/tests/design.spec.ts`
 - `apps/admin/tests/m7-ui-foundation.spec.ts`
 - `apps/admin/tests/m7-ui-page-router.spec.ts`
 - `/Users/atilla/源码/unpacked 6/shell/TopBar.tsx`

@@ -38,6 +38,7 @@ Required reads completed before implementation edits:
 - `apps/admin/src/App.tsx`
 - `apps/admin/src/shell/AppShell.tsx`
 - `apps/admin/src/shell/AppShell.css`
+- `apps/admin/tests/design.spec.ts`
 - `apps/admin/tests/m7-ui-foundation.spec.ts`
 - `apps/admin/tests/m7-ui-page-router.spec.ts`
 - `/Users/atilla/源码/unpacked 6/shell/TopBar.tsx`
@@ -58,6 +59,7 @@ Source mapping:
 | `docs/admin-design-system.md` | Applied prototype topbar dimensions, environment marker visual semantics, mobile 320px no-overflow boundary and no-overclaim wording. |
 | Current `AppShell.tsx` | Replaced visible `Tenant` label/select copy, `Search shell`, default `STAGING`, disabled notification/user icons and raw tenant status string. |
 | Current focused tests | Updated assertions to preserve anchors while checking owner-style visible copy and M7-UI-05 navigation separation. |
+| Current `apps/admin/tests/design.spec.ts` | Post-CI compatibility update after GitHub Actions job `85065283224` showed old legacy evidence assertions still expected disabled topbar buttons and `Tenant B` / `Connector degraded` copy. |
 
 ## Implementation Summary
 
@@ -69,6 +71,7 @@ Source mapping:
 | `apps/admin/src/shell/AppShell.css` | Tunes shared topbar density, tenant capsule, centered search, environment badge and right-side operator tools without touching page-local styles. |
 | `apps/admin/tests/m7-ui-foundation.spec.ts` | Updates shell anchor/topbar assertions for Chinese search, `PRODUCTION`, operator identity, prototype tenant copy and 320px fallback. |
 | `apps/admin/tests/m7-ui-page-router.spec.ts` | Updates tenant breadcrumb assertion to prototype tenant copy while preserving group/tenant nav separation coverage. |
+| `apps/admin/tests/design.spec.ts` | Updates legacy full-suite assertions to M7-UI-06 shell facts: enabled notification/user controls, visible operator identity and `tenant-b` copy as `丝路数码` / `降级`. |
 | `docs/evidence/M7/README.md` | Records UI-06 as a shared shell/topbar calibration branch. |
 | `docs/admin-ui-page-migration-ledger.md` | Adds UI-06 as a shared shell calibration row; no page migration is marked complete. |
 
@@ -110,18 +113,21 @@ Screenshot artifacts are generated under `/tmp/uzmax-m7-ui-06-shared-shell-topba
 
 The bundled runtime has `node` and `pnpm`, but no `npm`, `npx` or `gh`. For npm/npx validation and Playwright config compatibility, commands were executed with temporary `/tmp/uzmax-m7-ui-06-shared-shell-topbar-calibration/bin/npm` and `npx` shims that delegate to the bundled `pnpm`; no repo config or package file was changed.
 
+CI corrective follow-up: GitHub Actions job `85065283224` failed only in full Playwright because `apps/admin/tests/design.spec.ts` still asserted pre-M7-UI-06 shell facts: disabled notification/user buttons, `Tenant B`, and `Connector degraded`. This follow-up updates those assertions to the intentional owner-style topbar behavior and records the corrective full Playwright pass.
+
 | Command | Result | Notes |
 |---|---|---|
 | `git diff --check` | pass | No whitespace errors. |
 | `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run format:check` | fail, pre-existing unrelated formatting debt | After formatting this slice's touched files, global check still reports 11 untouched files: `apps/admin/src/M4CustomerAssetRuntimeState.tsx`, `apps/admin/src/orderImportApiClient.ts`, `apps/admin/src/pages/registry.ts`, `apps/api/src/ai-member-runtime.contracts.ts`, `apps/api/src/confirmation-queue.types.ts`, `apps/api/src/conversation-ticket.types.ts`, `apps/api/src/order-import.repository.ts`, `apps/api/src/order-import.types.ts`, `packages/capabilities/kb/src/index.ts`, `packages/capabilities/order-read/src/index.ts`, `packages/channels/src/index.ts`. |
 | `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-06-shared-shell-topbar-calibration.md --include-worktree` | pass | 9 changed files: source 3, test 2, docs 4; source net LOC 167; new source files 0. |
+| `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-06-shared-shell-topbar-calibration.md --include-worktree` | pass | 10 changed files: source 3, test 3, docs 4; source net LOC 167; new source files 0. |
 | `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run lint` | pass | ESLint passed after keeping `App.tsx` and `AppShell.tsx` under React file line limits. |
 | `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run typecheck -- --pretty false` | fail, environment dependency gap | `tsc` runs but local pnpm install lacks workspace/backend dependencies such as `@nestjs/common`, `@nestjs/core`, `@supabase/supabase-js`, `bullmq`, `@prisma/client` and `reflect-metadata`. No shell-specific TypeScript error was reported before those missing-module blockers. |
 | `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run build:admin` | pass | Vite admin build succeeded; output JS gzip about 99.78 kB. |
 | `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npx playwright test apps/admin/tests/m7-ui-foundation.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts` | pass | 5 focused tests passed. |
+| `PATH=/tmp/uzmax-m7-ui-06-shared-shell-topbar-calibration/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm exec playwright test` | pass | Full admin Playwright suite passed: 39 tests. |
 | screenshot capture | pass | Three screenshots captured under `/tmp/uzmax-m7-ui-06-shared-shell-topbar-calibration/`. |
-| touched-file Prettier check | pass | `prettier --check` passed for all 9 touched files. |
+| touched-file Prettier check | pass | `prettier --check` passed for the touched test/spec/evidence files in this follow-up. |
 | forbidden path check | pass | Final changed files are limited to the spec touch list; no package/lock/generated/backend/API/DB/worker/cron/CI/guard/global config drift. |
 
 ## Boundary

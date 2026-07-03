@@ -10,6 +10,22 @@ M7+ page migration uses `/Users/atilla/Downloads/运营塔台1.0.html` and `/Use
 
 The current route registry is admin-internal. It is not a backend API, public DTO, permission contract or release gate.
 
+## Group/Tenant Layer Separation Boundary
+
+Owner rule: group-level pages and tenant-level pages must not share one combined
+sidebar. Admin entry/home starts in the group layer; selecting a tenant
+transitions into the tenant layer.
+
+Group-level pages include group overview, model/cost/risk, templates,
+connections, release/acceptance, tenant management and group logs. Tenant-level
+pages include conversations, tickets, confirmation queue, customers, orders,
+knowledge, evals, AI members, and tenant-scoped team/config/analytics/logs.
+
+The current M7 AppShell still presents a mixed group+tenant sidebar. UI-11 does
+not edit shell/shared navigation because that is outside its approved touch list.
+This is a visual/IA blocker for full owner HTML navigation parity and requires a
+follow-up foundation spec before broad tenant page migration.
+
 ## Router/Foundation State
 
 | Order | Spec id | IA page | Prototype source path | Target route/page id | Target repo path | Current runtime/API/hook status | Required states | Evidence status |
@@ -18,7 +34,7 @@ The current route registry is admin-internal. It is not a backend API, public DT
 
 ## Planned Page Ledger
 
-Current ledger state is mixed: M7-UI-10 is merged to `main`, M7-UI-11 is spec-ready pending PR review, and the remaining planned pages are not implemented. Any later page worker must update this ledger or a page-specific evidence file before claiming implementation.
+Current ledger state is mixed: M7-UI-10 is merged to `main`, M7-UI-11 is implementation-pending PR review with group/tenant shell separation recorded as unresolved, and the remaining planned pages are not implemented. Any later page worker must update this ledger or a page-specific evidence file before claiming implementation.
 
 | Order | Spec id | IA page | Prototype source path | Target route/page id | Target repo path | Current runtime/API/hook status | Required states | Evidence status |
 |---:|---|---|---|---|---|---|---|---|
@@ -26,7 +42,7 @@ Current ledger state is mixed: M7-UI-10 is merged to `main`, M7-UI-11 is spec-re
 | 2 | M7-UI-04B-group-model-risk | 模型/成本/风险 | `/Users/atilla/源码/unpacked 6/pages/group/GroupModelPage.tsx` | `group.modelRisk` | `apps/admin/src/pages/group/GroupModelRiskPage.tsx` | `not_started`; no model/cost/risk runtime wiring; no LLM cost judgment | loading, empty, error, permission, degraded | `not_started` |
 | 3 | M7-UI-04C-group-template | 模板中心 | `/Users/atilla/源码/unpacked 6/pages/group/GroupTemplatePage.tsx` | `group.templates` | `apps/admin/src/pages/group/GroupTemplatePage.tsx` | `not_started`; existing M5 template evidence remains legacy-only | loading, empty, error, permission, degraded | `not_started` |
 | 4 | M7-UI-04D-group-connection | 连接中心 | `/Users/atilla/源码/unpacked 6/pages/group/GroupConnectionPage.tsx` | `group.connections` | `apps/admin/src/pages/group/GroupConnectionPage.tsx` | `not_started`; connector feature flags/ADR-B states not wired | loading, empty, error, permission, degraded | `not_started` |
-| 5 | M7-UI-11-release-acceptance-page | 发布与验收 | `/Users/atilla/源码/unpacked 6/pages/group/GroupReleasePage.tsx`; `/Users/atilla/源码/unpacked 6/fixtures/groupPlatform.ts`; owner HTML 发布与验收 region | `group.release` | `apps/admin/src/pages/group/GroupReleasePage.tsx` | `spec_ready_pending_pr_review`; existing release gate console remains legacy evidence route; no M7 page/hook/API implementation; release/acceptance API, owner signoff source, GA-0 checklist runtime truth, audit-write path and release actions remain blockers | loading, empty, error, permission, degraded, owner-decision-required, GA-0 locked, release blocked | `spec_evidence_stub_pending_pr_review` |
+| 5 | M7-UI-11-release-acceptance-page | 发布与验收 | `/Users/atilla/源码/unpacked 6/pages/group/GroupReleasePage.tsx`; `/Users/atilla/源码/unpacked 6/fixtures/groupPlatform.ts`; owner HTML 发布与验收 region | `group.release` | `apps/admin/src/pages/group/GroupReleasePage.tsx` | `implementation_pending_pr_review`; group-layer page surface renders through `PageOutlet` using existing `releaseGateContracts.ts` as legacy evidence input; no release/acceptance runtime API, owner signoff source, GA-0 checklist runtime truth or audit-write path is added; GA-0/1.0 actions remain disabled; surrounding mixed AppShell/sidebar remains unresolved shell/IA blocker outside UI-11 scope | loading, empty, error, permission, degraded, owner-decision-required, GA-0 locked, release blocked, mobile read-only fallback, owner HTML visual parity, group/tenant separation gate recorded | `implementation_evidence_pending_pr_review` |
 | 6 | M7-UI-04F-group-tenant | 租户管理 | `/Users/atilla/源码/unpacked 6/pages/group/GroupTenantPage.tsx` | `group.tenants` | `apps/admin/src/pages/group/GroupTenantPage.tsx` | `not_started`; tenant create/disable audit path not wired | loading, empty, error, permission, degraded | `not_started` |
 | 7 | M7-UI-04G-group-logs | 集团日志 | `/Users/atilla/源码/unpacked 6/pages/group/GroupLogsPage.tsx` | `group.logs` | `apps/admin/src/pages/group/GroupLogsPage.tsx` | `not_started`; group audit/export jobs not wired | loading, empty, error, permission, degraded | `not_started` |
 | 8 | M7-UI-04H-tenant-conversations | 对话 | `/Users/atilla/源码/unpacked 6/pages/conversations/ConversationsPage.tsx` | `tenant.conversations` | `apps/admin/src/pages/conversations/ConversationsPage.tsx` | `not_started`; existing M2 conversation shell remains legacy evidence route | loading, empty, error, permission, degraded, SLA risk | `not_started` |

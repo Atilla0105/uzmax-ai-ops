@@ -32,11 +32,13 @@ test("switches AppShell nav into the M7 page outlet without losing legacy eviden
     "data-page-id",
     "group.release"
   );
-  await expect(page.getByTestId("page-scaffold")).toContainText(
-    "M7-UI-04E-group-release"
+  await expect(page.getByTestId("m7-release-acceptance-page")).toBeVisible();
+  await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
+  await expect(page.getByTestId("m7-release-high-risk-actions")).toContainText(
+    "Only the project owner"
   );
 
-  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
+  await page.goto("/design");
   await expect(page.getByTestId("legacy-evidence-route")).toHaveAttribute(
     "data-page-id",
     "legacy.evidence"

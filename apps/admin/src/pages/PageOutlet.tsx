@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
+import { GroupReleasePage } from "./group/GroupReleasePage";
 import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, initialAdminPageId, type AdminPageId } from "./registry";
 
@@ -29,6 +30,14 @@ export function PageOutlet({
     return (
       <section data-page-id={page.id} data-testid="page-outlet">
         <QueuePage />
+      </section>
+    );
+  }
+
+  if (page.id === "group.release") {
+    return (
+      <section data-page-id={page.id} data-testid="page-outlet">
+        <GroupReleasePage />
       </section>
     );
   }

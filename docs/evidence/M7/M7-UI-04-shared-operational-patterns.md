@@ -7,7 +7,7 @@
 - Base confirmed: `main` at `b9ede1f50d5875f27ad6aca66f9cde8ce183ba90`
 - Scope: shared operational patterns only; no page migration, runtime API/hook wiring, token mutation or raw prototype fixture copy.
 - Page worker boundary: M7-UI-04A+ page workers remain blocked until this shared-pattern PR is merged.
-- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns plus `/design` preview CSS. The branch-specific spec budget is <= 1000 net source LOC, but the default repo guard still fails at 600 net source LOC unless PR metadata declares `Exception: large_change_exception`. The worker does not self-approve that exception.
+- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns, accessibility remediation and `/design` preview CSS. After the quality-review fixes, committed net source LOC is 1043; this exceeds the default repo guard budget of 600 and the earlier branch target of <= 1000. Merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval; this worker does not self-approve that exception.
 
 ## Entry / Workspace Evidence
 
@@ -85,7 +85,7 @@ Searches before adding source files:
 |---|---|---|
 | `patterns/DataTable.tsx` | `DataTable` in `apps/admin/src/patterns/data-table.tsx` | Adopt anatomy: stable columns, compact density, optional selection, empty state. Replace inline styles/raw literals with classes and canonical tokens. |
 | `patterns/MessageBubble.tsx` | `MessageBubble` in `apps/admin/src/patterns/feedback-patterns.tsx` | Adopt role variants: system/customer/AI/human. Use token classes and generic synthetic preview copy only. |
-| `patterns/ConfirmModal.tsx` | `ConfirmModal` in `apps/admin/src/patterns/operational-patterns.tsx` | Adopt confirmation + optional reason field; keep button affordances primitive-based and gate/destructive copy explicit. |
+| `patterns/ConfirmModal.tsx` | `ConfirmModal` in `apps/admin/src/patterns/confirm-modal.tsx` | Adopt confirmation + optional reason field; keep button affordances primitive-based and gate/destructive copy explicit. |
 | `patterns/Toast.tsx` | `useToast` + `ToastHost` | Adopt minimal host/hook shape. Toast is feedback only, not audit evidence. |
 | `patterns/BatchBar.tsx` | `BatchActionBar` | Adopt selected-count + actions pattern. Use `Button` primitives and no inline raw colors. |
 | `patterns/Dropdown.tsx` | Not implemented in this slice | Rejected for now because owner-required list names `FilterBar`; dropdown behavior can be added by a later spec if needed. |
@@ -118,29 +118,32 @@ Rejected:
 - Added focused Playwright coverage in `apps/admin/tests/m7-ui-patterns.spec.ts`.
 - Updated M7 evidence index to show UI-03 merged on this base, UI-04 implemented in worker and UI-04A+ blocked until UI-04 merge.
 
+## Quality Review Fixes
+
+- `ConfirmModal` now wires `aria-labelledby` and conditional `aria-describedby`, focuses the required reason textarea or first dialog control when opened, traps Tab/Shift+Tab within the dialog, closes on Escape, restores focus to the previously focused element on close/unmount and marks required reason textareas with both `required` and `aria-required`.
+- `DataTable` no longer uses row-level mouse click activation. It exposes an explicit typed `rowAction` cell button with accessible per-row labels and keyboard activation; row selection checkbox clicks only toggle selection.
+- `DataTable` disables the select-all checkbox and labels it `Select all rows unavailable` when `selection.onToggleAll` is absent, so the shared pattern no longer renders an enabled no-op bulk control.
+- `useToast` now uses a monotonic `useRef` counter for toast IDs instead of `Date.now()`, and `ToastHost` exposes each generated ID for non-timing Playwright coverage.
+- `apps/admin/tests/m7-ui-patterns.spec.ts` now covers dialog accessible name/description, required reason field, focus trap, Escape close with focus return, keyboard row action, row checkbox non-activation, select-all state changes and distinct stacked toast IDs.
+
 ## Validation
 
 Source budget caveat:
 
-- Branch-specific spec budget: net source LOC <= 1000.
-- Committed branch source numstat: 1008 added source lines and 84 deleted source lines, net source LOC 924.
+- Current committed branch source numstat after quality fixes:
+  - `140  0  apps/admin/src/patterns/confirm-modal.tsx`
+  - `140  0  apps/admin/src/patterns/data-table.tsx`
+  - `91   0  apps/admin/src/patterns/feedback-patterns.tsx`
+  - `29   0  apps/admin/src/patterns/index.tsx`
+  - `145  0  apps/admin/src/patterns/operational-patterns.tsx`
+  - `350  0  apps/admin/src/shell/AppShell.css`
+  - `232  84 apps/admin/src/shell/FoundationPreview.tsx`
+- Current committed branch net source LOC: 1043.
 - Default repo guard budget: net source LOC <= 600.
-- Therefore the current committed branch intentionally fails local `pr-shape --include-worktree` with `net source LOC 924 > 600` unless PR metadata declares `Exception: large_change_exception`.
-- `large_change_exception` still requires owner/coordinator approval before merge; this worker does not self-approve it.
+- Earlier branch target: net source LOC <= 1000; quality-review remediation pushed the branch above that target.
+- Therefore the branch intentionally fails local `pr-shape --include-worktree` with `net source LOC 1043 > 600` unless PR metadata declares `Exception: large_change_exception`. The overage, including the post-review increase above 1000, requires owner/coordinator approval before merge; this worker does not self-approve it.
 
-```text
-git diff --check
-exit 0
-```
-
-```text
-/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-04-shared-operational-patterns.md --include-worktree
-exit 1
-guard:pr-shape failed:
-net source LOC 924 > 600
-```
-
-Docs/evidence fix rerun:
+Quality-review validation rerun after source/test commit `4681b58`:
 
 ```text
 git diff --check
@@ -148,17 +151,26 @@ EXIT:0
 ```
 
 ```text
+git diff --check main...HEAD
+EXIT:0
+```
+
+```text
+rg -n -- "#[0-9a-fA-F]{3,8}|--uzmax|border-left|\.skip\(|\.only\(|\bxit\(|\bxfail\(" apps/admin/src/patterns apps/admin/src/shell/FoundationPreview.tsx apps/admin/src/shell/AppShell.css apps/admin/tests/m7-ui-patterns.spec.ts || true
+(no output)
+EXIT:0
+```
+
+```text
 /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-04-shared-operational-patterns.md --include-worktree
 guard:pr-shape failed:
-net source LOC 924 > 600
+net source LOC 1043 > 600
 EXIT:1
 ```
 
 ```text
 git status --short --branch
 ## codex/m7-ui-04-shared-operational-patterns
- M docs/evidence/M7/M7-UI-04-shared-operational-patterns.md
- M docs/specs/M7-UI-04-shared-operational-patterns.md
 ```
 
 ```text
@@ -167,22 +179,7 @@ git status --short --branch
 ## main...origin/main
 ```
 
-```text
-source-only numstat from the staged/committed patch
-119  0  apps/admin/src/patterns/data-table.tsx
-86   0  apps/admin/src/patterns/feedback-patterns.tsx
-29   0  apps/admin/src/patterns/index.tsx
-208  0  apps/admin/src/patterns/operational-patterns.tsx
-350  0  apps/admin/src/shell/AppShell.css
-216  84 apps/admin/src/shell/FoundationPreview.tsx
-```
-
-```text
-git diff --check HEAD^..HEAD
-exit 0
-```
-
-Isolated worktree tooling availability:
+Isolated worktree tooling availability remains unchanged from the implementation commit:
 
 ```text
 test -d node_modules && echo NODE_MODULES_PRESENT || echo NODE_MODULES_ABSENT

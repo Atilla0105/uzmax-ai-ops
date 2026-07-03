@@ -47,13 +47,13 @@ feature
 ## Change Budget / Path Classification
 
 - Source changed files: <= 7
-- Source net LOC: <= 1000 for this branch-specific spec budget. The repo's default `guard:pr-shape` source budget remains 600 net LOC, so local/CI guard execution is expected to fail with `net source LOC 924 > 600` unless PR metadata declares `Exception: large_change_exception`.
+- Source net LOC: quality-review fixes raised the committed branch to 1043 net source LOC. This exceeds both the repo default `guard:pr-shape` source budget of 600 and the earlier branch target of <= 1000, so merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval. If that exception is rejected, the branch must be split or shrunk before merge.
 - New source files: <= 5
 - Test files changed: 1 focused Playwright spec
 - Docs files changed: 3
 - Package/lock/generated/config/backend/API/DB/worker/cron/CI changes: 0
 - External API/provider/connector/adapter basis: none
-- Exceptions: `large_change_exception` proposed for owner/coordinator review because this start-gate slice delivers eight shared operational patterns plus `/design` preview CSS before page workers may start. This worker does not self-approve the exception; merge still requires owner/coordinator approval of the exception path.
+- Exceptions: `large_change_exception` proposed for owner/coordinator review because this start-gate slice delivers eight shared operational patterns, accessibility remediation and `/design` preview CSS before page workers may start. This worker does not self-approve the exception; merge still requires owner/coordinator approval of the exception path.
 
 ## Preconditions
 

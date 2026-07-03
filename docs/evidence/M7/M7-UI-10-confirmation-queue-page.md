@@ -46,12 +46,23 @@ This is not M7 closeout, M5 owner acceptance, GA-0, production, real customer/or
 - Distill health summary, daily cap, pass-rate, distill frequency and manual recovery are follow-up runtime/API spec work. This PR does not claim those contracts; it only shows true pending/conflict counts plus degraded `健康 API 未接入` wording.
 - No fixture is used as runtime. Playwright route fixtures use controlled refs such as `controlled://m7-ui-10/...` only.
 
+## Design Audit / Equivalent Review
+
+| Check | Evidence |
+|---|---|
+| Focused-only actions | Only the focused unresolved card renders the full action footer; non-focused pending cards remain visible/focusable without controls. Covered in `apps/admin/tests/m7-ui-confirmation-queue.spec.ts`. |
+| Decided-card dim state | Approved/edited/discarded/blocked cards keep their audit/status surface and use token-based `is-decided` dim styling instead of disappearing. Covered by Playwright class/style assertions. |
+| No fake `/10` cap | Queue stats show true pending/conflict counts and `健康 API 未接入`; daily cap, pass-rate and frequency are documented follow-up runtime/API work. |
+| Disabled keep-current/recovery | `保留当前值` remains disabled because no `keep_current`/`kept` contract exists; recovery remains degraded/read-only until a follow-up runtime/API spec exists. |
+| No old tokens/side stripe | Queue styles consume current M7 tokens/primitives/patterns and do not add old `--uzmax-*` page tokens or side-stripe decoration. |
+| 320px no overflow | Focused Playwright mobile case asserts approval/discard reachability and `document.body.scrollWidth <= 320`; refreshed mobile artifact is recorded below. |
+
 ## Visual Evidence
 
 Desktop and 320px visual evidence is generated locally but not committed as binary artifacts. Artifact path:
 
-- `/tmp/uzmax-m7-ui-10-confirmation-queue-page/desktop.png`
-- `/tmp/uzmax-m7-ui-10-confirmation-queue-page/mobile-320.png`
+- `/tmp/uzmax-m7-ui-10-confirmation-queue-page/desktop-1440-full.png` (1440x1000, 159 KB)
+- `/tmp/uzmax-m7-ui-10-confirmation-queue-page/mobile-320.png` (320x1520, 106 KB)
 
 Command used after implementation:
 
@@ -72,7 +83,7 @@ PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH
 | `npm run build:admin` | pass | Vite admin production build completed. |
 | `npm run playwright -- apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | pass | 4/4 focused tests passed, including focused-only actions, decided-card styling, block reason disabling, conflict keyboard blocking, state coverage and 320px mobile fallback. |
 | `npm run playwright -- apps/admin/tests/m7-ui-page-router.spec.ts` | pass | Router test now verifies `tenant.queue` renders `m7-confirmation-queue-page` and no scaffold while preserving legacy evidence route coverage. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node /tmp/uzmax-m7-ui-10-confirmation-queue-page/capture.mjs` | pass | Generated `/tmp/uzmax-m7-ui-10-confirmation-queue-page/desktop.png` (1048x801, 107 KB) and `/tmp/uzmax-m7-ui-10-confirmation-queue-page/mobile-320.png` (320x1520, 106 KB); screenshots are not committed. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node /tmp/uzmax-m7-ui-10-confirmation-queue-page/capture.mjs` | pass | Generated `/tmp/uzmax-m7-ui-10-confirmation-queue-page/desktop-1440-full.png` (1440x1000, 159 KB) and `/tmp/uzmax-m7-ui-10-confirmation-queue-page/mobile-320.png` (320x1520, 106 KB); screenshots are not committed. |
 | `git diff --check` / `git diff --cached --check` / `git diff --check origin/main...HEAD` | pass | Working, staged and committed diff whitespace checks returned no output. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-10-confirmation-queue-page.md --include-worktree` | pass | Guard reported 11 changed files: source 5, test 2, docs 4; source changed files 5, net LOC 599, new source files 3. |
 

@@ -1,8 +1,9 @@
 type AdminPageLayer = "group" | "tenant" | "legacy";
 type AdminPageNavSection = "group" | "tenant";
 type AdminPageStatus =
-  "legacy_evidence" | "not_started" | "implemented_in_worker_pending_pr";
-
+  | "legacy_evidence"
+  | "not_started"
+  | "implemented_in_worker_pending_pr";
 interface AdminPageRegistryEntry {
   evidenceStatus: string;
   iaPage: string;
@@ -18,7 +19,6 @@ interface AdminPageRegistryEntry {
   targetPath: string;
   targetSpecId: string;
 }
-
 const stateMatrix = ["loading", "empty", "error", "permission", "degraded"] as const;
 
 const adminPageRegistry = [

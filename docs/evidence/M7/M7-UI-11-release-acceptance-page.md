@@ -7,7 +7,9 @@ Implementation evidence for `group.release` / 发布与验收.
 This PR implements the M7 release and acceptance console in `apps/admin` as a
 read-only/degraded owner-facing governance page. It replaces the planned scaffold
 for `group.release`, updates focused Playwright coverage, and updates the M7
-queue and page ledger to implementation-pending PR status.
+queue and page ledger to implementation-pending PR status. After UI-05 merged,
+the page is revalidated under the layered AppShell: `group.release` uses
+group-only navigation and `tenant.queue` remains tenant-only.
 
 This is not M7 closeout, owner acceptance, GA-0 opening, production/staging
 action, real customer/order-data use, customer LLM, Telegram Business automatic
@@ -31,6 +33,17 @@ reply or 1.0 release approval.
 | first resumed write control | First resumed write was `mkdir -p apps/admin/src/pages/group` scoped with command `workdir` to the assigned worktree. Immediate dual status check showed root/main clean and assigned worktree clean. |
 | incident control used | All resumed manual patches used absolute assigned-worktree paths. Root/main dual status checks were run after the first page patch and before validation. |
 
+## Post UI-05 Layered Shell Resume Evidence
+
+| Fact | Evidence |
+|---|---|
+| UI-05 base merged to main | PR #180 / commit `88044142c66257dce7cecd7b003cb49be0e6b44b` |
+| assigned worktree before UI-05 merge | `/Users/atilla/.codex/worktrees/m7-ui-11-release-acceptance-page-impl`; branch `codex/m7-ui-11-release-acceptance-page-impl`; clean before merge |
+| root/main before UI-05 merge | `/Users/atilla/Applications/UZMAX智能运营` stayed `## main...origin/main`; read-only |
+| UI-05 integration | `git fetch origin main --prune`; `git merge --no-edit origin/main`; merge commit `e4d0a2c` |
+| conflict resolution scope | Resolved only `apps/admin/tests/m7-ui-page-router.spec.ts`, `docs/admin-ui-page-migration-ledger.md`, and `docs/evidence/M7/README.md` to preserve UI-05 layered shell facts while adding UI-11 release assertions |
+| root/main after UI-05 merge | `## main...origin/main`; read-only |
+
 ## Required Reads / Mapping
 
 - Re-read before resumed implementation: `AGENTS.md`, `docs/specs/M7-UI-11-release-acceptance-page.md`, `docs/incidents/INC-2026-07-03-m7-ui-11-root-patch-target.md`, `docs/evidence/M7/M7-UI-11A-worker-boundary-incident.md`, `docs/admin-design-system.md`, M7 README/ledger, v1.1 release/acceptance sections, `apps/admin/src/releaseGateContracts.ts`, `apps/admin/src/pages/PageOutlet.tsx`, `apps/admin/src/pages/registry.ts`, and owner prototype release sources.
@@ -45,12 +58,12 @@ density, spacing, columns, hierarchy, sidebar/topbar/page structure, component
 expression, state treatment and interaction shape are blockers if they diverge
 without an explicit runtime, permission, mobile or degraded-state justification.
 
-Current status: page-body parity is implemented for the release console region,
-but full owner HTML visual parity is not passed. The rendered `/design` shell
-still shows the existing mixed GROUP+TENANT AppShell/sidebar, while the owner
-HTML group-layer release page shows group navigation only. This PR therefore
-does not claim full owner HTML visual parity, full sidebar parity or full IA
-parity.
+Current status: the previous mixed AppShell/sidebar blocker is resolved by the
+merged UI-05 layered shell. In this branch, `group.release` renders under
+group-only navigation, and `tenant.queue` remains tenant-only. This PR still
+does not claim one-to-one owner HTML page-body parity: the release console is a
+page-body candidate with explicit remaining deviations for degraded/runtime
+truth, disabled high-risk actions, and read-only mobile fallback.
 
 Parity evidence artifacts generated outside git:
 
@@ -72,11 +85,10 @@ Visual parity actions taken before PR:
 - Kept mobile as read-only blocker review. The mobile degraded action button is
   hidden so the blocker copy remains readable at 320px; GA-0/1.0 actions remain
   disabled.
-- Inherited the existing M7 AppShell sidebar/topbar from the allowed
-  implementation surface. If merge acceptance requires full owner HTML
-  shell/navigation parity, this PR should wait for or depend on a follow-up
-  layered navigation foundation spec rather than hiding shell changes inside
-  UI-11.
+- Rebased onto the merged UI-05 AppShell foundation, so the screenshots and
+  router tests now exercise group-only navigation for the release page. UI-11
+  does not claim page-body one-to-one visual acceptance until owner/design
+  review compares the refreshed artifacts against the owner HTML blueprint.
 
 ## Group/Tenant Layer Separation Gate
 
@@ -94,24 +106,21 @@ Required IA separation:
   evals, AI members, team/config/analytics/logs where those surfaces are
   tenant-scoped.
 - A group page must not be accepted as full visual/IA parity if the surrounding
-  shell still presents a mixed group+tenant sidebar as the primary navigation.
+  shell presents a mixed group+tenant sidebar as the primary navigation.
 
 Current UI-11 status:
 
-- `group.release` itself is implemented as a group-layer page surface.
-- This PR does not edit `apps/admin/src/shell/**`, shared navigation, shared
-  patterns or global tokens because those paths are outside the approved UI-11
-  implementation touch list.
-- The current `/design` route therefore still inherits the mixed M7 AppShell
-  sidebar/topbar. That is a visual/IA blocker for full owner-HTML navigation
-  parity and a required follow-up foundation spec before broad tenant page
-  migration.
-- The UI-11 router test was revised so it does not assert simultaneous
-  `group-layer` + `tenant-layer` rendering as a desirable target. Any remaining
-  legacy shell/IA assertions outside the UI-11 changed files are pre-existing
-  debt for the layered navigation foundation spec.
-- This implementation PR records the gate and does not claim full sidebar/IA
-  parity, admin-home group-entry closure or tenant-transition closure.
+- UI-05 is merged to `main` via PR #180 / commit `8804414`; this branch merged
+  that foundation before revalidation.
+- `group.release` is implemented as a group-layer page surface under the
+  layered AppShell.
+- Focused tests assert `group.release` has `data-shell-level="group"`, shows
+  group navigation, and does not expose tenant navigation.
+- Focused router tests assert `tenant.queue` has `data-shell-level="tenant"`,
+  shows tenant navigation, and does not expose group navigation.
+- UI-11 did not add new AppShell/shared navigation changes beyond merging
+  `origin/main`; it preserves the UI-05 boundary and does not claim broader page
+  migration closure.
 
 ## Implementation Summary
 
@@ -121,8 +130,8 @@ Current UI-11 status:
 | `apps/admin/src/pages/group/GroupReleaseSupport.tsx` | Page-local read-only release data shaping, state renderers, status mapping and scoped CSS. |
 | `apps/admin/src/pages/PageOutlet.tsx` | Routes `group.release` to the new page instead of the planned scaffold. |
 | `apps/admin/src/pages/registry.ts` | Marks `group.release` as `implemented_in_worker_pending_pr` with UI-11 target spec. |
-| `apps/admin/tests/m7-ui-release-acceptance.spec.ts` | Focused desktop, state, disabled-action and 320px mobile fallback coverage. |
-| `apps/admin/tests/m7-ui-page-router.spec.ts` | Updates router coverage so `group.release` no longer expects scaffold content. |
+| `apps/admin/tests/m7-ui-release-acceptance.spec.ts` | Focused desktop, group-only nav, state, disabled-action and 320px mobile fallback coverage. |
+| `apps/admin/tests/m7-ui-page-router.spec.ts` | Keeps UI-05 group-only/tenant-only router coverage while asserting `group.release` no longer renders scaffold content and `tenant.queue` remains tenant-only. |
 
 ## Runtime / Contract Boundary
 
@@ -164,24 +173,21 @@ These artifacts were generated outside git and must not be committed:
 
 | Command | Result | Notes |
 |---|---|---|
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm ci` | pass | Installed dependencies inside the assigned implementation worktree only. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run typecheck -- --pretty false` | pass | TypeScript passed after the page-state typed prop fix. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npx playwright test apps/admin/tests/m7-ui-release-acceptance.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts` | pass | 4 focused tests passed. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run build:admin` | pass | Admin production build passed for screenshots and preview. |
-| owner HTML parity baseline screenshot | pass | Prototype navigated to `集团 -> 发布与验收`; saved `/tmp/uzmax-m7-ui-11-release-acceptance-page/owner-html-release-1440.png`. |
-| implementation screenshot generation | pass | Desktop/mobile parity screenshots generated under `/tmp/uzmax-m7-ui-11-release-acceptance-page/`; mobile `document.body.scrollWidth` was `320`. |
-| `git -C /Users/atilla/Applications/UZMAX智能运营 status --short --branch` after first resumed write and after page patch | pass | Root/main stayed `## main...origin/main`. |
-| `git -C /Users/atilla/.codex/worktrees/m7-ui-11-release-acceptance-page-impl status --short --branch` after first resumed write and after page patch | pass | Only assigned implementation files changed. |
-| dual status before validation | pass | Root/main stayed `## main...origin/main`; assigned worktree showed only UI-11 source/test/docs changes. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run knip` | pass | Reproduced and fixed CI blocker; `releaseCss` is no longer an unused export. |
+| dual status before validation | pass | Root/main stayed `## main...origin/main`; assigned worktree was on `codex/m7-ui-11-release-acceptance-page-impl` with only UI-11 follow-up edits after the UI-05 merge commit. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npx playwright test apps/admin/tests/m7-ui-release-acceptance.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | pass | 10 focused tests passed; covers `group.release` group-only nav, `tenant.queue` tenant-only nav, route replacement, disabled release actions and mobile fallback. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run knip` | pass | CI knip gate passed; no unused `releaseCss` export. |
 | `git diff --check` | pass | No whitespace errors. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-11-release-acceptance-page.md --include-worktree` | pass | 9 changed files: 4 source, 2 test, 3 docs. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/group/GroupReleasePage.tsx apps/admin/src/pages/group/GroupReleaseSupport.tsx` | pass | Detector returned `[]`; no new local Impeccable findings. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run lint` | pass | ESLint/dependency-cruiser command completed. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run typecheck -- --pretty false` | pass | Re-run after final docs guard; TypeScript passed. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run typecheck -- --pretty false` | pass | TypeScript passed. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run build:admin` | pass | Admin production build passed. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npx playwright test apps/admin/tests/m7-ui-release-acceptance.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts` | pass | 4 focused tests passed. |
-| focused forbidden-path / binary-media check | pass | No backend/API/DB/package/lock/CI/global-config/incident-path or binary-media files in the implementation worktree diff. |
+| owner HTML parity baseline screenshot | pass | Prototype navigated to `集团 -> 发布与验收`; saved `/tmp/uzmax-m7-ui-11-release-acceptance-page/owner-html-release-1440.png`. |
+| implementation screenshot generation | pass | Desktop/mobile parity screenshots generated under `/tmp/uzmax-m7-ui-11-release-acceptance-page/`; mobile `document.body.scrollWidth` was `320`. |
+| visual audit | pass with known gaps | Refreshed desktop artifact shows group-only left nav after UI-05; page body remains a parity candidate with degraded/runtime bar, disabled actions and read-only copy that intentionally diverge from the owner HTML. |
+| focused forbidden-path / binary-media check | pass | No backend/API/DB/package/lock/CI/global-config/incident-path or binary-media files in the implementation diff; no binary media in git diff. |
+| dual status after validation | pass | Root/main stayed `## main...origin/main`; assigned worktree held only UI-11 follow-up edits awaiting commit. |
 
 ## Spec Compliance Review
 

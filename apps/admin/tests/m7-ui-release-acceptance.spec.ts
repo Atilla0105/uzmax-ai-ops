@@ -1,5 +1,30 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const groupLabels = [
+  "集团总览",
+  "模型/成本/风险",
+  "模板中心",
+  "连接中心",
+  "发布与验收",
+  "租户管理",
+  "集团日志"
+];
+
+const tenantLabels = [
+  "对话",
+  "工单",
+  "确认队列",
+  "客户资产",
+  "订单",
+  "知识与资源",
+  "评测中心",
+  "AI 成员",
+  "团队",
+  "配置",
+  "分析",
+  "日志"
+];
+
 test("renders group.release as the M7 release acceptance console", async ({ page }) => {
   await openRelease(page);
 
@@ -7,6 +32,11 @@ test("renders group.release as the M7 release acceptance console", async ({ page
     "data-page-id",
     "group.release"
   );
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "group"
+  );
+  await expectLayerNav(page, groupLabels, tenantLabels);
   await expect(page.getByTestId("m7-release-acceptance-page")).toBeVisible();
   await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "发布与验收" })).toBeVisible();
@@ -76,4 +106,20 @@ async function openRelease(page: Page, state?: string) {
   const suffix = state ? `?m7ReleaseState=${state}` : "";
   await page.goto(`/design${suffix}`);
   await page.getByRole("button", { name: "发布与验收" }).click();
+}
+
+async function expectLayerNav(
+  page: Page,
+  visibleLabels: readonly string[],
+  hiddenLabels: readonly string[]
+) {
+  const nav = page.getByTestId("app-shell-nav");
+
+  for (const label of visibleLabels) {
+    await expect(nav.getByRole("button", { name: label, exact: true })).toBeVisible();
+  }
+
+  for (const label of hiddenLabels) {
+    await expect(nav.getByRole("button", { name: label, exact: true })).toHaveCount(0);
+  }
 }

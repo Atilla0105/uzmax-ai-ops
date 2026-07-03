@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test("spans the M5 operations loop closeout on desktop", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-confirmation-queue-shell")).toBeVisible();
   await expect(page.getByTestId("m5-queue-health")).toContainText(
@@ -61,7 +61,7 @@ test("spans the M5 operations loop closeout on desktop", async ({ page }) => {
 
 test("keeps M5 closeout essentials usable at 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 980 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-confirmation-queue-shell")).toBeVisible();
   await expect(page.getByTestId("m5-ai-mobile-fallback")).toBeVisible();
@@ -83,3 +83,9 @@ test("keeps M5 closeout essentials usable at 320px", async ({ page }) => {
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(320);
 });
+
+async function openLegacyEvidence(page: Page) {
+  await page.goto("/design");
+  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
+  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
+}

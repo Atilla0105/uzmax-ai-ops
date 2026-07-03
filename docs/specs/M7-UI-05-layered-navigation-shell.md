@@ -47,6 +47,16 @@ feature
   - `apps/admin/src/pages/registry.ts`
   - `apps/admin/src/pages/PageOutlet.tsx`
   - `apps/admin/src/App.tsx`
+  - `apps/admin/tests/design.spec.ts`
+  - `apps/admin/tests/m5-ai-member-console.spec.ts`
+  - `apps/admin/tests/m5-confirmation-queue.spec.ts`
+  - `apps/admin/tests/m5-integration-smoke-closeout.spec.ts`
+  - `apps/admin/tests/m5-logs-analytics.spec.ts`
+  - `apps/admin/tests/m5-template-center.spec.ts`
+  - `apps/admin/tests/m5r-admin-runtime-wiring.spec.ts`
+  - `apps/admin/tests/m6-release-gate-console.spec.ts`
+  - `apps/admin/tests/m7-ui-confirmation-queue.spec.ts`
+  - `apps/admin/tests/m7-ui-patterns.spec.ts`
   - `apps/admin/tests/m7-ui-page-router.spec.ts`
   - `apps/admin/tests/m7-ui-foundation.spec.ts`
   - `docs/evidence/M7/M7-UI-05-layered-navigation-shell.md`
@@ -61,7 +71,7 @@ Implementation PR budget:
 - source changed files: <= 6
 - source net LOC: <= 600
 - new source files: <= 1
-- test files changed: <= 2 focused Playwright specs
+- test files changed: <= 12 Playwright specs
 - docs changed: <= 4
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - binary screenshots/artifacts committed: 0
@@ -72,7 +82,7 @@ Implementation PR budget:
 ## 文档触发检查
 
 - 结果：`updated`。
-- 判断依据：this PR changes frontend shell behavior, focused Playwright tests and M7 evidence/ledger for the layered navigation foundation.
+- 判断依据：this PR changes frontend shell behavior, focused Playwright tests, legacy `/design` Playwright entry routing and M7 evidence/ledger for the layered navigation foundation.
 
 ## Required Reads / Source Mapping
 
@@ -227,6 +237,7 @@ Implementation evidence must include:
 - No accessible nav tree contains both group and tenant labels at the same time.
 - Collapse width remains 232 -> 68 and icon count matches active layer: 7 group, 12 tenant.
 - 320px mobile fallback has no horizontal overflow.
+- Existing legacy evidence Playwright tests explicitly open `legacy.evidence` after `/design` instead of assuming legacy panels are present in the initial group overview DOM.
 - Screenshot artifacts generated under `/tmp/uzmax-m7-ui-05-layered-navigation-shell/`: group release desktop, tenant queue desktop, 320 mobile.
 - Impeccable detector or equivalent design audit result for changed shell files.
 - No source/test/config/binary changes outside the approved touch list.
@@ -234,6 +245,7 @@ Implementation evidence must include:
 Focused validation:
 
 - `npx playwright test apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-foundation.spec.ts`
+- `npx playwright test apps/admin/tests/m7-ui-confirmation-queue.spec.ts apps/admin/tests/m7-ui-patterns.spec.ts apps/admin/tests/design.spec.ts apps/admin/tests/m5-ai-member-console.spec.ts apps/admin/tests/m5-confirmation-queue.spec.ts apps/admin/tests/m5-integration-smoke-closeout.spec.ts apps/admin/tests/m5-logs-analytics.spec.ts apps/admin/tests/m5-template-center.spec.ts apps/admin/tests/m5r-admin-runtime-wiring.spec.ts apps/admin/tests/m6-release-gate-console.spec.ts`
 
 Full validation before PR:
 
@@ -245,6 +257,7 @@ Full validation before PR:
 - `npm run typecheck -- --pretty false`
 - `npm run build:admin`
 - focused Playwright tests
+- `npm run playwright`
 - forbidden path and binary-media checks
 - root/main clean check
 

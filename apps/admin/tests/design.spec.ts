@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test("loads the M1 admin group and tenant shell", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("admin-shell")).toBeVisible();
   await expect(page.getByTestId("tenant-switcher")).toBeVisible();
   await expect(page.getByLabel("Search")).toBeVisible();
@@ -13,7 +13,8 @@ test("loads the M1 admin group and tenant shell", async ({ page }) => {
     "Authorization workbench"
   );
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
-  await expect(page.getByText("Group / Tenant B")).toBeVisible();
+  await openLegacyEvidenceFromCurrentPage(page);
+  await expect(page.getByTestId("tenant-switcher")).toHaveValue("tenant-b");
   await expect(page.getByTestId("tenant-health-entry")).toContainText(
     "Connector degraded"
   );
@@ -33,9 +34,10 @@ test("loads the M1 admin group and tenant shell", async ({ page }) => {
 });
 
 test("renders the M2-04 conversation and ticket shell on desktop", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("m2-conversation-ticket-shell")).toBeVisible();
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await openLegacyEvidenceFromCurrentPage(page);
   await expect(page.getByTestId("m2-shell-tenant")).toContainText("Tenant B");
 
   await expect(page.getByTestId("conversation-filters")).toContainText("Unread");
@@ -78,7 +80,7 @@ test("renders the M2-04 conversation and ticket shell on desktop", async ({ page
 });
 
 test("covers M2-04 ticket queues, actions, and close result UI", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("ticket-queue-tabs")).toContainText("Unclaimed");
   await expect(page.getByTestId("ticket-queue-tabs")).toContainText("Mine");
   await expect(page.getByTestId("ticket-queue-tabs")).toContainText("SLA soon");
@@ -122,7 +124,7 @@ test("covers M2-04 ticket queues, actions, and close result UI", async ({ page }
 test("shows M2-04 loading empty error permission and degraded states", async ({
   page
 }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("m2-state-loading")).toContainText("Loading");
   await expect(page.getByTestId("m2-state-empty")).toContainText("Empty");
   await expect(page.getByTestId("m2-state-error")).toContainText("Error");
@@ -133,7 +135,7 @@ test("shows M2-04 loading empty error permission and degraded states", async ({
 });
 
 test("renders the M3-09 knowledge resources and eval gate shell", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("m3-knowledge-eval-shell")).toBeVisible();
   await expect(page.getByTestId("m3-shell-mode")).toContainText(
     "synthetic local shell"
@@ -189,7 +191,7 @@ test("renders the M3-09 knowledge resources and eval gate shell", async ({ page 
 });
 
 test("renders the M4-01 order path status shell truthfully", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("m4-order-path-status-shell")).toBeVisible();
   await expect(page.getByTestId("m4-primary-path")).toContainText(
     "订单数据主路径：导入快照"
@@ -254,7 +256,7 @@ test("renders the M4-01 order path status shell truthfully", async ({ page }) =>
 });
 
 test("covers the M4-06 import snapshot admin shell states", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const detail = page.getByTestId("m4-snapshot-detail");
 
   await expect(page.getByTestId("m4-import-snapshot-jobs")).toContainText(
@@ -289,9 +291,10 @@ test("covers the M4-06 import snapshot admin shell states", async ({ page }) => 
 });
 
 test("renders the M4-16 customer asset admin shell", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("m4-customer-asset-shell")).toBeVisible();
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await openLegacyEvidenceFromCurrentPage(page);
   await expect(page.getByTestId("m4-customer-shell-mode")).toContainText("Tenant B");
   await expect(page.getByTestId("m4-customer-runtime-state")).toHaveCount(0);
 
@@ -337,7 +340,7 @@ test("renders the M4-16 customer asset admin shell", async ({ page }) => {
 });
 
 test("covers the M4-16 customer restore local action and filters", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const customerFilters = page.getByTestId("m4-customer-filters");
   await customerFilters.getByRole("button", { name: "Blacklist" }).click();
   await expect(page.getByTestId("m4-customer-list")).toContainText("customer://alpha");
@@ -368,7 +371,7 @@ test("covers the M4-16 customer restore local action and filters", async ({ page
 
 test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 860 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("admin-shell")).toBeVisible();
   await expect(page.getByTestId("release-readiness")).toBeVisible();
   await expect(page.getByTestId("m2-conversation-ticket-shell")).toBeVisible();
@@ -394,10 +397,20 @@ test("keeps the M1 shell usable at the narrow mobile floor", async ({ page }) =>
 
 test("keeps the M1 shell usable at the tablet breakpoint", async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 900 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   await expect(page.getByTestId("tenant-switcher")).toBeVisible();
   await expect(page.getByLabel("Search")).toBeVisible();
   await expect(page.getByTestId("release-readiness")).toContainText("Owner:");
   await expect(page.getByTestId("m4-customer-detail")).toContainText("Customer detail");
   await expect(page.getByTestId("ticket-detail")).toContainText("SLA policy ref");
 });
+
+async function openLegacyEvidence(page: Page) {
+  await page.goto("/design");
+  await openLegacyEvidenceFromCurrentPage(page);
+}
+
+async function openLegacyEvidenceFromCurrentPage(page: Page) {
+  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
+  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
+}

@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test("renders the M6-01 evidence-driven release gate console", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   const release = page.getByTestId("release-readiness");
   await expect(release).toContainText("M5 evidence is owner accepted");
@@ -42,3 +42,9 @@ test("renders the M6-01 evidence-driven release gate console", async ({ page }) 
     page.getByRole("button", { name: "GA-0 open action locked" })
   ).toBeDisabled();
 });
+
+async function openLegacyEvidence(page: Page) {
+  await page.goto("/design");
+  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
+  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
+}

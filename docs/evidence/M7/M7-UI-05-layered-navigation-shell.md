@@ -75,6 +75,8 @@ Source mapping:
 | `apps/admin/src/shell/AppShell.css` | Removes the existing `transition: width` layout animation so Impeccable no longer reports the prior `layout-transition` shell warning; existing 232px/68px dimensions remain. |
 | `apps/admin/tests/m7-ui-page-router.spec.ts` | Covers `/design` initial group-only route, tenant transition, group release with group-only nav, tenant queue with tenant-only nav, and back-to-group. |
 | `apps/admin/tests/m7-ui-foundation.spec.ts` | Covers shell anchors, collapse width 232 -> 68, active-layer icon counts 7/12, tenant default page and 320px no-overflow fallback. |
+| legacy evidence Playwright specs | Migrates older M2/M5/M6/M7 pattern specs to explicitly click `Open legacy evidence route` after `/design` instead of assuming legacy panels are initial DOM. |
+| `apps/admin/tests/m7-ui-confirmation-queue.spec.ts` | Updates `openQueue` to enter the tenant layer via the tenant switcher before clicking the tenant-only 确认队列 nav item. |
 | `docs/specs/M7-UI-05-layered-navigation-shell.md` | Updates the previously docs-only contract to the actual focused implementation scope and validation contract. |
 | `docs/evidence/M7/README.md` | Records UI-05 as implementation pending PR review. |
 | `docs/admin-ui-page-migration-ledger.md` | Records the layered shell foundation as implemented in this branch and still pending merge/review. |
@@ -92,6 +94,7 @@ Source mapping:
 | Back-to-group | Focused Playwright clicks `Back to group overview` and asserts group overview/group-only nav. |
 | Collapse counts | Foundation Playwright asserts expanded/collapsed widths 232 -> 68 and active-layer icon counts 7 group / 12 tenant. |
 | 320px fallback | Foundation Playwright asserts no horizontal overflow at 320px viewport. |
+| Legacy evidence route | Full Playwright compatibility tests now open `/design`, click `Open legacy evidence route`, and keep their existing legacy content assertions on the explicit legacy route. |
 
 ## Screenshots
 
@@ -116,12 +119,14 @@ Screenshot artifacts are generated under `/tmp/uzmax-m7-ui-05-layered-navigation
 |---|---|---|
 | `git diff --check` | pass | No whitespace errors. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-05-layered-navigation-shell.md --include-worktree` | pass | 12 changed files: source 6, test 2, docs 4; source net LOC 53; new source files 1. |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-05-layered-navigation-shell.md --include-worktree` | pass | 22 changed files: source 6, test 12, docs 4; source net LOC 53; new source files 1. |
 | `npm run knip` | pass | No findings. |
 | `npm run lint` | pass | AppShell line count/complexity blocker fixed. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript no emit check passed. |
 | `npm run build:admin` | pass | Vite admin build succeeded; JS gzip about 99.44 kB after tree-shakeable shell icon helper extraction. |
 | `npx playwright test apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-foundation.spec.ts` | pass | 5 focused tests passed. |
+| `npx playwright test apps/admin/tests/m7-ui-confirmation-queue.spec.ts apps/admin/tests/m7-ui-patterns.spec.ts apps/admin/tests/design.spec.ts apps/admin/tests/m5-ai-member-console.spec.ts apps/admin/tests/m5-confirmation-queue.spec.ts apps/admin/tests/m5-integration-smoke-closeout.spec.ts apps/admin/tests/m5-logs-analytics.spec.ts apps/admin/tests/m5-template-center.spec.ts apps/admin/tests/m5r-admin-runtime-wiring.spec.ts apps/admin/tests/m6-release-gate-console.spec.ts` | pass | 34 focused legacy-entry and tenant-queue regression tests passed after migrating old `/design` assumptions. |
+| `npm run playwright` | pass | Full admin Playwright suite passed after legacy route migration. |
 | screenshot capture | pass | Three screenshots captured under `/tmp/uzmax-m7-ui-05-layered-navigation-shell/`; screenshots are not committed. |
 | forbidden path check | pass | Changed files are limited to spec touch list; no backend/package/lock/CI/global config drift. |
 | binary media check | pass | No committed PNG/JPG/GIF/WebP/video/PDF/ZIP artifacts. |

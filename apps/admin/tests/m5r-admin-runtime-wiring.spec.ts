@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("wires M5 admin shells to runtime API clients", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-runtime-result")).toContainText(
     "API loaded 1 confirmation items"
@@ -94,7 +94,7 @@ test("routes 320px confirmation and AI emergency controls through API", async ({
   page
 }) => {
   await page.setViewportSize({ width: 320, height: 980 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await page.getByRole("button", { name: "Approve" }).first().click();
   await page.getByRole("button", { name: "Discard" }).first().click();
@@ -135,7 +135,7 @@ test("blocks runtime capability enable when config evidence is missing", async (
     });
   });
 
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-ai-runtime-result")).toContainText(
     "Runtime state breaker_offline"
@@ -160,7 +160,7 @@ test("keeps empty runtime queue empty without synthetic card fallback", async ({
     await route.fulfill({ json: { items: [] } });
   });
 
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-runtime-result")).toContainText(
     "API loaded 0 confirmation items"
@@ -176,6 +176,12 @@ test("keeps empty runtime queue empty without synthetic card fallback", async ({
     requests.filter((path) => path.includes("/confirmation-queue/items/"))
   ).toHaveLength(0);
 });
+
+async function openLegacyEvidence(page: Page) {
+  await page.goto("/design");
+  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
+  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
+}
 
 async function routeRuntimeApis(page: Page) {
   await page.route("**/confirmation-queue/items?status=pending", async (route) => {

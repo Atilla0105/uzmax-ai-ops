@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test("renders shared operational patterns in the design preview", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m7-operational-patterns")).toBeVisible();
   await expect(page.getByTestId("m7-page-toolbar")).toContainText(
@@ -30,7 +30,7 @@ test("renders shared operational patterns in the design preview", async ({ page 
 test("supports confirmation accessibility, focus trap and reason flow", async ({
   page
 }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   const opener = page.getByRole("button", { name: "Open confirmation" });
   await opener.click();
@@ -71,7 +71,7 @@ test("supports confirmation accessibility, focus trap and reason flow", async ({
 test("supports table selection, keyboard row action and stacked toasts", async ({
   page
 }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   const toastHost = page.getByTestId("m7-toast-host");
   await expect(page.getByTestId("m7-batch-action-bar")).toContainText("2");
@@ -106,7 +106,7 @@ test("keeps shared operational patterns within the 320px fallback width", async 
   page
 }) => {
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m7-operational-patterns")).toBeVisible();
   await expect(page.getByTestId("m7-data-table")).toBeVisible();
@@ -115,3 +115,9 @@ test("keeps shared operational patterns within the 320px fallback width", async 
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(320);
 });
+
+async function openLegacyEvidence(page: Page) {
+  await page.goto("/design");
+  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
+  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
+}

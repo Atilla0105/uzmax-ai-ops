@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test("renders the M5-06 logs analytics desktop flow", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-logs-analytics-shell");
   const filters = page.getByTestId("m5-log-filters");
   await expect(shell).toBeVisible();
@@ -56,7 +56,7 @@ test("renders the M5-06 logs analytics desktop flow", async ({ page }) => {
 
 test("keeps M5-06 logs and essential metrics usable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
   const shell = page.getByTestId("m5-logs-analytics-shell");
   const filters = page.getByTestId("m5-log-filters");
   await expect(shell).toBeVisible();
@@ -75,3 +75,9 @@ test("keeps M5-06 logs and essential metrics usable on mobile", async ({ page })
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(320);
 });
+
+async function openLegacyEvidence(page: Page) {
+  await page.goto("/design");
+  await page.getByRole("button", { name: "Open legacy evidence route" }).click();
+  await expect(page.getByTestId("legacy-evidence-route")).toBeVisible();
+}

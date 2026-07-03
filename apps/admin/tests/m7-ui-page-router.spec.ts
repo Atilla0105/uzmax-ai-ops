@@ -43,7 +43,5 @@ test("switches AppShell nav into the M7 page outlet without losing legacy eviden
     "data-page-id",
     "legacy.evidence"
   );
-  await expect(page.getByTestId("group-layer")).toBeVisible();
-  await expect(page.getByTestId("tenant-layer")).toBeVisible();
   await expect(page.getByTestId("release-readiness")).toBeVisible();
 });

@@ -36,7 +36,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-03-page-migration-ledger-and-router"
   },
   {
-    evidenceStatus: "implementation_evidence_pending_pr_review",
+    evidenceStatus: "not_started",
     iaPage: "集团总览",
     id: "group.overview",
     label: "集团总览",

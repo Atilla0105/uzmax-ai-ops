@@ -45,6 +45,13 @@ density, spacing, columns, hierarchy, sidebar/topbar/page structure, component
 expression, state treatment and interaction shape are blockers if they diverge
 without an explicit runtime, permission, mobile or degraded-state justification.
 
+Current status: page-body parity is implemented for the release console region,
+but full owner HTML visual parity is not passed. The rendered `/design` shell
+still shows the existing mixed GROUP+TENANT AppShell/sidebar, while the owner
+HTML group-layer release page shows group navigation only. This PR therefore
+does not claim full owner HTML visual parity, full sidebar parity or full IA
+parity.
+
 Parity evidence artifacts generated outside git:
 
 - Owner baseline: `/tmp/uzmax-m7-ui-11-release-acceptance-page/owner-html-release-1440.png`
@@ -66,10 +73,10 @@ Visual parity actions taken before PR:
   hidden so the blocker copy remains readable at 320px; GA-0/1.0 actions remain
   disabled.
 - Inherited the existing M7 AppShell sidebar/topbar from the allowed
-  implementation surface. This PR does not claim to close shell-wide visual
-  parity; if exact sidebar/topbar reconstruction is required beyond the existing
-  AppShell, it must be handled by a separate approved spec/touch list rather than
-  hidden inside UI-11.
+  implementation surface. If merge acceptance requires full owner HTML
+  shell/navigation parity, this PR should wait for or depend on a follow-up
+  layered navigation foundation spec rather than hiding shell changes inside
+  UI-11.
 
 ## Group/Tenant Layer Separation Gate
 
@@ -99,6 +106,10 @@ Current UI-11 status:
   sidebar/topbar. That is a visual/IA blocker for full owner-HTML navigation
   parity and a required follow-up foundation spec before broad tenant page
   migration.
+- The UI-11 router test was revised so it does not assert simultaneous
+  `group-layer` + `tenant-layer` rendering as a desirable target. Any remaining
+  legacy shell/IA assertions outside the UI-11 changed files are pre-existing
+  debt for the layered navigation foundation spec.
 - This implementation PR records the gate and does not claim full sidebar/IA
   parity, admin-home group-entry closure or tenant-transition closure.
 
@@ -162,6 +173,7 @@ These artifacts were generated outside git and must not be committed:
 | `git -C /Users/atilla/Applications/UZMAX智能运营 status --short --branch` after first resumed write and after page patch | pass | Root/main stayed `## main...origin/main`. |
 | `git -C /Users/atilla/.codex/worktrees/m7-ui-11-release-acceptance-page-impl status --short --branch` after first resumed write and after page patch | pass | Only assigned implementation files changed. |
 | dual status before validation | pass | Root/main stayed `## main...origin/main`; assigned worktree showed only UI-11 source/test/docs changes. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run knip` | pass | Reproduced and fixed CI blocker; `releaseCss` is no longer an unused export. |
 | `git diff --check` | pass | No whitespace errors. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-11-release-acceptance-page.md --include-worktree` | pass | 9 changed files: 4 source, 2 test, 3 docs. |

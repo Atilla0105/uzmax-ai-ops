@@ -185,6 +185,17 @@ Budget notes:
     - `source.changedFiles`: `4`
     - `source.netLoc`: `0`
     - `source.newFiles`: `0`
+- PR-mode metadata simulation after PR body update:
+  - Setup: temporary `/tmp` GitHub event JSON with PR body fields `Spec ID: M7-UI-02-icon-shell-calibration`, `Spec file: docs/specs/M7-UI-02-icon-shell-calibration.md`, `Exception: none`; no repo file was written.
+  - Command: `GITHUB_EVENT_PATH=<tmp_event> /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-02-icon-shell-calibration.md`
+  - Result: passed.
+  - Output:
+    - `specType`: `feature`
+    - `changedFiles`: `9`
+    - `categories`: `source=4`, `test=1`, `docs=2`, `lock=1`, `config=1`
+    - `source.changedFiles`: `4`
+    - `source.netLoc`: `91`
+    - `source.newFiles`: `0`
 - `npm run typecheck`
   - First result: failed with `apps/admin/src/primitives/index.tsx(59,7): error TS2322: Type ... LucideIcon ... is not assignable to type 'ReactNode'.`
   - Fix: made `renderedIcon` an explicit `ReactNode` and rendered component inputs through a narrowed branch.
@@ -205,4 +216,3 @@ Budget notes:
 ## Follow-Ups / Blockers
 
 - No implementation blockers remain for this slice.
-- PR-mode `guard:pr-shape` should be rerun after the PR body exists if the coordinator requires PR metadata simulation.

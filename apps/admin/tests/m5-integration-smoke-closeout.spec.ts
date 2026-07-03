@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
 test("spans the M5 operations loop closeout on desktop", async ({ page }) => {
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-confirmation-queue-shell")).toBeVisible();
   await expect(page.getByTestId("m5-queue-health")).toContainText(
@@ -61,7 +62,7 @@ test("spans the M5 operations loop closeout on desktop", async ({ page }) => {
 
 test("keeps M5 closeout essentials usable at 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 980 });
-  await page.goto("/design");
+  await openLegacyEvidence(page);
 
   await expect(page.getByTestId("m5-confirmation-queue-shell")).toBeVisible();
   await expect(page.getByTestId("m5-ai-mobile-fallback")).toBeVisible();

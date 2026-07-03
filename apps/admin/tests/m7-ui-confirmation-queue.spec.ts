@@ -158,6 +158,11 @@ test("keeps mobile approval fallback reachable at 320px", async ({ page }) => {
 
 async function openQueue(page: Page) {
   await page.goto("/design");
+  await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "tenant"
+  );
   await page.getByRole("button", { name: "确认队列" }).click();
 }
 

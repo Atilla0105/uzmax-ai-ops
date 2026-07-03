@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  degradedReason,
+  handoffBlocker,
+  handoffTarget
+} from "./conversationWorkbenchHandoff";
 
 export type RuntimeStatus = "empty" | "error" | "loading" | "permission" | "ready";
 type ConversationStatus = "closed" | "handoff" | "open" | "pending_handoff";
@@ -247,6 +252,11 @@ export function useConversationWorkbenchRuntime() {
   const [status, setStatus] = useState<RuntimeStatus>("loading");
   const [traceOpen, setTraceOpen] = useState<Record<string, boolean>>({});
   const [handoffPending, setHandoffPending] = useState(false);
+  const activeIdRef = useRef(activeId);
+
+  useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
 
   const loadList = useCallback(async () => {
     setStatus("loading");
@@ -301,9 +311,8 @@ export function useConversationWorkbenchRuntime() {
   const activeDetail = detail?.conversation.id === activeId ? detail : null;
   const activeConversation =
     activeDetail?.conversation ?? conversations.find((row) => row.id === activeId);
-  const canRequestHandoff =
-    Boolean(activeDetail?.conversation.slaPolicyRef) && !handoffPending;
-  const handoffDisabledReason = handoffBlocker(status, activeDetail);
+  const handoffDisabledReason = handoffBlocker(status, activeDetail, handoffPending);
+  const canRequestHandoff = !handoffDisabledReason;
 
   const select = useCallback((conversationId: string) => {
     setActiveId(conversationId);
@@ -312,41 +321,49 @@ export function useConversationWorkbenchRuntime() {
   }, []);
 
   const requestHandoff = useCallback(async () => {
-    if (!activeDetail) {
-      setLastError("选择会话详情未同步；接管保持禁用。");
-      return;
-    }
-    const policyRef = activeDetail.conversation.slaPolicyRef;
-    if (!policyRef) {
-      setLastError("handoff SLA policyRef 未从 runtime 返回；接管保持禁用。");
+    const target = handoffTarget(status, activeDetail, handoffPending);
+    if ("reason" in target) {
+      setLastError(target.reason);
       return;
     }
     setHandoffPending(true);
     setLastError("");
     try {
-      const conversation = await client.handoff(
-        activeDetail.conversation.id,
-        policyRef
-      );
+      const conversation = await client.handoff(target.id, target.policyRef);
+      if (conversation.id !== target.id) {
+        if (activeIdRef.current === target.id)
+          setLastError(`handoff response did not match ${target.ref}`);
+        return;
+      }
       setConversations((rows) =>
         rows.map((row) => (row.id === conversation.id ? conversation : row))
       );
-      setDetail((current) => current && { ...current, conversation });
-    } catch (error) {
-      setLastError(
-        error instanceof Error ? error.message : "handoff runtime unavailable"
+      setDetail((current) =>
+        current?.conversation.id === target.id && activeIdRef.current === target.id
+          ? { ...current, conversation }
+          : current
       );
+    } catch (error) {
+      if (activeIdRef.current === target.id)
+        setLastError(
+          error instanceof Error ? error.message : "handoff runtime unavailable"
+        );
     } finally {
       setHandoffPending(false);
     }
-  }, [activeDetail, client]);
+  }, [activeDetail, client, handoffPending, status]);
 
   return {
     activeId,
     activeConversation,
     canRequestHandoff,
     conversations,
-    degradedReason: degradedReason(status, lastError, activeDetail),
+    degradedReason: degradedReason(
+      status,
+      lastError,
+      activeDetail,
+      handoffDisabledReason
+    ),
     detail,
     handoffDisabledReason,
     handoffPending,
@@ -399,29 +416,6 @@ export function isEditableTarget(target: EventTarget | null) {
     target instanceof HTMLElement &&
     ["input", "select", "textarea"].includes(target.tagName.toLowerCase())
   );
-}
-
-function degradedReason(
-  status: RuntimeStatus,
-  lastError: string,
-  detail: ConversationDetail | null
-) {
-  if (status === "error")
-    return "conversation-ticket API 不可用；页面保持只读，不回退到 fixture。";
-  if (status === "permission")
-    return "缺少 conversation:read 或 ticket:write；后端权限仍是最终边界。";
-  if (lastError) return lastError;
-  if (!detail) return "详情/客户上下文未返回，操作降级。";
-  if (!detail.conversation.slaPolicyRef)
-    return "接管所需 SLA policyRef 未从 runtime 返回；人工接管保持禁用。";
-  return "发送、客户聚合和实时 WS 未接入，保持只读确认。";
-}
-
-function handoffBlocker(status: RuntimeStatus, detail: ConversationDetail | null) {
-  if (status !== "ready") return "conversation-ticket runtime 未就绪。";
-  if (!detail) return "选择会话详情未同步；接管保持禁用。";
-  if (!detail.conversation.slaPolicyRef) return "接管需要 runtime 返回 SLA policyRef。";
-  return "";
 }
 
 export function contentText(message: MessageRow) {

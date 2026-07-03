@@ -7,10 +7,18 @@ const tenantLabels =
     "|"
   );
 const handoffs: unknown[] = [];
+const handoffTargets: string[] = [];
 type RouteOptions = { slaPolicyRef?: string };
+type Trace = Record<string, string>;
+const composer = (page: Page) => page.getByLabel("Conversation composer");
+const degraded = (page: Page) => page.getByTestId("m7-conversation-degraded");
+const rail = (page: Page) => page.getByTestId("m7-conversation-context-rail");
+const row = (page: Page, id: string) => page.getByTestId(`m7-conversation-row-${id}`);
+const takeover = (page: Page) => page.getByRole("button", { name: "接管会话 T" });
 
 test.beforeEach(async ({ page }) => {
   handoffs.length = 0;
+  handoffTargets.length = 0;
   await routeConversationReady(page);
 });
 
@@ -32,13 +40,9 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
     "data-runtime-state",
     "degraded"
   );
-  await expect(page.getByTestId("m7-conversation-degraded")).toContainText("发送");
-  await expect(page.getByTestId("m7-conversation-degraded")).toContainText("WS");
-  await expect(page.getByTestId("m7-conversation-degraded")).toContainText(
-    "SLA policyRef"
-  );
-  await expect(page.getByTestId("m7-conversation-degraded")).toContainText("degraded");
-  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
+  for (const text of ["发送", "WS", "SLA policyRef", "degraded"])
+    await expect(degraded(page)).toContainText(text);
+  await expect(takeover(page)).toBeDisabled();
   await expect(page.getByTestId("m7-conversation-query-degraded")).toContainText(
     "查询降级"
   );
@@ -59,12 +63,8 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
   await expect(page.getByTestId("m7-conversation-list")).toContainText(
     "Nodira Karimova"
   );
-  await expect(page.getByTestId("m7-conversation-context-rail")).toContainText(
-    "ORD-REF-20413"
-  );
-  await expect(
-    page.getByTestId("m7-conversation-context-rail").getByRole("tablist")
-  ).toHaveCount(0);
+  await expect(rail(page)).toContainText("ORD-REF-20413");
+  await expect(rail(page).getByRole("tablist")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "档案", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true"
@@ -74,23 +74,48 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
   await expect(page.getByTestId("m7-conversation-ai-trace")).toContainText(
     "物流时效-中亚 v4"
   );
-  await page.getByTestId("m7-conversation-row-conv-calm").click();
+  await row(page, "conv-calm").click();
   await expect(page.getByTestId("m7-conversation-thread")).toContainText("WB-20419");
-  await expect(page.getByLabel("Conversation composer")).toHaveValue(/ORD-REF-20419/);
-  await expect(page.getByLabel("Conversation composer")).not.toHaveValue(
-    /ORD-REF-20413/
-  );
+  await expect(composer(page)).toHaveValue(/ORD-REF-20419/);
+  await expect(composer(page)).not.toHaveValue(/ORD-REF-20413/);
+});
+
+test("requires actionable takeover status with runtime policy", async ({ page }) => {
+  await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
+  await openConversations(page);
+  await expect(takeover(page)).toBeEnabled();
+  await takeover(page).click();
+  await expect.poll(() => handoffTargets).toEqual(["conv-risk"]);
+
+  await row(page, "conv-calm").click();
+  await expect(composer(page)).toHaveValue(/ORD-REF-20419/);
+  await expect(takeover(page)).toBeEnabled();
+  await takeover(page).click();
+  await expect.poll(() => handoffTargets).toEqual(["conv-risk", "conv-calm"]);
+
+  await row(page, "conv-closed").click();
+  await expect(composer(page)).toHaveValue(/ORD-REF-20429/);
+  await expect(takeover(page)).toBeDisabled();
+  await expect(degraded(page)).toContainText("已解决会话不可重复接管");
+  await page.keyboard.press("t");
+
+  await row(page, "conv-human").click();
+  await expect(composer(page)).toHaveValue(/ORD-REF-20425/);
+  await expect(takeover(page)).toBeDisabled();
+  await expect(degraded(page)).toContainText("会话已由人工接管");
+  await page.keyboard.press("t");
+  expect(handoffTargets).toEqual(["conv-risk", "conv-calm"]);
 });
 
 test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
   await openConversations(page);
-  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
+  await expect(takeover(page)).toBeDisabled();
   await page.keyboard.press("t");
   expect(handoffs).toHaveLength(0);
 
   await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
   await openConversations(page);
-  await page.getByRole("button", { name: "接管会话 T" }).click();
+  await takeover(page).click();
   expect(handoffs).toContainEqual(
     expect.objectContaining({
       reason: expect.stringContaining("M7 conversation"),
@@ -107,11 +132,45 @@ test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
       status: 500
     });
   });
-  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeEnabled();
-  await page.getByRole("button", { name: "接管会话 T" }).click();
-  await expect(page.getByTestId("m7-conversation-degraded")).toContainText(
-    "status 500"
-  );
+  await expect(takeover(page)).toBeEnabled();
+  await takeover(page).click();
+  await expect(degraded(page)).toContainText("status 500");
+});
+
+test("ignores stale handoff response detail", async ({ page }) => {
+  let release: (() => void) | undefined;
+  await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
+  await page.unroute("**/conversation-ticket/conversations/*/handoff");
+  await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
+    const targetId = handoffTargetFromUrl(route.request().url());
+    const body = JSON.parse(route.request().postData() ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    handoffs.push(body);
+    handoffTargets.push(targetId);
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await route.fulfill({
+      json: {
+        conversation: conversation(targetId, "pending_handoff", true, {
+          slaPolicyRef: "tenant-b-sla-policy"
+        })
+      }
+    });
+  });
+
+  await openConversations(page);
+  await takeover(page).click();
+  await expect.poll(() => handoffTargets).toEqual(["conv-risk"]);
+  await row(page, "conv-calm").click();
+  await expect(composer(page)).toHaveValue(/ORD-REF-20419/);
+  release?.();
+  await expect(takeover(page)).toBeEnabled();
+  await expect(composer(page)).toHaveValue(/ORD-REF-20419/);
+  await expect(composer(page)).not.toHaveValue(/ORD-REF-20413/);
+  await expect(rail(page)).toContainText("ORD-REF-20419");
 });
 
 test("keeps selected target safe when detail fails", async ({ page }) => {
@@ -123,17 +182,13 @@ test("keeps selected target safe when detail fails", async ({ page }) => {
     return route.fulfill({ json: detail(id) });
   });
   await openConversations(page);
-  await page.getByTestId("m7-conversation-row-conv-calm").click();
+  await row(page, "conv-calm").click();
   await expect(page.getByTestId("m7-conversation-thread")).toContainText("WB-20419");
-  await expect(page.getByTestId("m7-conversation-context-rail")).toContainText(
-    "ORD-REF-20419"
-  );
-  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
+  await expect(rail(page)).toContainText("ORD-REF-20419");
+  await expect(takeover(page)).toBeDisabled();
   await page.keyboard.press("t");
   expect(handoffs).toHaveLength(0);
-  await expect(page.getByTestId("m7-conversation-degraded")).toContainText(
-    "status 500"
-  );
+  await expect(degraded(page)).toContainText("status 500");
 });
 
 test("covers loading empty error permission and customer-context unavailable states", async ({
@@ -180,8 +235,8 @@ test("keeps mobile fallback within 320px without mixed group nav", async ({ page
   await page.setViewportSize({ width: 320, height: 900 });
   await openConversations(page);
   await expectTenantOnlyNav(page);
-  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
-  await expect(page.getByLabel("Conversation composer")).toBeDisabled();
+  await expect(takeover(page)).toBeDisabled();
+  await expect(composer(page)).toBeDisabled();
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
@@ -229,10 +284,12 @@ async function routeConversationReady(page: Page, options: RouteOptions = {}) {
       string,
       unknown
     >;
+    const targetId = handoffTargetFromUrl(route.request().url());
     handoffs.push(body);
+    handoffTargets.push(targetId);
     await route.fulfill({
       json: {
-        conversation: conversation("conv-risk", "pending_handoff", true, options)
+        conversation: conversation(targetId, "pending_handoff", true, options)
       }
     });
   });
@@ -252,15 +309,23 @@ function conversation(
   options: RouteOptions = {}
 ) {
   const data = conversationData[id] ?? conversationData["conv-risk"]!;
+  const [subject, displayRef, orderRef, slaText, timeLabel] = data;
   return {
     aiState: risk || status === "handoff" ? "suspended" : "active",
     awaitingReply: risk || id === "conv-awaiting",
-    channel: data.channel,
-    customerRef: data.customerRef,
-    customFields: data.customFields,
-    displayRef: data.displayRef,
-    dualTracks: data.dualTracks,
-    externalConversationRef: data.displayRef,
+    channel: "Business",
+    customerRef: `CU-${displayRef.slice(3)}`,
+    customFields: [
+      { label: "国家/城市", value: "UZ · Tashkent" },
+      { label: "偏好语言", value: "中文 / ru" },
+      { label: "最近渠道", value: "Telegram Business" }
+    ],
+    displayRef,
+    dualTracks: [
+      { stage: "物流说明已触达", time: "今天 12:18", via: "Business" },
+      { stage: "售后复核待确认", time: "今天 12:22", via: "AI 草稿" }
+    ],
+    externalConversationRef: displayRef,
     id,
     inFlightAiMessages: risk
       ? [
@@ -268,36 +333,33 @@ function conversation(
           { id: "ai-2", status: "pending_cancel" }
         ]
       : [],
-    journeyStage: data.stage,
-    language: data.language,
-    lastMessageAt: data.lastMessageAt,
-    lastPreview: data.preview,
-    memberLabel: data.member,
-    notes: data.notes,
-    orderRef: data.orderRef,
-    participantExternalRef: data.customerRef,
-    quoteRef: data.quoteRef,
+    journeyStage: "售后跟进",
+    language: "中文 / ru",
+    lastMessageAt: "2026-07-03T12:24:00.000Z",
+    lastPreview: `${orderRef} 节点复核中，建议给客户确认口径。`,
+    memberLabel: "AI Samarkand",
+    notes: [
+      { text: "偏好先给预计节点，再解释异常原因。", time: "12:10", who: "Ops Lin" }
+    ],
+    orderRef,
+    participantExternalRef: `CU-${displayRef.slice(3)}`,
+    quoteRef: "QT-REF-1907",
     slaPolicyRef: options.slaPolicyRef,
     slaRisk: risk,
-    slaText: risk ? data.slaText : "",
+    slaText: risk ? slaText : "",
     status,
-    subject: data.name,
-    tags: data.tags,
+    subject,
+    tags: ["高频客户", "售后", "Business"],
     tenantId: "tenant-b",
-    ticketRef: data.ticketRef,
-    timeLabel: data.timeLabel,
+    ticketRef: "TK-REF-3842",
+    timeLabel,
     unreadCount: risk ? 2 : 0
   };
 }
 
 function detail(id: string, options: RouteOptions = {}) {
   return {
-    conversation: conversation(
-      id,
-      id === "conv-risk" ? "pending_handoff" : "open",
-      id === "conv-risk",
-      options
-    ),
+    conversation: conversation(id, statusForId(id), riskForId(id), options),
     messages: [
       message(`${id}-in`, "inbound", "你好，我想确认包裹现在卡在哪个节点？"),
       message(
@@ -324,12 +386,21 @@ function detail(id: string, options: RouteOptions = {}) {
   };
 }
 
-function message(
-  id: string,
-  direction: string,
-  text: string,
-  trace?: Record<string, string>
-) {
+const statusById: Record<string, string> = {
+  "conv-closed": "closed",
+  "conv-human": "handoff",
+  "conv-risk": "pending_handoff"
+};
+const statusForId = (id: string) => statusById[id] ?? "open";
+
+const riskForId = (id: string) => id === "conv-risk" || id === "conv-late";
+
+function handoffTargetFromUrl(url: string) {
+  const parts = url.split("/");
+  return parts[parts.length - 2] ?? "conv-risk";
+}
+
+function message(id: string, direction: string, text: string, trace?: Trace) {
   return {
     content: {
       channel: direction === "outbound" ? "business" : "telegram",
@@ -345,76 +416,13 @@ function message(
 
 const conversationData: Record<
   string,
-  {
-    channel: string;
-    customerRef: string;
-    customFields: Array<{ label: string; value: string }>;
-    displayRef: string;
-    dualTracks: Array<{ stage: string; time: string; via: string }>;
-    language: string;
-    lastMessageAt: string;
-    member: string;
-    name: string;
-    notes: Array<{ text: string; time: string; who: string }>;
-    orderRef: string;
-    preview: string;
-    quoteRef: string;
-    slaText: string;
-    stage: string;
-    tags: string[];
-    ticketRef: string;
-    timeLabel: string;
-  }
+  readonly [string, string, string, string, string]
 > = {
-  "conv-risk": rowData(
-    "Nodira Karimova",
-    "WB-20413",
-    "ORD-REF-20413",
-    "SLA 16m",
-    "2分钟"
-  ),
-  "conv-calm": rowData("Aziz Bek", "WB-20419", "ORD-REF-20419", "", "14分钟"),
-  "conv-awaiting": rowData("Madina S.", "WB-20421", "ORD-REF-20421", "", "11分钟"),
-  "conv-human": rowData("Timur Aliyev", "WB-20425", "ORD-REF-20425", "", "20分钟"),
-  "conv-ai": rowData("Dilnoza M.", "WB-20427", "ORD-REF-20427", "", "34分钟"),
-  "conv-closed": rowData("Rustam K.", "WB-20429", "ORD-REF-20429", "", "1小时"),
-  "conv-late": rowData("Malika R.", "WB-20431", "ORD-REF-20431", "SLA 29m", "6分钟")
+  "conv-risk": ["Nodira Karimova", "WB-20413", "ORD-REF-20413", "SLA 16m", "2分钟"],
+  "conv-calm": ["Aziz Bek", "WB-20419", "ORD-REF-20419", "", "14分钟"],
+  "conv-awaiting": ["Madina S.", "WB-20421", "ORD-REF-20421", "", "11分钟"],
+  "conv-human": ["Timur Aliyev", "WB-20425", "ORD-REF-20425", "", "20分钟"],
+  "conv-ai": ["Dilnoza M.", "WB-20427", "ORD-REF-20427", "", "34分钟"],
+  "conv-closed": ["Rustam K.", "WB-20429", "ORD-REF-20429", "", "1小时"],
+  "conv-late": ["Malika R.", "WB-20431", "ORD-REF-20431", "SLA 29m", "6分钟"]
 };
-
-function rowData(
-  name: string,
-  displayRef: string,
-  orderRef: string,
-  slaText: string,
-  timeLabel: string
-) {
-  return {
-    channel: "Business",
-    customerRef: `CU-${displayRef.slice(3)}`,
-    customFields: [
-      { label: "国家/城市", value: "UZ · Tashkent" },
-      { label: "偏好语言", value: "中文 / ru" },
-      { label: "最近渠道", value: "Telegram Business" }
-    ],
-    displayRef,
-    dualTracks: [
-      { stage: "物流说明已触达", time: "今天 12:18", via: "Business" },
-      { stage: "售后复核待确认", time: "今天 12:22", via: "AI 草稿" }
-    ],
-    language: "中文 / ru",
-    lastMessageAt: "2026-07-03T12:24:00.000Z",
-    member: "AI Samarkand",
-    name,
-    notes: [
-      { text: "偏好先给预计节点，再解释异常原因。", time: "12:10", who: "Ops Lin" }
-    ],
-    orderRef,
-    preview: `${orderRef} 节点复核中，建议给客户确认口径。`,
-    quoteRef: "QT-REF-1907",
-    slaText,
-    stage: "售后跟进",
-    tags: ["高频客户", "售后", "Business"],
-    ticketRef: "TK-REF-3842",
-    timeLabel
-  };
-}

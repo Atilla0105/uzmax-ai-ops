@@ -1,54 +1,38 @@
 import "./AppShell.css";
 import { useMemo, useState, type ReactNode } from "react";
-import {
-  BarChart3,
-  Bell,
-  BookOpen,
-  Bot,
-  Building2,
-  ClipboardList,
-  Copy,
-  Cpu,
-  Gauge,
-  Inbox,
-  LayoutDashboard,
-  MessageSquare,
-  Package,
-  PanelLeftClose,
-  Plug,
-  Rocket,
-  ScrollText,
-  SlidersHorizontal,
-  UserCircle,
-  Users,
-  UsersRound
-} from "lucide-react";
+import * as Icons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button, Heartbeat, IconSlot, SearchInput, StatusBadge } from "../primitives";
 import { NavItem } from "../patterns";
-import { adminPageNavigation, type AdminPageId } from "../pages/registry";
+import {
+  adminPageIcon,
+  adminPageNavigation,
+  getAdminPage,
+  type AdminPageId
+} from "../pages/registry";
 
 type TenantHealth = "healthy" | "degraded" | "attention";
-
-interface AppShellTenant {
+type AppShellTenant = {
   health: TenantHealth;
   id: string;
-  line: string;
   name: string;
-  risk: string;
   status: string;
-}
-
-export interface AppShellProps {
-  activePageId: AdminPageId;
+};
+export type AdminShellRoute = {
+  level: "group" | "tenant";
+  pageId: AdminPageId;
+  tenantId?: string;
+};
+export type AppShellProps = {
   children: ReactNode;
   env?: "production" | "staging" | "local";
-  onPageChange: (pageId: AdminPageId) => void;
-  onTenantChange: (tenantId: AppShellTenant["id"]) => void;
+  onRouteChange: (route: AdminShellRoute) => void;
+  route: AdminShellRoute;
   selectedTenantId: AppShellTenant["id"];
   tenants: readonly [AppShellTenant, ...AppShellTenant[]];
-}
-
+};
+type AdminNavigationPage =
+  (typeof adminPageNavigation)[keyof typeof adminPageNavigation][number];
 type NavEntry = {
   badge?: string;
   icon: LucideIcon;
@@ -57,63 +41,48 @@ type NavEntry = {
   navId: string;
 };
 
-const navIcons: Record<AdminPageId, LucideIcon> = {
-  "group.connections": Plug,
-  "group.logs": ScrollText,
-  "group.modelRisk": Cpu,
-  "group.overview": LayoutDashboard,
-  "group.release": Rocket,
-  "group.templates": Copy,
-  "group.tenants": Building2,
-  "legacy.evidence": ScrollText,
-  "tenant.aiMembers": Bot,
-  "tenant.analytics": BarChart3,
-  "tenant.config": SlidersHorizontal,
-  "tenant.conversations": MessageSquare,
-  "tenant.customers": Users,
-  "tenant.eval": Gauge,
-  "tenant.knowledge": BookOpen,
-  "tenant.logs": ScrollText,
-  "tenant.orders": Package,
-  "tenant.queue": Inbox,
-  "tenant.team": UsersRound,
-  "tenant.tickets": ClipboardList
-};
-
 const navBadges: Partial<Record<AdminPageId, string>> = {
   "tenant.conversations": "7",
   "tenant.queue": "9",
   "tenant.tickets": "3"
 };
-
-const groupNav = adminPageNavigation.group.map((page) => ({
-  badge: navBadges[page.id],
-  icon: navIcons[page.id],
-  id: page.id,
-  label: page.label,
-  navId: page.navId ?? page.id
-})) satisfies NavEntry[];
-
-const tenantNav = adminPageNavigation.tenant.map((page) => ({
-  badge: navBadges[page.id],
-  icon: navIcons[page.id],
-  id: page.id,
-  label: page.label,
-  navId: page.navId ?? page.id
-})) satisfies NavEntry[];
-
-const healthTone: Record<TenantHealth, "ok" | "warn" | "danger"> = {
-  attention: "danger",
-  degraded: "warn",
-  healthy: "ok"
+const toneByHealth = {
+  attention: { badge: "danger", heartbeat: "warn" },
+  degraded: { badge: "warn", heartbeat: "warn" },
+  healthy: { badge: "ok", heartbeat: "ok" }
+} satisfies Record<
+  TenantHealth,
+  { badge: "ok" | "warn" | "danger"; heartbeat: "ok" | "warn" }
+>;
+const envTone = { local: "info", production: "neutral", staging: "warn" } as const;
+const groupNav = adminPageNavigation.group.map(createNavEntry);
+const tenantNav = adminPageNavigation.tenant.map(createNavEntry);
+const layerConfig = {
+  group: {
+    badgeText: "集团层",
+    badgeTone: "neutral",
+    buttonClass: "is-active",
+    nav: groupNav,
+    navLabel: "GROUP"
+  },
+  tenant: {
+    badgeText: "租户层",
+    badgeTone: "info",
+    buttonClass: undefined,
+    nav: tenantNav,
+    navLabel: "TENANT"
+  }
+} as const;
+const toggleCopy = {
+  collapsed: { aria: "Expand navigation", text: "展开" },
+  expanded: { aria: "Collapse navigation", text: "收起导航" }
 };
 
 export function AppShell({
-  activePageId,
   children,
   env = "staging",
-  onPageChange,
-  onTenantChange,
+  onRouteChange,
+  route,
   selectedTenantId,
   tenants
 }: AppShellProps) {
@@ -122,12 +91,15 @@ export function AppShell({
     () => tenants.find((tenant) => tenant.id === selectedTenantId) ?? tenants[0],
     [selectedTenantId, tenants]
   );
+  const activeLayer = layerConfig[route.level];
+  const navToggle = getToggleCopy(expanded);
+  const tenantTone = toneByHealth[selectedTenant.health];
 
   return (
     <main
-      className={`admin-shell m2-admin-shell uz-app-shell${
-        expanded ? "" : " is-nav-collapsed"
-      }`}
+      className={shellClassName(expanded)}
+      data-active-page-id={route.pageId}
+      data-shell-level={route.level}
       data-testid="admin-shell"
     >
       <aside
@@ -144,48 +116,55 @@ export function AppShell({
         </div>
         <nav className="uz-nav-body">
           <NavGroup
-            activePageId={activePageId}
+            activePageId={route.pageId}
             collapsed={!expanded}
-            items={groupNav}
-            label="GROUP"
-            onSelect={onPageChange}
-          />
-          <NavGroup
-            activePageId={activePageId}
-            collapsed={!expanded}
-            items={tenantNav}
-            label="TENANT"
-            onSelect={onPageChange}
+            items={activeLayer.nav}
+            label={activeLayer.navLabel}
+            onSelect={(pageId) =>
+              onRouteChange(createPageRoute(pageId, selectedTenant.id))
+            }
           />
         </nav>
         <Button
-          aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
+          aria-label={navToggle.aria}
           className="uz-nav-collapse"
-          icon={<IconSlot icon={PanelLeftClose} />}
+          icon={<IconSlot icon={Icons.PanelLeftClose} />}
           onClick={() => setExpanded((current) => !current)}
           variant="ghost"
         >
-          {expanded ? "收起导航" : "展开"}
+          {navToggle.text}
         </Button>
       </aside>
-
       <section className="uz-app-main">
-        {env === "staging" ? <div aria-hidden className="uz-env-strip" /> : null}
+        {envStrip(env)}
         <header className="uz-topbar">
-          <div className="uz-breadcrumb" aria-label="Current scope">
-            <span className="uz-breadcrumb__compact">
-              Group / {selectedTenant.name}
-            </span>
-            <button type="button">Group</button>
+          <div
+            className="uz-breadcrumb"
+            aria-label="Current scope"
+            data-testid="route-breadcrumb"
+          >
+            <button
+              aria-label="Back to group overview"
+              className={activeLayer.buttonClass}
+              onClick={() => onRouteChange(groupOverviewRoute())}
+              type="button"
+            >
+              集团
+            </button>
             <span>/</span>
-            <strong>{selectedTenant.name}</strong>
+            <strong>{breadcrumbLabel(route, selectedTenant.name)}</strong>
+            <StatusBadge data-testid="active-layer-badge" tone={activeLayer.badgeTone}>
+              {activeLayer.badgeText}
+            </StatusBadge>
           </div>
           <label className="uz-tenant-select" htmlFor="tenant-switcher">
             <span>Tenant</span>
             <select
               data-testid="tenant-switcher"
               id="tenant-switcher"
-              onChange={(event) => onTenantChange(event.currentTarget.value)}
+              onChange={(event) =>
+                onRouteChange(createTenantRoute(route, event.currentTarget.value))
+              }
               value={selectedTenant.id}
             >
               {tenants.map((tenant) => (
@@ -194,7 +173,7 @@ export function AppShell({
                 </option>
               ))}
             </select>
-            <StatusBadge dot tone={healthTone[selectedTenant.health]}>
+            <StatusBadge dot tone={tenantTone.badge}>
               {selectedTenant.status}
             </StatusBadge>
           </label>
@@ -205,21 +184,18 @@ export function AppShell({
             value="Search shell"
           />
           <div className="uz-topbar-actions" aria-label="Operator tools">
-            <StatusBadge
-              data-testid="environment-marker"
-              tone={env === "production" ? "neutral" : "warn"}
-            >
+            <StatusBadge data-testid="environment-marker" tone={envTone[env]}>
               {env.toUpperCase()}
             </StatusBadge>
             <span className="uz-heartbeat-label" data-testid="system-heartbeat">
-              <Heartbeat tone={selectedTenant.health === "healthy" ? "ok" : "warn"} />
+              <Heartbeat tone={tenantTone.heartbeat} />
               <span>68ms</span>
             </span>
             <button aria-label="Notifications" type="button" disabled>
-              <IconSlot icon={Bell} />
+              <IconSlot icon={Icons.Bell} />
             </button>
             <button aria-label="User menu" type="button" disabled>
-              <IconSlot icon={UserCircle} />
+              <IconSlot icon={Icons.UserCircle} />
             </button>
           </div>
         </header>
@@ -229,34 +205,74 @@ export function AppShell({
   );
 }
 
-function NavGroup({
-  activePageId,
-  collapsed,
-  items,
-  label,
-  onSelect
-}: {
+type NavGroupProps = {
   activePageId: AdminPageId;
   collapsed: boolean;
   items: NavEntry[];
   label: string;
   onSelect: (id: AdminPageId) => void;
-}) {
+};
+
+function NavGroup({ activePageId, collapsed, items, label, onSelect }: NavGroupProps) {
   return (
     <section className="uz-nav-group">
       <p>{label}</p>
-      {items.map((item) => (
+      {items.map(({ id, navId, ...item }) => (
         <NavItem
-          active={activePageId === item.id}
-          badge={item.badge}
+          {...item}
+          active={activePageId === id}
           collapsed={collapsed}
-          icon={item.icon}
-          key={item.id}
-          label={item.label}
-          onClick={() => onSelect(item.id)}
-          data-nav-id={item.navId}
+          data-nav-id={navId}
+          key={id}
+          onClick={() => onSelect(id)}
         />
       ))}
     </section>
   );
+}
+
+function createNavEntry(page: AdminNavigationPage): NavEntry {
+  return {
+    badge: navBadges[page.id],
+    icon: Icons[adminPageIcon[page.id]] as LucideIcon,
+    id: page.id,
+    label: page.label,
+    navId: page.navId ?? page.id
+  };
+}
+
+function createPageRoute(pageId: AdminPageId, tenantId: string): AdminShellRoute {
+  const page = getAdminPage(pageId);
+  return page.layer === "tenant"
+    ? { level: "tenant", pageId, tenantId }
+    : { level: "group", pageId: page.layer === "group" ? pageId : "group.overview" };
+}
+
+function createTenantRoute(route: AdminShellRoute, tenantId: string): AdminShellRoute {
+  const page = getAdminPage(route.pageId);
+  const pageId =
+    route.level === "tenant" && page.layer === "tenant"
+      ? route.pageId
+      : "tenant.conversations";
+  return { level: "tenant", pageId, tenantId };
+}
+
+function groupOverviewRoute(): AdminShellRoute {
+  return { level: "group", pageId: "group.overview" };
+}
+
+function breadcrumbLabel(route: AdminShellRoute, tenantName: string) {
+  return route.level === "group" ? getAdminPage(route.pageId).label : tenantName;
+}
+
+function shellClassName(expanded: boolean) {
+  return `admin-shell m2-admin-shell uz-app-shell${expanded ? "" : " is-nav-collapsed"}`;
+}
+
+function getToggleCopy(expanded: boolean) {
+  return expanded ? toggleCopy.expanded : toggleCopy.collapsed;
+}
+
+function envStrip(env: NonNullable<AppShellProps["env"]>) {
+  return env === "staging" ? <div aria-hidden className="uz-env-strip" /> : null;
 }

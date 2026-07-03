@@ -2,8 +2,8 @@ import { useState } from "react";
 import "@uzmax/ui-tokens/tokens.css";
 import "./styles.css";
 import { PageOutlet } from "./pages/PageOutlet";
-import { initialAdminPageId, type AdminPageId } from "./pages/registry";
-import { AppShell } from "./shell/AppShell";
+import { getAdminPage, initialAdminPageId, type AdminPageId } from "./pages/registry";
+import { AppShell, type AdminShellRoute } from "./shell/AppShell";
 import { FoundationPreview } from "./shell/FoundationPreview";
 import { M2ConversationTicketShell } from "./M2ConversationTicketShell";
 import { M3KnowledgeEvalShell } from "./M3KnowledgeEvalShell";
@@ -14,7 +14,6 @@ import { M5ConfirmationQueueShell } from "./M5ConfirmationQueueShell";
 import { M5LogsAnalyticsShell } from "./M5LogsAnalyticsShell";
 import { M5TemplateCenterShell } from "./M5TemplateCenterShell";
 import { releaseGateConsoleState } from "./releaseGateContracts";
-
 const tenants = [
   {
     health: "healthy",
@@ -43,14 +42,46 @@ const tenants = [
 ] as const;
 
 export function App() {
-  const [selectedTenantId, setSelectedTenantId] =
-    useState<(typeof tenants)[number]["id"]>("tenant-a");
   const [foundationTab, setFoundationTab] = useState("states");
   const [previewToggle, setPreviewToggle] = useState(true);
   const [previewChecked, setPreviewChecked] = useState(true);
-  const [activePageId, setActivePageId] = useState<AdminPageId>(initialAdminPageId);
+  const [route, setRoute] = useState<AdminShellRoute>({
+    level: "group",
+    pageId: initialAdminPageId
+  });
+  const selectedTenantId = route.tenantId ?? tenants[0].id;
   const selectedTenant =
     tenants.find((tenant) => tenant.id === selectedTenantId) ?? tenants[0];
+
+  const setAdminRoute = (nextRoute: AdminShellRoute) => {
+    const page = getAdminPage(nextRoute.pageId);
+
+    if (page.layer === "tenant") {
+      setRoute({
+        level: "tenant",
+        pageId: nextRoute.pageId,
+        tenantId: nextRoute.tenantId ?? selectedTenant.id
+      });
+      return;
+    }
+
+    setRoute({
+      level: "group",
+      pageId: page.layer === "group" ? nextRoute.pageId : "legacy.evidence",
+      tenantId: nextRoute.tenantId ?? route.tenantId
+    });
+  };
+
+  const setActivePageId = (pageId: AdminPageId) => {
+    const page = getAdminPage(pageId);
+
+    if (page.layer === "tenant") {
+      setAdminRoute({ level: "tenant", pageId, tenantId: selectedTenant.id });
+      return;
+    }
+
+    setAdminRoute({ level: "group", pageId, tenantId: route.tenantId });
+  };
 
   const legacyEvidence = (
     <section className="page-grid">
@@ -123,21 +154,13 @@ export function App() {
       </section>
 
       <M2ConversationTicketShell tenantName={selectedTenant.name} />
-
       <M3KnowledgeEvalShell tenantName={selectedTenant.name} />
-
       <M4OrderPathStatusShell tenantName={selectedTenant.name} />
-
       <M4CustomerAssetShell tenantName={selectedTenant.name} />
-
       <M5ConfirmationQueueShell tenantName={selectedTenant.name} />
-
       <M5AiMemberConsoleShell tenantName={selectedTenant.name} />
-
       <M5LogsAnalyticsShell tenantName={selectedTenant.name} />
-
       <M5TemplateCenterShell tenantName={selectedTenant.name} />
-
       <FoundationPreview
         activeTab={foundationTab}
         checked={previewChecked}
@@ -186,16 +209,13 @@ export function App() {
 
   return (
     <AppShell
-      activePageId={activePageId}
-      onPageChange={setActivePageId}
-      onTenantChange={(tenantId) =>
-        setSelectedTenantId(tenantId as typeof selectedTenantId)
-      }
+      onRouteChange={setAdminRoute}
+      route={route}
       selectedTenantId={selectedTenant.id}
       tenants={tenants}
     >
       <PageOutlet
-        activePageId={activePageId}
+        activePageId={route.pageId}
         legacyEvidence={legacyEvidence}
         onPageChange={setActivePageId}
       />

@@ -17,7 +17,6 @@
   overflow: hidden;
   border-right: 1px solid var(--ink-150);
   background: var(--card);
-  transition: width var(--duration-base) var(--easing-standard);
 }
 
 .uz-app-shell.is-nav-collapsed .uz-app-nav {

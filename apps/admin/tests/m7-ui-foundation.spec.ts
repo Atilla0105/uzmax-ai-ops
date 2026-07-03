@@ -10,7 +10,7 @@ const navWidth = async (page: Page) =>
 const navIconCount = async (page: Page) =>
   page.getByTestId("app-shell-nav").locator(".uz-nav-item svg").count();
 
-test("renders the M7 foundation AppShell frame and state matrix", async ({ page }) => {
+test("renders the group-layer M7 foundation AppShell frame", async ({ page }) => {
   await page.goto("/design");
 
   await expect(page.getByTestId("admin-shell")).toBeVisible();
@@ -29,23 +29,22 @@ test("renders the M7 foundation AppShell frame and state matrix", async ({ page 
     page.getByRole("button", { name: "User menu" }).locator("svg")
   ).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "对话" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "工单" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "客户资产" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "订单" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "知识与资源" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "确认队列" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "评测中心" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "AI 成员" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "团队" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "配置" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "分析" })).toBeVisible();
-  await expect(page.getByRole("button", { exact: true, name: "日志" })).toBeVisible();
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "group"
+  );
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "group.overview"
+  );
+  await expect(page.getByRole("button", { name: "集团总览" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "发布与验收" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "确认队列" })).toHaveCount(0);
 
   await expect(
     page.getByRole("button", { name: "Collapse navigation" }).locator("svg")
   ).toBeVisible();
-  await expect.poll(async () => navIconCount(page)).toBe(19);
+  await expect.poll(async () => navIconCount(page)).toBe(7);
   await expect
     .poll(async () =>
       page
@@ -60,7 +59,7 @@ test("renders the M7 foundation AppShell frame and state matrix", async ({ page 
 
   await page.getByRole("button", { name: "Collapse navigation" }).click();
   await expect.poll(async () => navWidth(page)).toBe(68);
-  await expect.poll(async () => navIconCount(page)).toBe(19);
+  await expect.poll(async () => navIconCount(page)).toBe(7);
   expect(
     await page.getByTestId("app-shell-nav").evaluate((nav) => {
       const navRect = nav.getBoundingClientRect();
@@ -75,17 +74,22 @@ test("renders the M7 foundation AppShell frame and state matrix", async ({ page 
   await page.getByRole("button", { name: "Expand navigation" }).click();
 
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
-  await expect(page.getByText("Group / Tenant B")).toBeVisible();
-  await expect(page.getByTestId("environment-marker")).toContainText("STAGING");
-  await expect(page.getByTestId("m7-degraded-bar")).toContainText("Connector degraded");
-
-  await expect(page.getByTestId("m7-state-loading")).toContainText("Loading");
-  await expect(page.getByTestId("m7-state-empty")).toContainText("Empty");
-  await expect(page.getByTestId("m7-state-error")).toContainText("Error");
-  await expect(page.getByTestId("m7-state-permission")).toContainText(
-    "Permission denied"
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "tenant"
   );
-  await expect(page.getByTestId("m7-state-degraded")).toContainText("Degraded");
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.conversations"
+  );
+  await expect.poll(async () => navIconCount(page)).toBe(12);
+  await expect(page.getByTestId("route-breadcrumb")).toContainText("Tenant B");
+  await expect(page.getByRole("button", { name: "确认队列" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "集团总览" })).toHaveCount(0);
+  await expect(page.getByTestId("environment-marker")).toContainText("STAGING");
+  await expect(page.getByTestId("page-scaffold")).toContainText(
+    "M7-UI-04H-tenant-conversations"
+  );
 });
 
 test("keeps the M7 foundation shell within the 320px fallback width", async ({
@@ -95,9 +99,9 @@ test("keeps the M7 foundation shell within the 320px fallback width", async ({
   await page.goto("/design");
 
   await expect(page.getByTestId("admin-shell")).toBeVisible();
-  await expect(page.getByTestId("m7-foundation-preview")).toBeVisible();
-  await expect(page.getByTestId("m7-state-permission")).toContainText(
-    "Permission denied"
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "group"
   );
 
   const scrollWidth = await page.evaluate(() => document.body.scrollWidth);

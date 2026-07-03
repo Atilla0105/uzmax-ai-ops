@@ -26,6 +26,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Button, Heartbeat, IconSlot, SearchInput, StatusBadge } from "../primitives";
 import { NavItem } from "../patterns";
+import { adminPageNavigation, type AdminPageId } from "../pages/registry";
 
 type TenantHealth = "healthy" | "degraded" | "attention";
 
@@ -39,8 +40,10 @@ interface AppShellTenant {
 }
 
 export interface AppShellProps {
+  activePageId: AdminPageId;
   children: ReactNode;
   env?: "production" | "staging" | "local";
+  onPageChange: (pageId: AdminPageId) => void;
   onTenantChange: (tenantId: AppShellTenant["id"]) => void;
   selectedTenantId: AppShellTenant["id"];
   tenants: readonly [AppShellTenant, ...AppShellTenant[]];
@@ -49,34 +52,55 @@ export interface AppShellProps {
 type NavEntry = {
   badge?: string;
   icon: LucideIcon;
-  id: string;
+  id: AdminPageId;
   label: string;
+  navId: string;
 };
 
-const groupNav: NavEntry[] = [
-  { id: "overview", label: "集团总览", icon: LayoutDashboard },
-  { id: "model-risk", label: "模型/成本/风险", icon: Cpu },
-  { id: "templates", label: "模板中心", icon: Copy },
-  { id: "connections", label: "连接中心", icon: Plug },
-  { id: "release", label: "发布与验收", icon: Rocket },
-  { id: "tenants", label: "租户管理", icon: Building2 },
-  { id: "group-logs", label: "集团日志", icon: ScrollText }
-];
+const navIcons: Record<AdminPageId, LucideIcon> = {
+  "group.connections": Plug,
+  "group.logs": ScrollText,
+  "group.modelRisk": Cpu,
+  "group.overview": LayoutDashboard,
+  "group.release": Rocket,
+  "group.templates": Copy,
+  "group.tenants": Building2,
+  "legacy.evidence": ScrollText,
+  "tenant.aiMembers": Bot,
+  "tenant.analytics": BarChart3,
+  "tenant.config": SlidersHorizontal,
+  "tenant.conversations": MessageSquare,
+  "tenant.customers": Users,
+  "tenant.eval": Gauge,
+  "tenant.knowledge": BookOpen,
+  "tenant.logs": ScrollText,
+  "tenant.orders": Package,
+  "tenant.queue": Inbox,
+  "tenant.team": UsersRound,
+  "tenant.tickets": ClipboardList
+};
 
-const tenantNav: NavEntry[] = [
-  { id: "conversations", label: "对话", icon: MessageSquare, badge: "7" },
-  { id: "tickets", label: "工单", icon: ClipboardList, badge: "3" },
-  { id: "customers", label: "客户资产", icon: Users },
-  { id: "orders", label: "订单", icon: Package },
-  { id: "knowledge", label: "知识与资源", icon: BookOpen },
-  { id: "queue", label: "确认队列", icon: Inbox, badge: "9" },
-  { id: "eval", label: "评测中心", icon: Gauge },
-  { id: "ai-members", label: "AI 成员", icon: Bot },
-  { id: "team", label: "团队", icon: UsersRound },
-  { id: "config", label: "配置", icon: SlidersHorizontal },
-  { id: "analytics", label: "分析", icon: BarChart3 },
-  { id: "logs", label: "日志", icon: ScrollText }
-];
+const navBadges: Partial<Record<AdminPageId, string>> = {
+  "tenant.conversations": "7",
+  "tenant.queue": "9",
+  "tenant.tickets": "3"
+};
+
+const groupNav = adminPageNavigation.group.map((page) => ({
+  badge: navBadges[page.id],
+  icon: navIcons[page.id],
+  id: page.id,
+  label: page.label,
+  navId: page.navId ?? page.id
+})) satisfies NavEntry[];
+
+const tenantNav = adminPageNavigation.tenant.map((page) => ({
+  badge: navBadges[page.id],
+  icon: navIcons[page.id],
+  id: page.id,
+  label: page.label,
+  navId: page.navId ?? page.id
+})) satisfies NavEntry[];
 
 const healthTone: Record<TenantHealth, "ok" | "warn" | "danger"> = {
   attention: "danger",
@@ -85,13 +109,14 @@ const healthTone: Record<TenantHealth, "ok" | "warn" | "danger"> = {
 };
 
 export function AppShell({
+  activePageId,
   children,
   env = "staging",
+  onPageChange,
   onTenantChange,
   selectedTenantId,
   tenants
 }: AppShellProps) {
-  const [activeNav, setActiveNav] = useState("overview");
   const [expanded, setExpanded] = useState(true);
   const selectedTenant = useMemo(
     () => tenants.find((tenant) => tenant.id === selectedTenantId) ?? tenants[0],
@@ -100,7 +125,9 @@ export function AppShell({
 
   return (
     <main
-      className={`admin-shell m2-admin-shell uz-app-shell${expanded ? "" : " is-nav-collapsed"}`}
+      className={`admin-shell m2-admin-shell uz-app-shell${
+        expanded ? "" : " is-nav-collapsed"
+      }`}
       data-testid="admin-shell"
     >
       <aside
@@ -117,18 +144,18 @@ export function AppShell({
         </div>
         <nav className="uz-nav-body">
           <NavGroup
-            activeNav={activeNav}
+            activePageId={activePageId}
             collapsed={!expanded}
             items={groupNav}
             label="GROUP"
-            onSelect={setActiveNav}
+            onSelect={onPageChange}
           />
           <NavGroup
-            activeNav={activeNav}
+            activePageId={activePageId}
             collapsed={!expanded}
             items={tenantNav}
             label="TENANT"
-            onSelect={setActiveNav}
+            onSelect={onPageChange}
           />
         </nav>
         <Button
@@ -203,30 +230,31 @@ export function AppShell({
 }
 
 function NavGroup({
-  activeNav,
+  activePageId,
   collapsed,
   items,
   label,
   onSelect
 }: {
-  activeNav: string;
+  activePageId: AdminPageId;
   collapsed: boolean;
   items: NavEntry[];
   label: string;
-  onSelect: (id: string) => void;
+  onSelect: (id: AdminPageId) => void;
 }) {
   return (
     <section className="uz-nav-group">
       <p>{label}</p>
       {items.map((item) => (
         <NavItem
-          active={activeNav === item.id}
+          active={activePageId === item.id}
           badge={item.badge}
           collapsed={collapsed}
           icon={item.icon}
           key={item.id}
           label={item.label}
           onClick={() => onSelect(item.id)}
+          data-nav-id={item.navId}
         />
       ))}
     </section>

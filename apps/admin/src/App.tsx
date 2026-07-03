@@ -1,6 +1,11 @@
 import { useState } from "react";
 import "@uzmax/ui-tokens/tokens.css";
 import "./styles.css";
+import { PageOutlet } from "./pages/PageOutlet";
+import {
+  initialAdminPageId,
+  type AdminPageId
+} from "./pages/registry";
 import { AppShell } from "./shell/AppShell";
 import { FoundationPreview } from "./shell/FoundationPreview";
 import { M2ConversationTicketShell } from "./M2ConversationTicketShell";
@@ -46,17 +51,12 @@ export function App() {
   const [foundationTab, setFoundationTab] = useState("states");
   const [previewToggle, setPreviewToggle] = useState(true);
   const [previewChecked, setPreviewChecked] = useState(true);
+  const [activePageId, setActivePageId] =
+    useState<AdminPageId>(initialAdminPageId);
   const selectedTenant =
     tenants.find((tenant) => tenant.id === selectedTenantId) ?? tenants[0];
 
-  return (
-    <AppShell
-      onTenantChange={(tenantId) =>
-        setSelectedTenantId(tenantId as typeof selectedTenantId)
-      }
-      selectedTenantId={selectedTenant.id}
-      tenants={tenants}
-    >
+  const legacyEvidence = (
       <section className="page-grid">
         <section className="panel group-panel" data-testid="group-layer">
           <div className="section-heading">
@@ -186,6 +186,23 @@ export function App() {
           </button>
         </section>
       </section>
+  );
+
+  return (
+    <AppShell
+      activePageId={activePageId}
+      onPageChange={setActivePageId}
+      onTenantChange={(tenantId) =>
+        setSelectedTenantId(tenantId as typeof selectedTenantId)
+      }
+      selectedTenantId={selectedTenant.id}
+      tenants={tenants}
+    >
+      <PageOutlet
+        activePageId={activePageId}
+        legacyEvidence={legacyEvidence}
+        onPageChange={setActivePageId}
+      />
     </AppShell>
   );
 }

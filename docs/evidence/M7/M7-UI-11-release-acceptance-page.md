@@ -19,7 +19,7 @@ This is not M7 closeout, owner acceptance, GA-0 opening, production deployment, 
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
 | root/main status | `## main...origin/main` |
 | `git branch --no-merged main` at entry | no output |
-| open PR audit | `gh` unavailable; equivalent GitHub REST audit completed. Current open PR list returned only PR #176 (`codex/m7-ui-11-release-acceptance-page` -> `main`, open, non-draft, head `6124b421937f0fefd154af11aedf3fedaf8905e3` at audit time). PR #176 detail returned open, non-draft, mergeable true, base `main`, base sha `c82fa4d3496807286dc512af32f215b30c3a64fa`. GitHub CI for `6124b421937f0fefd154af11aedf3fedaf8905e3` returned run `28661037540` with conclusion `success`. Root/main `git branch --no-merged main` returned only `codex/m7-ui-11-release-acceptance-page`; root/main status remained `## main...origin/main`. |
+| open PR audit | `gh` unavailable; equivalent GitHub REST audit completed. The open PR list returned only PR #176 (`codex/m7-ui-11-release-acceptance-page` -> `main`, open, non-draft). PR #176 detail returned open, non-draft and mergeable with base `main`. Root/main `git branch --no-merged main` returned only `codex/m7-ui-11-release-acceptance-page`; root/main status remained clean at `## main...origin/main`. |
 
 ## Required Reads / Mapping
 

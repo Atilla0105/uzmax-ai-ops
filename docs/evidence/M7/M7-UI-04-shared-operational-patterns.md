@@ -7,7 +7,7 @@
 - Base confirmed: `main` at `b9ede1f50d5875f27ad6aca66f9cde8ce183ba90`
 - Scope: shared operational patterns only; no page migration, runtime API/hook wiring, token mutation or raw prototype fixture copy.
 - Page worker boundary: M7-UI-04A+ page workers remain blocked until this shared-pattern PR is merged.
-- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns, accessibility remediation and `/design` preview CSS. After the quality-review fixes, committed net source LOC is 1043; this exceeds the default repo guard budget of 600 and the earlier branch target of <= 1000. Merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval; this worker does not self-approve that exception.
+- PR hygiene note: this worker proposes `large_change_exception` for owner/coordinator review because the committed source diff includes eight shared patterns, accessibility remediation, lint-remediation extraction and `/design` preview CSS. After the lint fixes, committed net source LOC is 1213 across eight source files; this exceeds the default repo guard budget of 600 and the earlier branch targets. Merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval; this worker does not self-approve that exception.
 
 ## Entry / Workspace Evidence
 
@@ -114,7 +114,7 @@ Rejected:
 
 - Added typed generic `DataTable` with column definitions, optional selection, density and empty-state support.
 - Added `FilterBar`, `PageToolbar`, `SidePanel`, `MessageBubble`, `ConfirmModal`, `ToastHost`/`useToast` and `BatchActionBar` exports from `apps/admin/src/patterns`.
-- Updated `FoundationPreview` to render an operational patterns preview with stable `data-testid` anchors.
+- Updated `FoundationPreview` to render an operational patterns preview with stable `data-testid` anchors, then extracted that preview to `apps/admin/src/patterns/operational-patterns-preview.tsx` for lint max-lines compliance.
 - Added focused Playwright coverage in `apps/admin/tests/m7-ui-patterns.spec.ts`.
 - Updated M7 evidence index to show UI-03 merged on this base, UI-04 implemented in worker and UI-04A+ blocked until UI-04 merge.
 
@@ -126,24 +126,54 @@ Rejected:
 - `useToast` now uses a monotonic `useRef` counter for toast IDs instead of `Date.now()`, and `ToastHost` exposes each generated ID for non-timing Playwright coverage.
 - `apps/admin/tests/m7-ui-patterns.spec.ts` now covers dialog accessible name/description, required reason field, focus trap, Escape close with focus return, keyboard row action, row checkbox non-activation, select-all state changes and distinct stacked toast IDs.
 
+## Lint Review Fixes
+
+- `DataTable` keeps the same public API and behavior, but header, colgroup, selection cells, body rows and row actions now live in focused helper components; the exported `DataTable` function only coordinates empty-state handling and table composition to stay under the complexity limit.
+- `FoundationPreview.tsx` now contains only the foundation preview wrapper and is 107 lines after formatting.
+- The operational `/design` preview moved to `apps/admin/src/patterns/operational-patterns-preview.tsx`, which is inside the allowed `apps/admin/src/patterns/**` scope and remains 240 lines after formatting.
+- `apps/admin/src/patterns/data-table.tsx` is 246 lines after formatting.
+
 ## Validation
 
 Source budget caveat:
 
-- Current committed branch source numstat after quality fixes:
-  - `140  0  apps/admin/src/patterns/confirm-modal.tsx`
-  - `140  0  apps/admin/src/patterns/data-table.tsx`
+- Current committed branch source numstat after lint fixes:
+  - `134  0  apps/admin/src/patterns/confirm-modal.tsx`
+  - `246  0  apps/admin/src/patterns/data-table.tsx`
   - `91   0  apps/admin/src/patterns/feedback-patterns.tsx`
-  - `29   0  apps/admin/src/patterns/index.tsx`
-  - `145  0  apps/admin/src/patterns/operational-patterns.tsx`
+  - `14   0  apps/admin/src/patterns/index.tsx`
+  - `240  0  apps/admin/src/patterns/operational-patterns-preview.tsx`
+  - `149  0  apps/admin/src/patterns/operational-patterns.tsx`
   - `350  0  apps/admin/src/shell/AppShell.css`
-  - `232  84 apps/admin/src/shell/FoundationPreview.tsx`
-- Current committed branch net source LOC: 1043.
+  - `75   86 apps/admin/src/shell/FoundationPreview.tsx`
+- Current committed branch net source LOC: 1213.
+- Current committed branch source files changed: 8.
+- New source files: 5 (`confirm-modal.tsx`, `data-table.tsx`, `feedback-patterns.tsx`, `operational-patterns.tsx`, `operational-patterns-preview.tsx`).
 - Default repo guard budget: net source LOC <= 600.
-- Earlier branch target: net source LOC <= 1000; quality-review remediation pushed the branch above that target.
-- Therefore the branch intentionally fails local `pr-shape --include-worktree` with `net source LOC 1043 > 600` unless PR metadata declares `Exception: large_change_exception`. The overage, including the post-review increase above 1000, requires owner/coordinator approval before merge; this worker does not self-approve it.
+- Earlier branch targets are exceeded; lint remediation added one source file and increased the source net LOC.
+- Therefore the branch intentionally fails local `pr-shape --include-worktree` with `net source LOC 1213 > 600` unless PR metadata declares `Exception: large_change_exception`. The overage requires owner/coordinator approval before merge; this worker does not self-approve it.
 
-Quality-review validation rerun after source/test commit `4681b58`:
+Lint-remediation validation after source commit `2bc313f`:
+
+```text
+wc -l apps/admin/src/shell/FoundationPreview.tsx apps/admin/src/patterns/operational-patterns-preview.tsx apps/admin/src/patterns/data-table.tsx
+     107 apps/admin/src/shell/FoundationPreview.tsx
+     240 apps/admin/src/patterns/operational-patterns-preview.tsx
+     246 apps/admin/src/patterns/data-table.tsx
+     593 total
+```
+
+```text
+/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /Users/atilla/Library/pnpm/store/v11/links/@/prettier/3.8.4/a75f860c176c48f03ad8c65cded05d55db36b554d0bd40bf7e8691a016b03f80/node_modules/prettier/bin/prettier.cjs --check apps/admin/src/patterns/data-table.tsx apps/admin/src/patterns/operational-patterns-preview.tsx apps/admin/src/shell/FoundationPreview.tsx
+Checking formatting...
+All matched files use Prettier code style!
+EXIT:0
+```
+
+```text
+targeted lint
+unavailable locally: npm not found; node_modules absent; apps/admin/node_modules absent; eslint binary absent in the isolated worktree shell.
+```
 
 ```text
 git diff --check
@@ -164,13 +194,13 @@ EXIT:0
 ```text
 /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-04-shared-operational-patterns.md --include-worktree
 guard:pr-shape failed:
-net source LOC 1043 > 600
+net source LOC 1213 > 600
 EXIT:1
 ```
 
 ```text
 git status --short --branch
-## codex/m7-ui-04-shared-operational-patterns
+## codex/m7-ui-04-shared-operational-patterns...origin/codex/m7-ui-04-shared-operational-patterns [ahead 1]
 ```
 
 ```text

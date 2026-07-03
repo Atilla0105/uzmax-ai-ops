@@ -227,6 +227,7 @@ function conversation(id: string, status: string, risk: boolean) {
     tags: data.tags,
     tenantId: "tenant-b",
     ticketRef: data.ticketRef,
+    timeLabel: data.timeLabel,
     unreadCount: risk ? 2 : 0
   };
 }
@@ -253,7 +254,13 @@ function detail(id: string) {
           tool: "order.lookup(ORD-REF-20413)"
         }
       ),
-      message(`${id}-sys`, "internal", "AI 已暂停，等待人工接管。")
+      message(`${id}-sys`, "internal", "AI 已暂停，等待人工接管。"),
+      message(
+        `${id}-ai-brief`,
+        "outbound",
+        "补充草稿：先确认分拣复核，再给出下一节点预计更新时间。"
+      ),
+      message(`${id}-ops`, "internal", "运营状态：接管中，Business 外发待确认。")
     ]
   };
 }
@@ -297,18 +304,31 @@ const conversationData: Record<
     stage: string;
     tags: string[];
     ticketRef: string;
+    timeLabel: string;
   }
 > = {
-  "conv-risk": rowData("Nodira Karimova", "WB-20413", "ORD-REF-20413", "SLA 16m"),
-  "conv-calm": rowData("Aziz Bek", "WB-20419", "ORD-REF-20419", ""),
-  "conv-awaiting": rowData("Madina S.", "WB-20421", "ORD-REF-20421", ""),
-  "conv-human": rowData("Timur Aliyev", "WB-20425", "ORD-REF-20425", ""),
-  "conv-ai": rowData("Dilnoza M.", "WB-20427", "ORD-REF-20427", ""),
-  "conv-closed": rowData("Rustam K.", "WB-20429", "ORD-REF-20429", ""),
-  "conv-late": rowData("Malika R.", "WB-20431", "ORD-REF-20431", "SLA 29m")
+  "conv-risk": rowData(
+    "Nodira Karimova",
+    "WB-20413",
+    "ORD-REF-20413",
+    "SLA 16m",
+    "2分钟"
+  ),
+  "conv-calm": rowData("Aziz Bek", "WB-20419", "ORD-REF-20419", "", "14分钟"),
+  "conv-awaiting": rowData("Madina S.", "WB-20421", "ORD-REF-20421", "", "11分钟"),
+  "conv-human": rowData("Timur Aliyev", "WB-20425", "ORD-REF-20425", "", "20分钟"),
+  "conv-ai": rowData("Dilnoza M.", "WB-20427", "ORD-REF-20427", "", "34分钟"),
+  "conv-closed": rowData("Rustam K.", "WB-20429", "ORD-REF-20429", "", "1小时"),
+  "conv-late": rowData("Malika R.", "WB-20431", "ORD-REF-20431", "SLA 29m", "6分钟")
 };
 
-function rowData(name: string, displayRef: string, orderRef: string, slaText: string) {
+function rowData(
+  name: string,
+  displayRef: string,
+  orderRef: string,
+  slaText: string,
+  timeLabel: string
+) {
   return {
     channel: "Business",
     customerRef: `CU-${displayRef.slice(3)}`,
@@ -335,6 +355,7 @@ function rowData(name: string, displayRef: string, orderRef: string, slaText: st
     slaText,
     stage: "售后跟进",
     tags: ["高频客户", "售后", "Business"],
-    ticketRef: "TK-REF-3842"
+    ticketRef: "TK-REF-3842",
+    timeLabel
   };
 }

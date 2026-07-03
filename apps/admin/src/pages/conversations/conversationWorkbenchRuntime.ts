@@ -31,6 +31,7 @@ export type ConversationRow = {
   tags?: string[];
   tenantId: string;
   ticketRef?: string;
+  timeLabel?: string;
   unreadCount: number;
 };
 
@@ -148,6 +149,7 @@ function readConversation(value: unknown): ConversationRow {
     tags: stringArray(record.tags),
     tenantId: text(record.tenantId, "tenant-unavailable"),
     ticketRef: text(record.ticketRef),
+    timeLabel: text(record.timeLabel, text(record.relativeTime)),
     unreadCount: numberValue(record.unreadCount)
   };
 }

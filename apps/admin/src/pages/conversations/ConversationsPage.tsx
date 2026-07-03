@@ -158,7 +158,7 @@ function ConversationListRow({
       <span className="uz-conv-row__top">
         <Avatar initial={displayName(row)} tone={avatarTone(row)} />
         <strong>{displayName(row)}</strong>
-        <span className="mono">{timeLabel(row.lastMessageAt)}</span>
+        <span className="mono">{row.timeLabel || timeLabel(row.lastMessageAt)}</span>
       </span>
       <span className="uz-conv-row__preview">{previewLabel(row)}</span>
       <span className="uz-conv-row__meta">

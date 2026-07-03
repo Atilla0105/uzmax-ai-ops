@@ -1,38 +1,77 @@
-import type {
+import {
+  createElement,
+  isValidElement,
+  type ElementType,
   ButtonHTMLAttributes,
   HTMLAttributes,
   InputHTMLAttributes,
   ReactNode
 } from "react";
+import { Search } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 function cx(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
 type IconSlotSize = "sm" | "md" | "lg";
+export const ICON_STROKE = 1.75;
 
 export interface IconSlotProps extends HTMLAttributes<HTMLSpanElement> {
+  icon?: ElementType | LucideIcon | ReactNode;
   label?: string;
   size?: IconSlotSize;
   text?: string;
 }
 
+function isIconComponent(
+  icon: IconSlotProps["icon"]
+): icon is ElementType | LucideIcon {
+  if (!icon || isValidElement(icon)) {
+    return false;
+  }
+
+  return (
+    typeof icon === "function" ||
+    (typeof icon === "object" && "render" in icon && "displayName" in icon)
+  );
+}
+
 export function IconSlot({
   className,
+  icon,
   label,
   size = "md",
   text,
   ...props
 }: IconSlotProps) {
+  let renderedIcon: ReactNode = null;
+  if (isIconComponent(icon)) {
+    renderedIcon = createElement(icon, {
+      "aria-hidden": true,
+      color: "currentColor",
+      size: size === "lg" ? 20 : size === "sm" ? 13 : 16,
+      strokeWidth: ICON_STROKE
+    });
+  } else {
+    renderedIcon = icon;
+  }
+
   return (
     <span
       aria-hidden={label ? undefined : true}
       aria-label={label}
-      className={cx("uz-icon-slot", `uz-icon-slot--${size}`, className)}
+      className={cx(
+        "uz-icon-slot",
+        `uz-icon-slot--${size}`,
+        text && !icon && "uz-icon-slot--text",
+        className
+      )}
+      data-icon-slot
       role={label ? "img" : undefined}
       {...props}
     >
-      {text}
+      {renderedIcon ?? text}
     </span>
   );
 }
@@ -159,7 +198,7 @@ export function Input({ before, className, disabled, kbdHint, ...props }: InputP
 }
 
 export function SearchInput(props: Omit<InputProps, "before" | "type">) {
-  return <Input before={<IconSlot text="S" />} type="search" {...props} />;
+  return <Input before={<IconSlot icon={Search} />} type="search" {...props} />;
 }
 
 export interface ToggleProps extends ButtonHTMLAttributes<HTMLButtonElement> {

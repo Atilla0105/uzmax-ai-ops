@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import { Inbox, Lock, TriangleAlert } from "lucide-react";
 import {
   Button,
   CountBadge,
@@ -15,7 +16,7 @@ export interface NavItemProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
   badge?: ReactNode;
   collapsed?: boolean;
-  icon?: IconSlotProps["text"];
+  icon?: IconSlotProps["icon"];
   label: string;
 }
 
@@ -41,7 +42,7 @@ export function NavItem({
       type="button"
       {...props}
     >
-      <IconSlot text={icon} />
+      <IconSlot icon={icon} />
       {!collapsed ? <span className="uz-nav-item__label">{label}</span> : null}
       {!collapsed && badge ? <CountBadge aria-hidden value={badge} /> : null}
     </button>
@@ -83,7 +84,7 @@ export function Tabs({ active, className, onChange, tabs, ...props }: TabsProps)
 export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   action?: ReactNode;
   description?: ReactNode;
-  iconText?: string;
+  icon?: IconSlotProps["icon"];
   title: ReactNode;
 }
 
@@ -91,13 +92,13 @@ export function EmptyState({
   action,
   className,
   description,
-  iconText = "0",
+  icon = Inbox,
   title,
   ...props
 }: EmptyStateProps) {
   return (
     <div className={cx("uz-empty-state", className)} {...props}>
-      <IconSlot size="lg" text={iconText} />
+      <IconSlot icon={icon} size="lg" />
       <strong>{title}</strong>
       {description ? <p>{description}</p> : null}
       {action}
@@ -116,13 +117,13 @@ export interface PageStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
 
 const stateCopy: Record<
   PageStateKind,
-  { icon: string; title: string; tone: "neutral" | "warn" | "danger" }
+  { icon: IconSlotProps["icon"]; title: string; tone: "neutral" | "warn" | "danger" }
 > = {
-  degraded: { icon: "DG", title: "Degraded", tone: "warn" },
-  empty: { icon: "0", title: "Empty", tone: "neutral" },
-  error: { icon: "ER", title: "Error", tone: "danger" },
-  loading: { icon: "LD", title: "Loading", tone: "neutral" },
-  permission: { icon: "LK", title: "Permission denied", tone: "danger" }
+  degraded: { icon: TriangleAlert, title: "Degraded", tone: "warn" },
+  empty: { icon: Inbox, title: "Empty", tone: "neutral" },
+  error: { icon: TriangleAlert, title: "Error", tone: "danger" },
+  loading: { icon: Inbox, title: "Loading", tone: "neutral" },
+  permission: { icon: Lock, title: "Permission denied", tone: "danger" }
 };
 
 export function PageState({
@@ -144,7 +145,7 @@ export function PageState({
       {kind === "loading" ? (
         <span aria-label="Loading" className="uz-spinner" role="status" />
       ) : (
-        <IconSlot size="lg" text={copy.icon} />
+        <IconSlot icon={copy.icon} size="lg" />
       )}
       <StatusBadge tone={copy.tone}>{title ?? copy.title}</StatusBadge>
       {message ? <p>{message}</p> : null}
@@ -165,7 +166,7 @@ export function DegradedBar({
 }: DegradedBarProps) {
   return (
     <div className={cx("uz-degraded-bar", className)} role="status" {...props}>
-      <IconSlot text="DG" />
+      <IconSlot icon={TriangleAlert} />
       <span>{children}</span>
       {action}
     </div>

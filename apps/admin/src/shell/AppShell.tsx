@@ -1,5 +1,29 @@
 import "./AppShell.css";
 import { useMemo, useState, type ReactNode } from "react";
+import {
+  BarChart3,
+  Bell,
+  BookOpen,
+  Bot,
+  Building2,
+  ClipboardList,
+  Copy,
+  Cpu,
+  Gauge,
+  Inbox,
+  LayoutDashboard,
+  MessageSquare,
+  Package,
+  PanelLeftClose,
+  Plug,
+  Rocket,
+  ScrollText,
+  SlidersHorizontal,
+  UserCircle,
+  Users,
+  UsersRound
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button, Heartbeat, IconSlot, SearchInput, StatusBadge } from "../primitives";
 import { NavItem } from "../patterns";
 
@@ -24,34 +48,34 @@ export interface AppShellProps {
 
 type NavEntry = {
   badge?: string;
+  icon: LucideIcon;
   id: string;
   label: string;
-  mark: string;
 };
 
 const groupNav: NavEntry[] = [
-  { id: "overview", label: "集团总览", mark: "总" },
-  { id: "model-risk", label: "模型/成本/风险", mark: "模" },
-  { id: "templates", label: "模板中心", mark: "模" },
-  { id: "connections", label: "连接中心", mark: "连" },
-  { id: "release", label: "发布与验收", mark: "发" },
-  { id: "tenants", label: "租户管理", mark: "租" },
-  { id: "group-logs", label: "集团日志", mark: "志" }
+  { id: "overview", label: "集团总览", icon: LayoutDashboard },
+  { id: "model-risk", label: "模型/成本/风险", icon: Cpu },
+  { id: "templates", label: "模板中心", icon: Copy },
+  { id: "connections", label: "连接中心", icon: Plug },
+  { id: "release", label: "发布与验收", icon: Rocket },
+  { id: "tenants", label: "租户管理", icon: Building2 },
+  { id: "group-logs", label: "集团日志", icon: ScrollText }
 ];
 
 const tenantNav: NavEntry[] = [
-  { id: "conversations", label: "对话", mark: "对", badge: "7" },
-  { id: "tickets", label: "工单", mark: "工", badge: "3" },
-  { id: "customers", label: "客户资产", mark: "客" },
-  { id: "orders", label: "订单", mark: "订" },
-  { id: "knowledge", label: "知识与资源", mark: "知" },
-  { id: "queue", label: "确认队列", mark: "确", badge: "9" },
-  { id: "eval", label: "评测中心", mark: "评" },
-  { id: "ai-members", label: "AI 成员", mark: "AI" },
-  { id: "team", label: "团队", mark: "团" },
-  { id: "config", label: "配置", mark: "配" },
-  { id: "analytics", label: "分析", mark: "析" },
-  { id: "logs", label: "日志", mark: "志" }
+  { id: "conversations", label: "对话", icon: MessageSquare, badge: "7" },
+  { id: "tickets", label: "工单", icon: ClipboardList, badge: "3" },
+  { id: "customers", label: "客户资产", icon: Users },
+  { id: "orders", label: "订单", icon: Package },
+  { id: "knowledge", label: "知识与资源", icon: BookOpen },
+  { id: "queue", label: "确认队列", icon: Inbox, badge: "9" },
+  { id: "eval", label: "评测中心", icon: Gauge },
+  { id: "ai-members", label: "AI 成员", icon: Bot },
+  { id: "team", label: "团队", icon: UsersRound },
+  { id: "config", label: "配置", icon: SlidersHorizontal },
+  { id: "analytics", label: "分析", icon: BarChart3 },
+  { id: "logs", label: "日志", icon: ScrollText }
 ];
 
 const healthTone: Record<TenantHealth, "ok" | "warn" | "danger"> = {
@@ -110,7 +134,7 @@ export function AppShell({
         <Button
           aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
           className="uz-nav-collapse"
-          icon={<IconSlot text={expanded ? "收" : "展"} />}
+          icon={<IconSlot icon={PanelLeftClose} />}
           onClick={() => setExpanded((current) => !current)}
           variant="ghost"
         >
@@ -164,11 +188,11 @@ export function AppShell({
               <Heartbeat tone={selectedTenant.health === "healthy" ? "ok" : "warn"} />
               <span>68ms</span>
             </span>
-            <button type="button" disabled>
-              Notifications
+            <button aria-label="Notifications" type="button" disabled>
+              <IconSlot icon={Bell} />
             </button>
-            <button type="button" disabled>
-              User menu
+            <button aria-label="User menu" type="button" disabled>
+              <IconSlot icon={UserCircle} />
             </button>
           </div>
         </header>
@@ -199,7 +223,7 @@ function NavGroup({
           active={activeNav === item.id}
           badge={item.badge}
           collapsed={collapsed}
-          icon={item.mark}
+          icon={item.icon}
           key={item.id}
           label={item.label}
           onClick={() => onSelect(item.id)}

@@ -18,7 +18,7 @@ The current route registry is admin-internal. It is not a backend API, public DT
 
 ## Planned Page Ledger
 
-All planned pages are `not_started`. Any later page worker must update this ledger or a page-specific evidence file before claiming implementation.
+Current ledger state is mixed: M7-UI-10 is merged to `main`, M7-UI-11 is spec-ready pending PR review, and the remaining planned pages are not implemented. Any later page worker must update this ledger or a page-specific evidence file before claiming implementation.
 
 | Order | Spec id | IA page | Prototype source path | Target route/page id | Target repo path | Current runtime/API/hook status | Required states | Evidence status |
 |---:|---|---|---|---|---|---|---|---|

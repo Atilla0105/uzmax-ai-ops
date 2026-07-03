@@ -1,7 +1,9 @@
 type AdminPageLayer = "group" | "tenant" | "legacy";
 type AdminPageNavSection = "group" | "tenant";
-type AdminPageStatus = "not_started" | "legacy_evidence";
-
+type AdminPageStatus =
+  | "legacy_evidence"
+  | "not_started"
+  | "implemented_in_worker_pending_pr";
 interface AdminPageRegistryEntry {
   evidenceStatus: string;
   iaPage: string;
@@ -17,7 +19,6 @@ interface AdminPageRegistryEntry {
   targetPath: string;
   targetSpecId: string;
 }
-
 const stateMatrix = ["loading", "empty", "error", "permission", "degraded"] as const;
 
 const adminPageRegistry = [
@@ -216,7 +217,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-04L-tenant-knowledge"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "确认队列",
     id: "tenant.queue",
     label: "确认队列",
@@ -226,9 +227,9 @@ const adminPageRegistry = [
     order: 13,
     requiredStates: [...stateMatrix, "conflict diff"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/queue/QueuePage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/queue/QueuePage.tsx",
-    targetSpecId: "M7-UI-04M-tenant-queue"
+    targetSpecId: "M7-UI-10-confirmation-queue-page"
   },
   {
     evidenceStatus: "not_started",

@@ -41,7 +41,7 @@ M7 does not approve GA-0, production deployment, real customer/order-data use, c
 | UI-02 | M7-UI-02 Icon Shell Calibration | `merged_to_main` | `docs/evidence/M7/M7-UI-02-icon-shell-calibration.md` |
 | UI-03 | M7-UI-03 Page Migration Ledger And Router | `merged_to_main` | `docs/evidence/M7/M7-UI-03-page-migration-ledger-and-router.md` |
 | UI-04 | M7-UI-04 Shared Operational Patterns | `merged_to_main` | `docs/evidence/M7/M7-UI-04-shared-operational-patterns.md`; base includes commit `5877029` / PR #173 |
-| UI-10 | M7-UI-10 Confirmation Queue Page | `spec_drafted_pending_coordinator_approval` | `docs/specs/M7-UI-10-confirmation-queue-page.md`; `docs/evidence/M7/M7-UI-10-confirmation-queue-page.md` |
+| UI-10 | M7-UI-10 Confirmation Queue Page | `implemented_in_worker_pending_pr_review` | `docs/specs/M7-UI-10-confirmation-queue-page.md`; `docs/evidence/M7/M7-UI-10-confirmation-queue-page.md`; focused Playwright `apps/admin/tests/m7-ui-confirmation-queue.spec.ts` |
 | UI-04A+ | Page migration implementation queue | `page_specific_specs_required` | all 19 page rows remain implementation `not_started`; page implementation still requires approved page-specific spec, runtime contract, state matrix, tests and evidence |
 
 ## Boundary
@@ -60,4 +60,4 @@ The M7-00 detector baseline still has `side-tab` findings in current admin CSS. 
 
 ## Current M7 UI Queue Boundary
 
-M7-UI-00 through M7-UI-02 establish the migration index, fixture safety, token/foundation contract, shared foundation layer and shell icon calibration on `main`. M7-UI-03 adds only the permanent page ledger, typed admin page registry and router/page-outlet scaffold. M7-UI-04 adds shared operational patterns for later page workers; it still does not migrate a page. M7-UI-10 is a confirmation-queue page spec draft only. Page implementation still requires coordinator approval, real runtime/API or documented read-only contracts, full state matrices, synthetic tests and evidence before any ledger row can move beyond implementation `not_started`.
+M7-UI-00 through M7-UI-02 establish the migration index, fixture safety, token/foundation contract, shared foundation layer and shell icon calibration on `main`. M7-UI-03 adds only the permanent page ledger, typed admin page registry and router/page-outlet scaffold. M7-UI-04 adds shared operational patterns for later page workers. M7-UI-10 implementation is now present on its worker branch for `tenant.queue`, pending PR review/CI; it does not close GA-0, M7, M5 owner acceptance, production, release, distill health recovery API, or keep-current runtime semantics.

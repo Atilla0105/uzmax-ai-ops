@@ -46,6 +46,7 @@ feature
   - `apps/admin/src/pages/PageOutlet.tsx`
   - `apps/admin/src/pages/registry.ts`
   - `apps/admin/tests/m7-ui-confirmation-queue.spec.ts`
+  - `apps/admin/tests/m7-ui-page-router.spec.ts`
 - 说明/备注：
   - Phase 1 may touch only the docs paths above.
   - Future implementation may touch the listed `apps/admin` page/test paths only after coordinator approval.
@@ -68,7 +69,7 @@ Future implementation budget after coordinator approval:
 - source changed files: <= 5
 - source net LOC: <= 600
 - new source files: <= 3
-- test files changed: 1 focused Playwright spec
+- test files changed: <= 2 focused Playwright specs when the page route replaces the prior router scaffold assertion
 - docs changed: <= 3 evidence/ledger updates
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - external API/SDK/provider/connector/adapter basis: none; use existing internal admin API client contracts and repo evidence only.

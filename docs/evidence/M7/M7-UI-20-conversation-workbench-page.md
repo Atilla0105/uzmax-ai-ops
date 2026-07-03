@@ -2,25 +2,25 @@
 
 ## Status
 
-Spec-only evidence stub for `tenant.conversations` / 对话工作台.
+Implementation evidence for `tenant.conversations` / 对话工作台.
 
-This PR creates the page-migration contract for the real tenant operational conversation workbench. It updates the M7 execution queue and page ledger, but does not implement the React page, route rendering, API hooks, tests, CSS, backend/API/runtime contracts, DB changes, package/lock changes, CI/global config, screenshots or fixture imports.
+This branch replaces the planned scaffold with a real M7 tenant conversation workbench page. It adds a page-local `conversation-ticket` read/handoff client, route rendering, focused Playwright coverage, mobile fallback and honest degraded/read-only boundaries for runtime surfaces that do not yet have approved M7 contracts.
 
-This is not page implementation, M7 closeout, owner acceptance, GA-0 opening, production deployment, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
+This is not owner visual acceptance, runtime closure, M7 closeout, GA-0 opening, production deployment, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
 
 ## Entry Evidence
 
 | Fact | Evidence |
 |---|---|
-| worker path | `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-spec` |
-| worker branch | `codex/m7-ui-20-conversation-workbench-spec` |
-| worker status at entry | `## codex/m7-ui-20-conversation-workbench-spec` |
-| worker HEAD / origin main | `88044142c66257dce7cecd7b003cb49be0e6b44b` / `88044142c66257dce7cecd7b003cb49be0e6b44b` |
+| worker path | `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl` |
+| worker branch | `codex/m7-ui-20-conversation-workbench-page-impl` |
+| worker status at entry | `## codex/m7-ui-20-conversation-workbench-page-impl` |
+| worker HEAD | `6e66143e4ea5c9323ec8b25470c8892fdece08a3` |
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
 | root/main status before worktree creation | `## main...origin/main` |
 | root/main branch before worktree creation | `main` |
 | branch audit | `git branch --no-merged main` showed `codex/m7-ui-11-release-acceptance-page-impl`; owner/coordinator explicitly marked PR #178 Draft/Paused and this worker did not touch it. |
-| open PR audit | `gh` is unavailable in this shell. |
+| open PR audit | GitHub connector showed only PR #178 open, Draft/Paused, head `codex/m7-ui-11-release-acceptance-page-impl`; this worker did not touch it. |
 
 ## Required Reads / Mapping
 
@@ -29,33 +29,56 @@ This is not page implementation, M7 closeout, owner acceptance, GA-0 opening, pr
 - Adopted Impeccable/product-register guidance: dense operational workbench, status-first hierarchy, keyboard-first desktop flow, mobile fallback only, no decorative visuals, no nested/free layout, no side-stripe copy.
 - Rejected prototype/legacy behavior: raw inline styling, raw fixtures as runtime truth, local demo state, old M2 shell visuals, old `--uzmax-*` visual target and group+tenant mixed nav.
 
-## Spec Summary
+## Implementation Summary
 
 | Path | Summary |
 |---|---|
-| `docs/specs/M7-UI-20-conversation-workbench-page.md` | Defines the source mapping, page matrix, runtime/API plan, full state coverage, visual rules, evidence plan, sequence gate and validation list for `tenant.conversations`. |
-| `docs/evidence/M7/M7-UI-20-conversation-workbench-page.md` | Records this spec-only evidence stub. |
-| `docs/evidence/M7/README.md` | Records UI-05 as merged baseline, UI-10 as already merged, UI-11/PR #178 as Draft/Paused transitional, and UI-20 as next high-value spec. |
-| `docs/admin-ui-page-migration-ledger.md` | Updates `tenant.conversations` target spec/status/runtime blockers without claiming implementation. |
+| `apps/admin/src/pages/conversations/ConversationsPage.tsx` | M7 three-column tenant conversation workbench page: 316px list, thread/header/message body, AI trace expansion, bottom composer, 340px context rail, SLA/handoff/takeover states and mobile fallback. |
+| `apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts` | Page-local client/hook for existing `conversation-ticket` list/detail/handoff endpoints; no fixture imports and no backend/API expansion. |
+| `apps/admin/src/pages/conversations/conversationWorkbenchStyles.tsx` | Scoped page CSS using existing design-system token variables; no new tokens, old `--uzmax-*` target or M2 shell CSS. |
+| `apps/admin/src/pages/PageOutlet.tsx`, `apps/admin/src/pages/registry.ts` | Routes `tenant.conversations` to the real page and marks implementation evidence pending PR review. |
+| `apps/admin/tests/m7-ui-conversation-workbench.spec.ts` | Focused Playwright coverage for route/layer/nav, row selection, AI trace, handoff/degraded, loading/empty/error/permission/customer-context-unavailable and 320px mobile fallback. |
+| `apps/admin/tests/m7-ui-page-router.spec.ts` | Updates tenant selection assertion so `tenant.conversations` renders the real page, not the scaffold. |
 
 ## Runtime / Contract Notes
 
 - Current repo has backend `apps/api/src/conversation-ticket.*` contracts for conversation list/detail, handoff ticket creation and ticket actions.
-- Current repo does not have a M7 admin conversation page, admin `conversationApiClient`, page hook, WebSocket hook, customer-context aggregator, Business draft confirm API, human external send API or AI trace API.
-- Future implementation must prefer existing truthful clients/hooks if present at implementation time. If missing, it must render read-only/degraded or split runtime/API work; fixture pretending as runtime is prohibited.
+- This implementation adds only a page-local M7 admin client/hook under `apps/admin/src/pages/conversations/**`.
+- The runtime reads approved `conversation-ticket` list/detail/handoff semantics. Business draft confirmation, human external send, customer-context aggregation, customer/order/quote rail actions, AI trace source expansion and WebSocket realtime remain read-only/degraded.
+- Fixture pretending as runtime is prohibited and not used.
 - UI-05 layered navigation is merged to `main` and is a mandatory baseline: `tenant.conversations` belongs only to the tenant layer.
 
-## Priority Update
+## Visual / Runtime Notes
 
-`发布与验收` / PR #178 is paused as transitional owner/governance work and is not the main high-value page migration blocker. The real migration priority after the already-merged confirmation queue is `tenant.conversations` / `M7-UI-20-conversation-workbench-page`, pending coordinator review before implementation.
+- Visual structure follows owner prototype/unpacked sources for tenant sidebar context, 316px conversation list, central thread with 46px-ish header, message body, AI trace affordance, bottom composer/draft area and 340px customer context rail.
+- Prototype side stripes, raw fixtures, inline styles and local demo state were rejected/adapted. List risk uses badges/dots/row tint instead of 3px side bars.
+- Page-local CSS uses existing `--ink-*`, `--state-*`, spacing, radius, font and z-index token variables.
+- Mobile fallback stacks list/thread/rail at 320px and keeps emergency takeover visible; complex editing remains disabled/read-only.
+- Default runtime may show degraded/error if `/conversation-ticket` is unavailable; this is intentional and does not imply backend/runtime closure.
+
+## Screenshots
+
+Generated artifacts are kept outside the repo under `/tmp/uzmax-m7-ui-20-conversation-workbench-page/`.
+
+| Artifact | Path |
+|---|---|
+| Desktop 1440-ish screenshot | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/desktop-1440.png` |
+| Mobile 320 screenshot | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/mobile-320.png` |
+| Owner HTML/prototype screenshot | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/owner-html-1440.png` |
+
+Owner HTML/prototype screenshot was feasible from `/Users/atilla/Downloads/运营塔台1.0.html`. The owner screenshot shows the richer prototype runtime/demo data; this implementation screenshot intentionally shows controlled Playwright route data plus degraded runtime copy instead of importing prototype fixtures.
 
 ## Validation
 
-Validation is recorded in the final worker report for this branch. Required commands:
+Validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
 
-- `git diff --check`
-- `npm run guard:doc-triggers`
-- `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree`
+- `git diff --check` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run guard:doc-triggers` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run lint` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run typecheck -- --pretty false` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run build:admin` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npx playwright test apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts` - pass, 7 tests.
 - PR body includes `Spec ID` and `Spec file` metadata for CI `guard:pr-shape`.
 
 ## Boundary

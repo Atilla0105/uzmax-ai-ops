@@ -36,7 +36,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-03-page-migration-ledger-and-router"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "集团总览",
     id: "group.overview",
     label: "集团总览",
@@ -141,7 +141,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-04G-group-logs"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "对话",
     id: "tenant.conversations",
     label: "对话",
@@ -149,12 +149,20 @@ const adminPageRegistry = [
     navId: "conversations",
     navSection: "tenant",
     order: 8,
-    requiredStates: [...stateMatrix, "SLA risk"],
+    requiredStates: [
+      ...stateMatrix,
+      "mobile fallback",
+      "SLA risk",
+      "handoff/takeover",
+      "AI suspended",
+      "withdrawn/pending_cancel",
+      "customer context unavailable"
+    ],
     sourcePath:
       "/Users/atilla/源码/unpacked 6/pages/conversations/ConversationsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/conversations/ConversationsPage.tsx",
-    targetSpecId: "M7-UI-04H-tenant-conversations"
+    targetSpecId: "M7-UI-20-conversation-workbench-page"
   },
   {
     evidenceStatus: "not_started",

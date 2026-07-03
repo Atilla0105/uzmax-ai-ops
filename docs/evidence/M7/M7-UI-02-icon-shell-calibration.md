@@ -239,6 +239,35 @@ Budget notes:
     - `source.netLoc`: `91`
     - `source.newFiles`: `0`
 
+## CI Knip Follow-Up
+
+- CI / coordinator local reproduction:
+  - `Unused exports (1) ICON_STROKE apps/admin/src/primitives/index.tsx:18:14`
+- Fix:
+  - Changed `ICON_STROKE` from an exported constant to an internal module constant.
+  - No fake consumer was added and behavior remains unchanged.
+  - Scope stayed limited to `apps/admin/src/primitives/index.tsx` plus this evidence update.
+- `npm run knip`
+  - Result: passed.
+  - Output included `Total running time: 373ms`.
+- `npm run lint`
+  - Result: passed.
+- `npm run typecheck`
+  - Result: passed.
+- Focused Playwright: `node node_modules/@playwright/test/cli.js test apps/admin/tests/m7-ui-foundation.spec.ts`
+  - Result: passed, `2 passed (2.1s)`.
+- `git diff --check`
+  - Result: passed, no output.
+- `node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-02-icon-shell-calibration.md --include-worktree`
+  - Result: passed.
+  - Output:
+    - `specType`: `feature`
+    - `changedFiles`: `9`
+    - `categories`: `source=4`, `test=1`, `docs=2`, `lock=1`, `config=1`
+    - `source.changedFiles`: `4`
+    - `source.netLoc`: `88`
+    - `source.newFiles`: `0`
+
 ## Follow-Ups / Blockers
 
 - No implementation blockers remain for this slice.

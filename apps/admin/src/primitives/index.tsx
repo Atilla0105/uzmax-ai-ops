@@ -15,7 +15,7 @@ function cx(...classes: Array<string | false | undefined>) {
 }
 
 type IconSlotSize = "sm" | "md" | "lg";
-export const ICON_STROKE = 1.75;
+const ICON_STROKE = 1.75;
 
 export interface IconSlotProps extends HTMLAttributes<HTMLSpanElement> {
   icon?: ElementType | LucideIcon | ReactNode;

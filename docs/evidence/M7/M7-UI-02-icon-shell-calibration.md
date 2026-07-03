@@ -213,6 +213,32 @@ Budget notes:
   - Command: `rg -n 'IconSlot text|text="S"|mark:|收|展|>Notifications<|>User menu<' apps/admin/src/primitives/index.tsx apps/admin/src/patterns/index.tsx apps/admin/src/shell/AppShell.tsx apps/admin/src/shell/AppShell.css apps/admin/tests/m7-ui-foundation.spec.ts`
   - Result: no shell/icon placeholder matches except visible collapse labels `收起导航` / `展开`, which are preserved UI labels rather than icon glyphs.
 
+## CI Lint Follow-Up
+
+- CI / coordinator local reproduction:
+  - `apps/admin/src/primitives/index.tsx:48:7 error The value assigned to 'renderedIcon' is not used in subsequent statements no-useless-assignment`
+- Fix:
+  - Replaced the `let renderedIcon: ReactNode = null; if/else` shape with a single `const renderedIcon: ReactNode = isIconComponent(icon) ? createElement(...) : icon;`.
+  - Scope stayed limited to `apps/admin/src/primitives/index.tsx` plus this evidence update.
+- `npm run lint`
+  - Result: passed.
+  - Output included the repo lint command and no errors.
+- `npm run typecheck`
+  - Result: passed.
+- Focused Playwright: `node node_modules/@playwright/test/cli.js test apps/admin/tests/m7-ui-foundation.spec.ts`
+  - Result: passed, `2 passed (2.2s)`.
+- `git diff --check`
+  - Result: passed, no output.
+- `node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M7-UI-02-icon-shell-calibration.md --include-worktree`
+  - Result: passed.
+  - Output:
+    - `specType`: `feature`
+    - `changedFiles`: `9`
+    - `categories`: `source=4`, `test=1`, `docs=2`, `lock=1`, `config=1`
+    - `source.changedFiles`: `4`
+    - `source.netLoc`: `91`
+    - `source.newFiles`: `0`
+
 ## Follow-Ups / Blockers
 
 - No implementation blockers remain for this slice.

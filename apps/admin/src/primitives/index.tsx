@@ -45,17 +45,14 @@ export function IconSlot({
   text,
   ...props
 }: IconSlotProps) {
-  let renderedIcon: ReactNode = null;
-  if (isIconComponent(icon)) {
-    renderedIcon = createElement(icon, {
-      "aria-hidden": true,
-      color: "currentColor",
-      size: size === "lg" ? 20 : size === "sm" ? 13 : 16,
-      strokeWidth: ICON_STROKE
-    });
-  } else {
-    renderedIcon = icon;
-  }
+  const renderedIcon: ReactNode = isIconComponent(icon)
+    ? createElement(icon, {
+        "aria-hidden": true,
+        color: "currentColor",
+        size: size === "lg" ? 20 : size === "sm" ? 13 : 16,
+        strokeWidth: ICON_STROKE
+      })
+    : icon;
 
   return (
     <span

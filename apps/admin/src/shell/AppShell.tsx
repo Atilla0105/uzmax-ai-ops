@@ -12,12 +12,9 @@ import {
 } from "../pages/registry";
 
 type TenantHealth = "healthy" | "degraded" | "attention";
-type AppShellTenant = {
+interface AppShellTenant extends Record<"id" | "name" | "status", string> {
   health: TenantHealth;
-  id: string;
-  name: string;
-  status: string;
-};
+}
 export type AdminShellRoute = {
   level: "group" | "tenant";
   pageId: AdminPageId;
@@ -33,13 +30,7 @@ export type AppShellProps = {
 };
 type AdminNavigationPage =
   (typeof adminPageNavigation)[keyof typeof adminPageNavigation][number];
-type NavEntry = {
-  badge?: string;
-  icon: LucideIcon;
-  id: AdminPageId;
-  label: string;
-  navId: string;
-};
+type NavEntry = ReturnType<typeof createNavEntry>;
 
 const navBadges: Partial<Record<AdminPageId, string>> = {
   "tenant.conversations": "7",
@@ -50,28 +41,13 @@ const toneByHealth = {
   attention: { badge: "danger", heartbeat: "warn" },
   degraded: { badge: "warn", heartbeat: "warn" },
   healthy: { badge: "ok", heartbeat: "ok" }
-} satisfies Record<
-  TenantHealth,
-  { badge: "ok" | "warn" | "danger"; heartbeat: "ok" | "warn" }
->;
+} as const;
 const envTone = { local: "info", production: "neutral", staging: "warn" } as const;
 const groupNav = adminPageNavigation.group.map(createNavEntry);
 const tenantNav = adminPageNavigation.tenant.map(createNavEntry);
 const layerConfig = {
-  group: {
-    badgeText: "集团层",
-    badgeTone: "neutral",
-    buttonClass: "is-active",
-    nav: groupNav,
-    navLabel: "GROUP"
-  },
-  tenant: {
-    badgeText: "租户层",
-    badgeTone: "info",
-    buttonClass: undefined,
-    nav: tenantNav,
-    navLabel: "TENANT"
-  }
+  group: ["集团层", "neutral", "is-active", groupNav, "GROUP"],
+  tenant: ["租户层", "info", undefined, tenantNav, "TENANT"]
 } as const;
 const toggleCopy = {
   collapsed: { aria: "Expand navigation", text: "展开" },
@@ -91,7 +67,8 @@ export function AppShell({
     () => tenants.find((tenant) => tenant.id === selectedTenantId) ?? tenants[0],
     [selectedTenantId, tenants]
   );
-  const activeLayer = layerConfig[route.level];
+  const [layerBadgeText, layerBadgeTone, buttonClass, activeNav, navLabel] =
+    layerConfig[route.level];
   const navToggle = getToggleCopy(expanded);
   const tenantTone = toneByHealth[selectedTenant.health];
 
@@ -118,8 +95,8 @@ export function AppShell({
           <NavGroup
             activePageId={route.pageId}
             collapsed={!expanded}
-            items={activeLayer.nav}
-            label={activeLayer.navLabel}
+            items={activeNav}
+            label={navLabel}
             onSelect={(pageId) =>
               onRouteChange(createPageRoute(pageId, selectedTenant.id))
             }
@@ -145,7 +122,7 @@ export function AppShell({
           >
             <button
               aria-label="Back to group overview"
-              className={activeLayer.buttonClass}
+              className={buttonClass}
               onClick={() => onRouteChange(groupOverviewRoute())}
               type="button"
             >
@@ -153,8 +130,8 @@ export function AppShell({
             </button>
             <span>/</span>
             <strong>{breadcrumbLabel(route, selectedTenant.name)}</strong>
-            <StatusBadge data-testid="active-layer-badge" tone={activeLayer.badgeTone}>
-              {activeLayer.badgeText}
+            <StatusBadge data-testid="active-layer-badge" tone={layerBadgeTone}>
+              {layerBadgeText}
             </StatusBadge>
           </div>
           <label className="uz-tenant-select" htmlFor="tenant-switcher">
@@ -231,7 +208,7 @@ function NavGroup({ activePageId, collapsed, items, label, onSelect }: NavGroupP
   );
 }
 
-function createNavEntry(page: AdminNavigationPage): NavEntry {
+function createNavEntry(page: AdminNavigationPage) {
   return {
     badge: navBadges[page.id],
     icon: Icons[adminPageIcon[page.id]] as LucideIcon,

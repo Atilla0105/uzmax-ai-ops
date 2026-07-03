@@ -1,6 +1,6 @@
 import type * as Icons from "lucide-react";
 
-export type AdminPageLayer = "group" | "tenant" | "legacy";
+type AdminPageLayer = "group" | "tenant" | "legacy";
 type AdminPageNavSection = "group" | "tenant";
 type AdminPageStatus =
   | "legacy_evidence"

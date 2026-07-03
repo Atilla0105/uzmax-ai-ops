@@ -43,14 +43,43 @@ type OperationalRow = {
 };
 
 const operationalRows: OperationalRow[] = [
-  { area: "Queue review", id: "queue", owner: "Ops", state: "Human review", stateTone: "danger" },
-  { area: "Release gate", id: "gate", owner: "Owner", state: "Blocked", stateTone: "warn" },
-  { area: "Eval run", id: "eval", owner: "AI ops", state: "Running", stateTone: "info" },
-  { area: "Tenant health", id: "tenant", owner: "Admin", state: "Healthy", stateTone: "ok" }
+  {
+    area: "Queue review",
+    id: "queue",
+    owner: "Ops",
+    state: "Human review",
+    stateTone: "danger"
+  },
+  {
+    area: "Release gate",
+    id: "gate",
+    owner: "Owner",
+    state: "Blocked",
+    stateTone: "warn"
+  },
+  {
+    area: "Eval run",
+    id: "eval",
+    owner: "AI ops",
+    state: "Running",
+    stateTone: "info"
+  },
+  {
+    area: "Tenant health",
+    id: "tenant",
+    owner: "Admin",
+    state: "Healthy",
+    stateTone: "ok"
+  }
 ];
 
 const operationalColumns: Array<DataTableColumn<OperationalRow>> = [
-  { header: "Area", key: "area", render: (row) => <strong>{row.area}</strong>, width: "34%" },
+  {
+    header: "Area",
+    key: "area",
+    render: (row) => <strong>{row.area}</strong>,
+    width: "34%"
+  },
   {
     header: "State",
     key: "state",
@@ -58,7 +87,12 @@ const operationalColumns: Array<DataTableColumn<OperationalRow>> = [
     width: "28%"
   },
   { header: "Owner", key: "owner", render: (row) => row.owner, width: "22%" },
-  { align: "right", header: "Age", key: "age", render: (_row, index) => <Kbd>{index + 1}m</Kbd> }
+  {
+    align: "right",
+    header: "Age",
+    key: "age",
+    render: (_row, index) => <Kbd>{index + 1}m</Kbd>
+  }
 ];
 
 const previewStates = [
@@ -71,9 +105,24 @@ const previewStates = [
 
 const previewMessages = [
   ["system", "System audit marker", undefined, "m7-message-system"],
-  ["customer", "Customer message body wraps without side stripes.", "10:24 · inbound", "m7-message-customer"],
-  ["ai", "AI draft state stays visually accountable.", "10:25 · AI route", "m7-message-ai"],
-  ["human", "Human action uses blocking-state color only when needed.", "10:26 · operator", "m7-message-human"]
+  [
+    "customer",
+    "Customer message body wraps without side stripes.",
+    "10:24 · inbound",
+    "m7-message-customer"
+  ],
+  [
+    "ai",
+    "AI draft state stays visually accountable.",
+    "10:25 · AI route",
+    "m7-message-ai"
+  ],
+  [
+    "human",
+    "Human action uses blocking-state color only when needed.",
+    "10:26 · operator",
+    "m7-message-human"
+  ]
 ] as const;
 
 export function FoundationPreview({
@@ -120,17 +169,38 @@ export function FoundationPreview({
             { key: "disabled", label: "Permission" }
           ]}
         />
-        <div className="foundation-preview__controls" data-testid="m7-foundation-controls">
+        <div
+          className="foundation-preview__controls"
+          data-testid="m7-foundation-controls"
+        >
           <Button variant="primary">Confirm</Button>
-          <Button variant="secondary" kbd="J">Review</Button>
-          <Button isLoading variant="success">Loading</Button>
-          <SearchInput aria-label="Foundation lookup" placeholder="Search foundation" readOnly />
+          <Button variant="secondary" kbd="J">
+            Review
+          </Button>
+          <Button isLoading variant="success">
+            Loading
+          </Button>
+          <SearchInput
+            aria-label="Foundation lookup"
+            placeholder="Search foundation"
+            readOnly
+          />
           <Input aria-label="Foundation filter" kbdHint="/" readOnly value="Filter" />
-          <StatusBadge dot tone="danger">Human needed</StatusBadge>
+          <StatusBadge dot tone="danger">
+            Human needed
+          </StatusBadge>
           <Kbd>Esc</Kbd>
           <Avatar initial="AI" tone="ai" />
-          <Toggle aria-label="Foundation toggle" checked={toggleOn} onClick={() => onToggleChange(!toggleOn)} />
-          <Checkbox aria-label="Foundation checkbox" checked={checked} onClick={() => onCheckedChange(!checked)} />
+          <Toggle
+            aria-label="Foundation toggle"
+            checked={toggleOn}
+            onClick={() => onToggleChange(!toggleOn)}
+          />
+          <Checkbox
+            aria-label="Foundation checkbox"
+            checked={checked}
+            onClick={() => onCheckedChange(!checked)}
+          />
         </div>
         <div className="foundation-preview__states" data-testid="m7-foundation-states">
           {previewStates.map(([kind, message, testId]) => (
@@ -145,9 +215,16 @@ export function FoundationPreview({
         </div>
       </section>
 
-      <section className="panel operational-patterns" data-testid="m7-operational-patterns">
+      <section
+        className="panel operational-patterns"
+        data-testid="m7-operational-patterns"
+      >
         <PageToolbar
-          actions={<Button onClick={() => setConfirmOpen(true)} variant="danger">Open confirmation</Button>}
+          actions={
+            <Button onClick={() => setConfirmOpen(true)} variant="danger">
+              Open confirmation
+            </Button>
+          }
           eyebrow="M7-UI-04"
           meta="Shared pattern preview only; planned pages remain not started."
           status={<StatusBadge tone="warn">Page workers blocked</StatusBadge>}
@@ -211,8 +288,17 @@ export function FoundationPreview({
             </div>
             <BatchActionBar
               actions={[
-                { key: "assign", label: "Assign", onClick: () => toast.show("Batch action preview", "success") },
-                { danger: true, key: "hold", label: "Hold", onClick: () => setConfirmOpen(true) }
+                {
+                  key: "assign",
+                  label: "Assign",
+                  onClick: () => toast.show("Batch action preview", "success")
+                },
+                {
+                  danger: true,
+                  key: "hold",
+                  label: "Hold",
+                  onClick: () => setConfirmOpen(true)
+                }
               ]}
               count={selectedIds.size}
               label="Selected rows"
@@ -235,7 +321,9 @@ export function FoundationPreview({
             <p>Context, permission and audit copy live beside the work surface.</p>
           </SidePanel>
           {!panelOpen ? (
-            <Button onClick={() => setPanelOpen(true)} variant="secondary">Open supporting panel</Button>
+            <Button onClick={() => setPanelOpen(true)} variant="secondary">
+              Open supporting panel
+            </Button>
           ) : null}
         </div>
       </section>

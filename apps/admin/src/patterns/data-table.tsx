@@ -50,7 +50,9 @@ export function DataTable<Row>({
   selection
 }: DataTableProps<Row>) {
   const allSelected =
-    !!selection && rows.length > 0 && rows.every((row) => selection.selectedKeys.has(rowKey(row)));
+    !!selection &&
+    rows.length > 0 &&
+    rows.every((row) => selection.selectedKeys.has(rowKey(row)));
   const someSelected =
     !!selection && rows.some((row) => selection.selectedKeys.has(rowKey(row)));
 
@@ -64,7 +66,10 @@ export function DataTable<Row>({
         <colgroup>
           {selection ? <col className="uz-data-table__select-col" /> : null}
           {columns.map((column) => (
-            <col key={column.key} style={column.width ? { width: column.width } : undefined} />
+            <col
+              key={column.key}
+              style={column.width ? { width: column.width } : undefined}
+            />
           ))}
           {rowAction ? <col className="uz-data-table__action-col" /> : null}
         </colgroup>
@@ -115,7 +120,10 @@ export function DataTable<Row>({
                   </td>
                 ) : null}
                 {columns.map((column) => (
-                  <td className={cx(column.align && `is-${column.align}`)} key={column.key}>
+                  <td
+                    className={cx(column.align && `is-${column.align}`)}
+                    key={column.key}
+                  >
                     {column.render(row, index)}
                   </td>
                 ))}

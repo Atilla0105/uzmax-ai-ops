@@ -105,7 +105,11 @@ export function BatchActionBar({
             {action.label}
           </Button>
         ))}
-        {onClear ? <Button onClick={onClear} variant="ghost">Clear</Button> : null}
+        {onClear ? (
+          <Button onClick={onClear} variant="ghost">
+            Clear
+          </Button>
+        ) : null}
       </div>
     </div>
   );

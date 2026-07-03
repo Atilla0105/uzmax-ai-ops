@@ -9,15 +9,9 @@ test("renders shared operational patterns in the design preview", async ({ page 
   );
   await expect(page.getByTestId("m7-filter-bar")).toBeVisible();
   await expect(page.getByTestId("m7-data-table")).toContainText("Queue review");
-  await expect(
-    page.getByRole("checkbox", { name: "Select all rows" })
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Open Queue review" })
-  ).toBeVisible();
-  await expect(page.getByTestId("m7-batch-action-bar")).toContainText(
-    "Selected rows"
-  );
+  await expect(page.getByRole("checkbox", { name: "Select all rows" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Queue review" })).toBeVisible();
+  await expect(page.getByTestId("m7-batch-action-bar")).toContainText("Selected rows");
   await expect(page.getByTestId("m7-side-panel")).toContainText("Supporting panel");
   await expect(page.getByTestId("m7-operational-degraded-bar")).toContainText(
     "Shared degraded"
@@ -54,9 +48,7 @@ test("supports confirmation accessibility, focus trap and reason flow", async ({
   await expect(reason).toHaveJSProperty("required", true);
   await expect(reason).toHaveAttribute("aria-required", "true");
   await expect(reason).toBeFocused();
-  await expect(
-    page.getByRole("button", { name: "Confirm hold" })
-  ).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Confirm hold" })).toBeDisabled();
 
   await page.keyboard.press("Shift+Tab");
   await expect(page.getByRole("button", { name: "Cancel" })).toBeFocused();
@@ -68,9 +60,7 @@ test("supports confirmation accessibility, focus trap and reason flow", async ({
   await expect(opener).toBeFocused();
 
   await opener.click();
-  await page
-    .getByPlaceholder("Record the operational reason")
-    .fill("Pattern gate");
+  await page.getByPlaceholder("Record the operational reason").fill("Pattern gate");
   await page.getByRole("button", { name: "Confirm hold" }).click();
   await expect(page.getByTestId("m7-confirm-modal")).toHaveCount(0);
   await expect(page.getByTestId("m7-toast-host")).toContainText(
@@ -103,9 +93,9 @@ test("supports table selection, keyboard row action and stacked toasts", async (
   await expect(toastHost).toContainText("Filter preview updated");
   await expect(toastHost).toContainText("Filter preview saved");
 
-  const toastIds = await toastHost.locator(".uz-toast").evaluateAll((nodes) =>
-    nodes.map((node) => node.getAttribute("data-toast-id"))
-  );
+  const toastIds = await toastHost
+    .locator(".uz-toast")
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-toast-id")));
   expect(new Set(toastIds).size).toBe(toastIds.length);
 });
 

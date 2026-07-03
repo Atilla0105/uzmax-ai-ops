@@ -17,17 +17,23 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
   await expect(page.getByTestId("app-shell-nav")).toBeVisible();
   await expect(page.getByTestId("tenant-switcher")).toBeVisible();
   await expect(page.getByLabel("Search")).toBeVisible();
+  await expect(page.getByLabel("Search")).toHaveAttribute(
+    "placeholder",
+    "搜索会话、客户、订单、工单、知识..."
+  );
+  await expect(page.getByText("Search shell")).toHaveCount(0);
   await expect(page.locator(".uz-topbar .uz-input svg")).toBeVisible();
-  await expect(page.getByTestId("environment-marker")).toContainText("STAGING");
+  await expect(page.getByTestId("environment-marker")).toContainText("PRODUCTION");
   await expect(page.getByTestId("system-heartbeat")).toContainText("68ms");
-  await expect(page.getByRole("button", { name: "Notifications" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Notifications" })).toBeEnabled();
   await expect(
     page.getByRole("button", { name: "Notifications" }).locator("svg")
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "User menu" })).toBeDisabled();
-  await expect(
-    page.getByRole("button", { name: "User menu" }).locator("svg")
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "User menu" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "User menu" })).toContainText("韩雪");
+  await expect(page.getByRole("button", { name: "User menu" })).toContainText(
+    "运营负责人"
+  );
 
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-shell-level",
@@ -83,10 +89,11 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
     "tenant.conversations"
   );
   await expect.poll(async () => navIconCount(page)).toBe(12);
-  await expect(page.getByTestId("route-breadcrumb")).toContainText("Tenant B");
+  await expect(page.getByTestId("route-breadcrumb")).toContainText("丝路数码");
+  await expect(page.getByText("Tenant B - Connector degraded")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "确认队列" })).toBeVisible();
   await expect(page.getByRole("button", { name: "集团总览" })).toHaveCount(0);
-  await expect(page.getByTestId("environment-marker")).toContainText("STAGING");
+  await expect(page.getByTestId("environment-marker")).toContainText("PRODUCTION");
   await expect(page.getByTestId("page-scaffold")).toContainText(
     "M7-UI-04H-tenant-conversations"
   );

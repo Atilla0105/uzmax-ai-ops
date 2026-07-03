@@ -18,26 +18,34 @@ const tenants = [
   {
     health: "healthy",
     id: "tenant-a",
-    line: "controlled operations",
-    name: "Tenant A",
+    line: "美妆 · 中亚",
+    name: "玉珠跨境美妆",
     risk: "aggregate only",
-    status: "Healthy"
+    status: "健康"
   },
   {
     health: "degraded",
     id: "tenant-b",
-    line: "connector fallback",
-    name: "Tenant B",
+    line: "3C数码 · 俄语区",
+    name: "丝路数码",
     risk: "connector degraded",
-    status: "Connector degraded"
+    status: "降级"
   },
   {
     health: "attention",
     id: "tenant-c",
-    line: "manual review",
-    name: "Tenant C",
+    line: "家居 · 哈萨克",
+    name: "天净家居",
     risk: "manual review",
-    status: "Manual review"
+    status: "需人工"
+  },
+  {
+    health: "breaker",
+    id: "tenant-d",
+    line: "母婴 · 俄语区",
+    name: "白桦母婴",
+    risk: "breaker offline",
+    status: "熔断"
   }
 ] as const;
 
@@ -223,7 +231,7 @@ export function App() {
   );
 }
 
-function Metric({
+const Metric = ({
   label,
   tone = "neutral",
   value
@@ -231,16 +239,14 @@ function Metric({
   label: string;
   tone?: "neutral" | "warn";
   value: string;
-}) {
-  return (
-    <div className={`metric ${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
+}) => (
+  <div className={`metric ${tone}`}>
+    <span>{label}</span>
+    <strong>{value}</strong>
+  </div>
+);
 
-function Entry({
+const Entry = ({
   testId,
   title,
   value
@@ -248,11 +254,9 @@ function Entry({
   testId?: string;
   title: string;
   value: string;
-}) {
-  return (
-    <article className="entry" data-testid={testId}>
-      <h3>{title}</h3>
-      <p>{value}</p>
-    </article>
-  );
-}
+}) => (
+  <article className="entry" data-testid={testId}>
+    <h3>{title}</h3>
+    <p>{value}</p>
+  </article>
+);

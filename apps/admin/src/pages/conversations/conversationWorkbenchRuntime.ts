@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type RuntimeStatus = "empty" | "error" | "loading" | "permission" | "ready";
-export type ConversationFilterId =
-  | "all"
-  | "unread"
-  | "awaiting"
-  | "needs"
-  | "sla"
-  | "closed";
 type ConversationStatus = "closed" | "handoff" | "open" | "pending_handoff";
 type MessageDirection = "inbound" | "internal" | "outbound";
 
@@ -31,6 +24,7 @@ export type ConversationRow = {
   orderRef?: string;
   participantExternalRef: string;
   quoteRef?: string;
+  slaPolicyRef?: string;
   slaRisk?: boolean;
   slaText?: string;
   status: ConversationStatus;
@@ -55,17 +49,15 @@ export type ConversationDetail = {
   messages: MessageRow[];
 };
 
-export const conversationFilters: Array<{
-  id: ConversationFilterId;
-  label: string;
-}> = [
+export const conversationFilters = [
   { id: "all", label: "全部" },
   { id: "unread", label: "未读" },
   { id: "awaiting", label: "未回" },
   { id: "needs", label: "待人工" },
   { id: "sla", label: "SLA" },
   { id: "closed", label: "已解决" }
-];
+] as const;
+export type ConversationFilterId = (typeof conversationFilters)[number]["id"];
 
 type ApiFetcher = (
   input: string,
@@ -159,6 +151,7 @@ function readConversation(value: unknown): ConversationRow {
       "customer-ref-unavailable"
     ),
     quoteRef: text(record.quoteRef),
+    slaPolicyRef: text(record.slaPolicyRef),
     slaRisk: bool(record.slaRisk),
     slaText: text(record.slaText),
     status: ["closed", "handoff", "open", "pending_handoff"].includes(status)
@@ -217,14 +210,14 @@ function createConversationClient(fetcher: ApiFetcher = browserFetcher) {
           : []
       };
     },
-    async handoff(conversationId: string) {
+    async handoff(conversationId: string, slaPolicyRef: string) {
       const payload = await readJson(
         fetcher,
         `/conversation-ticket/conversations/${encodeURIComponent(conversationId)}/handoff`,
         {
           body: JSON.stringify({
             reason: "M7 conversation workbench operator takeover",
-            slaPolicyRef: "controlled://m7-ui-20/sla/default"
+            slaPolicyRef
           }),
           headers: { "content-type": "application/json" },
           method: "POST"
@@ -257,6 +250,7 @@ export function useConversationWorkbenchRuntime() {
 
   const loadList = useCallback(async () => {
     setStatus("loading");
+    setDetail(null);
     setLastError("");
     try {
       const rows = await client.list();
@@ -273,32 +267,67 @@ export function useConversationWorkbenchRuntime() {
     }
   }, [client]);
 
-  const loadDetail = useCallback(async () => {
-    if (!activeId || status !== "ready") return;
-    try {
-      setDetail(await client.detail(activeId));
-    } catch (error) {
-      setLastError(
-        error instanceof Error ? error.message : "conversation detail failed"
-      );
-      setDetail(null);
-    }
-  }, [activeId, client, status]);
-
   useEffect(() => {
     void loadList();
   }, [loadList]);
 
   useEffect(() => {
-    void loadDetail();
-  }, [loadDetail]);
+    if (!activeId || status !== "ready") return;
+    let cancelled = false;
+    setDetail(null);
+    void client
+      .detail(activeId)
+      .then((next) => {
+        if (cancelled) return;
+        if (next.conversation.id !== activeId) {
+          setLastError("conversation detail response did not match selection");
+          setDetail(null);
+          return;
+        }
+        setDetail(next);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setLastError(
+          error instanceof Error ? error.message : "conversation detail failed"
+        );
+        setDetail(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId, client, status]);
+
+  const activeDetail = detail?.conversation.id === activeId ? detail : null;
+  const activeConversation =
+    activeDetail?.conversation ?? conversations.find((row) => row.id === activeId);
+  const canRequestHandoff =
+    Boolean(activeDetail?.conversation.slaPolicyRef) && !handoffPending;
+  const handoffDisabledReason = handoffBlocker(status, activeDetail);
+
+  const select = useCallback((conversationId: string) => {
+    setActiveId(conversationId);
+    setDetail(null);
+    setLastError("");
+  }, []);
 
   const requestHandoff = useCallback(async () => {
-    if (!activeId) return;
+    if (!activeDetail) {
+      setLastError("选择会话详情未同步；接管保持禁用。");
+      return;
+    }
+    const policyRef = activeDetail.conversation.slaPolicyRef;
+    if (!policyRef) {
+      setLastError("handoff SLA policyRef 未从 runtime 返回；接管保持禁用。");
+      return;
+    }
     setHandoffPending(true);
     setLastError("");
     try {
-      const conversation = await client.handoff(activeId);
+      const conversation = await client.handoff(
+        activeDetail.conversation.id,
+        policyRef
+      );
       setConversations((rows) =>
         rows.map((row) => (row.id === conversation.id ? conversation : row))
       );
@@ -310,18 +339,21 @@ export function useConversationWorkbenchRuntime() {
     } finally {
       setHandoffPending(false);
     }
-  }, [activeId, client]);
+  }, [activeDetail, client]);
 
   return {
     activeId,
+    activeConversation,
+    canRequestHandoff,
     conversations,
-    degradedReason: degradedReason(status, lastError, detail),
+    degradedReason: degradedReason(status, lastError, activeDetail),
     detail,
+    handoffDisabledReason,
     handoffPending,
     lastError,
     reload: loadList,
     requestHandoff,
-    select: setActiveId,
+    select,
     status,
     toggleTrace: (id: string) =>
       setTraceOpen((current) => ({ ...current, [id]: !current[id] })),
@@ -380,7 +412,16 @@ function degradedReason(
     return "缺少 conversation:read 或 ticket:write；后端权限仍是最终边界。";
   if (lastError) return lastError;
   if (!detail) return "详情/客户上下文未返回，操作降级。";
+  if (!detail.conversation.slaPolicyRef)
+    return "接管所需 SLA policyRef 未从 runtime 返回；人工接管保持禁用。";
   return "发送、客户聚合和实时 WS 未接入，保持只读确认。";
+}
+
+function handoffBlocker(status: RuntimeStatus, detail: ConversationDetail | null) {
+  if (status !== "ready") return "conversation-ticket runtime 未就绪。";
+  if (!detail) return "选择会话详情未同步；接管保持禁用。";
+  if (!detail.conversation.slaPolicyRef) return "接管需要 runtime 返回 SLA policyRef。";
+  return "";
 }
 
 export function contentText(message: MessageRow) {

@@ -36,9 +36,10 @@ export function ContextRail({
           <span>{data.header.ref}</span>
         </div>
       </header>
-      <div className="uz-conv-rail__tabs" role="tablist">
+      <div aria-label="客户上下文视图" className="uz-conv-rail__tabs">
         {railTabs.map((tab) => (
           <button
+            aria-pressed={tab.id === railTab}
             className={tab.id === railTab ? "is-active" : undefined}
             key={tab.id}
             onClick={() => setRailTab(tab.id)}

@@ -1,29 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const groupLabels = [
-  "集团总览",
-  "模型/成本/风险",
-  "模板中心",
-  "连接中心",
-  "发布与验收",
-  "租户管理",
-  "集团日志"
-];
-const tenantLabels = [
-  "对话",
-  "工单",
-  "确认队列",
-  "客户资产",
-  "订单",
-  "知识与资源",
-  "评测中心",
-  "AI 成员",
-  "团队",
-  "配置",
-  "分析",
-  "日志"
-];
+const groupLabels =
+  "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
+const tenantLabels =
+  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
+    "|"
+  );
 const handoffs: unknown[] = [];
+type RouteOptions = { slaPolicyRef?: string };
 
 test.beforeEach(async ({ page }) => {
   handoffs.length = 0;
@@ -50,7 +34,11 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
   );
   await expect(page.getByTestId("m7-conversation-degraded")).toContainText("发送");
   await expect(page.getByTestId("m7-conversation-degraded")).toContainText("WS");
+  await expect(page.getByTestId("m7-conversation-degraded")).toContainText(
+    "SLA policyRef"
+  );
   await expect(page.getByTestId("m7-conversation-degraded")).toContainText("degraded");
+  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
   await expect(page.getByTestId("m7-conversation-query-degraded")).toContainText(
     "查询降级"
   );
@@ -74,6 +62,13 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
   await expect(page.getByTestId("m7-conversation-context-rail")).toContainText(
     "ORD-REF-20413"
   );
+  await expect(
+    page.getByTestId("m7-conversation-context-rail").getByRole("tablist")
+  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "档案", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
   await expect(page.getByRole("button", { name: "展开 AI 轨迹" })).toBeVisible();
   await page.getByRole("button", { name: "展开 AI 轨迹" }).click();
   await expect(page.getByTestId("m7-conversation-ai-trace")).toContainText(
@@ -81,17 +76,28 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
   );
   await page.getByTestId("m7-conversation-row-conv-calm").click();
   await expect(page.getByTestId("m7-conversation-thread")).toContainText("WB-20419");
-  await expect(page.getByLabel("Conversation composer")).toBeDisabled();
+  await expect(page.getByLabel("Conversation composer")).toHaveValue(/ORD-REF-20419/);
+  await expect(page.getByLabel("Conversation composer")).not.toHaveValue(
+    /ORD-REF-20413/
+  );
 });
 
-test("uses conversation-ticket runtime for takeover and reports missing runtime honestly", async ({
-  page
-}) => {
+test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
+  await openConversations(page);
+  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
+  await page.keyboard.press("t");
+  expect(handoffs).toHaveLength(0);
+
+  await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
   await openConversations(page);
   await page.getByRole("button", { name: "接管会话 T" }).click();
   expect(handoffs).toContainEqual(
-    expect.objectContaining({ reason: expect.stringContaining("M7 conversation") })
+    expect.objectContaining({
+      reason: expect.stringContaining("M7 conversation"),
+      slaPolicyRef: "tenant-b-sla-policy"
+    })
   );
+  expect(JSON.stringify(handoffs)).not.toContain("controlled://m7-ui-20/sla/default");
   await expect(page.getByText("待人工").first()).toBeVisible();
 
   await page.unroute("**/conversation-ticket/conversations/*/handoff");
@@ -101,7 +107,30 @@ test("uses conversation-ticket runtime for takeover and reports missing runtime 
       status: 500
     });
   });
+  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeEnabled();
+  await page.getByRole("button", { name: "接管会话 T" }).click();
+  await expect(page.getByTestId("m7-conversation-degraded")).toContainText(
+    "status 500"
+  );
+});
+
+test("keeps selected target safe when detail fails", async ({ page }) => {
+  await page.unroute(/\/conversation-ticket\/conversations\/[^/]+$/).catch(() => {});
+  await page.route(/\/conversation-ticket\/conversations\/[^/]+$/, async (route) => {
+    const id = route.request().url().split("/").pop() ?? "conv-risk";
+    if (id === "conv-calm")
+      return route.fulfill({ json: { error: "detail-failed" }, status: 500 });
+    return route.fulfill({ json: detail(id) });
+  });
+  await openConversations(page);
+  await page.getByTestId("m7-conversation-row-conv-calm").click();
+  await expect(page.getByTestId("m7-conversation-thread")).toContainText("WB-20419");
+  await expect(page.getByTestId("m7-conversation-context-rail")).toContainText(
+    "ORD-REF-20419"
+  );
+  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
   await page.keyboard.press("t");
+  expect(handoffs).toHaveLength(0);
   await expect(page.getByTestId("m7-conversation-degraded")).toContainText(
     "status 500"
   );
@@ -151,7 +180,7 @@ test("keeps mobile fallback within 320px without mixed group nav", async ({ page
   await page.setViewportSize({ width: 320, height: 900 });
   await openConversations(page);
   await expectTenantOnlyNav(page);
-  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "接管会话 T" })).toBeDisabled();
   await expect(page.getByLabel("Conversation composer")).toBeDisabled();
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
 });
@@ -177,22 +206,24 @@ async function expectTenantOnlyNav(page: Page) {
     await expect(nav.getByRole("button", { name: label, exact: true })).toHaveCount(0);
 }
 
-async function routeConversationReady(page: Page) {
+async function routeConversationReady(page: Page, options: RouteOptions = {}) {
   await routeList(page, 200, {
     items: [
-      conversation("conv-risk", "pending_handoff", true),
-      conversation("conv-calm", "open", false),
-      conversation("conv-awaiting", "open", false),
-      conversation("conv-human", "handoff", false),
-      conversation("conv-ai", "open", false),
-      conversation("conv-closed", "closed", false),
-      conversation("conv-late", "open", true)
+      conversation("conv-risk", "pending_handoff", true, options),
+      conversation("conv-calm", "open", false, options),
+      conversation("conv-awaiting", "open", false, options),
+      conversation("conv-human", "handoff", false, options),
+      conversation("conv-ai", "open", false, options),
+      conversation("conv-closed", "closed", false, options),
+      conversation("conv-late", "open", true, options)
     ]
   });
+  await page.unroute(/\/conversation-ticket\/conversations\/[^/]+$/).catch(() => {});
   await page.route(/\/conversation-ticket\/conversations\/[^/]+$/, async (route) => {
     const id = route.request().url().split("/").pop() ?? "conv-risk";
-    await route.fulfill({ json: detail(id) });
+    await route.fulfill({ json: detail(id, options) });
   });
+  await page.unroute("**/conversation-ticket/conversations/*/handoff").catch(() => {});
   await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
     const body = JSON.parse(route.request().postData() ?? "{}") as Record<
       string,
@@ -200,7 +231,9 @@ async function routeConversationReady(page: Page) {
     >;
     handoffs.push(body);
     await route.fulfill({
-      json: { conversation: conversation("conv-risk", "pending_handoff", true) }
+      json: {
+        conversation: conversation("conv-risk", "pending_handoff", true, options)
+      }
     });
   });
 }
@@ -212,7 +245,12 @@ async function routeList(page: Page, status: number, json: unknown) {
   });
 }
 
-function conversation(id: string, status: string, risk: boolean) {
+function conversation(
+  id: string,
+  status: string,
+  risk: boolean,
+  options: RouteOptions = {}
+) {
   const data = conversationData[id] ?? conversationData["conv-risk"]!;
   return {
     aiState: risk || status === "handoff" ? "suspended" : "active",
@@ -239,6 +277,7 @@ function conversation(id: string, status: string, risk: boolean) {
     orderRef: data.orderRef,
     participantExternalRef: data.customerRef,
     quoteRef: data.quoteRef,
+    slaPolicyRef: options.slaPolicyRef,
     slaRisk: risk,
     slaText: risk ? data.slaText : "",
     status,
@@ -251,12 +290,13 @@ function conversation(id: string, status: string, risk: boolean) {
   };
 }
 
-function detail(id: string) {
+function detail(id: string, options: RouteOptions = {}) {
   return {
     conversation: conversation(
       id,
       id === "conv-risk" ? "pending_handoff" : "open",
-      id === "conv-risk"
+      id === "conv-risk",
+      options
     ),
     messages: [
       message(`${id}-in`, "inbound", "你好，我想确认包裹现在卡在哪个节点？"),

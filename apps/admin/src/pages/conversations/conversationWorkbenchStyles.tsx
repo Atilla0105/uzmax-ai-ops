@@ -15,11 +15,13 @@ export const ConversationWorkbenchStyles = () => h("style", null, css);
 export function ThreadHeader({
   active,
   disabled,
+  disabledReason,
   handoffPending,
   requestHandoff
 }: {
   active?: ConversationRow;
   disabled: boolean;
+  disabledReason: string;
   handoffPending: boolean;
   requestHandoff: () => void;
 }) {
@@ -48,6 +50,7 @@ export function ThreadHeader({
           isLoading={handoffPending}
           kbd="T"
           onClick={requestHandoff}
+          title={disabled ? disabledReason : undefined}
           variant="danger"
         >
           接管会话
@@ -183,8 +186,8 @@ export function Composer({
   const suspended = active?.aiState === "suspended";
   const inFlight = active?.inFlightAiMessages?.slice(0, 2) ?? [];
   const draft = suspended
-    ? "收到，我先为你核对订单节点和可选处理方案。当前由人工接管，外部发送仍需已批准的发送合约。"
-    : "您好，订单 ORD-REF-20413 已进入分拣复核。预计下一节点更新后我会继续同步，如需人工处理可直接接管。";
+    ? `收到，我先为你核对${draftSubject(active)}和可选处理方案。当前由人工接管，外部发送仍需已批准的发送合约。`
+    : `您好，${draftSubject(active)}已进入复核。预计下一节点更新后我会继续同步，如需人工处理可直接接管。`;
   return (
     <footer className="uz-conv-composer" data-testid="m7-conversation-composer">
       <div className="uz-conv-composer__state">
@@ -217,6 +220,12 @@ export function Composer({
       </div>
     </footer>
   );
+}
+
+function draftSubject(active?: ConversationRow) {
+  if (active?.orderRef) return `订单 ${active.orderRef} 的节点`;
+  if (active?.displayRef) return `会话 ${active.displayRef}`;
+  return "当前会话";
 }
 
 function roleLabel(message: MessageRow) {

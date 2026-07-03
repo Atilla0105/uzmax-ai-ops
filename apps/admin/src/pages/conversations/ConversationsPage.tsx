@@ -31,7 +31,7 @@ export function ConversationsPage() {
   const runtime = useConversationWorkbenchRuntime();
   const [filter, setFilter] = useState<ConversationFilterId>("all");
   const [railTab, setRailTab] = useState<RailTab>("profile");
-  const active = runtime.detail?.conversation ?? runtime.conversations[0];
+  const active = runtime.activeConversation;
   const rows = useMemo(
     () => runtime.conversations.filter((row) => matchesConversationFilter(row, filter)),
     [filter, runtime.conversations]
@@ -40,7 +40,7 @@ export function ConversationsPage() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || isEditableTarget(event.target)) return;
-      if (event.key.toLowerCase() !== "t" || runtime.status !== "ready") return;
+      if (event.key.toLowerCase() !== "t" || !runtime.canRequestHandoff) return;
       event.preventDefault();
       void runtime.requestHandoff();
     };
@@ -66,7 +66,8 @@ export function ConversationsPage() {
       <section className="uz-conv-thread" data-testid="m7-conversation-thread">
         <ThreadHeader
           active={active}
-          disabled={runtime.status !== "ready"}
+          disabled={!runtime.canRequestHandoff}
+          disabledReason={runtime.handoffDisabledReason}
           handoffPending={runtime.handoffPending}
           requestHandoff={() => void runtime.requestHandoff()}
         />

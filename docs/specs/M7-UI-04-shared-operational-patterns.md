@@ -47,7 +47,7 @@ feature
 ## Change Budget / Path Classification
 
 - Source changed files: <= 8 after extracting the operational preview from `FoundationPreview.tsx` into `apps/admin/src/patterns/operational-patterns-preview.tsx` for lint max-lines compliance.
-- Source net LOC: knip-remediation cleanup raised the committed branch to 1215 net source LOC. This exceeds the repo default `guard:pr-shape` source budget of 600 and the earlier branch targets, so merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval. If that exception is rejected, the branch must be split or shrunk before merge.
+- Source net LOC: final selector-only cleanup raised the committed branch to 1216 net source LOC. This exceeds the repo default `guard:pr-shape` source budget of 600 and the earlier branch targets, so merge requires PR metadata `Exception: large_change_exception` plus owner/coordinator approval. If that exception is rejected, the branch must be split or shrunk before merge.
 - New source files: <= 5
 - Test files changed: 1 focused Playwright spec
 - Docs files changed: 3

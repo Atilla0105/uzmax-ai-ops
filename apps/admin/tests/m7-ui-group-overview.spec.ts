@@ -178,15 +178,29 @@ async function expectLayerNav(
   hiddenLabels: readonly string[]
 ) {
   const nav = page.getByTestId("app-shell-nav");
-  await expect
-    .poll(() => nav.locator(".uz-nav-group p").allTextContents())
-    .toEqual(visibleSectionLabels);
-  for (const label of hiddenSectionLabels)
-    await expect(nav.locator(".uz-nav-group p", { hasText: label })).toHaveCount(0);
-  for (const label of visibleLabels)
-    await expect(nav.getByRole("button", { name: label, exact: true })).toBeVisible();
-  for (const label of hiddenLabels)
-    await expect(nav.getByRole("button", { name: label, exact: true })).toHaveCount(0);
+  const sectionText = await nav.locator(".uz-nav-group p").allTextContents();
+  expect(sectionText).toEqual([...visibleSectionLabels]);
+
+  const hiddenSectionCounts = await Promise.all(
+    hiddenSectionLabels.map((label) =>
+      nav.locator(".uz-nav-group p").filter({ hasText: label }).count()
+    )
+  );
+  expect(hiddenSectionCounts).toEqual(hiddenSectionLabels.map(() => 0));
+
+  const visibleButtonStates = await Promise.all(
+    visibleLabels.map((label) =>
+      nav.getByRole("button", { exact: true, name: label }).isVisible()
+    )
+  );
+  expect(visibleButtonStates).toEqual(visibleLabels.map(() => true));
+
+  const hiddenButtonCounts = await Promise.all(
+    hiddenLabels.map((label) =>
+      nav.getByRole("button", { exact: true, name: label }).count()
+    )
+  );
+  expect(hiddenButtonCounts).toEqual(hiddenLabels.map(() => 0));
 }
 
 async function expectTenantRoute(page: Page, tenantId: string) {

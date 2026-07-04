@@ -57,6 +57,7 @@ Future code PR type: DB/API runtime foundation.
   - `apps/api/src/group-overview.contracts.ts`
   - `apps/api/src/app.module.ts`
   - `scripts/tests/req-g01a-code-01-group-overview-db-api-foundation.test.mjs`
+  - `scripts/tests/m1-02-api-access-context.test.mjs`
   - `packages/db/scripts/run-req-g01a-code-01-group-overview-db-api-foundation-smoke.mjs`
   - `packages/db/scripts/tests/run-req-g01a-code-01-group-overview-db-api-foundation-smoke.mjs`
   - `apps/api/src/group-overview*.spec.ts`
@@ -64,6 +65,7 @@ Future code PR type: DB/API runtime foundation.
 - 说明/备注：
   - Current docs-only PR may change only the four docs paths at the top of this list.
   - Future code-01 may use the DB/API/test paths above only for DB + API runtime foundation.
+  - `scripts/tests/m1-02-api-access-context.test.mjs` is allowed only for the existing Nest runtime transpile cache compatibility required when `AppModule` imports the new group-overview controller/service/runtime files; it must not become a broad M1 access-context behavior change.
   - Admin source, admin tests, page wiring, visual evidence, owner HTML and unpacked prototype source are intentionally absent from code-01.
   - Focused DB/API tests and optional true-DB smoke harnesses for code-01 must use the explicit future test paths above; do not introduce broad package-local test roots.
   - If the future worker proves `schema.prisma` does not need a change because the SQL view is queried through a typed `$queryRaw` port, it must record that decision with read-only evidence.

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { URL } from "node:url";
+import { pathToFileURL, URL } from "node:url";
 
 import ts from "typescript";
 
@@ -15,7 +15,7 @@ const apiCoreUrl = await transpileModule("apps/api/src/access-context-core.ts", 
   "../../../packages/db/src/index.ts": dbUrl
 });
 const apiCore = await import(apiCoreUrl);
-const { importApiRuntime } = await import(
+const { compileApiRuntime } = await import(
   new URL("../../apps/api/scripts/runtime-compiler.mjs", import.meta.url)
 );
 const apiAdapterSource = read("apps/api/src/access-context.ts");
@@ -181,7 +181,7 @@ describe("M1-02 API access context shell", () => {
     process.env.NODE_ENV = "test";
     process.env.PORT = "0";
 
-    const { bootstrap } = await importApiRuntime();
+    const { bootstrap } = await importApiRuntimeWithGroupOverviewCache();
     const app = await bootstrap();
 
     try {
@@ -226,6 +226,12 @@ describe("M1-02 API access context shell", () => {
 });
 
 async function transpileModule(relativePath, replacements = {}) {
+  const outputText = transpileText(relativePath, replacements);
+  const encoded = Buffer.from(outputText, "utf8").toString("base64");
+  return `data:text/javascript;base64,${encoded}`;
+}
+
+function transpileText(relativePath, replacements = {}) {
   let source = read(relativePath);
   for (const [from, to] of Object.entries(replacements)) {
     source = source.replaceAll(from, to);
@@ -240,8 +246,64 @@ async function transpileModule(relativePath, replacements = {}) {
     },
     fileName: relativePath
   });
-  const encoded = Buffer.from(outputText, "utf8").toString("base64");
-  return `data:text/javascript;base64,${encoded}`;
+  return outputText;
+}
+
+async function importApiRuntimeWithGroupOverviewCache() {
+  const outDir = await compileApiRuntime();
+  const authz = { "../../../packages/authz/src/index.ts": "./authz-index.mjs" };
+  const db = { "../../../packages/db/src/index.ts": "./db-index.mjs" };
+  const contracts = {
+    "./group-overview.contracts.ts": "./group-overview.contracts.mjs"
+  };
+  writeRuntimeModule(outDir, "apps/api/src/group-overview.contracts.ts", authz);
+  writeRuntimeModule(outDir, "apps/api/src/group-overview.repository.ts", {
+    ...authz,
+    ...db,
+    ...contracts
+  });
+  writeRuntimeModule(outDir, "apps/api/src/group-overview.runtime.ts", {
+    "../../../packages/db/src/prisma-runtime.ts": "./prisma-runtime.mjs",
+    ...contracts,
+    "./group-overview.repository.ts": "./group-overview.repository.mjs"
+  });
+  writeRuntimeModule(outDir, "apps/api/src/group-overview.service.ts", {
+    ...authz,
+    ...contracts,
+    "./group-overview.repository.ts": "./group-overview.repository.mjs"
+  });
+  writeRuntimeModule(outDir, "apps/api/src/group-overview.controller.ts", {
+    ...authz,
+    "./access-context.ts": "./access-context.mjs",
+    ...contracts,
+    "./group-overview.service.ts": "./group-overview.service.mjs"
+  });
+  patchRuntimeAppModule(outDir);
+  const entry = pathToFileURL(path.join(outDir, "main.mjs")).href;
+  return import(`${entry}?t=${Date.now()}`);
+}
+
+function writeRuntimeModule(outDir, sourcePath, replacements) {
+  const outputName = sourcePath.replace("apps/api/src/", "").replace(".ts", ".mjs");
+  writeFileSync(
+    path.join(outDir, outputName),
+    transpileText(sourcePath, replacements),
+    "utf8"
+  );
+}
+
+function patchRuntimeAppModule(outDir) {
+  const appModulePath = path.join(outDir, "app.module.mjs");
+  let source = readFileSync(appModulePath, "utf8");
+  for (const name of [
+    "group-overview.contracts",
+    "group-overview.controller",
+    "group-overview.runtime",
+    "group-overview.service"
+  ]) {
+    source = source.replaceAll(`./${name}.ts`, `./${name}.mjs`);
+  }
+  writeFileSync(appModulePath, source, "utf8");
 }
 
 function read(relativePath) {

@@ -38,9 +38,7 @@ const SOURCE_GAPS =
 export class RlsPrismaGroupOverviewRepository implements GroupOverviewRepositoryPort {
   constructor(private readonly tx: GroupOverviewRlsTransactionRunner) {}
 
-  runtimeStatus() {
-    return "configured" as const;
-  }
+  runtimeStatus() { return "configured" as const; }
 
   async listTenantAggregates(access: AccessContext, window: c.GroupOverviewWindow) {
     const rows: c.GroupOverviewTenantAggregate[] = [];
@@ -77,24 +75,30 @@ function tenantAggregateOps(
 ) {
   const w = { gte: new Date(window.start), lte: new Date(window.end) };
   const where = { orgId: scope.orgId, tenantId: scope.tenantId };
+  const conversationWindow = { ...where, createdAt: w };
+  const handoffWindow = {
+    ...conversationWindow,
+    status: { in: ["HANDOFF", "PENDING_HANDOFF"] }
+  };
+  const slaRiskWindow = { ...where, slaDueAt: w, status: { not: "CLOSED" } };
+  const breakerWhere = { ...where, status: "BREAKER_OFFLINE" };
   return [
-    call(p.tenant!.findFirst, {
+    op(p, "tenant", "findFirst", {
       select: { id: true, name: true, slug: true, status: true, updatedAt: true },
       where: { id: scope.tenantId, orgId: scope.orgId }
     }),
-    call(p.channelConversation!.count, { where: { ...where, createdAt: w } }),
-    call(p.supportTicket!.count, {
-      where: { ...where, status: { in: ["OPEN", "ESCALATED", "REOPENED"] } }
-    }),
-    call(p.supportTicket!.count, {
+    op(p, "channelConversation", "count", { where: conversationWindow }),
+    op(p, "channelConversation", "count", { where: handoffWindow }),
+    op(p, "supportTicket", "count", { where: slaRiskWindow }),
+    op(p, "aiMember", "count", { where: breakerWhere }),
+    op(p, "evalGate", "findFirst", {
+      orderBy: { updatedAt: "desc" },
       where: {
         ...where,
-        slaDueAt: { lte: new Date(window.end) },
-        status: { not: "CLOSED" }
+        targetKind: "group_overview",
+        targetRef: `controlled://group-overview/${scope.tenantId}`
       }
-    }),
-    call(p.aiMember!.count, { where: { ...where, status: "BREAKER_OFFLINE" } }),
-    call(p.evalGate!.findFirst, { orderBy: { updatedAt: "desc" }, where })
+    })
   ];
 }
 
@@ -119,7 +123,9 @@ function mapTenantAggregate(
     degraded,
     evalStatus: evalStatus(rec(rows[5]).status),
     generatedAt: new Date().toISOString(),
-    handoffRateBps: sessions ? Math.round((humanNeeded / sessions) * 10000) : 0,
+    handoffRateBps: sessions
+      ? Math.min(10000, Math.round((humanNeeded / sessions) * 10000))
+      : 0,
     healthCategory: aiBreakerCount
       ? "breaker"
       : degraded.length
@@ -133,7 +139,7 @@ function mapTenantAggregate(
     redlineEventCountToday: null,
     sessions,
     slaRisk: num(rows[3]),
-    sourceWatermark: c.watermark(partialSources, maxDate([tenant.updatedAt])),
+    sourceWatermark: c.watermark(partialSources, null),
     tenantId: String(tenant.id ?? scope.tenantId),
     tenantRef: String(tenant.slug),
     tenantStatus: String(tenant.status).toLowerCase(),
@@ -153,17 +159,19 @@ function evalStatus(value: unknown): c.GroupOverviewEvalStatus {
     )[String(value)] ?? "unavailable"
   );
 }
-function maxDate(values: readonly unknown[]) {
-  const dates = values
-    .map((v) => Date.parse(v instanceof Date ? v.toISOString() : String(v ?? "")))
-    .filter(Number.isFinite);
-  return dates.length ? new Date(Math.max(...dates)).toISOString() : null;
-}
 function num(value: unknown) {
   return Number(value ?? 0);
 }
 function rec(value: unknown): Row {
   return value && typeof value === "object" ? (value as Row) : {};
+}
+function op(
+  p: GroupOverviewPrismaClientPort,
+  delegate: string,
+  method: keyof Delegate,
+  args: Row
+) {
+  return call(p[delegate]?.[method], args);
 }
 function call(fn: unknown, args: Row) {
   if (typeof fn !== "function")

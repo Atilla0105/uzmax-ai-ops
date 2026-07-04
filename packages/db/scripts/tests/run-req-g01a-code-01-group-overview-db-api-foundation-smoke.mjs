@@ -73,9 +73,9 @@ export async function runReqG01aCode01GroupOverviewDbApiFoundationSmoke() {
     const tenantA = rows.find((row) => row.tenantId === TENANT_A_ID);
     const tenantB = rows.find((row) => row.tenantId === TENANT_B_ID);
     assert.equal(tenantA.sessions, 2);
-    assert.equal(tenantA.humanNeeded, 2);
+    assert.equal(tenantA.humanNeeded, 1);
     assert.equal(tenantA.slaRisk, 1);
-    assert.equal(tenantA.handoffRateBps, 10000);
+    assert.equal(tenantA.handoffRateBps, 5000);
     assert.equal(tenantA.aiBreakerCount, 1);
     assert.equal(tenantA.evalStatus, "pass");
     assert.equal(tenantA.healthCategory, "breaker");
@@ -89,6 +89,7 @@ export async function runReqG01aCode01GroupOverviewDbApiFoundationSmoke() {
     assert.equal(tenantB.healthCategory, "degraded");
 
     for (const row of rows) {
+      assert.equal(row.sourceWatermark.maxSourceUpdatedAt, null);
       assert.deepEqual(row.partialSources, [
         "business_line_source_unavailable",
         "channel_source_unavailable",
@@ -338,7 +339,7 @@ function evalGate(id, tenantId, status) {
     id,
     orgId: ORG_ID,
     status,
-    targetKind: "group_overview_smoke",
+    targetKind: "group_overview",
     targetRef: `controlled://group-overview/${tenantId}`,
     tenantId
   };

@@ -4,7 +4,7 @@
 
 Status token: `code_01_db_api_foundation_implemented_not_admin_wired_not_visual_accepted`.
 
-This implementation candidate adds the DB/API foundation skeleton for `group.overview` aggregate data: guarded API controller wiring, contracts/DTO validators, service permission assertion, disabled-default runtime provider, a per-authorized-tenant RLS repository foundation, and a focused true DB/RLS smoke harness. The true DB/RLS smoke was not run locally because `UZMAX_RLS_DATABASE_URL` is missing, so no passed true-DB evidence or runtime closure is claimed. It does not add a DB migration, Prisma schema/view mapping, admin wiring, populated admin rendering, owner HTML changes, owner acceptance, visual acceptance, runtime final closure, GA-0, production or 1.0 release.
+This implementation candidate adds the DB/API foundation skeleton for `group.overview` aggregate data: guarded API controller wiring, contracts/DTO validators, service permission assertion, disabled-default runtime provider, a per-authorized-tenant RLS repository foundation, and a focused true DB/RLS smoke harness. The PR #191 finalizer kept the dirty runtime/test/harness fixes for honest null/partial source watermark semantics, window-consistent handoff metrics, eval-gate selector scoping, incomplete delegate 503 handling, and existing Nest runtime transpile cache compatibility. The true DB/RLS smoke was not run locally because `UZMAX_RLS_DATABASE_URL` is missing, so no passed true-DB evidence or runtime closure is claimed. It does not add a DB migration, Prisma schema/view mapping, admin wiring, populated admin rendering, owner HTML changes, owner acceptance, visual acceptance, runtime final closure, GA-0, production or 1.0 release.
 
 ## Entry Evidence
 
@@ -16,6 +16,7 @@ This implementation candidate adds the DB/API foundation skeleton for `group.ove
 | worker `git status --short --branch` during PR #191 DB/RLS smoke follow-up | `## codex/req-g01a-code-01-db-api-foundation-impl...origin/codex/req-g01a-code-01-db-api-foundation-impl` with local smoke-harness/evidence changes before final amend/push; true DB smoke was not run because `UZMAX_RLS_DATABASE_URL` is missing |
 | worker `git branch --show-current` at entry | `codex/req-g01a-code-01-db-api-foundation-impl` |
 | worker HEAD before final PR #191 DB/RLS smoke-harness amend | `16189a7` / `Implement REQ-G01A group overview DB API foundation` |
+| worker HEAD before PR #191 finalizer dirty diff | `4d0274819f30e21221060cd7ebabe1414cff2a38` / `Implement REQ-G01A group overview DB API foundation` |
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
 | root/main status during PR #191 follow-up | `## main...origin/main` |
 | PR | PR #191 on `codex/req-g01a-code-01-db-api-foundation-impl` |
@@ -32,6 +33,18 @@ This implementation candidate adds the DB/API foundation skeleton for `group.ove
 | rebase result | `git rebase origin/main` applied the PR #191 implementation commit with one docs conflict in `docs/evidence/M7/README.md`; conflict was resolved by preserving current main UI-07B/UI-08/UI-09 wording and updating only the `REQ-G01A-code-01` candidate status paragraph. |
 | node/npm path | plain `node` and `npm` were not available in this shell; validation used `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH` with Node `v24.14.0` and npm `11.9.0`. |
 | true DB/RLS smoke | still not run; no `UZMAX_RLS_DATABASE_URL` was provided, so no true DB/RLS pass or runtime closure is claimed. |
+
+## 2026-07-04 PR #191 Finalizer Evidence
+
+| Fact | Evidence |
+|---|---|
+| assigned worker path rechecked | `/Users/atilla/.codex/worktrees/req-g01a-code-01-db-api-foundation-impl` |
+| assigned branch rechecked | `codex/req-g01a-code-01-db-api-foundation-impl` |
+| dirty diff inspection | Kept the expected runtime/test/harness fixes in `apps/api/src/group-overview.repository.ts`, `packages/db/scripts/tests/run-req-g01a-code-01-group-overview-db-api-foundation-smoke.mjs`, `scripts/tests/req-g01a-code-01-group-overview-db-api-foundation.test.mjs` and `scripts/tests/m1-02-api-access-context.test.mjs`; no concrete bug was found in the finalizer inspection. |
+| focused group overview test | `node --test scripts/tests/req-g01a-code-01-group-overview-db-api-foundation.test.mjs` passed 8/8. Coverage now includes honest null/partial source watermark semantics, window-consistent handoff metrics capped at 10000 bps, `group_overview` eval-gate selector with controlled target ref, and incomplete delegate 503 behavior. |
+| M1-02 runtime cache compatibility | `node --test scripts/tests/m1-02-api-access-context.test.mjs` passed 5/5 after writing the group-overview runtime modules into the existing Nest runtime transpile cache used by `AppModule`; this addresses the import failure shape seen in GitHub CI without broadening M1 access-context behavior. |
+| true DB/RLS smoke | `UZMAX_RLS_DATABASE_URL` is absent in this shell, so `packages/db/scripts/tests/run-req-g01a-code-01-group-overview-db-api-foundation-smoke.mjs` was not run locally and no true DB/RLS runtime closure is claimed. |
+| pr-shape after finalizer allowlist update | pass: changed files 13, categories source 6/docs 4/test 3, source changed files 6, source net LOC 600, new source files 5. |
 
 ## Required Reads
 
@@ -104,16 +117,18 @@ This docs worker did not read or modify owner HTML `/Users/atilla/Downloads/运�
 
 ## Validation
 
-Latest 2026-07-04 rebase/rerun validation:
+Latest 2026-07-04 finalizer validation:
 
 | Command | Result | Notes |
 |---|---|---|
-| `git diff --check` | pass | No whitespace errors after rebase. |
-| `node --test scripts/tests/req-g01a-code-01-group-overview-db-api-foundation.test.mjs` | pass | 7 tests passed; focused test covers endpoint wiring, disabled runtime, contract/forbidden-field assertions including separator variants (`external_user_id`, `customer_display_name`, `provider_response`, `storage_url`), true-DB smoke harness reference, service permission behavior and per-authorized-tenant RLS transaction setup. |
+| `git diff --check origin/main...HEAD` / `git diff --check` | pass | No whitespace errors in the committed range or finalizer worktree diff during pre-commit validation. |
+| `node --test scripts/tests/req-g01a-code-01-group-overview-db-api-foundation.test.mjs` | pass | 8 tests passed; focused test covers endpoint wiring, disabled runtime, contract/forbidden-field assertions including separator variants (`external_user_id`, `customer_display_name`, `provider_response`, `storage_url`), true-DB smoke harness reference, service permission behavior, honest null/partial source watermark semantics, window-consistent handoff metrics, eval-gate selector scoping, per-authorized-tenant RLS transaction setup and incomplete delegate 503 behavior. |
+| `node --test scripts/tests/m1-02-api-access-context.test.mjs` | pass | 5 tests passed; existing Nest runtime transpile cache now includes the group-overview AppModule imports needed by PR #191. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/REQ-G01A-code-01-group-overview-db-api-foundation.md --include-worktree` | pass | changed files 11, categories source 6/docs 3/test 2, source changed files 6, source net LOC 592, new source files 5. |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/REQ-G01A-code-01-group-overview-db-api-foundation.md --include-worktree` | pass | changed files 13, categories source 6/docs 4/test 3, source changed files 6, source net LOC 600, new source files 5. |
 | `npm run lint` | pass | ESLint completed for apps, packages and scripts. |
 | `npm run typecheck` | pass | `tsc --noEmit -p tsconfig.json`. |
+| `npm run test` | pass | Full Node test suite passed: 470 tests, 83 suites, 0 failures. |
 | `npm run build:api` | pass | API TypeScript build passed. |
 
 Earlier PR #191 implementation validation before the 2026-07-04 rebase:
@@ -130,7 +145,7 @@ Earlier PR #191 implementation validation before the 2026-07-04 rebase:
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
 | `git diff --check` / `git diff --cached --check` | pass | No whitespace errors in tracked unstaged or staged diff; new smoke harness is also covered by Prettier/lint. |
 | `npm run guard:worker-boundary` with assigned/root env | pass | Assigned worktree and root/main separation verified. |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/REQ-G01A-code-01-group-overview-db-api-foundation.md --include-worktree` | pass | PR shape validated for PR #191 candidate plus local smoke harness: changed files 11, categories source 6/docs 3/test 2, source net LOC 592, new source files 5. |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/REQ-G01A-code-01-group-overview-db-api-foundation.md --include-worktree` | pass | PR shape validated for PR #191 candidate plus local smoke harness: changed files 11, categories source 6/docs 3/test 2, source net LOC 600, new source files 5. Superseded by finalizer stats above after adding the narrow `scripts/tests/m1-02-api-access-context.test.mjs` allowlist entry. |
 
 ## Source LOC
 
@@ -139,15 +154,16 @@ Earlier PR #191 implementation validation before the 2026-07-04 rebase:
 | `apps/api/src/app.module.ts` | 10 |
 | `apps/api/src/group-overview.contracts.ts` | 204 |
 | `apps/api/src/group-overview.controller.ts` | 51 |
-| `apps/api/src/group-overview.repository.ts` | 189 |
+| `apps/api/src/group-overview.repository.ts` | 197 |
 | `apps/api/src/group-overview.runtime.ts` | 49 |
 | `apps/api/src/group-overview.service.ts` | 89 |
-| Total (`git diff --cached --numstat origin/main` source insertions) | 592 |
-| `guard:pr-shape` source net LOC | 592 |
+| Total (`git diff --cached --numstat origin/main` source insertions) | 600 |
+| `guard:pr-shape` source net LOC | 600 |
 
 Test-only additions:
 
 - `packages/db/scripts/tests/run-req-g01a-code-01-group-overview-db-api-foundation-smoke.mjs`
+- `scripts/tests/m1-02-api-access-context.test.mjs` was changed narrowly for existing Nest runtime transpile cache compatibility with the new group-overview `AppModule` imports.
 
 ## No-Code Boundary
 

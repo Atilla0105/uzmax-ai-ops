@@ -1,9 +1,7 @@
 type AdminPageLayer = "group" | "tenant" | "legacy";
 type AdminPageNavSection = "group" | "tenant";
 type AdminPageStatus =
-  | "legacy_evidence"
-  | "not_started"
-  | "implemented_in_worker_pending_pr";
+  "legacy_evidence" | "not_started" | "implemented_in_worker_pending_pr";
 interface AdminPageRegistryEntry {
   evidenceStatus: string;
   iaPage: string;
@@ -210,7 +208,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-31-orders-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_evidence_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "知识与资源",
     id: "tenant.knowledge",
     label: "知识与资源",
@@ -218,11 +217,11 @@ const adminPageRegistry = [
     navId: "knowledge",
     navSection: "tenant",
     order: 13,
-    requiredStates: [...stateMatrix, "eval-gated publish"],
+    requiredStates: [...stateMatrix, "eval-gated publish", "no formal knowledge write"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/knowledge/KnowledgePage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/knowledge/KnowledgePage.tsx",
-    targetSpecId: "M7-UI-04L-tenant-knowledge"
+    targetSpecId: "M7-UI-32-knowledge-resources-page"
   },
   {
     evidenceStatus: "implementation_evidence_pending_pr_review",

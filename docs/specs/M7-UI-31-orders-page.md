@@ -83,9 +83,9 @@ Worktree / branch entry evidence:
 | Fact | Evidence |
 |---|---|
 | worker `pwd` | `/Users/atilla/.codex/worktrees/m7-ui-31-orders-visible-ui` |
-| worker `git status --short --branch` | `## codex/m7-ui-31-orders-visible-ui...origin/codex/m7-ui-30-customer-assets-visible-ui` |
+| worker `git status --short --branch` | `## codex/m7-ui-31-orders-visible-ui...origin/codex/m7-ui-30-customer-assets-visible-ui [ahead 1]` |
 | worker `git branch --show-current` | `codex/m7-ui-31-orders-visible-ui` |
-| worker HEAD | `53f8b43db51847a6856648ba4e94938da2f064d2` |
+| worker HEAD | `da28a8f2445daf159bc6adc392843523de41fe58` |
 | stacked base | `origin/codex/m7-ui-30-customer-assets-visible-ui` |
 
 ## Source Mapping
@@ -104,6 +104,7 @@ Worktree / branch entry evidence:
 |---|---|
 | Header | title `订单`; detail state shows back/breadcrumb; list state shows 300-340px search and `导入快照` action. |
 | Runtime/snapshot bar | Persistent amber/degraded/snapshot bar truthfully states synthetic mock/degraded/read-only state and not production order data. |
+| Prototype icon expression | Preserve source Lucide Search, Upload, TriangleAlert, Package and X roles through `IconSlot`/Lucide rendering; no text glyphs or square placeholders for these source icons. |
 | Orders table | Dense columns equivalent to order id, customer, amount, status, batch, logistics, source, updated; sanitized ids such as `SYN-ORD-001`. |
 | Row open/detail | Click and keyboard activation open detail; detail has stale warning for stale item, header card, logistics timeline and linked customer/conversation/ticket affordances. |
 | Linked affordances | Customer, conversation and ticket affordances remain visible but disabled/local-only/degraded and truthful. |
@@ -145,7 +146,7 @@ Implementation must record:
 - `npm run typecheck`
 - focused Playwright orders test and affected admin page router/nav test if necessary
 - `npm run build:admin` or repo-equivalent admin build command
-- desktop/list/detail/import/mobile screenshots and metrics under `/tmp/uzmax-m7-ui-31-orders-visible-ui/` if produced.
+- React desktop list/detail/mobile screenshots under `/tmp/uzmax-m7-ui-31-orders-visible-ui/`; screenshots remain transient validation artifacts and are not committed.
 
 Browser evidence must include source HTML/unpacked/React comparison, key geometry assertions, sidebar/topbar/category/collapse tenant-shell checks and mobile readable/no-overflow fallback. If owner HTML under `file://` does not expose all order regions, evidence must record that caveat and verify anatomy against unpacked source.
 
@@ -154,7 +155,7 @@ Browser evidence must include source HTML/unpacked/React comparison, key geometr
 - Only allowed files change.
 - `tenant.orders` renders a visible page, not scaffold.
 - Registry, ledger and M7 README mark this as implementation candidate pending PR review, not merged, owner accepted or runtime closed.
-- Focused Playwright covers tenant entry, tenant-only nav, visible degraded/mock/read-only/not-production-order-data labels, header/search/table/list count geometry, row click and keyboard open detail, stale warning/timeline/linked affordances, import local upload/progress/result/history/rollback, required states, tenant switching isolation, sidebar collapse, topbar/category tenant-shell checks, 320px no body overflow and no mixed group nav.
+- Focused Playwright covers tenant entry, tenant-only nav, visible degraded/mock/read-only/not-production-order-data labels, Lucide icon SVG visibility for source icon roles, header/search/table/list count geometry, row click and keyboard open detail, stale warning/timeline/linked affordances, import local upload/progress/result/history/rollback, required states, tenant switching isolation, sidebar collapse, topbar height/environment/breadcrumb/category tenant-shell checks, 320px no body overflow and no mixed group nav.
 
 ## 失败分支
 

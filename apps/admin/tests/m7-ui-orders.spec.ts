@@ -1,4 +1,9 @@
+import { mkdirSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ordersArtifactsDir = "/tmp/uzmax-m7-ui-31-orders-visible-ui";
+
+mkdirSync(ordersArtifactsDir, { recursive: true });
 
 const ordersNavContract = {
   groupButtons: [
@@ -58,6 +63,15 @@ test("renders tenant.orders with tenant-only nav degraded labels and list geomet
   await expect(page.getByTestId("m7-orders-runtime-note")).toContainText(
     "No real CSV/XLSX, order API or DB"
   );
+  await expect(page.locator(".uz-topbar")).toBeVisible();
+  const topbarHeight = await page.locator(".uz-topbar").evaluate((node) => {
+    return (node as HTMLElement).offsetHeight;
+  });
+  expect(topbarHeight).toBeGreaterThanOrEqual(52);
+  expect(topbarHeight).toBeLessThanOrEqual(53);
+  await expect(page.getByTestId("environment-marker")).toContainText("PRODUCTION");
+  await expect(page.getByTestId("route-breadcrumb")).toContainText("丝路数码");
+  await expect(page.getByTestId("m7-orders-runtime-icon").locator("svg")).toBeVisible();
   for (const label of [
     "订单号",
     "客户",
@@ -79,7 +93,13 @@ test("renders tenant.orders with tenant-only nav degraded labels and list geomet
     );
   expect(searchWidth).toBeGreaterThanOrEqual(300);
   expect(searchWidth).toBeLessThanOrEqual(340);
+  await expect(page.getByTestId("m7-orders-search-icon").locator("svg")).toBeVisible();
+  await expect(page.getByTestId("m7-orders-upload-icon").locator("svg")).toBeVisible();
   await expectTenantOnlyNav(page);
+  await page.screenshot({
+    fullPage: true,
+    path: `${ordersArtifactsDir}/react-orders-list-desktop.png`
+  });
 });
 
 test("opens detail by click and keyboard with stale warning timeline and links", async ({
@@ -89,6 +109,7 @@ test("opens detail by click and keyboard with stale warning timeline and links",
 
   await page.getByTestId("m7-order-row-SYN-ORD-001").click();
   await expect(page.getByTestId("m7-orders-detail")).toContainText("SYN-ORD-001");
+  await expect(page.getByTestId("m7-orders-package-icon").locator("svg")).toBeVisible();
   await expect(page.getByTestId("m7-orders-timeline")).toContainText("物流节点");
   await expect(page.getByTestId("m7-orders-linked-affordances")).toContainText(
     "关联客户"
@@ -111,6 +132,11 @@ test("opens detail by click and keyboard with stale warning timeline and links",
   await expect(page.getByTestId("m7-orders-stale-warning")).toContainText(
     "不能作为生产订单状态"
   );
+  await expect(page.getByTestId("m7-orders-stale-icon").locator("svg")).toBeVisible();
+  await page.screenshot({
+    fullPage: true,
+    path: `${ordersArtifactsDir}/react-orders-detail-desktop.png`
+  });
 });
 
 test("supports local import modal upload progress result history and rollback", async ({
@@ -125,11 +151,16 @@ test("supports local import modal upload progress result history and rollback", 
   await expect(page.getByTestId("m7-orders-import-modal")).toContainText(
     "不读取真实文件"
   );
+  await expect(
+    page.getByTestId("m7-orders-modal-runtime-icon").locator("svg")
+  ).toBeVisible();
+  await expect(page.getByTestId("m7-orders-close-icon").locator("svg")).toBeVisible();
   await expect(page.getByTestId("m7-orders-import-history")).toContainText(
     "SYN-IMP-001"
   );
   await expect(page.getByTestId("m7-orders-start-import")).toBeDisabled();
   await page.getByTestId("m7-orders-file-drop").click();
+  await expect(page.getByTestId("m7-orders-drop-icon").locator("svg")).toBeVisible();
   await expect(page.getByTestId("m7-orders-file-drop")).toContainText(
     "synthetic-orders-snapshot.csv"
   );
@@ -198,6 +229,10 @@ test("supports sidebar collapse and 320px readable fallback", async ({ page }) =
   await expect(page.getByTestId("m7-orders-detail")).toBeVisible();
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
   await expectTenantOnlyNav(page);
+  await page.screenshot({
+    fullPage: true,
+    path: `${ordersArtifactsDir}/react-orders-mobile-320.png`
+  });
 });
 
 async function openOrders(page: Page, query = "") {

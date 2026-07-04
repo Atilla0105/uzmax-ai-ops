@@ -5,6 +5,9 @@ import {
   type KeyboardEvent,
   type MouseEvent
 } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Package, Search, TriangleAlert, Upload, X } from "lucide-react";
+import { IconSlot } from "../../primitives";
 import {
   filterOrders,
   initialImportHistory,
@@ -15,6 +18,23 @@ import {
   type ImportTask,
   type ImportStep
 } from "./orderFallback";
+
+const orderIconSnippets = {
+  package: renderToStaticMarkup(
+    <IconSlot data-testid="m7-orders-package-icon" icon={Package} />
+  ),
+  search: renderToStaticMarkup(
+    <IconSlot data-testid="m7-orders-search-icon" icon={Search} size="sm" />
+  ),
+  triangleAlert: renderToStaticMarkup(<IconSlot icon={TriangleAlert} />),
+  upload: renderToStaticMarkup(
+    <IconSlot data-testid="m7-orders-upload-icon" icon={Upload} size="sm" />
+  ),
+  uploadDrop: renderToStaticMarkup(
+    <IconSlot data-testid="m7-orders-drop-icon" icon={Upload} />
+  ),
+  x: renderToStaticMarkup(<IconSlot data-testid="m7-orders-close-icon" icon={X} />)
+} as const;
 
 export function OrdersPage({ selectedTenantId }: { selectedTenantId: string }) {
   const viewState = readOrderViewState();
@@ -122,6 +142,7 @@ export function OrdersPage({ selectedTenantId }: { selectedTenantId: string }) {
           active,
           fileName,
           history,
+          icons: orderIconSnippets,
           importOpen,
           importStep,
           query,

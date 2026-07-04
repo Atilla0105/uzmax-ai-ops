@@ -12,8 +12,8 @@ This PR renders the visible UI-first orders page using centralized sanitized syn
 |---|---|
 | worker path | `/Users/atilla/.codex/worktrees/m7-ui-31-orders-visible-ui` |
 | worker branch | `codex/m7-ui-31-orders-visible-ui` |
-| worker status at entry | `## codex/m7-ui-31-orders-visible-ui...origin/codex/m7-ui-30-customer-assets-visible-ui` |
-| worker HEAD at entry | `53f8b43db51847a6856648ba4e94938da2f064d2` |
+| worker status at entry | `## codex/m7-ui-31-orders-visible-ui...origin/codex/m7-ui-30-customer-assets-visible-ui [ahead 1]` |
+| worker HEAD at entry | `da28a8f2445daf159bc6adc392843523de41fe58` |
 | stacked base | `origin/codex/m7-ui-30-customer-assets-visible-ui` |
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` remains read-only for this worker |
 
@@ -28,11 +28,11 @@ This PR renders the visible UI-first orders page using centralized sanitized syn
 
 | Path | Summary |
 |---|---|
-| `apps/admin/src/pages/orders/OrdersPage.tsx` | Visible tenant orders page route with list/detail/back, row keyboard activation, local import flow state and tenant-switch remount isolation through `PageOutlet`. |
-| `apps/admin/src/pages/orders/orderFallback.ts` | Sanitized synthetic mock order rows, import history, deterministic URL state helper, HTML renderer and scoped page CSS. |
+| `apps/admin/src/pages/orders/OrdersPage.tsx` | Visible tenant orders page route with list/detail/back, row keyboard activation, local import flow state, tenant-switch remount isolation through `PageOutlet` and React-rendered Lucide static snippets for source-preserved icons. |
+| `apps/admin/src/pages/orders/orderFallback.ts` | Sanitized synthetic mock order rows, import history, deterministic URL state helper, HTML renderer, trusted static Lucide icon insertion points and scoped page CSS. |
 | `apps/admin/src/pages/PageOutlet.tsx` | Renders `OrdersPage` for `tenant.orders` with selected tenant scope and tenant-switch remount isolation. |
 | `apps/admin/src/pages/registry.ts` | Marks `tenant.orders` as implementation evidence pending PR review under this spec. |
-| `apps/admin/tests/m7-ui-orders.spec.ts` | Focused Playwright coverage for tenant-only routing/nav, degraded/mock/read-only labels, search geometry, list/detail/stale/timeline/linked affordances, local import modal flow, deterministic states, tenant-switch isolation, sidebar collapse and 320px no overflow. |
+| `apps/admin/tests/m7-ui-orders.spec.ts` | Focused Playwright coverage for tenant-only routing/nav, topbar height/environment/breadcrumb, degraded/mock/read-only labels, Lucide icon slots, search geometry, list/detail/stale/timeline/linked affordances, local import modal flow, deterministic states, tenant-switch isolation, sidebar collapse, screenshot capture and 320px no overflow. |
 
 ## Runtime / Data Boundary
 
@@ -44,20 +44,33 @@ This PR renders the visible UI-first orders page using centralized sanitized syn
 
 ## Browser Evidence
 
-Focused Playwright validates the React implementation directly. Browser artifacts were not required for this narrow completion slice unless produced during validation.
+Focused Playwright validates the React implementation directly and writes transient artifacts outside the repo.
 
-Source HTML note: direct `file://` owner HTML can expose the shell and route anatomy, but the task's reliable detailed acceptance reference for this narrow slice is the frozen unpacked source. Anatomy was verified against `/Users/atilla/源码/unpacked 6/pages/orders/OrdersPage.tsx`, `hooks/useOrders.ts` and `fixtures/orders.ts`; no owner visual acceptance is claimed.
+Artifacts captured under `/tmp/uzmax-m7-ui-31-orders-visible-ui/`:
 
-Measured by focused Playwright:
+- React desktop orders list screenshot: `/tmp/uzmax-m7-ui-31-orders-visible-ui/react-orders-list-desktop.png`
+- React desktop orders detail screenshot: `/tmp/uzmax-m7-ui-31-orders-visible-ui/react-orders-detail-desktop.png`
+- React mobile 320 screenshot: `/tmp/uzmax-m7-ui-31-orders-visible-ui/react-orders-mobile-320.png`
 
-- `tenant.orders` route is tenant-only; tenant sidebar categories are `运营/数据/智能/管理/洞察`, group sections are hidden.
-- Search input width is asserted in the 300-340px range.
-- Row click and keyboard activation open detail.
-- Detail contains stale warning, logistics timeline and linked customer/conversation/ticket affordances.
-- Import modal covers local upload, progress, result, history and rollback.
-- Deterministic states cover loading, empty, error and permission.
-- Tenant switch resets local detail/import state.
-- 320px mobile fallback has no body horizontal overflow.
+Source HTML / unpacked / React comparison:
+
+| Evidence item | Result |
+|---|---|
+| owner HTML region/caveat | `/Users/atilla/Downloads/运营塔台1.0.html` is a compressed dc-runtime owner prototype; the orders runtime region is embedded in the generated script on line `171` (`isOrders`, `orderCols`, `orders`, `orderDetail`, `orderImportOpen`, import state). Direct `file://` can expose shell/route anatomy, but the stable readable component source for detailed comparison is `/Users/atilla/源码/unpacked 6`. |
+| unpacked source inspected | `/Users/atilla/源码/unpacked 6/pages/orders/OrdersPage.tsx:1-240` for Search/Upload/TriangleAlert/Package/X icon expression, header/search/import/runtime bar, list/detail/stale/timeline/import modal anatomy; `/Users/atilla/源码/unpacked 6/hooks/useOrders.ts:1-72` for local state machine; `/Users/atilla/源码/unpacked 6/fixtures/orders.ts:1-112` for field shape only. |
+| React implementation comparison | Preserves list/detail/import anatomy and source Lucide icon roles while replacing raw/prototype fixture values with centralized sanitized `SYN-*` mock data, visible degraded/read-only/not-production copy and local-only disabled linked affordances. |
+| sidebar result | Tenant-only sidebar categories are `运营/数据/智能/管理/洞察`; group sections/buttons are hidden; collapsed sidebar width is asserted at `68`. |
+| topbar result | `.uz-topbar` height is asserted `52-53px`; `environment-marker` contains `PRODUCTION` as visual parity only; `route-breadcrumb` contains selected tenant `丝路数码`. |
+| key page geometry | Search control width is asserted in the `300-340px` source range; list/detail remain visible; mobile body scroll width is asserted `<= 320`. |
+| icon expression | Lucide Search, Upload, TriangleAlert, Package and X render as SVG through `IconSlot` static snippets and are asserted visible in the focused browser test. |
+| mobile result | 320px fallback keeps the page visible, table/detail contained and `document.body.scrollWidth <= 320`; pixel-level mobile polish remains deferred. |
+
+Remaining desktop visual deltas:
+
+- Data is intentionally synthetic/mock/read-only (`SYN-*`) rather than the owner prototype's raw real-looking fixture names, phones, Telegram handles, external IDs and prices.
+- Linked customer/conversation/ticket affordances remain local-only/disabled because no order runtime/API/navigation contract is implemented in this slice.
+- CSV/XLSX parsing, import backend, external order API and DB persistence are not implemented; the import modal is a local UI state machine only.
+- No owner visual acceptance, runtime closure, production deployment or release approval is claimed.
 
 ## Validation
 
@@ -65,15 +78,15 @@ Measured by focused Playwright:
 |---|---|---|
 | `git diff --check origin/codex/m7-ui-30-customer-assets-visible-ui...HEAD` | pass | No whitespace output. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-30-customer-assets-visible-ui --spec docs/specs/M7-UI-31-orders-page.md --include-worktree` | pass | Pre-stage report: changedFiles `9`, categories `source: 4`, `docs: 4`, `test: 1`; staged-index re-run also exited `0` but reports empty because staged files are not counted by that guard mode. |
+| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-30-customer-assets-visible-ui --spec docs/specs/M7-UI-31-orders-page.md --include-worktree` | pass | changedFiles `9`, categories `source: 4`, `docs: 4`, `test: 1`; source net LOC `459`, new source files `2`. |
 | `npm run guard:prettier-ignore -- --base origin/codex/m7-ui-30-customer-assets-visible-ui` | pass | `prettier-ignore-boundary: ok`; no diff-added markers in monitored source/test paths. |
 | `npm run format:check` | pass | Full Prettier check clean. |
-| `npm run knip` | pass | Completed cleanly after keeping only used exports in `orderFallback.ts`. |
+| `npm run knip` | pass | Completed cleanly. |
 | `npm run jscpd` | pass | No duplicates found. |
-| `npm run lint` | pass | Completed cleanly after replacing the click-handler branch chain with a command map. |
+| `npm run lint` | pass | Completed cleanly. |
 | `npm run typecheck` | pass | TypeScript completed cleanly. |
-| `npm run playwright -- apps/admin/tests/m7-ui-orders.spec.ts` | pass | 6/6 focused orders tests passed. |
-| `npm run build:admin` | pass | Vite admin build completed; final bundle `460.78 kB`, gzip `131.88 kB`. |
+| `npm run playwright -- apps/admin/tests/m7-ui-orders.spec.ts` | pass | 6/6 focused orders tests passed; React list/detail/mobile screenshots written under `/tmp/uzmax-m7-ui-31-orders-visible-ui/`. |
+| `npm run build:admin` | pass | Vite admin build completed; final JS bundle `650.32 kB`, gzip `190.76 kB`; Vite emitted the existing chunk-size warning class (`>500 kB`) after bundling the React static icon renderer. |
 
 ## Boundary
 

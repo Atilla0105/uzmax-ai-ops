@@ -45,6 +45,7 @@ feature
   - `docs/admin-ui-page-migration-ledger.md`
   - `docs/admin-ui-prototype-migration-index.md`
   - `apps/admin/src/pages/conversations/**`
+  - `apps/admin/src/App.tsx`
   - `apps/admin/src/pages/PageOutlet.tsx`
   - `apps/admin/src/pages/registry.ts`
   - `apps/admin/tests/m7-ui-conversation-workbench.spec.ts`
@@ -55,6 +56,7 @@ feature
 - 说明/备注：
   - The original spec-only phase touched only the docs paths above.
   - The implementation/retest phase may touch the listed `apps/admin` page/test paths after coordinator approval.
+  - `apps/admin/src/App.tsx` is allowed only for selectedTenantId propagation into `PageOutlet`; this is not permission for AppShell/global shell work.
   - Coordinator-approved test-scope expansion: `apps/admin/tests/helpers/openLegacyEvidence.ts` and `apps/admin/tests/m7-ui-foundation.spec.ts` are allowed only for narrow full-suite compatibility after `tenant.conversations` stops rendering the scaffold. This is test/helper compatibility only.
   - Coordinator-approved fallback split: `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` is allowed only because max-lines lint required splitting no-API fallback coverage out of the main workbench spec. This does not expand runtime/source scope.
   - This expansion does not permit changes to shared shell, shared tokens, shared primitives, shared patterns, `AppShell`, global config, backend/API routes, WebSocket contracts, customer asset/order/quote clients, package/lock, CI/guard scripts or DB/schema. If any of those are required, stop and split to a separate approved spec.

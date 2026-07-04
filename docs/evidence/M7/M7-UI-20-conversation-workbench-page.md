@@ -64,7 +64,8 @@ Owner v6 screenshot review update: PR #182 remains Draft and is only an owner vi
 | `apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts` | Page-local handoff eligibility/degraded-copy helper for status/AI-state/policy checks and request target derivation; no shared runtime or backend contract expansion. |
 | `apps/admin/src/pages/conversations/conversationWorkbenchStyles.tsx` | Scoped page CSS using existing design-system token variables; no new tokens, old `--uzmax-*` target or M2 shell CSS. Composer draft text uses the selected conversation ref or generic copy, not a fixed fixture order id. |
 | `apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx` | Page-local rail/state support split out after Prettier expansion to keep component file size and complexity within lint without moving shared primitives/patterns. Right rail view switches are segmented buttons with `aria-pressed`, not incomplete tabs. |
-| `apps/admin/src/pages/PageOutlet.tsx`, `apps/admin/src/pages/registry.ts` | Routes `tenant.conversations` to the real page and marks implementation evidence pending PR review. |
+| `apps/admin/src/App.tsx` | Propagates selectedTenantId into `PageOutlet` only so conversation rows/details stay scoped to the selected tenant; this is not AppShell/global shell work. |
+| `apps/admin/src/pages/PageOutlet.tsx`, `apps/admin/src/pages/registry.ts` | Routes `tenant.conversations` to the real page, passes selected tenant scope into the page outlet and marks implementation evidence pending PR review. |
 | `apps/admin/tests/m7-ui-conversation-workbench.spec.ts` | Focused Playwright coverage for route/layer/nav, degraded runtime bar, disabled search/sort affordances, row selection, AI trace, handoff/degraded, no placeholder SLA policy post, closed/pending-handoff/already-handoff takeover blocking, stale handoff response detail guard, detail-failure target safety, dynamic composer ref, loading/empty/error/permission/customer-context-unavailable and 320px mobile fallback. |
 | `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | Focused no-API fallback Playwright coverage split out of the main workbench spec only because max-lines lint required the fallback assertions to live in a separate file. |
 | `apps/admin/tests/m7-ui-page-router.spec.ts` | Updates tenant selection assertion so `tenant.conversations` renders the real page, not the scaffold. |
@@ -101,12 +102,13 @@ Owner v6 screenshot review update: PR #182 remains Draft and is only an owner vi
 
 ## PR Hygiene / Budget
 
-- Changed source remains inside the allowed page-local scope: `apps/admin/src/pages/conversations/**`, `PageOutlet`, and `registry`.
+- Changed source remains inside the allowed page-local scope: `apps/admin/src/pages/conversations/**`, `App.tsx` selectedTenantId propagation into `PageOutlet`, `PageOutlet`, and `registry`.
 - `conversationWorkbenchPanels.tsx` is intentionally added as a page-local support file. Reason: Prettier-expanded JSX/CSS pushed `conversationWorkbenchStyles.tsx` over the React file-length limit and concentrated right-rail/state complexity; splitting the rail/state support keeps lintable code without touching shared primitives, patterns, tokens or shell.
 - Coordinator-approved test-scope expansion is recorded in the spec: `apps/admin/tests/helpers/openLegacyEvidence.ts` and `apps/admin/tests/m7-ui-foundation.spec.ts` are allowed only for full-suite compatibility after `tenant.conversations` stopped being a scaffold. The additional `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` file is allowed only because max-lines lint required splitting no-API fallback coverage out of the main workbench spec. This is test/helper/fallback coverage bookkeeping only and is not permission to touch shared shell, tokens, primitives, patterns, `AppShell`, global config, backend/API, WebSocket, package/lock, CI/guard or DB/schema.
-- Post-UI-06 `pr-shape` without PR metadata fails on source budget: `net source LOC 1569 > 600`.
-- Current `pr-shape` with PR-body metadata and `Exception: large_change_exception` passes and reports `source.changedFiles=9`, `source.netLoc=1569`, `source.newFiles=7`.
+- Current `pr-shape` without PR metadata fails on source budget: `net source LOC 1689 > 600`.
+- Current `pr-shape` with PR-body metadata and `Exception: large_change_exception` passes and reports `source.changedFiles=10`, `source.netLoc=1689`, `source.newFiles=7`.
 - The `large_change_exception` is source-size governance only and still requires coordinator/owner review before merge; it is not page acceptance, runtime closure or release approval.
+- Tenant-scope remediation passes selectedTenantId through App/PageOutlet/page runtime, filters rows/details to the selected tenant, regenerates fallback rows for the selected tenant and rejects mismatched detail/handoff responses. Handoff race remediation guards delayed completions by selected tenant/request generation and includes the delayed handoff duplicate-id tenant-switch race test.
 - No package/lock, backend/API, DB/schema, shared token, shared primitive, shared pattern, shell architecture, CI/guard or PR #178 files were touched. `apps/admin/tests/helpers/openLegacyEvidence.ts` has a narrow full-suite compatibility update so legacy evidence specs can open the explicit legacy route after tenant-layer navigation.
 
 ## Screenshots
@@ -137,7 +139,7 @@ Latest page-local visual parity validation run from `/Users/atilla/.codex/worktr
 - `git diff --check` - pass.
 - `PATH=/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run format:check` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run guard:doc-triggers` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; current report: categories source 9 / test 5 / docs 4, source net LOC 1569, new source files 7.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; current report: changedFiles 19, categories source 10 / test 5 / docs 4, source net LOC 1689, new source files 7.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run lint` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run typecheck -- --pretty false` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run build:admin` - pass.
@@ -146,7 +148,7 @@ Latest page-local visual parity validation run from `/Users/atilla/.codex/worktr
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/conversations/ConversationsPage.tsx apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts apps/admin/src/pages/conversations/conversationWorkbenchStyles.tsx` - pass, `[]`.
 - Screenshot capture - pass, desktop/mobile artifacts refreshed as `*-after-ui06-v6.png` under `/tmp/uzmax-m7-ui-20-conversation-workbench-page/`; mobile capture checked `document.body.scrollWidth === 320`; owner baseline remains `/tmp/uzmax-m7-ui-20-conversation-workbench-page/owner-html-1440-after-ui06-v2.png`.
 
-Latest coordinator fallback verification artifacts are outside the repo under `/tmp/uzmax-m7-ui-20-conversation-workbench-check-final/`. That run captured live no-API screenshots/metrics for the fallback state and confirmed the page remains visibly degraded/read-only instead of pretending API-backed runtime closure.
+Latest coordinator fallback verification artifacts are outside the repo under `/tmp/uzmax-m7-ui-20-conversation-workbench-final-ab414c9/`. That run captured live no-API screenshots/metrics for tenant-c and confirmed outlet/workbench/row tenant-c, synthetic/degraded runtime state, no error card, no tenant-b in the workbench, desktop metrics nav 232 / topbar 53 / list 316 / thread 552 / rail 340, and mobile `document.body.scrollWidth === 320`.
 
 Plan-note acceptance update validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
 
@@ -160,15 +162,15 @@ Plan-note acceptance update validation run from `/Users/atilla/.codex/worktrees/
   "specPath": "docs/specs/M7-UI-20-conversation-workbench-page.md",
   "specType": "feature",
   "bootstrapException": false,
-  "changedFiles": 18,
+  "changedFiles": 19,
   "categories": {
-    "source": 9,
+    "source": 10,
     "test": 5,
     "docs": 4
   },
   "source": {
-    "changedFiles": 9,
-    "netLoc": 1569,
+    "changedFiles": 10,
+    "netLoc": 1689,
     "newFiles": 7
   }
 }
@@ -176,15 +178,15 @@ Plan-note acceptance update validation run from `/Users/atilla/.codex/worktrees/
 
 - Playwright not run; this update is docs-only and did not change code.
 
-Fallback bookkeeping validation summary from the current PR #182 branch:
+Final evidence bookkeeping validation summary from the current PR #182 branch at `ab414c9`:
 
 - `git diff --check` - pass.
 - Targeted ESLint - pass.
 - `tsc` - pass.
 - Admin build - pass.
-- Playwright conversation specs - pass, 8/8.
-- Live no-API screenshots/metrics - captured under `/tmp/uzmax-m7-ui-20-conversation-workbench-check-final/`.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: source 9 files, net LOC 1569, new source files 7.
+- Playwright conversation specs - pass, 11/11, including the delayed handoff duplicate-id tenant-switch race coverage.
+- Live no-API screenshots/metrics - captured under `/tmp/uzmax-m7-ui-20-conversation-workbench-final-ab414c9/`; tenant-c outlet/workbench/row evidence, synthetic/degraded runtime state, no error card, no tenant-b in workbench, desktop nav 232 / topbar 53 / list 316 / thread 552 / rail 340, mobile bodyScrollWidth 320.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: changedFiles 19, source 10 files, test 5 files, docs 4 files, net source LOC 1689, new source files 7.
 
 ## Boundary
 

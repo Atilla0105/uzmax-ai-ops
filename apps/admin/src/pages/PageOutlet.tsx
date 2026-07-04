@@ -42,7 +42,10 @@ export function PageOutlet({
   if (page.id === "group.overview") {
     return (
       <section data-page-id={page.id} data-testid="page-outlet">
-        <GroupOverviewPage onEnterTenant={onEnterTenant} />
+        <GroupOverviewPage
+          onEnterTenant={onEnterTenant}
+          onOpenLegacyEvidence={() => onPageChange(legacyEvidencePageId)}
+        />
       </section>
     );
   }

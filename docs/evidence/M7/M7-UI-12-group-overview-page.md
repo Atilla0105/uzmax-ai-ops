@@ -40,7 +40,18 @@ This PR renders the visible UI-first group overview page in `apps/admin` using c
 - The default first viewport hides sanitized tenant rows and shows the source-like empty/filtered table state; search, clear-filter or selecting a health card reveals sanitized fallback rows for interaction tests.
 - The prohibited prototype metric values are not used as group overview runtime facts.
 - No backend/API/DB/schema/package/lock/global CI files are touched.
-- Tenant-entry button activation enters `tenant.conversations` with the row tenant id; real authorization/cache invalidation remains a future runtime responsibility.
+- Tenant-entry button activation enters `tenant.conversations` with the sanitized fallback row tenant id as a controlled UI-only degraded affordance. It demonstrates the group layer -> tenant layer boundary only; real authorization, RLS, permission reload and tenant-cache invalidation remain future runtime responsibilities before production use.
+
+## Runtime State Coverage
+
+| State / behavior | Evidence status |
+|---|---|
+| degraded/mock visual shell | covered by page runtime note, fallback metadata and focused Playwright |
+| source-like initial / filtered empty table | covered by default first viewport and clear-filter empty-state assertions |
+| mobile fallback and sidebar collapse | covered by 320px no-overflow and collapsed sidebar width assertions |
+| shell separation | covered by group-only navigation, tenant-only navigation and `/design` group-layer assertions |
+| tenant-entry visual boundary | covered by click, Enter and Space activation into `tenant.conversations`; UI-only, not production authorization |
+| loading / error / permission denied runtime states | deferred/not claimed under the UI-first DB/API blocker exception for this slice |
 
 ## Browser Evidence
 
@@ -74,7 +85,11 @@ Source HTML note: direct file open defaulted to the tenant conversation view; cl
 
 | Command | Result | Notes |
 |---|---|---|
-| `git diff --check` | pass | No whitespace output. |
+| `git diff --check` | pass | Re-run in docs-only follow-up; no whitespace output. |
+| `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
+| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-20-conversation-workbench-page-impl --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree` | pass | `changedFiles: 10`; categories `source: 5`, `test: 1`, `docs: 4`; source net LOC `458`; no package/lock/backend/DB/global config expansion. |
+| `npm run format:check` | pass | Re-run in docs-only follow-up; repo Prettier check passed. |
+| `npm run lint` | pass | ESLint passed after keeping `GroupOverviewPage.tsx` under the React max-lines budget by moving static mappings to the existing fallback module. |
 | `npm run typecheck -- --pretty false` | pass | Ran with Codex Node PATH prefix. |
 | `npm run build:admin` | pass | Vite admin build produced `apps/admin/dist`. |
 | `npm run playwright -- apps/admin/tests/m7-ui-group-overview.spec.ts` | pass | 5/5 tests passed; covers tenant-entry button click plus Enter/Space keyboard activation. |
@@ -83,6 +98,7 @@ Source HTML note: direct file open defaulted to the tenant conversation view; cl
 
 - Header result text uses truthful `fallback` rather than the owner source's `实时`, so it does not imply production runtime closure.
 - Sanitized tenant rows remain available only after user interaction; default visual intentionally follows the current source-like empty table screenshot.
+- Controlled tenant-entry is visual-only and intentionally lacks production authorization/cache-invalidation runtime proof in this UI-first slice.
 - Owner pixel/detail acceptance is still pending; this evidence is an implementation candidate, not final visual signoff.
 
 ## Boundary

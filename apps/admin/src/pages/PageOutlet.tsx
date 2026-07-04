@@ -4,6 +4,7 @@ import { PageState } from "../patterns";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
+import { OrdersPage } from "./orders/OrdersPage";
 import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, legacyEvidencePageId, type AdminPageId } from "./registry";
 import { TicketsPage } from "./tickets/TicketsPage";
@@ -85,6 +86,18 @@ export function PageOutlet({
         data-testid="page-outlet"
       >
         <CustomersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      </section>
+    );
+  }
+
+  if (page.id === "tenant.orders") {
+    return (
+      <section
+        data-page-id={page.id}
+        data-tenant-id={selectedTenantId}
+        data-testid="page-outlet"
+      >
+        <OrdersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
       </section>
     );
   }

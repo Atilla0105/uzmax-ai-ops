@@ -195,7 +195,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-30-customer-assets-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "订单",
     id: "tenant.orders",
     label: "订单",
@@ -205,9 +205,9 @@ const adminPageRegistry = [
     order: 12,
     requiredStates: [...stateMatrix, "stale snapshot"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/orders/OrdersPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/orders/OrdersPage.tsx",
-    targetSpecId: "M7-UI-04K-tenant-orders"
+    targetSpecId: "M7-UI-31-orders-page"
   },
   {
     evidenceStatus: "not_started",

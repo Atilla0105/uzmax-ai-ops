@@ -1,0 +1,232 @@
+import { expect, test, type Page } from "@playwright/test";
+
+const ordersNavContract = {
+  groupButtons: [
+    "集团总览",
+    "模型/成本/风险",
+    "模板中心",
+    "连接中心",
+    "发布与验收",
+    "租户管理",
+    "集团日志"
+  ],
+  groupSections: ["总览", "平台", "治理"],
+  tenantButtons: [
+    "对话",
+    "工单",
+    "确认队列",
+    "客户资产",
+    "订单",
+    "知识与资源",
+    "评测中心",
+    "AI 成员",
+    "团队",
+    "配置",
+    "分析",
+    "日志"
+  ],
+  tenantSections: ["运营", "数据", "智能", "管理", "洞察"]
+};
+
+test.beforeEach(({ page }) => stubConversationTicket(page));
+
+async function stubConversationTicket(page: Page) {
+  await page.route("**/conversation-ticket/conversations", async (route) => {
+    await route.fulfill({ json: { items: [] } });
+  });
+}
+
+test("renders tenant.orders with tenant-only nav degraded labels and list geometry", async ({
+  page
+}) => {
+  await openOrders(page);
+
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-page-id",
+    "tenant.orders"
+  );
+  await expect(page.getByTestId("m7-orders-page")).toHaveAttribute(
+    "data-runtime-state",
+    "degraded"
+  );
+  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText("degraded");
+  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText("mock");
+  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText("read-only");
+  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText(
+    "not production order data"
+  );
+  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText(
+    "No real CSV/XLSX, order API or DB"
+  );
+  for (const label of [
+    "订单号",
+    "客户",
+    "金额",
+    "状态",
+    "批次",
+    "物流节点",
+    "来源",
+    "更新时间"
+  ])
+    await expect(page.getByTestId("m7-orders-table")).toContainText(label);
+  await expect(page.getByTestId("m7-orders-list-count")).toContainText(
+    "4 个 synthetic mock 订单"
+  );
+  const searchWidth = await page
+    .getByTestId("m7-orders-search")
+    .evaluate((node) =>
+      Math.round((node as HTMLElement).getBoundingClientRect().width)
+    );
+  expect(searchWidth).toBeGreaterThanOrEqual(300);
+  expect(searchWidth).toBeLessThanOrEqual(340);
+  await expectTenantOnlyNav(page);
+});
+
+test("opens detail by click and keyboard with stale warning timeline and links", async ({
+  page
+}) => {
+  await openOrders(page);
+
+  await page.getByTestId("m7-order-row-SYN-ORD-001").click();
+  await expect(page.getByTestId("m7-orders-detail")).toContainText("SYN-ORD-001");
+  await expect(page.getByTestId("m7-orders-timeline")).toContainText("物流节点");
+  await expect(page.getByTestId("m7-orders-linked-affordances")).toContainText(
+    "关联客户"
+  );
+  await expect(page.getByTestId("m7-orders-linked-affordances")).toContainText(
+    "关联客户与会话"
+  );
+  await expect(page.getByTestId("m7-orders-linked-affordances")).toContainText(
+    "关联工单"
+  );
+
+  await page.getByTestId("m7-orders-back").click();
+  const staleRow = page.getByRole("button", { name: "打开订单 SYN-ORD-004" });
+  await staleRow.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("m7-orders-detail")).toContainText("SYN-ORD-004");
+  await expect(page.getByTestId("m7-orders-stale-warning")).toContainText(
+    "stale snapshot"
+  );
+  await expect(page.getByTestId("m7-orders-stale-warning")).toContainText(
+    "不能作为生产订单状态"
+  );
+});
+
+test("supports local import modal upload progress result history and rollback", async ({
+  page
+}) => {
+  await openOrders(page);
+
+  await page.getByTestId("m7-orders-import").click();
+  await expect(page.getByTestId("m7-orders-import-modal")).toContainText(
+    "local mock only"
+  );
+  await expect(page.getByTestId("m7-orders-import-modal")).toContainText(
+    "不读取真实文件"
+  );
+  await expect(page.getByTestId("m7-orders-import-history")).toContainText(
+    "SYN-IMP-001"
+  );
+  await expect(page.getByTestId("m7-orders-start-import")).toBeDisabled();
+  await page.getByTestId("m7-orders-file-drop").click();
+  await expect(page.getByTestId("m7-orders-file-drop")).toContainText(
+    "synthetic-orders-snapshot.csv"
+  );
+  await expect(page.getByTestId("m7-orders-start-import")).toBeEnabled();
+  await page.getByTestId("m7-orders-start-import").click();
+  await expect(page.getByTestId("m7-orders-import-progress")).toContainText("100%");
+  await page.getByTestId("m7-orders-show-result").click();
+  await expect(page.getByTestId("m7-orders-import-result")).toContainText(
+    "导入完成，部分行失败"
+  );
+  await page.getByTestId("m7-orders-rollback-import").click();
+  await expect(page.getByTestId("m7-orders-import-result")).toContainText(
+    "本次导入已回滚"
+  );
+});
+
+test("covers deterministic loading empty error and permission states", async ({
+  page
+}) => {
+  for (const state of ["loading", "empty", "error", "permission"]) {
+    await openOrders(page, `?m7OrderState=${state}`);
+    if (state === "empty")
+      await expect(page.getByTestId("m7-orders-empty")).toContainText("empty state");
+    else await expect(page.getByTestId(`m7-orders-state-${state}`)).toBeVisible();
+  }
+});
+
+test("resets local order detail and import state when switching tenants", async ({
+  page
+}) => {
+  await openOrders(page);
+
+  await page.getByTestId("m7-order-row-SYN-ORD-004").click();
+  await page.getByTestId("m7-orders-import").click();
+  await expect(page.getByTestId("m7-orders-import-modal")).toBeVisible();
+
+  await page.getByTestId("tenant-switcher").selectOption("tenant-c");
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.orders"
+  );
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
+  );
+  await expect(page.getByTestId("m7-orders-page")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
+  );
+  await expect(page.getByTestId("m7-orders-table")).toBeVisible();
+  await expect(page.getByTestId("m7-orders-detail")).toHaveCount(0);
+  await expect(page.getByTestId("m7-orders-import-modal")).toHaveCount(0);
+});
+
+test("supports sidebar collapse and 320px readable fallback", async ({ page }) => {
+  await openOrders(page);
+  await page.getByRole("button", { name: "Collapse navigation" }).click();
+  await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty("offsetWidth", 68);
+  await expectTenantOnlyNav(page);
+
+  await page.setViewportSize({ width: 320, height: 900 });
+  await openOrders(page);
+  await expect(page.getByTestId("m7-orders-page")).toBeVisible();
+  await expect(page.getByTestId("m7-orders-table")).toBeVisible();
+  await page.getByTestId("m7-order-row-SYN-ORD-001").click();
+  await expect(page.getByTestId("m7-orders-detail")).toBeVisible();
+  expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
+  await expectTenantOnlyNav(page);
+});
+
+async function openOrders(page: Page, query = "") {
+  await page.goto(`/design${query}`);
+  await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await page
+    .getByTestId("app-shell-nav")
+    .getByRole("button", { name: "订单", exact: true })
+    .click();
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "tenant"
+  );
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.orders"
+  );
+}
+
+async function expectTenantOnlyNav(page: Page) {
+  const nav = page.getByTestId("app-shell-nav");
+  const sectionLabels = nav.locator(".uz-nav-group p");
+  await expect
+    .poll(() => sectionLabels.allTextContents())
+    .toEqual(ordersNavContract.tenantSections);
+  for (const label of ordersNavContract.tenantButtons)
+    await expect(nav.getByRole("button", { exact: true, name: label })).toBeVisible();
+  for (const label of ordersNavContract.groupButtons)
+    await expect(nav.getByRole("button", { exact: true, name: label })).toHaveCount(0);
+  for (const label of ordersNavContract.groupSections)
+    await expect(sectionLabels.filter({ hasText: label })).toHaveCount(0);
+}

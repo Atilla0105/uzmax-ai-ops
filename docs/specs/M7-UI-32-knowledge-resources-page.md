@@ -59,6 +59,12 @@ config: []
 - Non-component source files <= 400 lines.
 - Complexity <= 10.
 
+## Exceptions
+
+- Proposed for owner/coordinator review only: `large_change_exception`.
+- Reason: the visible page implementation plus focused test totals net source LOC 904 against the default `guard:pr-shape` source budget of 600.
+- This exception is source-size governance only. It is not self-approved by the worker and does not imply runtime closure, owner visual acceptance, merge approval, release approval or production readiness.
+
 ## Implementation Contract
 
 - Route `tenant.knowledge` through `PageOutlet` with `key={selectedTenantId}` to reset tenant-local state.
@@ -80,3 +86,4 @@ config: []
 
 - Focused Playwright coverage for tenant navigation, tenant-only sidebar, topbar/sidebar dimensions, runtime labels, tabs, journey, facts keyboard/detail/redline, snippets, assets local edit/save/cancel/delete, template source, URL states, tenant-switch reset and mobile 320 no body overflow.
 - Evidence records validation results and screenshot paths under `/tmp/uzmax-m7-ui-32-knowledge-resources-visible-ui-v2`.
+- `guard:pr-shape` evidence must distinguish the default-budget failure mode from the metadata-assisted pass: without PR metadata the slice exceeds the default 600 source LOC budget, while a PR body containing `Spec ID`, `Spec file` and `Exception: large_change_exception` allows the guard to pass for coordinator/owner review.

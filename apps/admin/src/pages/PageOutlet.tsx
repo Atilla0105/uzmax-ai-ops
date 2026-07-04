@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
 import { ConversationsPage } from "./conversations/ConversationsPage";
+import { CustomersPage } from "./customers/CustomersPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, legacyEvidencePageId, type AdminPageId } from "./registry";
@@ -72,6 +73,18 @@ export function PageOutlet({
         data-testid="page-outlet"
       >
         <TicketsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      </section>
+    );
+  }
+
+  if (page.id === "tenant.customers") {
+    return (
+      <section
+        data-page-id={page.id}
+        data-tenant-id={selectedTenantId}
+        data-testid="page-outlet"
+      >
+        <CustomersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
       </section>
     );
   }

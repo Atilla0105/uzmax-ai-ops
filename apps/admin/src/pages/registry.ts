@@ -180,7 +180,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-21-ticket-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "客户资产",
     id: "tenant.customers",
     label: "客户资产",
@@ -190,9 +190,9 @@ const adminPageRegistry = [
     order: 11,
     requiredStates: [...stateMatrix, "privacy boundary"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/customers/CustomersPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/customers/CustomersPage.tsx",
-    targetSpecId: "M7-UI-04J-tenant-customers"
+    targetSpecId: "M7-UI-30-customer-assets-page"
   },
   {
     evidenceStatus: "not_started",

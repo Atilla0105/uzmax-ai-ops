@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-
-const composer = (page: Page) => page.getByLabel("Conversation composer");
-const degraded = (page: Page) => page.getByTestId("m7-conversation-degraded");
-const rail = (page: Page) => page.getByTestId("m7-conversation-context-rail");
-const row = (page: Page, id: string) => page.getByTestId(`m7-conversation-row-${id}`);
-const takeover = (page: Page) => page.getByRole("button", { name: "接管会话 T" });
+import {
+  conversationComposer as composer,
+  conversationDegraded as degraded,
+  conversationRail as rail,
+  conversationRow as row,
+  conversationTakeover as takeover
+} from "./conversationWorkbenchLocators";
 
 test("scopes synthetic fallback to the selected tenant when no API returns Vite HTML", async ({
   page

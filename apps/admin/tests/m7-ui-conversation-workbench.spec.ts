@@ -1,4 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  conversationComposer as composer,
+  conversationDegraded as degraded,
+  conversationRail as rail,
+  conversationRow as row,
+  conversationTakeover as takeover
+} from "./conversationWorkbenchLocators";
 
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
@@ -10,11 +17,6 @@ const handoffs: unknown[] = [];
 const handoffTargets: string[] = [];
 type RouteOptions = { slaPolicyRef?: string; tenantId?: string };
 type Trace = Record<string, string>;
-const composer = (page: Page) => page.getByLabel("Conversation composer");
-const degraded = (page: Page) => page.getByTestId("m7-conversation-degraded");
-const rail = (page: Page) => page.getByTestId("m7-conversation-context-rail");
-const row = (page: Page, id: string) => page.getByTestId(`m7-conversation-row-${id}`);
-const takeover = (page: Page) => page.getByRole("button", { name: "接管会话 T" });
 
 test.beforeEach(async ({ page }) => {
   handoffs.length = 0;

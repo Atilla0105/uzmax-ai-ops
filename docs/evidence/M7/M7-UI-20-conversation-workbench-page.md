@@ -180,7 +180,7 @@ Plan-note acceptance update validation run from `/Users/atilla/.codex/worktrees/
 
 - Playwright not run; this update is docs-only and did not change code.
 
-Final evidence bookkeeping validation summary from the current PR #182 branch at `a684887b1156c9db4f79496f9fc03b7f53d35015`:
+Final evidence bookkeeping validation summary from the PR #182 CI-fix commit `a684887b1156c9db4f79496f9fc03b7f53d35015`:
 
 - `git diff --check` - pass.
 - Targeted ESLint - pass.
@@ -192,7 +192,7 @@ Final evidence bookkeeping validation summary from the current PR #182 branch at
 - Live no-API screenshots/metrics - captured under `/tmp/uzmax-m7-ui-20-conversation-workbench-final-ab414c9/`; tenant-c outlet/workbench/row evidence, synthetic/degraded runtime state, no error card, no tenant-b in workbench, desktop nav 232 / topbar 53 / list 316 / thread 552 / rail 340, mobile bodyScrollWidth 320.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: changedFiles 20, source 10 files, test 6 files, docs 4 files, net source LOC 1678, new source files 7.
 
-Evidence/spec metadata sync validation from `a684887b1156c9db4f79496f9fc03b7f53d35015`:
+Evidence/spec metadata sync validation from `74f90c6f6be37f1e6d6316945fbf4ac7e97d2e1a`:
 
 - `git diff --check` - pass.
 - `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass; report: changedFiles 20, source 10 files, test 6 files, docs 4 files, net source LOC 1678, new source files 7.

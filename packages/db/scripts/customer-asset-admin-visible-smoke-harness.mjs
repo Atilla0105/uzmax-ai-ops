@@ -70,6 +70,7 @@ export async function withCustomerAssetVisibleSmokePage(
     );
 
     await page.goto(`${runtime.adminBaseUrl}/design`);
+    await openLegacyEvidenceRoute(page);
     await callback(page.getByTestId("m4-customer-runtime-state"), page);
   } finally {
     await page.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {});
@@ -80,6 +81,15 @@ export async function withCustomerAssetVisibleSmokePage(
 export async function assertVisibleText(locator, text) {
   const { expect } = await import("@playwright/test");
   await expect(locator).toContainText(text, { timeout: visibleStateTimeoutMs });
+}
+
+async function openLegacyEvidenceRoute(page) {
+  await page
+    .getByRole("button", { name: "Open legacy evidence route" })
+    .click({ timeout: visibleStateTimeoutMs });
+  await page
+    .getByTestId("legacy-evidence-route")
+    .waitFor({ state: "visible", timeout: visibleStateTimeoutMs });
 }
 
 async function startAdminVisibleCustomerAssetRuntime({ fixture, prisma }) {

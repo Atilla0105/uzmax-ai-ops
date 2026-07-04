@@ -42,13 +42,12 @@ feature
   - `apps/admin/src/App.tsx`
   - `apps/admin/src/pages/PageOutlet.tsx`
   - `apps/admin/src/pages/registry.ts`
-  - `apps/admin/src/shell/AppShellNavigation.tsx`
   - `apps/admin/src/pages/group/GroupOverviewPage.tsx`
   - `apps/admin/src/pages/group/groupOverviewFallback.ts`
   - `apps/admin/tests/m7-ui-group-overview.spec.ts`
 - 说明/备注：
   - This PR may touch only the implementation and evidence paths above.
-  - `AppShellNavigation.tsx` is included only to neutralize existing tenant nav prototype numeric badges to visibly mock labels after group row entry exposes tenant nav.
+  - Shared shell/sidebar badge calibration remains owned by its base/shared-shell slice; this page slice reads and validates navigation behavior but does not change `AppShellNavigation.tsx`.
   - If future implementation needs a shared group aggregate ApiClient/hook outside the listed paths, backend/API routes, WebSocket contracts, package/lock, token package, shared patterns, CI/guard scripts or DB/schema changes, stop and split to a separate approved spec.
 - 未列出的模块默认不可改。
 
@@ -56,7 +55,7 @@ feature
 
 Implementation PR budget:
 
-- source changed files: <= 6
+- source changed files: <= 5
 - source net LOC: <= 600
 - new source files: <= 2
 - test files changed: <= 1 focused Playwright spec
@@ -109,13 +108,13 @@ Worktree / branch entry evidence:
 | Source | Required use |
 |---|---|
 | `/Users/atilla/Downloads/运营塔台1.0.html` | Hard visual baseline for first-viewport layout density, health strip, table rhythm, sidebar grouping and shell relationship. Do not copy bundled HTML/runtime text. |
-| `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx` | Primary structured source for page anatomy: title/result label, clear filter chip, search field, six health cards, sortable tenant table, row click into tenant layer. |
+| `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx` | Primary structured source for page anatomy: title/result label, clear filter chip, search field, six health cards, sortable tenant table and tenant entry into tenant layer. |
 | `/Users/atilla/源码/unpacked 6/fixtures/group.ts` | Field-shape reference only: `GROUP_HEALTH`, `OV_ROWS`, `OV_COL_DEFS`, `ovFilterTest`. Fixture values are not runtime truth and must not be imported into production page code. |
 | `/Users/atilla/源码/unpacked 6/App.tsx` | Source mapping for group route `overview` and `onEnterTenant` transition to tenant conversations. |
 | `/Users/atilla/源码/unpacked 6/shell/navigation.ts` | Source mapping for group navigation category placement: 总览 -> 集团总览. |
 | `apps/admin/src/pages/registry.ts` | This implementation updates `group.overview` to `M7-UI-12-group-overview-page` as `implemented_in_worker_pending_pr`. |
 | `apps/admin/src/pages/PageOutlet.tsx` | This implementation renders `GroupOverviewPage` for `group.overview` and keeps tenant conversation routing intact. |
-| `docs/admin-design-system.md` | Normalization layer: group overview is health strip + data table, no customer plaintext, row click enters authorized tenant context, all states required. |
+| `docs/admin-design-system.md` | Normalization layer: group overview is health strip + data table, no customer plaintext, tenant entry enters authorized tenant context, all states required. |
 
 v1.1/doc references:
 
@@ -173,7 +172,7 @@ The implementation must not import `/Users/atilla/源码/unpacked 6/fixtures/gro
 Data boundary:
 
 - Group layer data is authorized aggregate only.
-- Tenant row click may enter tenant layer only for an authorized tenant.
+- Tenant entry may enter tenant layer only for an authorized tenant.
 - When real runtime exists, tenant transition must clear tenant-scoped caches, reload permissions/feature flags and avoid preserving stale tenant state from the previous tenant.
 - Backend/API remains the authority for authorization; hidden or disabled frontend controls are not authorization.
 
@@ -206,7 +205,7 @@ Implementation must record:
 - `npm run guard:doc-triggers`
 - `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-20-conversation-workbench-page-impl --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree`
 - format/typecheck/lint/admin build as required by the implementation scope
-- focused Playwright for `group.overview`: loading, empty, filtered empty, error, permission denied, degraded, search, health-card filter/clear, sort, authorized row click
+- focused Playwright for `group.overview`: loading, empty, filtered empty, error, permission denied, degraded, search, health-card filter/clear, sort, authorized tenant-entry button click and keyboard activation
 - desktop and 320px mobile screenshots/no-overflow evidence
 - desktop pixel/detail comparison against owner HTML and unpacked source
 - Impeccable/equivalent design audit with accepted/rejected recommendations and reasons
@@ -217,7 +216,7 @@ Runtime states beyond degraded/read-only mock are intentionally not implemented 
 ## Pass Conditions
 
 - Only allowed implementation/evidence files change.
-- `group.overview` renders a visible page with title, degraded/mock label, search, filter clear, six health cards, nine-column tenant table, sort and row-click tenant entry.
+- `group.overview` renders a visible page with title, degraded/mock label, search, filter clear, six health cards, nine-column tenant table, sort and accessible tenant-entry action.
 - Registry and ledger point `group.overview` to `M7-UI-12-group-overview-page` as an implementation candidate pending PR review, not merged or owner accepted.
 - Centralized mock/degraded data is visibly marked and does not present prototype metrics as runtime truth.
 - Focused Playwright covers group layer, tenant entry, shell nav separation, sidebar collapse and 320px no-overflow fallback.

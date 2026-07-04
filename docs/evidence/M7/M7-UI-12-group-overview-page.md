@@ -22,7 +22,7 @@ This PR renders the visible UI-first group overview page in `apps/admin` using c
 - Required reads completed before editing: `AGENTS.md`, `docs/specs/M7-UI-12-group-overview-page.md`, `docs/admin-design-system.md`, `docs/admin-ui-page-migration-ledger.md`, `apps/admin/src/App.tsx`, `apps/admin/src/pages/PageOutlet.tsx`, `apps/admin/src/pages/registry.ts`, `apps/admin/src/shell/AppShell.tsx`, `apps/admin/src/shell/AppShellNavigation.tsx`, `apps/admin/src/shell/AppShell.css` and `apps/admin/src/pages/conversations/*`.
 - Owner prototype files read: `/Users/atilla/Downloads/运营塔台1.0.html`, `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx`, `/Users/atilla/源码/unpacked 6/fixtures/group.ts`, `/Users/atilla/源码/unpacked 6/App.tsx` and `/Users/atilla/源码/unpacked 6/shell/navigation.ts`.
 - Adopted Impeccable/product-register guidance: dense operational admin UI, status-first hierarchy, complete degraded/mock labeling, desktop control-room primary, 320px readable fallback, no decorative/legacy-shell visual drift.
-- Rejected/adapted prototype runtime behavior: raw fixture imports, inline style system, prototype metric values as runtime facts, group-layer customer plaintext and unmarked numeric badges.
+- Rejected/adapted prototype runtime behavior: raw fixture imports, inline style system, prototype metric values as runtime facts and group-layer customer plaintext.
 
 ## Implementation Summary
 
@@ -33,15 +33,14 @@ This PR renders the visible UI-first group overview page in `apps/admin` using c
 | `apps/admin/src/pages/PageOutlet.tsx` | Renders `GroupOverviewPage` for `group.overview`. |
 | `apps/admin/src/App.tsx` | Passes tenant-entry callback that routes clicked rows to `tenant.conversations`. |
 | `apps/admin/src/pages/registry.ts` | Marks `group.overview` as implementation evidence pending PR review under this spec. |
-| `apps/admin/src/shell/AppShellNavigation.tsx` | Neutralizes tenant nav prototype numeric badges to `mock` because row entry exposes tenant nav in this slice. |
-| `apps/admin/tests/m7-ui-group-overview.spec.ts` | Covers default group layer, group-only nav, topbar/sidebar geometry, cards/table labels, degraded/mock labeling, search/filter/clear/sort, row click tenant entry, tenant-only nav, collapse width and 320px no overflow. |
+| `apps/admin/tests/m7-ui-group-overview.spec.ts` | Covers default group layer, group-only nav, topbar/sidebar geometry, cards/table labels, degraded/mock labeling, search/filter/clear/sort, tenant-entry button click/keyboard activation, tenant-only nav, collapse width and 320px no overflow. |
 
 ## Runtime / Data Boundary
 
 - All group overview table/card values are centralized mock/degraded fallback values and are visibly labeled as `mock`, `degraded`, `aggregate runtime unavailable` and `not production metrics`.
 - The prohibited prototype metric values are not used as group overview runtime facts.
 - No backend/API/DB/schema/package/lock/global CI files are touched.
-- Row click enters `tenant.conversations` with the row tenant id; real authorization/cache invalidation remains a future runtime responsibility.
+- Tenant-entry button activation enters `tenant.conversations` with the row tenant id; real authorization/cache invalidation remains a future runtime responsibility.
 
 ## Browser Evidence
 
@@ -77,8 +76,8 @@ Source HTML note: direct file open defaulted to the tenant conversation view; cl
 | `npm run lint` | pass | ESLint completed cleanly. |
 | `npm run typecheck -- --pretty false` | pass after `npm ci` | Initial run failed because backend/runtime deps were absent from `node_modules`; `npm ci` from existing `package-lock.json` installed dependencies without package/lock changes, then typecheck passed. |
 | `npm run build:admin` | pass | Vite admin build produced `apps/admin/dist`. |
-| `npm run playwright -- apps/admin/tests/m7-ui-group-overview.spec.ts` | pass | 4/4 tests passed. |
-| `npm run playwright -- apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | pass | 14/14 tests passed; validates router/sidebar grouping and #182 conversation workbench after narrow shell badge neutralization. |
+| `npm run playwright -- apps/admin/tests/m7-ui-group-overview.spec.ts` | pass | 5/5 tests passed; covers tenant-entry button click plus Enter/Space keyboard activation. |
+| `npm run playwright -- apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | pass | 14/14 tests passed; validates router/sidebar grouping and #182 conversation workbench after restoring shared sidebar badges to the base values. |
 
 ## Boundary
 

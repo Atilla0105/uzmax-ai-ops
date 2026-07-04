@@ -15,23 +15,43 @@ import { M5LogsAnalyticsShell } from "./M5LogsAnalyticsShell";
 import { M5TemplateCenterShell } from "./M5TemplateCenterShell";
 import { releaseGateConsoleState } from "./releaseGateContracts";
 const tenants = [
-  {
-    health: "healthy", id: "tenant-a", line: "美妆 · 中亚", name: "玉珠跨境美妆",
-    risk: "aggregate only", status: "健康"
-  },
-  {
-    health: "degraded", id: "tenant-b", line: "3C数码 · 俄语区", name: "丝路数码",
-    risk: "connector degraded", status: "降级"
-  },
-  {
-    health: "attention", id: "tenant-c", line: "家居 · 哈萨克", name: "天净家居",
-    risk: "manual review", status: "需人工"
-  },
-  {
-    health: "breaker", id: "tenant-d", line: "母婴 · 俄语区", name: "白桦母婴",
-    risk: "breaker offline", status: "熔断"
-  }
+  tenant(
+    "tenant-a",
+    "玉珠跨境美妆",
+    "美妆 · 中亚",
+    "healthy",
+    "健康",
+    "aggregate only"
+  ),
+  tenant(
+    "tenant-b",
+    "丝路数码",
+    "3C数码 · 俄语区",
+    "degraded",
+    "降级",
+    "connector degraded"
+  ),
+  tenant(
+    "tenant-c",
+    "天净家居",
+    "家居 · 哈萨克",
+    "attention",
+    "需人工",
+    "manual review"
+  ),
+  tenant("tenant-d", "白桦母婴", "母婴 · 俄语区", "breaker", "熔断", "breaker offline")
 ] as const;
+
+function tenant(
+  id: string,
+  name: string,
+  line: string,
+  health: "healthy" | "degraded" | "attention" | "breaker",
+  status: string,
+  risk: string
+) {
+  return { health, id, line, name, risk, status };
+}
 
 export function App() {
   const [foundationTab, setFoundationTab] = useState("states");
@@ -223,32 +243,23 @@ export function App() {
   );
 }
 
-const Metric = ({
-  label,
-  tone = "neutral",
-  value
-}: {
-  label: string;
-  tone?: "neutral" | "warn";
-  value: string;
-}) => (
-  <div className={`metric ${tone}`}>
-    <span>{label}</span>
-    <strong>{value}</strong>
-  </div>
-);
+type MetricProps = { label: string; tone?: "neutral" | "warn"; value: string };
+type EntryProps = { testId?: string; title: string; value: string };
 
-const Entry = ({
-  testId,
-  title,
-  value
-}: {
-  testId?: string;
-  title: string;
-  value: string;
-}) => (
-  <article className="entry" data-testid={testId}>
-    <h3>{title}</h3>
-    <p>{value}</p>
-  </article>
-);
+function Metric({ label, tone = "neutral", value }: MetricProps) {
+  return (
+    <div className={`metric ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function Entry({ testId, title, value }: EntryProps) {
+  return (
+    <article className="entry" data-testid={testId}>
+      <h3>{title}</h3>
+      <p>{value}</p>
+    </article>
+  );
+}

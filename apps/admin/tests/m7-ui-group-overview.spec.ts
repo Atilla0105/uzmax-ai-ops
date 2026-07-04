@@ -9,9 +9,7 @@ const tenantLabels =
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const tableHeaders =
-  "租户|会话量|待人工|SLA风险|转人工率|AI成本/日|评测状态|订单状态|最后异常".split(
-    "|"
-  );
+  "租户|会话量|待人工|SLA风险|转人工率|AI成本/日|评测状态|订单状态|最后异常".split("|");
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/conversation-ticket/conversations", async (route) => {
@@ -74,10 +72,7 @@ test("renders group overview with group-only shell and degraded mock data", asyn
     ).toBeVisible();
   }
 
-  await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty(
-    "offsetWidth",
-    232
-  );
+  await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty("offsetWidth", 232);
   const topbarHeight = await page.locator(".uz-topbar").evaluate((node) => {
     return (node as HTMLElement).offsetHeight;
   });
@@ -108,19 +103,29 @@ test("supports search filters clear and sort without claiming runtime truth", as
   await expect(table.getByText("Mock 租户 A")).toBeVisible();
   await expect(table.getByText("Mock 租户 D")).toBeVisible();
 
-  const firstBefore = await firstTenantLabel(page);
   await page.getByTestId("m7-group-sort-human").click();
-  const firstAfter = await firstTenantLabel(page);
-  expect(firstAfter).not.toBe(firstBefore);
+  await expectTenantOrder(page, [
+    "Mock 租户 C",
+    "Mock 租户 A",
+    "Mock 租户 B",
+    "Mock 租户 D"
+  ]);
+  await page.getByTestId("m7-group-sort-human").click();
+  await expectTenantOrder(page, [
+    "Mock 租户 D",
+    "Mock 租户 B",
+    "Mock 租户 A",
+    "Mock 租户 C"
+  ]);
   await expect(page.getByTestId("m7-group-overview-page")).toContainText("mock");
 });
 
-test("row click enters tenant conversations and tenant-only navigation", async ({
+test("tenant entry button click enters tenant conversations and tenant-only navigation", async ({
   page
 }) => {
   await page.goto("/design");
 
-  await page.getByTestId("m7-group-overview-row-tenant-b").click();
+  await page.getByTestId("m7-group-enter-tenant-tenant-b").click();
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-shell-level",
     "tenant"
@@ -135,6 +140,19 @@ test("row click enters tenant conversations and tenant-only navigation", async (
   );
   await expect(page.getByTestId("m7-conversation-workbench-page")).toBeVisible();
   await expectLayerNav(page, tenantSections, groupSections, tenantLabels, groupLabels);
+});
+
+test("tenant entry supports keyboard Enter and Space", async ({ page }) => {
+  await page.goto("/design");
+
+  await page.getByTestId("m7-group-enter-tenant-tenant-b").focus();
+  await page.keyboard.press("Enter");
+  await expectTenantRoute(page, "tenant-b");
+
+  await page.goto("/design");
+  await page.getByTestId("m7-group-enter-tenant-tenant-c").focus();
+  await page.keyboard.press("Space");
+  await expectTenantRoute(page, "tenant-c");
 });
 
 test("sidebar collapse and 320px mobile fallback avoid body overflow", async ({
@@ -160,9 +178,9 @@ async function expectLayerNav(
   hiddenLabels: readonly string[]
 ) {
   const nav = page.getByTestId("app-shell-nav");
-  await expect.poll(() => nav.locator(".uz-nav-group p").allTextContents()).toEqual(
-    visibleSectionLabels
-  );
+  await expect
+    .poll(() => nav.locator(".uz-nav-group p").allTextContents())
+    .toEqual(visibleSectionLabels);
   for (const label of hiddenSectionLabels)
     await expect(nav.locator(".uz-nav-group p", { hasText: label })).toHaveCount(0);
   for (const label of visibleLabels)
@@ -171,10 +189,28 @@ async function expectLayerNav(
     await expect(nav.getByRole("button", { name: label, exact: true })).toHaveCount(0);
 }
 
-async function firstTenantLabel(page: Page) {
-  return page
-    .locator("[data-testid^='m7-group-overview-row-']")
-    .first()
-    .locator("strong")
-    .innerText();
+async function expectTenantRoute(page: Page, tenantId: string) {
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "tenant"
+  );
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.conversations"
+  );
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-tenant-id",
+    tenantId
+  );
+}
+
+async function expectTenantOrder(page: Page, expected: string[]) {
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-testid^='m7-group-overview-row-']")
+        .locator("strong")
+        .allTextContents()
+    )
+    .toEqual(expected);
 }

@@ -13,12 +13,12 @@ import {
 } from "./groupOverviewFallback";
 
 type SortDir = "asc" | "desc";
+type GroupOverviewPageProps = { onEnterTenant: (tenantId: string) => void };
+type GroupOverviewTableRowProps = GroupOverviewPageProps & { row: GroupOverviewRow };
+type EvalTone = "danger" | "info" | "neutral" | "ok";
+type OrderTone = "danger" | "neutral" | "ok" | "warn";
 
-export function GroupOverviewPage({
-  onEnterTenant
-}: {
-  onEnterTenant: (tenantId: string) => void;
-}) {
+export function GroupOverviewPage({ onEnterTenant }: GroupOverviewPageProps) {
   const [filter, setFilter] = useState<GroupHealthFilter>("total");
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<GroupOverviewSortKey>("sessions");
@@ -125,31 +125,37 @@ export function GroupOverviewPage({
               {groupOverviewColumns.map((column) => {
                 const sortColumn = "sortKey" in column ? column.sortKey : undefined;
                 return (
-                <th key={column.label} scope="col">
-                  {sortColumn ? (
-                    <button
-                      aria-label={`Sort ${column.label}`}
-                      data-testid={`m7-group-sort-${sortColumn}`}
-                      onClick={() => toggleSort(sortColumn)}
-                      type="button"
-                    >
-                      <span>{column.label}</span>
-                      <IconSlot icon={ArrowDownUp} size="sm" />
-                      {sortKey === sortColumn ? (
-                        <span className="uz-sort-dir">{sortDir === "asc" ? "升" : "降"}</span>
-                      ) : null}
-                    </button>
-                  ) : (
-                    column.label
-                  )}
-                </th>
+                  <th key={column.label} scope="col">
+                    {sortColumn ? (
+                      <button
+                        aria-label={`Sort ${column.label}`}
+                        data-testid={`m7-group-sort-${sortColumn}`}
+                        onClick={() => toggleSort(sortColumn)}
+                        type="button"
+                      >
+                        <span>{column.label}</span>
+                        <IconSlot icon={ArrowDownUp} size="sm" />
+                        {sortKey === sortColumn ? (
+                          <span className="uz-sort-dir">
+                            {sortDir === "asc" ? "升" : "降"}
+                          </span>
+                        ) : null}
+                      </button>
+                    ) : (
+                      column.label
+                    )}
+                  </th>
                 );
               })}
             </tr>
           </thead>
           <tbody>
             {filteredRows.map((row) => (
-              <GroupOverviewTableRow key={row.id} onEnterTenant={onEnterTenant} row={row} />
+              <GroupOverviewTableRow
+                key={row.id}
+                onEnterTenant={onEnterTenant}
+                row={row}
+              />
             ))}
           </tbody>
         </table>
@@ -166,25 +172,23 @@ export function GroupOverviewPage({
   );
 }
 
-function GroupOverviewTableRow({ onEnterTenant, row }: {
-  onEnterTenant: (tenantId: string) => void;
-  row: GroupOverviewRow;
-}) {
+function GroupOverviewTableRow({ onEnterTenant, row }: GroupOverviewTableRowProps) {
   return (
-    <tr
-      data-testid={`m7-group-overview-row-${row.id}`}
-      onClick={() => onEnterTenant(row.id)}
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") onEnterTenant(row.id);
-      }}
-    >
+    <tr data-testid={`m7-group-overview-row-${row.id}`}>
       <td>
-        <span className={`uz-tenant-dot uz-tenant-dot--${healthDot(row.health)}`} />
-        <span>
-          <strong>{row.tenantName}</strong>
-          <small>{row.businessLine}</small>
-        </span>
+        <button
+          aria-label={`进入 ${row.tenantName} 对话`}
+          className="uz-group-table__tenant-button"
+          data-testid={`m7-group-enter-tenant-${row.id}`}
+          onClick={() => onEnterTenant(row.id)}
+          type="button"
+        >
+          <span className={`uz-tenant-dot uz-tenant-dot--${healthDot(row.health)}`} />
+          <span>
+            <strong>{row.tenantName}</strong>
+            <small>{row.businessLine}</small>
+          </span>
+        </button>
       </td>
       <td className="is-mono">{row.sessions}</td>
       <td className="is-mono is-risk">{row.human}</td>
@@ -192,11 +196,13 @@ function GroupOverviewTableRow({ onEnterTenant, row }: {
       <td className="is-mono">{row.handoff}</td>
       <td className="is-mono">{row.cost}</td>
       <td>
-        <StatusBadge tone={evalTone(row.evalState)}>{evalLabel(row.evalState)}</StatusBadge>
+        <StatusBadge tone={evalTones[row.evalState]}>
+          {evalLabels[row.evalState]}
+        </StatusBadge>
       </td>
       <td>
-        <StatusBadge tone={orderTone(row.orderState)}>
-          {orderLabel(row.orderState)}
+        <StatusBadge tone={orderTones[row.orderState]}>
+          {orderLabels[row.orderState]}
         </StatusBadge>
       </td>
       <td className="is-last">{row.last}</td>
@@ -204,7 +210,11 @@ function GroupOverviewTableRow({ onEnterTenant, row }: {
   );
 }
 
-function resultLabel(visibleRows: number, filter: GroupHealthFilter, hasActiveFilter: boolean) {
+function resultLabel(
+  visibleRows: number,
+  filter: GroupHealthFilter,
+  hasActiveFilter: boolean
+) {
   if (!hasActiveFilter) return groupOverviewFallbackMeta.label;
   const label = groupHealthCards.find((card) => card.filter === filter)?.label;
   return `显示 ${visibleRows} / ${groupOverviewRows.length} mock rows${label ? ` · ${label}` : ""}`;
@@ -218,22 +228,31 @@ function sortValue(row: GroupOverviewRow, sortKey: GroupOverviewSortKey) {
 const healthDot = (health: GroupOverviewRow["health"]) =>
   health === "tripped" ? "breaker" : health;
 
-function evalLabel(state: GroupOverviewRow["evalState"]) {
-  return { blocked: "mock 阻断", pass: "mock 通过", running: "mock 运行中", unavailable: "—" }[state];
-}
+const evalLabels = {
+  blocked: "mock 阻断",
+  pass: "mock 通过",
+  running: "mock 运行中",
+  unavailable: "—"
+} satisfies Record<GroupOverviewRow["evalState"], string>;
+const evalTones = {
+  blocked: "danger",
+  pass: "ok",
+  running: "info",
+  unavailable: "neutral"
+} satisfies Record<GroupOverviewRow["evalState"], EvalTone>;
+const orderLabels = {
+  degraded: "mock 降级",
+  fault: "mock 故障",
+  normal: "mock 正常",
+  unavailable: "—"
+} satisfies Record<GroupOverviewRow["orderState"], string>;
+const orderTones = {
+  degraded: "warn",
+  fault: "danger",
+  normal: "ok",
+  unavailable: "neutral"
+} satisfies Record<GroupOverviewRow["orderState"], OrderTone>;
 
-function evalTone(state: GroupOverviewRow["evalState"]) {
-  return { blocked: "danger", pass: "ok", running: "info", unavailable: "neutral" }[state] as "danger" | "info" | "neutral" | "ok";
-}
-
-function orderLabel(state: GroupOverviewRow["orderState"]) {
-  return { degraded: "mock 降级", fault: "mock 故障", normal: "mock 正常", unavailable: "—" }[state];
-}
-
-function orderTone(state: GroupOverviewRow["orderState"]) {
-  return { degraded: "warn", fault: "danger", normal: "ok", unavailable: "neutral" }[state] as "danger" | "neutral" | "ok" | "warn";
-}
-
-const css = `.uz-page-group-overview{display:flex;flex-direction:column;min-height:100%;background:var(--paper);color:var(--ink-900);font:var(--text-base)/1.45 var(--font-body)}.uz-group-overview__head{display:flex;align-items:center;gap:var(--s-6);border-bottom:1px solid var(--ink-150);padding:14px 24px;background:var(--card)}.uz-group-overview__title{display:flex;align-items:center;gap:var(--s-4);min-width:0}.uz-group-overview__title h2{margin:0;font:700 var(--text-title)/1.2 var(--font-display);white-space:nowrap}.uz-group-overview__tools{display:flex;align-items:center;gap:var(--s-4);margin-left:auto}.uz-group-overview__tools .uz-input{width:240px;min-height:30px;border-radius:7px}.uz-group-overview__runtime{display:flex;align-items:center;gap:var(--s-4);margin:12px 24px 0;border:1px solid var(--state-warn-border);border-radius:8px;padding:7px 10px;background:var(--state-warn-bg);color:var(--ink-700);font-size:var(--text-xs);font-weight:600}.uz-group-overview__runtime>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.uz-group-health{display:grid;grid-template-columns:repeat(6,minmax(124px,1fr));gap:12px;padding:16px 24px}.uz-group-health__card{display:grid;gap:6px;border:1px solid var(--ink-150);border-radius:10px;padding:13px 15px;background:var(--card);color:var(--ink-900);text-align:left;cursor:pointer}.uz-group-health__card:hover,.uz-group-health__card:focus-visible,.uz-group-health__card[aria-pressed=true]{outline:0;box-shadow:var(--shadow-focus)}.uz-group-health__card span{color:var(--ink-500);font-size:11px}.uz-group-health__card strong{font:700 22px/1 var(--font-data)}.uz-group-health__card.is-warn strong{color:var(--state-warn)}.uz-group-health__card.is-danger strong{color:var(--state-human)}.uz-group-health__card.is-ok strong{color:var(--state-ok)}.uz-group-table{min-height:0;margin:0 24px 24px;overflow:auto;border:1px solid var(--ink-150);border-radius:10px;background:var(--card)}.uz-group-table table{width:100%;min-width:900px;border-collapse:collapse}.uz-group-table th{border-bottom:1px solid var(--ink-150);padding:0;background:var(--paper);color:var(--ink-500);font:700 11px/1.2 var(--font-body);text-align:left;white-space:nowrap}.uz-group-table th>button{display:flex;align-items:center;gap:5px;width:100%;height:34px;border:0;padding:0 14px;color:inherit;background:transparent;font:inherit;text-align:left;cursor:pointer}.uz-group-table th:not(:has(button)){padding:11px 14px}.uz-sort-dir{font-size:10px;color:var(--ink-900)}.uz-group-table td{border-bottom:1px solid var(--ink-075);padding:12px 14px;color:var(--ink-900);font-size:13px;white-space:nowrap}.uz-group-table tbody tr{cursor:pointer}.uz-group-table tbody tr:hover,.uz-group-table tbody tr:focus{background:var(--paper);outline:0}.uz-group-table td:first-child{display:flex;align-items:center;gap:9px;min-width:170px}.uz-group-table td:first-child>span:last-child{display:grid;gap:2px}.uz-group-table td strong{font-weight:700}.uz-group-table td small{color:var(--ink-500);font-size:11px}.uz-group-table .is-mono{font-family:var(--font-data)}.uz-group-table .is-risk{color:var(--state-human);font-weight:700}.uz-group-table .is-last{color:var(--ink-700);font-size:12px}.uz-group-table__empty{display:flex;align-items:center;justify-content:center;gap:var(--s-4);min-height:120px;color:var(--ink-700);font-size:var(--text-sm)}.uz-group-table__empty button{border:0;color:var(--state-ai);background:transparent;font-weight:700;cursor:pointer}@media(max-width:900px){.uz-group-overview__head{align-items:stretch;flex-direction:column;padding:12px}.uz-group-overview__title,.uz-group-overview__tools{align-items:flex-start;flex-wrap:wrap;margin-left:0}.uz-group-overview__tools .uz-input{width:100%}.uz-group-overview__runtime{align-items:flex-start;margin:10px 12px 0}.uz-group-overview__runtime>span:last-child{white-space:normal}.uz-group-health{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;gap:8px}.uz-group-table{margin:0 12px 12px}.uz-group-table table{min-width:0}.uz-group-table thead{display:none}.uz-group-table tbody,.uz-group-table tr,.uz-group-table td{display:block}.uz-group-table tr{border-bottom:1px solid var(--ink-150);padding:10px}.uz-group-table td{border:0;padding:4px 0;white-space:normal}.uz-group-table td:first-child{min-width:0}.uz-group-table td:not(:first-child)::before{display:inline-block;width:86px;color:var(--ink-500);font:700 11px/1.2 var(--font-body)}.uz-group-table td:nth-child(2)::before{content:"会话量"}.uz-group-table td:nth-child(3)::before{content:"待人工"}.uz-group-table td:nth-child(4)::before{content:"SLA风险"}.uz-group-table td:nth-child(5)::before{content:"转人工率"}.uz-group-table td:nth-child(6)::before{content:"AI成本/日"}.uz-group-table td:nth-child(7)::before{content:"评测状态"}.uz-group-table td:nth-child(8)::before{content:"订单状态"}.uz-group-table td:nth-child(9)::before{content:"最后异常"}}@media(max-width:360px){.uz-group-health{grid-template-columns:1fr}.uz-page-group-overview{min-width:0}.uz-group-overview__title .uz-status-badge{white-space:normal}.uz-group-overview__tools{width:100%}.uz-group-overview__tools .uz-button{width:100%}}`;
+const css = `.uz-page-group-overview{display:flex;flex-direction:column;min-height:100%;background:var(--paper);color:var(--ink-900);font:var(--text-base)/1.45 var(--font-body)}.uz-group-overview__head{display:flex;align-items:center;gap:var(--s-6);border-bottom:1px solid var(--ink-150);padding:14px 24px;background:var(--card)}.uz-group-overview__title{display:flex;align-items:center;gap:var(--s-4);min-width:0}.uz-group-overview__title h2{margin:0;font:700 var(--text-title)/1.2 var(--font-display);white-space:nowrap}.uz-group-overview__tools{display:flex;align-items:center;gap:var(--s-4);margin-left:auto}.uz-group-overview__tools .uz-input{width:240px;min-height:30px;border-radius:7px}.uz-group-overview__runtime{display:flex;align-items:center;gap:var(--s-4);margin:12px 24px 0;border:1px solid var(--state-warn-border);border-radius:8px;padding:7px 10px;background:var(--state-warn-bg);color:var(--ink-700);font-size:var(--text-xs);font-weight:600}.uz-group-overview__runtime>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.uz-group-health{display:grid;grid-template-columns:repeat(6,minmax(124px,1fr));gap:12px;padding:16px 24px}.uz-group-health__card{display:grid;gap:6px;border:1px solid var(--ink-150);border-radius:10px;padding:13px 15px;background:var(--card);color:var(--ink-900);text-align:left;cursor:pointer}.uz-group-health__card:hover,.uz-group-health__card:focus-visible,.uz-group-health__card[aria-pressed=true]{outline:0;box-shadow:var(--shadow-focus)}.uz-group-health__card span{color:var(--ink-500);font-size:11px}.uz-group-health__card strong{font:700 22px/1 var(--font-data)}.uz-group-health__card.is-warn strong{color:var(--state-warn)}.uz-group-health__card.is-danger strong{color:var(--state-human)}.uz-group-health__card.is-ok strong{color:var(--state-ok)}.uz-group-table{min-height:0;margin:0 24px 24px;overflow:auto;border:1px solid var(--ink-150);border-radius:10px;background:var(--card)}.uz-group-table table{width:100%;min-width:900px;border-collapse:collapse}.uz-group-table th{border-bottom:1px solid var(--ink-150);padding:0;background:var(--paper);color:var(--ink-500);font:700 11px/1.2 var(--font-body);text-align:left;white-space:nowrap}.uz-group-table th>button{display:flex;align-items:center;gap:5px;width:100%;height:34px;border:0;padding:0 14px;color:inherit;background:transparent;font:inherit;text-align:left;cursor:pointer}.uz-group-table th:not(:has(button)){padding:11px 14px}.uz-sort-dir{font-size:10px;color:var(--ink-900)}.uz-group-table td{border-bottom:1px solid var(--ink-075);padding:12px 14px;color:var(--ink-900);font-size:13px;white-space:nowrap}.uz-group-table tbody tr:hover{background:var(--paper)}.uz-group-table td:first-child{min-width:170px}.uz-group-table__tenant-button{display:flex;align-items:center;gap:9px;width:100%;border:0;padding:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}.uz-group-table__tenant-button:focus-visible{outline:0;box-shadow:var(--shadow-focus)}.uz-group-table__tenant-button>span:last-child{display:grid;gap:2px}.uz-group-table td strong{font-weight:700}.uz-group-table td small{color:var(--ink-500);font-size:11px}.uz-group-table .is-mono{font-family:var(--font-data)}.uz-group-table .is-risk{color:var(--state-human);font-weight:700}.uz-group-table .is-last{color:var(--ink-700);font-size:12px}.uz-group-table__empty{display:flex;align-items:center;justify-content:center;gap:var(--s-4);min-height:120px;color:var(--ink-700);font-size:var(--text-sm)}.uz-group-table__empty button{border:0;color:var(--state-ai);background:transparent;font-weight:700;cursor:pointer}@media(max-width:900px){.uz-group-overview__head{align-items:stretch;flex-direction:column;padding:12px}.uz-group-overview__title,.uz-group-overview__tools{align-items:flex-start;flex-wrap:wrap;margin-left:0}.uz-group-overview__tools .uz-input{width:100%}.uz-group-overview__runtime{align-items:flex-start;margin:10px 12px 0}.uz-group-overview__runtime>span:last-child{white-space:normal}.uz-group-health{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;gap:8px}.uz-group-table{margin:0 12px 12px}.uz-group-table table{min-width:0}.uz-group-table thead{display:none}.uz-group-table tbody,.uz-group-table tr,.uz-group-table td{display:block}.uz-group-table tr{border-bottom:1px solid var(--ink-150);padding:10px}.uz-group-table td{border:0;padding:4px 0;white-space:normal}.uz-group-table td:first-child{min-width:0}.uz-group-table td:not(:first-child)::before{display:inline-block;width:86px;color:var(--ink-500);font:700 11px/1.2 var(--font-body)}.uz-group-table td:nth-child(2)::before{content:"会话量"}.uz-group-table td:nth-child(3)::before{content:"待人工"}.uz-group-table td:nth-child(4)::before{content:"SLA风险"}.uz-group-table td:nth-child(5)::before{content:"转人工率"}.uz-group-table td:nth-child(6)::before{content:"AI成本/日"}.uz-group-table td:nth-child(7)::before{content:"评测状态"}.uz-group-table td:nth-child(8)::before{content:"订单状态"}.uz-group-table td:nth-child(9)::before{content:"最后异常"}}@media(max-width:360px){.uz-group-health{grid-template-columns:1fr}.uz-page-group-overview{min-width:0}.uz-group-overview__title .uz-status-badge{white-space:normal}.uz-group-overview__tools{width:100%}.uz-group-overview__tools .uz-button{width:100%}}`;
 
 const GroupOverviewStyles = () => h("style", null, css);

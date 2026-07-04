@@ -1,17 +1,7 @@
 export type GroupHealthFilter =
-  | "total"
-  | "abnormal"
-  | "aiTrip"
-  | "modelFault"
-  | "orderFault"
-  | "redline";
+  "total" | "abnormal" | "aiTrip" | "modelFault" | "orderFault" | "redline";
 
-export type GroupOverviewSortKey =
-  | "sessions"
-  | "human"
-  | "sla"
-  | "handoff"
-  | "cost";
+export type GroupOverviewSortKey = "sessions" | "human" | "sla" | "handoff" | "cost";
 
 export interface GroupHealthCard {
   filter: GroupHealthFilter;
@@ -121,7 +111,8 @@ export const groupOverviewColumns = [
 
 export function matchesGroupFilter(row: GroupOverviewRow, filter: GroupHealthFilter) {
   if (filter === "total") return true;
-  if (filter === "abnormal") return row.health === "degraded" || row.health === "attention";
+  if (filter === "abnormal")
+    return row.health === "degraded" || row.health === "attention";
   if (filter === "aiTrip") return row.health === "tripped";
   if (filter === "modelFault") return false;
   if (filter === "orderFault") return row.orderState === "fault";

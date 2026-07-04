@@ -85,7 +85,12 @@ test("supports filters search row open detail back and local guarded actions", a
   await expect(page.getByTestId("m7-customer-list-count")).toContainText(
     "1 位 mock 客户"
   );
-  await page.getByTestId("m7-customer-row-cu-mock-d").click();
+  const blockedRow = page.getByRole("button", {
+    name: "打开客户资产 D cu-mock-d"
+  });
+  await expect(blockedRow).toHaveAttribute("data-testid", "m7-customer-row-cu-mock-d");
+  await blockedRow.focus();
+  await page.keyboard.press("Space");
   await expect(page.getByTestId("m7-customer-detail")).toContainText("Mock 客户 D");
   await expect(page.getByTestId("m7-customer-detail")).toContainText("档案");
   await expect(page.getByTestId("m7-customer-detail")).toContainText("历史会话");

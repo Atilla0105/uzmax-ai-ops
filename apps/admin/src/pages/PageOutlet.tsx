@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
 import { ConversationsPage } from "./conversations/ConversationsPage";
+import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, legacyEvidencePageId, type AdminPageId } from "./registry";
 
 export interface PageOutletProps {
   activePageId: AdminPageId;
   legacyEvidence: ReactNode;
+  onEnterTenant: (tenantId: string) => void;
   onPageChange: (pageId: AdminPageId) => void;
   selectedTenantId: string;
 }
@@ -15,6 +17,7 @@ export interface PageOutletProps {
 export function PageOutlet({
   activePageId,
   legacyEvidence,
+  onEnterTenant,
   onPageChange,
   selectedTenantId
 }: PageOutletProps) {
@@ -32,6 +35,14 @@ export function PageOutlet({
     return (
       <section data-page-id={page.id} data-testid="page-outlet">
         <QueuePage />
+      </section>
+    );
+  }
+
+  if (page.id === "group.overview") {
+    return (
+      <section data-page-id={page.id} data-testid="page-outlet">
+        <GroupOverviewPage onEnterTenant={onEnterTenant} />
       </section>
     );
   }

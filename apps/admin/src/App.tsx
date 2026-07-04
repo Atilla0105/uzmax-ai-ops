@@ -16,36 +16,20 @@ import { M5TemplateCenterShell } from "./M5TemplateCenterShell";
 import { releaseGateConsoleState } from "./releaseGateContracts";
 const tenants = [
   {
-    health: "healthy",
-    id: "tenant-a",
-    line: "美妆 · 中亚",
-    name: "玉珠跨境美妆",
-    risk: "aggregate only",
-    status: "健康"
+    health: "healthy", id: "tenant-a", line: "美妆 · 中亚", name: "玉珠跨境美妆",
+    risk: "aggregate only", status: "健康"
   },
   {
-    health: "degraded",
-    id: "tenant-b",
-    line: "3C数码 · 俄语区",
-    name: "丝路数码",
-    risk: "connector degraded",
-    status: "降级"
+    health: "degraded", id: "tenant-b", line: "3C数码 · 俄语区", name: "丝路数码",
+    risk: "connector degraded", status: "降级"
   },
   {
-    health: "attention",
-    id: "tenant-c",
-    line: "家居 · 哈萨克",
-    name: "天净家居",
-    risk: "manual review",
-    status: "需人工"
+    health: "attention", id: "tenant-c", line: "家居 · 哈萨克", name: "天净家居",
+    risk: "manual review", status: "需人工"
   },
   {
-    health: "breaker",
-    id: "tenant-d",
-    line: "母婴 · 俄语区",
-    name: "白桦母婴",
-    risk: "breaker offline",
-    status: "熔断"
+    health: "breaker", id: "tenant-d", line: "母婴 · 俄语区", name: "白桦母婴",
+    risk: "breaker offline", status: "熔断"
   }
 ] as const;
 
@@ -225,6 +209,13 @@ export function App() {
       <PageOutlet
         activePageId={route.pageId}
         legacyEvidence={legacyEvidence}
+        onEnterTenant={(tenantId) =>
+          setAdminRoute({
+            level: "tenant",
+            pageId: "tenant.conversations",
+            tenantId
+          })
+        }
         onPageChange={setActivePageId}
         selectedTenantId={selectedTenant.id}
       />

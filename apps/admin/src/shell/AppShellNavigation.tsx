@@ -31,9 +31,9 @@ type AppShellNavGroupProps = {
 };
 
 const navBadges: Partial<Record<AdminPageId, string>> = {
-  "tenant.conversations": "7",
-  "tenant.queue": "9",
-  "tenant.tickets": "3"
+  "tenant.conversations": "mock",
+  "tenant.queue": "mock",
+  "tenant.tickets": "mock"
 };
 
 const groupNavConfig = [

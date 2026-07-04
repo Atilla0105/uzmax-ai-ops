@@ -36,7 +36,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-03-page-migration-ledger-and-router"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_candidate_pending_pr_review",
     iaPage: "集团总览",
     id: "group.overview",
     label: "集团总览",
@@ -46,9 +46,9 @@ const adminPageRegistry = [
     order: 1,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupOverviewPage.tsx",
-    targetSpecId: "M7-UI-04A-group-overview"
+    targetSpecId: "M7-UI-12-group-overview-page"
   },
   {
     evidenceStatus: "not_started",

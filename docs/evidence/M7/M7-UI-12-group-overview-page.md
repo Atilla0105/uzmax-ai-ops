@@ -2,74 +2,84 @@
 
 ## Status
 
-Spec-only evidence for `group.overview` / 集团总览.
+Implementation candidate evidence for `group.overview` / 集团总览 on stacked branch `codex/m7-ui-12-group-overview-visible-ui`.
 
-This PR creates the page-migration contract that replaces the older `M7-UI-04A-group-overview` placeholder for planning. It updates the M7 queue and page ledger, but does not implement React pages, route rendering, API hooks, tests, CSS, backend/API/runtime contracts, DB changes, package/lock changes, CI/global config, screenshots or fixture imports.
-
-This is not page implementation, M7 closeout, owner acceptance, GA-0 opening, production deployment, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
+This PR renders the visible UI-first group overview page in `apps/admin` using centralized degraded/mock fallback state. DB/API/runtime foundation is intentionally downgraded for this slice, so the page marks aggregate data as `mock`, `degraded` and `aggregate runtime unavailable`; it does not claim production metrics, real group aggregate runtime, owner visual acceptance, merge, GA-0, production deployment, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
 
 ## Entry Evidence
 
 | Fact | Evidence |
 |---|---|
-| worker path | `/Users/atilla/.codex/worktrees/m7-ui-12-group-overview-page-spec` |
-| worker branch | `codex/m7-ui-12-group-overview-page-spec` |
-| worker status at entry | `## codex/m7-ui-12-group-overview-page-spec...origin/main` |
-| worker HEAD | `2193a51` / `M7-UI-06 shared shell topbar calibration (#183)` |
-| root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
-| root/main status/head before edits | `## main...origin/main`; `2193a51` |
-| root `git branch --no-merged main` before edits | `codex/m7-ui-07-page-visual-acceptance-notes`; `codex/m7-ui-11-release-acceptance-page-impl`; `codex/m7-ui-20-conversation-workbench-page-impl` |
-| open PR/base audit | #178 Draft/Paused (`codex/m7-ui-11-release-acceptance-page-impl`, CI success at initial draft); #182 Draft conversation implementation candidate (`codex/m7-ui-20-conversation-workbench-page-impl`, CI success at initial draft); #184 page visual acceptance notes later squash-merged to `origin/main` as `d7ea071`, and this branch is rebased onto that base. |
-| Codex Node/npm PATH note | Plain `node`, `npm` and `gh` were not initially on shell PATH. Validation uses Codex Node/npm and bundled `gh` paths. |
+| worker path | `/Users/atilla/.codex/worktrees/m7-ui-12-group-overview-visible-ui` |
+| worker branch | `codex/m7-ui-12-group-overview-visible-ui` |
+| worker status at entry | `## codex/m7-ui-12-group-overview-visible-ui...origin/codex/m7-ui-20-conversation-workbench-page-impl` |
+| stacked base | PR #182 head/base branch `origin/codex/m7-ui-20-conversation-workbench-page-impl` |
+| root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` must remain read-only/clean |
+| Node/npm path | Plain `node` was missing on initial PATH; validation uses `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH`. |
 
 ## Required Reads / Mapping
 
-- Required reads completed before drafting: `AGENTS.md`, the four v1.1 source-of-truth docs, `docs/admin-design-system.md`, `docs/admin-ui-page-migration-ledger.md`, `docs/admin-ui-prototype-migration-index.md`, `docs/evidence/M7/README.md`, current `apps/admin/src/pages/registry.ts`, current `apps/admin/src/pages/PageOutlet.tsx`, and owner prototype group overview sources.
-- Owner prototype files read: `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx`, `/Users/atilla/源码/unpacked 6/fixtures/group.ts`, `/Users/atilla/源码/unpacked 6/App.tsx`, `/Users/atilla/源码/unpacked 6/shell/navigation.ts`, and `/Users/atilla/Downloads/运营塔台1.0.html` as visual reference only.
-- #184 acceptance notes are now present in `origin/main` via `d7ea071`; initial drafting inspected the #184 worktree read-only and no #184 files were edited.
-- Adopted Impeccable/product-register guidance: dense operational admin UI, status-first hierarchy, visible permission/degraded states, desktop primary, mobile fallback only and no decorative/legacy-shell visual language.
-- Rejected prototype/runtime behavior: raw inline styling as repo target, raw fixtures as runtime truth, local demo state, old shell visuals, old `--uzmax-*` visual target and any group-layer customer plaintext.
+- Required reads completed before editing: `AGENTS.md`, `docs/specs/M7-UI-12-group-overview-page.md`, `docs/admin-design-system.md`, `docs/admin-ui-page-migration-ledger.md`, `apps/admin/src/App.tsx`, `apps/admin/src/pages/PageOutlet.tsx`, `apps/admin/src/pages/registry.ts`, `apps/admin/src/shell/AppShell.tsx`, `apps/admin/src/shell/AppShellNavigation.tsx`, `apps/admin/src/shell/AppShell.css` and `apps/admin/src/pages/conversations/*`.
+- Owner prototype files read: `/Users/atilla/Downloads/运营塔台1.0.html`, `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx`, `/Users/atilla/源码/unpacked 6/fixtures/group.ts`, `/Users/atilla/源码/unpacked 6/App.tsx` and `/Users/atilla/源码/unpacked 6/shell/navigation.ts`.
+- Adopted Impeccable/product-register guidance: dense operational admin UI, status-first hierarchy, complete degraded/mock labeling, desktop control-room primary, 320px readable fallback, no decorative/legacy-shell visual drift.
+- Rejected/adapted prototype runtime behavior: raw fixture imports, inline style system, prototype metric values as runtime facts, group-layer customer plaintext and unmarked numeric badges.
 
-## Spec Summary
+## Implementation Summary
 
 | Path | Summary |
 |---|---|
-| `docs/specs/M7-UI-12-group-overview-page.md` | Defines source mapping, page matrix, runtime contract, state coverage, visual acceptance, evidence plan and boundaries for `group.overview`. |
-| `docs/evidence/M7/M7-UI-12-group-overview-page.md` | Records this spec-only evidence stub. |
-| `docs/admin-ui-page-migration-ledger.md` | Updates `group.overview` from `M7-UI-04A-group-overview` placeholder to `M7-UI-12-group-overview-page` spec-ready/docs-only state without claiming implementation. |
-| `docs/evidence/M7/README.md` | Adds UI-12 to the M7 execution queue and current boundary. |
+| `apps/admin/src/pages/group/GroupOverviewPage.tsx` | Adds visible group overview page with title, result/degraded labels, clear filter, search, six health cards, sortable table and row click into tenant conversations. |
+| `apps/admin/src/pages/group/groupOverviewFallback.ts` | Centralizes safe degraded/mock cards, rows, columns and filter matching; no prototype fixtures imported. |
+| `apps/admin/src/pages/PageOutlet.tsx` | Renders `GroupOverviewPage` for `group.overview`. |
+| `apps/admin/src/App.tsx` | Passes tenant-entry callback that routes clicked rows to `tenant.conversations`. |
+| `apps/admin/src/pages/registry.ts` | Marks `group.overview` as implementation evidence pending PR review under this spec. |
+| `apps/admin/src/shell/AppShellNavigation.tsx` | Neutralizes tenant nav prototype numeric badges to `mock` because row entry exposes tenant nav in this slice. |
+| `apps/admin/tests/m7-ui-group-overview.spec.ts` | Covers default group layer, group-only nav, topbar/sidebar geometry, cards/table labels, degraded/mock labeling, search/filter/clear/sort, row click tenant entry, tenant-only nav, collapse width and 320px no overflow. |
 
-## Runtime / Contract Notes
+## Runtime / Data Boundary
 
-- Current repo has a `group.overview` registry row, but it still renders the planned-page scaffold through `PageOutlet`.
-- Current repo does not have a M7 group overview page, group aggregate ApiClient, group aggregate hook, or approved runtime contract for REQ-G01 metrics.
-- Future implementation must wire an approved real aggregate API/hook or render an honest read-only/degraded state. It must not import or copy `unpacked 6` fixtures as runtime truth.
-- Group layer can show authorized aggregate data only. It must not expose customer plaintext, conversation content, phone, Telegram username, raw order payload or cross-tenant private data.
+- All group overview table/card values are centralized mock/degraded fallback values and are visibly labeled as `mock`, `degraded`, `aggregate runtime unavailable` and `not production metrics`.
+- The prohibited prototype metric values are not used as group overview runtime facts.
+- No backend/API/DB/schema/package/lock/global CI files are touched.
+- Row click enters `tenant.conversations` with the row tenant id; real authorization/cache invalidation remains a future runtime responsibility.
 
-## Review Fix Notes
+## Browser Evidence
 
-- At touch-list correction time, PR #185 was Draft, and this fix did not mark it ready.
-- After rebase, #184 is resolved in base via `d7ea071`; PR #185 remains Draft and must not be marked ready or merged by this worker. This note does not claim group overview visual acceptance, runtime closure or release readiness.
-- The spec machine-readable touch list is docs-only. Future implementation candidate paths are recorded in a separate non-guard section, and a future implementation PR must add or confirm its own implementation touch list before code changes.
+Artifacts captured under `/tmp/uzmax-m7-ui-12-group-overview-visible-ui/`:
 
-## Page Contract Highlights
+- React desktop screenshot: `/tmp/uzmax-m7-ui-12-group-overview-visible-ui/react-group-overview-desktop.png`
+- React mobile screenshot: `/tmp/uzmax-m7-ui-12-group-overview-visible-ui/react-group-overview-mobile-320.png`
+- Source HTML screenshot after clicking the source breadcrumb/group affordance: `/tmp/uzmax-m7-ui-12-group-overview-visible-ui/source-html-after-group-click-desktop.png`
+- Metrics JSON: `/tmp/uzmax-m7-ui-12-group-overview-visible-ui/metrics.json`
+- Source-click metrics JSON: `/tmp/uzmax-m7-ui-12-group-overview-visible-ui/source-click-metrics.json`
 
-- Objects: group health summary, tenant row, tenant health category, eval state, order connector state, last abnormal event and tenant navigation target.
-- Fields: tenant count, abnormal tenant count, AI tripped, model fault, order connector fault, redline today, sessions, human-needed, SLA risk, handoff rate, AI cost/day, eval status, order status and last abnormal event.
-- Filters/actions: search tenant/business line, health card filter, clear filter, sort columns and authorized row click into tenant layer.
-- States: loading, empty, filtered empty, error, permission denied, degraded/stale aggregate and mobile fallback/read-only.
-- Visual acceptance: owner HTML and unpacked source are hard baseline; desktop pixel/detail comparison is required before visual acceptance can be claimed; sidebar category grouping and bottom collapse control must be checked if visible.
+Measured React metrics:
+
+| Metric | Value |
+|---|---|
+| desktop page id | `group.overview` |
+| desktop runtime state | `degraded` |
+| desktop nav width | `232` |
+| desktop topbar height | `53` |
+| health cards | `6` |
+| mobile viewport/body scroll width | `320 / 320` |
+| mobile overflow | `false` |
+
+Source HTML note: direct file open defaulted to the tenant conversation view; clicking `集团` produced the group overview source screenshot. The source prototype still contains the original numeric demo values and is used only as visual/source mapping, not as runtime truth for this implementation.
 
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
-| `git add -N docs/specs/M7-UI-12-group-overview-page.md docs/evidence/M7/M7-UI-12-group-overview-page.md && git diff --check` | pass | Covered the two new docs plus modified tracked docs; no whitespace output. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree` | pass | Reported `changedFiles: 4`, category `docs: 4`, source changed files `0`, source net LOC `0`, new source files `0`. |
-
-PR body must include `Spec ID` and `Spec file` metadata for CI `guard:pr-shape`.
+| `git diff --check` | pass | No whitespace output. |
+| `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
+| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-20-conversation-workbench-page-impl --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree` | pass | `changedFiles: 11`; categories `source: 6`, `docs: 4`, `test: 1`; spec type `feature`. |
+| `npm run lint` | pass | ESLint completed cleanly. |
+| `npm run typecheck -- --pretty false` | pass after `npm ci` | Initial run failed because backend/runtime deps were absent from `node_modules`; `npm ci` from existing `package-lock.json` installed dependencies without package/lock changes, then typecheck passed. |
+| `npm run build:admin` | pass | Vite admin build produced `apps/admin/dist`. |
+| `npm run playwright -- apps/admin/tests/m7-ui-group-overview.spec.ts` | pass | 4/4 tests passed. |
+| `npm run playwright -- apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | pass | 14/14 tests passed; validates router/sidebar grouping and #182 conversation workbench after narrow shell badge neutralization. |
 
 ## Boundary
 
-This evidence does not approve page implementation, page migration, runtime closure, M7 closeout, owner acceptance, GA-0, production, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release.
+This evidence does not approve page migration final acceptance, runtime closure, M7 closeout, owner acceptance, GA-0, production, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release.

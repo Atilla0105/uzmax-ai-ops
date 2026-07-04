@@ -72,7 +72,7 @@ Source HTML note: direct file open defaulted to the tenant conversation view; cl
 |---|---|---|
 | `git diff --check` | pass | No whitespace output. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-20-conversation-workbench-page-impl --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree` | pass | `changedFiles: 11`; categories `source: 6`, `docs: 4`, `test: 1`; spec type `feature`. |
+| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-20-conversation-workbench-page-impl --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree` | pass | `changedFiles: 10`; categories `source: 5`, `docs: 4`, `test: 1`; spec type `feature`. |
 | `npm run lint` | pass | ESLint completed cleanly. |
 | `npm run typecheck -- --pretty false` | pass after `npm ci` | Initial run failed because backend/runtime deps were absent from `node_modules`; `npm ci` from existing `package-lock.json` installed dependencies without package/lock changes, then typecheck passed. |
 | `npm run build:admin` | pass | Vite admin build produced `apps/admin/dist`. |

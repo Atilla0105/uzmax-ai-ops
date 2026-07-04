@@ -1,5 +1,10 @@
 export type GroupHealthFilter =
-  "total" | "abnormal" | "aiTrip" | "modelFault" | "orderFault" | "redline";
+  | "total"
+  | "abnormal"
+  | "aiTrip"
+  | "modelFault"
+  | "orderFault"
+  | "redline";
 
 export type GroupOverviewSortKey = "sessions" | "human" | "sla" | "handoff" | "cost";
 

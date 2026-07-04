@@ -49,6 +49,7 @@ Artifacts captured under `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/`:
 - React desktop screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/react-ticket-desktop.png`
 - React mobile 320 screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/react-ticket-mobile-320.png`
 - Owner/source HTML screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/owner-html-ticket-source.png`
+- Source ticket screenshot after sidebar text click: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/source-ticket-after-click.png`
 - Metrics JSON: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/metrics.json`
 
 Measured React metrics:
@@ -64,7 +65,7 @@ Measured React metrics:
 | desktop body/viewport overflow | `1440 / 1440`, `false` |
 | mobile body/viewport overflow | `320 / 320`, `false` |
 
-Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.html` was feasible and captured, but no exact accessible `工单` button was found after load. The owner HTML remains source/visual mapping evidence; this branch does not claim source screenshot parity or owner visual acceptance.
+Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.html` defaulted to conversation; clicking the left sidebar text `工单` produced the source ticket screenshot. The target is text/DOM-clickable rather than `role=button`. The source screenshot supports layout/source comparison, but no owner visual acceptance is claimed.
 
 ## Validation
 

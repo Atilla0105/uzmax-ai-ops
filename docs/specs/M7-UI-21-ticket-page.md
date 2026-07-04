@@ -54,7 +54,7 @@ feature
 - source net LOC: <= 600
 - new source files: <= 2
 - test files changed: <= 1 focused Playwright spec
-- docs changed: <= 4 evidence/ledger/spec updates
+- docs changed: <= 5 evidence/ledger/spec updates including the required incident record
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - external API/SDK/provider/connector/adapter basis: none; render truthful degraded/read-only mock state only.
 

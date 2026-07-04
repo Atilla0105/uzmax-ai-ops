@@ -120,7 +120,16 @@ Priority notes:
 | M7-UI AppShell/global frame | `apps/admin/src/shell` and app entry | page migration | v1.1 IA nav order, tenant switch permission/cache behavior, env marker, heartbeat, search/notification disabled or real-wired. |
 | Page workers | `apps/admin/src/pages/**` | acceptance of individual pages | Real ApiClient/hook, loading/empty/error/permission/degraded states, tests, evidence, no fixture runtime. |
 
-Page worker hard rule: every migrated page must connect a real repo ApiClient/hook or explicitly documented read-only API contract, and must include loading, empty, error, permission denied and degraded behavior. A page that only renders `unpacked 6` fixtures is a prototype preview, not a repo migration.
+Page worker hard rules:
+
+- Every migrated page must connect a real repo ApiClient/hook or explicitly documented read-only API contract, and must include loading, empty, error, permission denied and degraded behavior. A page that only renders `unpacked 6` fixtures is a prototype preview, not a repo migration.
+- Owner HTML `/Users/atilla/Downloads/运营塔台1.0.html` and frozen `/Users/atilla/源码/unpacked 6` are the hard visual/source baseline. Current #182 direction is broadly aligned but not one-to-one visual acceptance, owner approval or merge readiness.
+- Before implementation and before any visual acceptance claim, every page worker must inspect the exact target `/Users/atilla/源码/unpacked 6/pages/**` source and the relevant owner HTML region. The source already contains layout/component details; do not invent layouts, freely rearrange UI or carry old shell visuals.
+- Desktop acceptance requires detailed pixel/detail-level adjustment against the owner HTML and target unpacked source.
+- Shared shell/sidebar acceptance must verify owner sidebar category grouping and the bottom collapse-sidebar control when the sidebar is visible.
+- Mobile remains an acceptable/readable fallback for this migration phase; pixel-level mobile redesign/polish belongs to a later mobile-specific pass.
+- Group and tenant layers remain separate: `/design/admin` opens group layer/group overview; selecting a tenant enters tenant layer.
+- Release/acceptance remains transitional/low business value and must not displace high-value real admin pages.
 
 ## 7. Directly Borrow, Adapt, Forbid
 
@@ -173,6 +182,8 @@ Each implementation worker must report:
 - source files searched with `rg` before adding new files;
 - why the target layer was extended instead of creating a parallel implementation;
 - exact mapping from `unpacked 6` source files to repo paths;
+- exact owner HTML region and target `unpacked 6/pages/**` sources inspected for desktop pixel/detail acceptance;
+- sidebar category grouping and bottom collapse-control parity result when the shell/sidebar is visible;
 - which fixture values were ignored, sanitized or converted to tests;
 - which Impeccable/design-system suggestions were accepted, adapted or rejected and why;
 - page state coverage and API/hook wiring evidence;

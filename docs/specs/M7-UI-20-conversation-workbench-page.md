@@ -50,6 +50,7 @@ feature
   - `apps/admin/src/pages/registry.ts`
   - `apps/admin/tests/m7-ui-conversation-workbench.spec.ts`
   - `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts`
+  - `apps/admin/tests/conversationWorkbenchLocators.ts`
   - `apps/admin/tests/m7-ui-page-router.spec.ts`
   - `apps/admin/tests/helpers/openLegacyEvidence.ts`
   - `apps/admin/tests/m7-ui-foundation.spec.ts`
@@ -59,6 +60,7 @@ feature
   - `apps/admin/src/App.tsx` is allowed only for selectedTenantId propagation into `PageOutlet`; this is not permission for AppShell/global shell work.
   - Coordinator-approved test-scope expansion: `apps/admin/tests/helpers/openLegacyEvidence.ts` and `apps/admin/tests/m7-ui-foundation.spec.ts` are allowed only for narrow full-suite compatibility after `tenant.conversations` stops rendering the scaffold. This is test/helper compatibility only.
   - Coordinator-approved fallback split: `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` is allowed only because max-lines lint required splitting no-API fallback coverage out of the main workbench spec. This does not expand runtime/source scope.
+  - Coordinator-approved locator-helper dedupe: `apps/admin/tests/conversationWorkbenchLocators.ts` is test-only Playwright locator helper extraction so `jscpd` can pass without duplicating locator code across focused conversation specs.
   - This expansion does not permit changes to shared shell, shared tokens, shared primitives, shared patterns, `AppShell`, global config, backend/API routes, WebSocket contracts, customer asset/order/quote clients, package/lock, CI/guard scripts or DB/schema. If any of those are required, stop and split to a separate approved spec.
 - 未列出的模块默认不可改。
 
@@ -79,11 +81,11 @@ Future implementation budget after coordinator approval:
 - source changed files: <= 5
 - source net LOC: <= 600
 - new source files: <= 3
-- test files changed: <= 5 focused/admin-compatibility Playwright specs/helpers. The fifth test file is `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts`, split out only because max-lines lint required no-API fallback coverage to leave the main workbench spec.
+- test files changed: <= 6 focused/admin-compatibility Playwright specs/helpers. The fifth test file is `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts`, split out only because max-lines lint required no-API fallback coverage to leave the main workbench spec; the sixth is `apps/admin/tests/conversationWorkbenchLocators.ts`, a test-only locator helper extracted for `jscpd` dedupe.
 - docs changed: <= 5 evidence/ledger/index/spec/M7 README updates
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - external API/SDK/provider/connector/adapter basis: none; use existing internal admin/API contracts, repo evidence and approved follow-up specs only.
-- exceptions: `large_change_exception` is permitted only through PR metadata/review for the existing page-local implementation size overage. The only approved test-scope expansions are the helper/foundation compatibility pair and the fallback-spec max-lines split listed above. Runtime/API gaps, shared shell/tokens/primitives/patterns/AppShell/global config, backend/API, WebSocket, package/lock, CI/guard or DB/schema changes still require a separate approved spec.
+- exceptions: `large_change_exception` is permitted only through PR metadata/review for the existing page-local implementation size overage. The only approved test-scope expansions are the helper/foundation compatibility pair, the fallback-spec max-lines split and the test-only locator-helper dedupe listed above. Runtime/API gaps, shared shell/tokens/primitives/patterns/AppShell/global config, backend/API, WebSocket, package/lock, CI/guard or DB/schema changes still require a separate approved spec.
 
 ## `rg` search conclusions before drafting
 

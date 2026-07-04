@@ -104,9 +104,9 @@ Owner v6 screenshot review update: PR #182 remains Draft and is only an owner vi
 
 - Changed source remains inside the allowed page-local scope: `apps/admin/src/pages/conversations/**`, `App.tsx` selectedTenantId propagation into `PageOutlet`, `PageOutlet`, and `registry`.
 - `conversationWorkbenchPanels.tsx` is intentionally added as a page-local support file. Reason: Prettier-expanded JSX/CSS pushed `conversationWorkbenchStyles.tsx` over the React file-length limit and concentrated right-rail/state complexity; splitting the rail/state support keeps lintable code without touching shared primitives, patterns, tokens or shell.
-- Coordinator-approved test-scope expansion is recorded in the spec: `apps/admin/tests/helpers/openLegacyEvidence.ts` and `apps/admin/tests/m7-ui-foundation.spec.ts` are allowed only for full-suite compatibility after `tenant.conversations` stopped being a scaffold. The additional `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` file is allowed only because max-lines lint required splitting no-API fallback coverage out of the main workbench spec. This is test/helper/fallback coverage bookkeeping only and is not permission to touch shared shell, tokens, primitives, patterns, `AppShell`, global config, backend/API, WebSocket, package/lock, CI/guard or DB/schema.
-- Current `pr-shape` without PR metadata fails on source budget: `net source LOC 1689 > 600`.
-- Current `pr-shape` with PR-body metadata and `Exception: large_change_exception` passes and reports `source.changedFiles=10`, `source.netLoc=1689`, `source.newFiles=7`.
+- Coordinator-approved test-scope expansion is recorded in the spec: `apps/admin/tests/helpers/openLegacyEvidence.ts` and `apps/admin/tests/m7-ui-foundation.spec.ts` are allowed only for full-suite compatibility after `tenant.conversations` stopped being a scaffold. The additional `apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` file is allowed only because max-lines lint required splitting no-API fallback coverage out of the main workbench spec. `apps/admin/tests/conversationWorkbenchLocators.ts` is a test-only Playwright locator helper extracted to dedupe focused conversation specs and make `jscpd` pass. This is test/helper/fallback/locator coverage bookkeeping only and is not permission to touch shared shell, tokens, primitives, patterns, `AppShell`, global config, backend/API, WebSocket, package/lock, CI/guard or DB/schema.
+- Current `pr-shape` without PR metadata fails on source budget: `net source LOC 1678 > 600`.
+- Current `pr-shape` with PR-body metadata and `Exception: large_change_exception` passes and reports `changedFiles=20`, categories `source=10 / test=6 / docs=4`, `source.changedFiles=10`, `source.netLoc=1678`, `source.newFiles=7`.
 - The `large_change_exception` is source-size governance only and still requires coordinator/owner review before merge; it is not page acceptance, runtime closure or release approval.
 - Tenant-scope remediation passes selectedTenantId through App/PageOutlet/page runtime, filters rows/details to the selected tenant, regenerates fallback rows for the selected tenant and rejects mismatched detail/handoff responses. Handoff race remediation guards delayed completions by selected tenant/request generation and includes the delayed handoff duplicate-id tenant-switch race test.
 - No package/lock, backend/API, DB/schema, shared token, shared primitive, shared pattern, shell architecture, CI/guard or PR #178 files were touched. `apps/admin/tests/helpers/openLegacyEvidence.ts` has a narrow full-suite compatibility update so legacy evidence specs can open the explicit legacy route after tenant-layer navigation.
@@ -139,7 +139,9 @@ Latest page-local visual parity validation run from `/Users/atilla/.codex/worktr
 - `git diff --check` - pass.
 - `PATH=/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run format:check` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run guard:doc-triggers` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; current report: changedFiles 19, categories source 10 / test 5 / docs 4, source net LOC 1689, new source files 7.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; current report: changedFiles 20, categories source 10 / test 6 / docs 4, source net LOC 1678, new source files 7.
+- GitHub Actions PR #182 CI run `28713385028` on `a684887b1156c9db4f79496f9fc03b7f53d35015` - green.
+- `npm run jscpd` - pass after the test-only locator helper dedupe in `apps/admin/tests/conversationWorkbenchLocators.ts`.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run lint` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run typecheck -- --pretty false` - pass.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run build:admin` - pass.
@@ -162,15 +164,15 @@ Plan-note acceptance update validation run from `/Users/atilla/.codex/worktrees/
   "specPath": "docs/specs/M7-UI-20-conversation-workbench-page.md",
   "specType": "feature",
   "bootstrapException": false,
-  "changedFiles": 19,
+  "changedFiles": 20,
   "categories": {
     "source": 10,
-    "test": 5,
+    "test": 6,
     "docs": 4
   },
   "source": {
     "changedFiles": 10,
-    "netLoc": 1689,
+    "netLoc": 1678,
     "newFiles": 7
   }
 }
@@ -178,15 +180,22 @@ Plan-note acceptance update validation run from `/Users/atilla/.codex/worktrees/
 
 - Playwright not run; this update is docs-only and did not change code.
 
-Final evidence bookkeeping validation summary from the current PR #182 branch at `ab414c9`:
+Final evidence bookkeeping validation summary from the current PR #182 branch at `a684887b1156c9db4f79496f9fc03b7f53d35015`:
 
 - `git diff --check` - pass.
 - Targeted ESLint - pass.
 - `tsc` - pass.
 - Admin build - pass.
 - Playwright conversation specs - pass, 11/11, including the delayed handoff duplicate-id tenant-switch race coverage.
+- GitHub Actions PR #182 run `28713385028` - green.
+- `npm run jscpd` - pass after `apps/admin/tests/conversationWorkbenchLocators.ts` extracted shared Playwright locators for focused conversation specs.
 - Live no-API screenshots/metrics - captured under `/tmp/uzmax-m7-ui-20-conversation-workbench-final-ab414c9/`; tenant-c outlet/workbench/row evidence, synthetic/degraded runtime state, no error card, no tenant-b in workbench, desktop nav 232 / topbar 53 / list 316 / thread 552 / rail 340, mobile bodyScrollWidth 320.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: changedFiles 19, source 10 files, test 5 files, docs 4 files, net source LOC 1689, new source files 7.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: changedFiles 20, source 10 files, test 6 files, docs 4 files, net source LOC 1678, new source files 7.
+
+Evidence/spec metadata sync validation from `a684887b1156c9db4f79496f9fc03b7f53d35015`:
+
+- `git diff --check` - pass.
+- `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass; report: changedFiles 20, source 10 files, test 6 files, docs 4 files, net source LOC 1678, new source files 7.
 
 ## Boundary
 

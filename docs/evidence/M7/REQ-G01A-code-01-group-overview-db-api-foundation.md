@@ -84,6 +84,7 @@ This docs worker did not read or modify owner HTML `/Users/atilla/Downloads/ËøêË
 - If current schema lacks a source, code-01 must encode degraded/partial-source metadata instead of fabricating values.
 - Group-scope RLS is a first-class blocker: code-01 must implement a tested safe strategy or return disabled/degraded state rather than bypassing RLS.
 - Future source file budget stays within five new API source files by consolidating DTOs, types, errors and validators into `group-overview.contracts.ts`.
+- Coordinator quality review added explicit future `packages/db/scripts/**` smoke-harness paths so the required DB/RLS true-DB validation has an allowed location if code-01 needs package-local support scripts.
 - No implementation, runtime closure, visual acceptance, owner acceptance, GA-0, production or 1.0 release is claimed.
 
 ## Validation

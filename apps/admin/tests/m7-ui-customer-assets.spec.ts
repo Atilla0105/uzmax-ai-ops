@@ -1,19 +1,41 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
-const groupLabels =
-  "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
-const tenantLabels =
-  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
-    "|"
-  );
-const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
-const groupSections = ["总览", "平台", "治理"];
+const customerShellExpectations = {
+  hiddenGroupButtons: [
+    "集团总览",
+    "模型/成本/风险",
+    "模板中心",
+    "连接中心",
+    "发布与验收",
+    "租户管理",
+    "集团日志"
+  ],
+  hiddenGroupSections: ["总览", "平台", "治理"],
+  tenantButtons: [
+    "对话",
+    "工单",
+    "确认队列",
+    "客户资产",
+    "订单",
+    "知识与资源",
+    "评测中心",
+    "AI 成员",
+    "团队",
+    "配置",
+    "分析",
+    "日志"
+  ],
+  tenantSections: ["运营", "数据", "智能", "管理", "洞察"]
+};
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(({ page }) => stubConversationTicketList(page));
+
+async function stubConversationTicketList(page: Page) {
   await page.route("**/conversation-ticket/conversations", async (route) => {
     await route.fulfill({ json: { items: [] } });
   });
-});
+}
 
 test("renders tenant.customers with tenant-only navigation and degraded mock labels", async ({
   page
@@ -239,13 +261,21 @@ async function openCustomers(page: Page) {
 
 async function expectTenantOnlyNav(page: Page) {
   const nav = page.getByTestId("app-shell-nav");
+  const sectionLabels = nav.locator(".uz-nav-group p");
   await expect
-    .poll(() => nav.locator(".uz-nav-group p").allTextContents())
-    .toEqual(tenantSections);
-  for (const label of tenantLabels)
-    await expect(nav.getByRole("button", { name: label, exact: true })).toBeVisible();
-  for (const label of groupLabels)
-    await expect(nav.getByRole("button", { name: label, exact: true })).toHaveCount(0);
-  for (const label of groupSections)
-    await expect(nav.locator(".uz-nav-group p", { hasText: label })).toHaveCount(0);
+    .poll(() => sectionLabels.allTextContents())
+    .toEqual(customerShellExpectations.tenantSections);
+  await Promise.all(
+    customerShellExpectations.tenantButtons.map((name) =>
+      expect(nav.getByRole("button", { exact: true, name })).toBeVisible()
+    )
+  );
+  await Promise.all([
+    ...customerShellExpectations.hiddenGroupButtons.map((name) =>
+      expect(nav.getByRole("button", { exact: true, name })).toHaveCount(0)
+    ),
+    ...customerShellExpectations.hiddenGroupSections.map((section) =>
+      expect(sectionLabels.filter({ hasText: section })).toHaveCount(0)
+    )
+  ]);
 }

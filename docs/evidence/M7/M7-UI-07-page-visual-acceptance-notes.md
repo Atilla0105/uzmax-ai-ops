@@ -46,7 +46,7 @@ Impeccable setup note: `.agents/skills/impeccable/SKILL.md` and `reference/produ
 - Every page worker must inspect exact target `/Users/atilla/源码/unpacked 6/pages/**` files and the relevant owner HTML region. Workers must not invent layouts, freely rearrange UI or carry old shell visuals.
 - Shared shell/sidebar acceptance must verify owner sidebar category grouping and the bottom collapse-sidebar control when the sidebar is visible.
 - Mobile remains an acceptable/readable fallback in this phase; pixel-level mobile redesign/polish is deferred.
-- Group and tenant layers remain separate: `/design/admin` opens group layer/group overview, and selecting a tenant enters tenant layer.
+- Group and tenant layers remain separate: `/design` or admin/home opens group layer/group overview, and selecting a tenant enters tenant layer.
 - Release/acceptance remains transitional/low business value and must not displace high-value real admin pages.
 
 ## Deliverables

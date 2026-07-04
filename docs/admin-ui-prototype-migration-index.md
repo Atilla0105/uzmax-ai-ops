@@ -128,7 +128,7 @@ Page worker hard rules:
 - Desktop acceptance requires detailed pixel/detail-level adjustment against the owner HTML and target unpacked source.
 - Shared shell/sidebar acceptance must verify owner sidebar category grouping and the bottom collapse-sidebar control when the sidebar is visible.
 - Mobile remains an acceptable/readable fallback for this migration phase; pixel-level mobile redesign/polish belongs to a later mobile-specific pass.
-- Group and tenant layers remain separate: `/design/admin` opens group layer/group overview; selecting a tenant enters tenant layer.
+- Group and tenant layers remain separate: `/design` or admin/home opens group layer/group overview; selecting a tenant enters tenant layer.
 - Release/acceptance remains transitional/low business value and must not displace high-value real admin pages.
 
 ## 7. Directly Borrow, Adapt, Forbid

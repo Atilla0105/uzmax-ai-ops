@@ -88,7 +88,7 @@ Confirmation: this worker read #182 docs as source material only and did not edi
 - The durable docs state #182 is broadly aligned but not accepted or merge-ready.
 - Page workers are required to inspect exact target `unpacked 6/pages/**` files and relevant owner HTML regions before visual acceptance.
 - Shared shell/sidebar acceptance records owner sidebar category grouping and bottom collapse-sidebar control.
-- Group and tenant layers remain separate: `/design/admin` opens group layer/group overview; selecting a tenant enters tenant layer.
+- Group and tenant layers remain separate: `/design` or admin/home opens group layer/group overview; selecting a tenant enters tenant layer.
 - Release/acceptance remains transitional/low business value and must not displace high-value real admin pages.
 - Validation results are recorded honestly.
 

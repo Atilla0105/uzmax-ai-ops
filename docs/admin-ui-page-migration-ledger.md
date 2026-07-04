@@ -18,7 +18,7 @@ The current route registry is admin-internal. It is not a backend API, public DT
 - Every page worker must inspect the exact target `/Users/atilla/源码/unpacked 6/pages/**` files and relevant owner HTML region. The source already contains layout/component details; workers must not invent layouts, freely rearrange UI or carry old shell visuals.
 - Shared shell/sidebar acceptance must verify owner sidebar category grouping and the bottom collapse-sidebar control when the sidebar is visible.
 - Mobile remains an acceptable/readable fallback in this phase. Pixel-level mobile redesign/polish is deferred to a later mobile-specific pass.
-- Group and tenant layers remain separate: `/design/admin` opens group layer/group overview; selecting a tenant enters tenant layer. Later page plans must keep this visible.
+- Group and tenant layers remain separate: `/design` or admin/home opens group layer/group overview; selecting a tenant enters tenant layer. Later page plans must keep this visible.
 - Release/acceptance remains transitional/low business value and must not displace high-value real admin pages.
 
 ## Router/Foundation State

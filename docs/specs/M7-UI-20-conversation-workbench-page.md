@@ -43,6 +43,7 @@ feature
   - `docs/evidence/M7/M7-UI-20-conversation-workbench-page.md`
   - `docs/evidence/M7/README.md`
   - `docs/admin-ui-page-migration-ledger.md`
+  - `docs/admin-ui-prototype-migration-index.md`
   - `apps/admin/src/pages/conversations/**`
   - `apps/admin/src/pages/PageOutlet.tsx`
   - `apps/admin/src/pages/registry.ts`
@@ -75,7 +76,7 @@ Future implementation budget after coordinator approval:
 - source net LOC: <= 600
 - new source files: <= 3
 - test files changed: <= 4 focused/admin-compatibility Playwright specs/helpers
-- docs changed: <= 3 evidence/ledger updates
+- docs changed: <= 5 evidence/ledger/index/spec/M7 README updates
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
 - external API/SDK/provider/connector/adapter basis: none; use existing internal admin/API contracts, repo evidence and approved follow-up specs only.
 - exceptions: `large_change_exception` is permitted only through PR metadata/review for the existing page-local implementation size overage. The only approved test-scope expansion is the helper/foundation compatibility pair listed above. Runtime/API gaps, shared shell/tokens/primitives/patterns/AppShell/global config, backend/API, WebSocket, package/lock, CI/guard or DB/schema changes still require a separate approved spec.

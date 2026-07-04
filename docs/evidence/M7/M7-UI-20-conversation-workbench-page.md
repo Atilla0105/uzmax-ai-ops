@@ -125,7 +125,7 @@ Owner HTML/prototype screenshot was feasible from `/Users/atilla/Downloads/ËøêËê
 - The next pass must derive layout, density, spacing, sidebar behavior, component anatomy, state treatment and microcopy shape from the owner HTML/unpacked source instead of inventing missing structure.
 - Sidebar parity must be verified concretely: owner sidebar functions are grouped by category, and the collapse-sidebar control sits at the bottom.
 - Mobile can remain as the current fallback for this PR cycle; mobile pixel-level redesign and polish is explicitly deferred to a later mobile-specific pass.
-- No PR body or GitHub comment was updated in this worker pass because the coordinator session reported an expired GitHub connector token; this is a docs-only local evidence update.
+- PR body metadata was refreshed through the GitHub connector for the added prototype-index docs scope; the connector returned PR #182 `draft: true`.
 
 ## Validation
 
@@ -143,11 +143,32 @@ Latest page-local visual parity validation run from `/Users/atilla/.codex/worktr
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/conversations/ConversationsPage.tsx apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts apps/admin/src/pages/conversations/conversationWorkbenchStyles.tsx` - pass, `[]`.
 - Screenshot capture - pass, desktop/mobile artifacts refreshed as `*-after-ui06-v6.png` under `/tmp/uzmax-m7-ui-20-conversation-workbench-page/`; mobile capture checked `document.body.scrollWidth === 320`; owner baseline remains `/tmp/uzmax-m7-ui-20-conversation-workbench-page/owner-html-1440-after-ui06-v2.png`.
 
-Evidence-only owner-feedback recording validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
+Plan-note acceptance update validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
 
 - `git diff --check` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run guard:doc-triggers` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run guard:doc-triggers` - pass, `doc-trigger-paths: ok`.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; exact report:
+
+```json
+{
+  "base": "origin/main",
+  "specPath": "docs/specs/M7-UI-20-conversation-workbench-page.md",
+  "specType": "feature",
+  "bootstrapException": false,
+  "changedFiles": 16,
+  "categories": {
+    "source": 7,
+    "test": 4,
+    "docs": 5
+  },
+  "source": {
+    "changedFiles": 7,
+    "netLoc": 1260,
+    "newFiles": 5
+  }
+}
+```
+
 - Playwright not run; this update is docs-only and did not change code.
 
 ## Boundary

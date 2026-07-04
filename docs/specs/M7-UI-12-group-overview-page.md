@@ -224,6 +224,7 @@ Future implementation must record:
 
 - `git diff --check`
 - `npm run guard:doc-triggers`
+- Before running or using `pr-shape` against this spec for a future implementation PR, add or confirm that PR's own machine-readable implementation touch list; the docs-only touch list above is not valid for implementation code changes.
 - `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree`
 - format/typecheck/lint/admin build as required by the implementation scope
 - focused Playwright for `group.overview`: loading, empty, filtered empty, error, permission denied, degraded, search, health-card filter/clear, sort, authorized row click

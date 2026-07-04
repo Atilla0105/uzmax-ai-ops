@@ -21,7 +21,7 @@ This slice defines the DB + API runtime foundation implementation spec for `grou
 | required pre-write guard, bare `npm` | failed before writing because `npm` was not on shell PATH: `zsh:1: command not found: npm` |
 | required pre-write guard, Codex Node PATH | pass: `worker-write-boundary: ok (codex/req-g01a-code-01-db-api-foundation-spec, /Users/atilla/.codex/worktrees/req-g01a-code-01-db-api-foundation-spec)` |
 | no-merged branch check | `git branch --no-merged main` showed #178 and #182 worker branches only: `codex/m7-ui-11-release-acceptance-page-impl`, `codex/m7-ui-20-conversation-workbench-page-impl`. |
-| open PR check | Bare `gh` is unavailable in this shell; open PR state was not re-verified through GitHub CLI in this docs slice. |
+| open PR / PR creation check | Bare `gh` was unavailable in the previous shell, but bundled gh at `/Users/atilla/Applications/Codex/tools/downloads/gh/gh_2.92.0_macOS_arm64/bin/gh` is available in this handoff; it created Draft PR #190 at `https://github.com/Atilla0105/uzmax-ai-ops/pull/190`. |
 
 ## Required Reads
 

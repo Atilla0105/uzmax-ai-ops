@@ -79,7 +79,7 @@ export const knowledgeTabs: { id: KnowledgeTab; label: string }[] = [
   { id: "templates", label: "模板来源" }
 ];
 
-export const runtimeLabels = [
+const runtimeLabels = [
   "degraded",
   "mock",
   "read-only",

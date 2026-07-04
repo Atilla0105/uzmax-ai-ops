@@ -38,6 +38,18 @@ test("renders tenant.tickets with tenant-only navigation and degraded mock label
   for (const id of ["unclaimed", "mine", "sla", "reopened", "follow"]) {
     await expect(page.getByTestId(`m7-ticket-tab-${id}`)).toContainText("mock");
   }
+  await expect(page.getByTestId("m7-ticket-tab-sla")).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await expect(page.getByTestId("m7-ticket-tab-mine")).toHaveAttribute(
+    "aria-pressed",
+    "false"
+  );
+  await expect(page.getByTestId("m7-ticket-row-T-MOCK-1042")).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
   await expect(page.getByTestId("m7-ticket-detail")).toContainText("摘要");
   await expect(page.getByTestId("m7-ticket-detail")).toContainText("AI 建议处理");
   await expect(page.getByTestId("m7-ticket-detail")).toContainText("会话片段");
@@ -71,8 +83,20 @@ test("supports tab switching row selection claim transfer notes and close requir
   await openTickets(page);
 
   await page.getByTestId("m7-ticket-tab-mine").click();
+  await expect(page.getByTestId("m7-ticket-tab-mine")).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await expect(page.getByTestId("m7-ticket-tab-sla")).toHaveAttribute(
+    "aria-pressed",
+    "false"
+  );
   await expect(page.getByTestId("m7-ticket-list")).toContainText("T-MOCK-1051");
   await page.getByTestId("m7-ticket-row-T-MOCK-1051").click();
+  await expect(page.getByTestId("m7-ticket-row-T-MOCK-1051")).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
   await expect(page.getByTestId("m7-ticket-detail")).toContainText(
     "mock 套装报价咨询转人工"
   );
@@ -95,6 +119,14 @@ test("supports tab switching row selection claim transfer notes and close requir
   );
 
   await page.getByRole("button", { name: "无响应" }).click();
+  await expect(page.getByRole("button", { name: "无响应" })).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await expect(page.getByRole("button", { name: "无效" })).toHaveAttribute(
+    "aria-pressed",
+    "false"
+  );
   await expect(page.getByTestId("m7-ticket-confirm-close")).toBeDisabled();
   await page.getByTestId("m7-ticket-close-note").fill("mock close note required");
   await expect(page.getByTestId("m7-ticket-confirm-close")).toBeEnabled();
@@ -103,6 +135,53 @@ test("supports tab switching row selection claim transfer notes and close requir
   await expect(page.getByTestId("m7-ticket-side-column")).toContainText(
     "mock close note required"
   );
+});
+
+test("resets local ticket state when switching tenants in place", async ({ page }) => {
+  await openTickets(page);
+
+  await page.getByTestId("m7-ticket-row-T-MOCK-1042").click();
+  await page.getByTestId("m7-ticket-claim").click();
+  await page.getByTestId("m7-ticket-transfer").selectOption("王敏");
+  await page
+    .getByTestId("m7-ticket-note-input")
+    .fill("tenant-b local note must not leak");
+  await page.getByTestId("m7-ticket-add-note").click();
+  await page.getByRole("button", { name: "无响应" }).click();
+  await page.getByTestId("m7-ticket-close-note").fill("tenant-b local close result");
+  await page.getByTestId("m7-ticket-confirm-close").click();
+  await expect(page.getByTestId("m7-ticket-side-column")).toContainText("工单已关闭");
+
+  await page.getByTestId("tenant-switcher").selectOption("tenant-c");
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.tickets"
+  );
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
+  );
+  await expect(page.getByTestId("m7-ticket-page")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
+  );
+  await expect(page.getByTestId("m7-ticket-row-T-MOCK-1042")).toBeVisible();
+  await expect(page.getByTestId("m7-ticket-row-T-MOCK-1042")).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await expect(page.getByTestId("m7-ticket-claim")).toBeEnabled();
+  await expect(page.getByTestId("m7-ticket-claim")).toContainText("认领");
+  await expect(page.getByTestId("m7-ticket-detail")).not.toContainText(
+    "tenant-b local note must not leak"
+  );
+  await expect(page.getByTestId("m7-ticket-side-column")).not.toContainText(
+    "tenant-b local close result"
+  );
+  await expect(page.getByTestId("m7-ticket-side-column")).not.toContainText(
+    "工单已关闭"
+  );
+  await expect(page.getByTestId("m7-ticket-close-note")).toHaveCount(0);
 });
 
 test("supports sidebar collapse and 320px readable fallback without mixed group nav", async ({

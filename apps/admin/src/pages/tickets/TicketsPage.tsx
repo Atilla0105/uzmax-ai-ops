@@ -82,16 +82,16 @@ function makeActions(active: TicketRecord, closeDraft: CloseDraft, noteDrafts: R
 function TicketList(props: { activeId: string; counts: Record<TicketTabId, number>; filtered: TicketRecord[]; select: (id: string) => void; setTab: (tab: TicketTabId) => void; tab: TicketTabId }) {
   return h("aside", { className: "uz-ticket-list", "data-testid": "m7-ticket-list" },
     h("header", { className: "uz-ticket-list__head" }, h("h2", null, "工单"), h(StatusBadge, { tone: "warn" }, ticketFallbackMeta.label)),
-    h("nav", { "aria-label": "Ticket tabs", className: "uz-ticket-tabs" }, ticketTabs.map((item) => h("button", { className: `uz-ticket-tab ${props.tab === item.id ? "is-active" : ""}`, "data-testid": `m7-ticket-tab-${item.id}`, key: item.id, onClick: () => props.setTab(item.id), type: "button" }, item.label, " ", h("span", { className: "mono" }, `${props.counts[item.id]} mock`)))),
+    h("nav", { "aria-label": "Ticket tabs", className: "uz-ticket-tabs" }, ticketTabs.map((item) => h("button", { "aria-pressed": props.tab === item.id, className: `uz-ticket-tab ${props.tab === item.id ? "is-active" : ""}`, "data-testid": `m7-ticket-tab-${item.id}`, key: item.id, onClick: () => props.setTab(item.id), type: "button" }, item.label, " ", h("span", { className: "mono" }, `${props.counts[item.id]} mock`)))),
     h("div", { className: "uz-ticket-rows" }, props.filtered.map((ticket) => h(TicketRow, { active: ticket.id === props.activeId, key: ticket.id, select: props.select, ticket })))
   );
 }
 
 // prettier-ignore
 function TicketRow({ active, select, ticket }: { active: boolean; select: (id: string) => void; ticket: TicketRecord }) {
-  return h("button", { className: `uz-ticket-row tone-${ticket.tone} ${active ? "is-active" : ""}`, "data-testid": `m7-ticket-row-${ticket.id}`, onClick: () => select(ticket.id), type: "button" },
+  return h("button", { "aria-pressed": active, className: `uz-ticket-row tone-${ticket.tone} ${active ? "is-active" : ""}`, "data-testid": `m7-ticket-row-${ticket.id}`, onClick: () => select(ticket.id), type: "button" },
     h("span", { "aria-hidden": true, className: "uz-ticket-row__rail" }),
-    h("span", { className: "uz-ticket-row__top" }, h("strong", null, ticket.id), h(StatusBadge, { tone: priorityTone(ticket.priority) }, ticket.priority), h("span", { className: "mono", style: { marginLeft: "auto" } }, ticket.sla)),
+    h("span", { className: "uz-ticket-row__top" }, h("strong", null, ticket.id), h(StatusBadge, { tone: priorityTone(ticket.priority) }, ticket.priority), h("span", { className: "mono uz-ticket-row__sla" }, ticket.sla)),
     h("span", { className: "uz-ticket-row__title" }, ticket.title),
     h("span", { className: "uz-ticket-row__meta" }, h("span", null, ticket.customer), h("span", null, "·"), h("span", null, ticket.channel), h("span", null, ticket.assignee))
   );
@@ -172,7 +172,7 @@ function TicketNotes({ active, actions, noteDraft, setNoteDraft }: { active: Tic
 // prettier-ignore
 function TicketClose({ active, actions, closeDraft, setCloseDraft }: { active: TicketRecord; actions: Actions; closeDraft: CloseDraft; setCloseDraft: (draft: CloseDraft) => void }) {
   if (active.closeResult) return h("section", { className: "uz-ticket-card uz-ticket-closed" }, h("h3", null, "工单已关闭"), h("strong", null, `结果：${active.closeResult}`), h("p", null, active.closeNote));
-  return h("section", { className: "uz-ticket-card uz-ticket-close", "data-testid": "m7-ticket-close-panel" }, h("h3", null, "关闭工单"), h("div", { className: "uz-ticket-muted" }, "必须选择结果："), h("div", { className: "uz-ticket-close-options" }, ticketCloseOptions.map((option) => h("button", { className: `uz-ticket-close-option ${closeDraft?.result === option ? "is-picked" : ""}`, key: option, onClick: () => setCloseDraft({ id: active.id, note: "", result: option }), type: "button" }, option))), closeDraft ? h(CloseDraftEditor, { actions, closeDraft, setCloseDraft }) : null);
+  return h("section", { className: "uz-ticket-card uz-ticket-close", "data-testid": "m7-ticket-close-panel" }, h("h3", null, "关闭工单"), h("div", { className: "uz-ticket-muted" }, "必须选择结果："), h("div", { className: "uz-ticket-close-options" }, ticketCloseOptions.map((option) => h("button", { "aria-pressed": closeDraft?.result === option, className: `uz-ticket-close-option ${closeDraft?.result === option ? "is-picked" : ""}`, key: option, onClick: () => setCloseDraft({ id: active.id, note: "", result: option }), type: "button" }, option))), closeDraft ? h(CloseDraftEditor, { actions, closeDraft, setCloseDraft }) : null);
 }
 
 // prettier-ignore

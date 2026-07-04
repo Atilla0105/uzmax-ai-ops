@@ -69,8 +69,6 @@ Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.h
 
 ## Validation
 
-To be filled after implementation:
-
 | Command | Result | Notes |
 |---|---|---|
 | `npm run format:check` | pass | Prettier clean after targeted formatting of new page/test files. |

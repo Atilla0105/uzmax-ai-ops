@@ -71,7 +71,7 @@ export function PageOutlet({
         data-tenant-id={selectedTenantId}
         data-testid="page-outlet"
       >
-        <TicketsPage selectedTenantId={selectedTenantId} />
+        <TicketsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
       </section>
     );
   }

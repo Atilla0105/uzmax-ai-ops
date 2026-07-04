@@ -215,6 +215,7 @@ export const ticketPageStyles = `
 .uz-ticket-row__rail{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ticket-tone)}
 .uz-ticket-row__top,.uz-ticket-row__meta,.uz-ticket-detail__meta,.uz-ticket-actions,.uz-ticket-note{display:flex;align-items:center;gap:var(--s-4)}
 .uz-ticket-row__top strong,.uz-ticket-mono{font-family:var(--font-data);font-size:var(--text-sm)}
+.uz-ticket-row__sla{margin-left:auto}
 .uz-ticket-row__title{font-size:var(--text-base);font-weight:700}
 .uz-ticket-row__meta{color:var(--ink-500);font-size:var(--text-xs)}
 .uz-ticket-row__meta span:last-child{margin-left:auto}
@@ -248,8 +249,8 @@ export const ticketPageStyles = `
 .uz-ticket-closed{border-color:var(--state-ok-border);background:var(--state-ok-bg)}
 .uz-ticket-closed h3{color:var(--state-ok)}
 .uz-ticket-muted{color:var(--ink-500);font-size:var(--text-xs)}
-.mono{font-family:var(--font-data)}
-.tone-human{--ticket-tone:var(--state-human)}.tone-warn{--ticket-tone:var(--state-warn)}.tone-ai{--ticket-tone:var(--state-ai)}.tone-ok{--ticket-tone:var(--state-ok)}.tone-off{--ticket-tone:var(--state-off)}
+.uz-ticket-page .mono{font-family:var(--font-data)}
+.uz-ticket-page .tone-human{--ticket-tone:var(--state-human)}.uz-ticket-page .tone-warn{--ticket-tone:var(--state-warn)}.uz-ticket-page .tone-ai{--ticket-tone:var(--state-ai)}.uz-ticket-page .tone-ok{--ticket-tone:var(--state-ok)}.uz-ticket-page .tone-off{--ticket-tone:var(--state-off)}
 @media (max-width:1024px){.uz-ticket-page{flex-direction:column;overflow:auto}.uz-ticket-list{width:auto;max-height:360px;border-right:0;border-bottom:1px solid var(--ink-150)}.uz-ticket-body{flex-direction:column;overflow:visible}.uz-ticket-side{width:auto}.uz-ticket-actions{width:100%;margin-left:0;flex-wrap:wrap}.uz-ticket-detail__meta{flex-wrap:wrap}}
 @media (max-width:520px){.uz-ticket-detail__head,.uz-ticket-runtime,.uz-ticket-body{padding-left:12px;padding-right:12px}.uz-ticket-quote{grid-template-columns:1fr}.uz-ticket-note{align-items:stretch;flex-direction:column}.uz-ticket-page{font-size:var(--text-base)}}
 `;

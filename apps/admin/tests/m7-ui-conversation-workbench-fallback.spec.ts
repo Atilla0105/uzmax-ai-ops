@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const composer = (page: Page) => page.getByLabel("Conversation composer");
 const degraded = (page: Page) => page.getByTestId("m7-conversation-degraded");
 const rail = (page: Page) => page.getByTestId("m7-conversation-context-rail");
+const row = (page: Page, id: string) => page.getByTestId(`m7-conversation-row-${id}`);
 const takeover = (page: Page) => page.getByRole("button", { name: "接管会话 T" });
 
 test("scopes synthetic fallback to the selected tenant when no API returns Vite HTML", async ({
@@ -107,6 +108,86 @@ test("does not render API rows from another tenant as selected tenant data", asy
   await expect(page.getByTestId("m7-conversation-empty")).toBeVisible();
 });
 
+test("ignores delayed handoff after tenant switch with duplicate conversation id", async ({
+  page
+}) => {
+  let activeTenant = "tenant-b";
+  let release: (() => void) | undefined;
+  let staleFulfilled = false;
+  const tenantB = conversation("conv-calm", {
+    displayRef: "WB-B-STALE",
+    lastPreview: "tenant-b stale handoff preview",
+    orderRef: "ORD-B-STALE",
+    slaPolicyRef: "tenant-b-sla-policy",
+    subject: "Tenant B stale customer",
+    tenantId: "tenant-b"
+  });
+  const tenantC = conversation("conv-calm", {
+    displayRef: "WB-C-CURRENT",
+    lastPreview: "tenant-c current preview",
+    orderRef: "ORD-C-CURRENT",
+    slaPolicyRef: "tenant-c-sla-policy",
+    subject: "Tenant C current customer",
+    tenantId: "tenant-c"
+  });
+  const activeConversation = () => (activeTenant === "tenant-b" ? tenantB : tenantC);
+
+  await page.route("**/conversation-ticket/conversations", async (route) => {
+    await route.fulfill({ json: { items: [activeConversation()] } });
+  });
+  await page.route(
+    /\/conversation-ticket\/conversations\/conv-calm$/,
+    async (route) => {
+      await route.fulfill({
+        json: {
+          conversation: activeConversation(),
+          messages: [message(`${activeTenant}-message`, `${activeTenant} detail text`)]
+        }
+      });
+    }
+  );
+  await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    staleFulfilled = true;
+    await route.fulfill({
+      json: {
+        conversation: {
+          ...tenantB,
+          aiState: "suspended",
+          status: "pending_handoff"
+        }
+      }
+    });
+  });
+
+  await openConversations(page, "tenant-b");
+  await expect(takeover(page)).toBeEnabled();
+  await takeover(page).click();
+  await expect.poll(() => Boolean(release)).toBe(true);
+  activeTenant = "tenant-c";
+  await page.getByTestId("tenant-switcher").selectOption("tenant-c");
+  await expect(page.getByTestId("m7-conversation-workbench-page")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
+  );
+  await expect(row(page, "conv-calm")).toHaveAttribute("data-tenant-id", "tenant-c");
+  await expect(rail(page)).toContainText("ORD-C-CURRENT");
+  release?.();
+  await expect.poll(() => staleFulfilled).toBe(true);
+  await expect(row(page, "conv-calm")).toHaveAttribute("data-tenant-id", "tenant-c");
+  await expect(row(page, "conv-calm")).not.toContainText("待人工");
+  await expect(page.getByTestId("m7-conversation-list")).not.toContainText(
+    "WB-B-STALE"
+  );
+  await expect(rail(page)).toContainText("ORD-C-CURRENT");
+  await expect(rail(page)).not.toContainText("ORD-B-STALE");
+  await expect(page.getByTestId("m7-conversation-thread")).not.toContainText(
+    "tenant-b detail text"
+  );
+});
+
 async function openConversations(page: Page, tenantId = "tenant-b") {
   await page.goto("/design");
   await page.getByTestId("tenant-switcher").selectOption(tenantId);
@@ -127,7 +208,7 @@ async function routeList(page: Page, status: number, json: unknown) {
   });
 }
 
-function conversation(id: string) {
+function conversation(id: string, overrides: Record<string, unknown> = {}) {
   return {
     aiState: "active",
     awaitingReply: false,
@@ -156,6 +237,17 @@ function conversation(id: string) {
     tenantId: "tenant-b",
     ticketRef: "",
     timeLabel: "刚刚",
-    unreadCount: 0
+    unreadCount: 0,
+    ...overrides
+  };
+}
+
+function message(id: string, text: string) {
+  return {
+    content: { text },
+    contentKind: "text",
+    direction: "inbound",
+    id,
+    occurredAt: "2026-07-03T12:25:00.000Z"
   };
 }

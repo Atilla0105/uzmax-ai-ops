@@ -94,7 +94,11 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
   const [traceOpen, setTraceOpen] = useState<Record<string, boolean>>({});
   const [handoffPending, setHandoffPending] = useState(false);
   const activeIdRef = useRef(activeId);
+  const handoffRequestIdRef = useRef(0);
   const listRequestIdRef = useRef(0);
+  const selectedTenantIdRef = useRef(selectedTenantId);
+
+  selectedTenantIdRef.current = selectedTenantId;
 
   useEffect(() => {
     activeIdRef.current = activeId;
@@ -147,6 +151,7 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
   }, [client, selectedTenantId]);
 
   useEffect(() => {
+    handoffRequestIdRef.current += 1;
     setActiveId("");
     setDetail(null);
     setTraceOpen({});
@@ -198,7 +203,9 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
       : null;
   const activeConversation =
     activeDetail?.conversation ??
-    conversations.find((row) => row.id === activeId && isSelectedTenant(row, selectedTenantId));
+    conversations.find(
+      (row) => row.id === activeId && isSelectedTenant(row, selectedTenantId)
+    );
   const handoffDisabledReason = handoffBlocker(status, activeDetail, handoffPending);
   const canRequestHandoff = !handoffDisabledReason;
 
@@ -219,35 +226,46 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
       setLastError(target.reason);
       return;
     }
+    const requestId = handoffRequestIdRef.current + 1;
+    handoffRequestIdRef.current = requestId;
+    const requestTenantId = selectedTenantId;
+    const isCurrentRequest = () =>
+      handoffRequestIdRef.current === requestId &&
+      selectedTenantIdRef.current === requestTenantId;
     setHandoffPending(true);
     setLastError("");
     try {
       const conversation = await client.handoff(target.id, target.policyRef);
-      if (conversation.id !== target.id) {
-        if (activeIdRef.current === target.id)
-          setLastError(`handoff response did not match ${target.ref}`);
-        return;
-      }
-      if (!isSelectedTenant(conversation, selectedTenantId)) {
-        if (activeIdRef.current === target.id)
-          setLastError(tenantMismatchError("handoff", selectedTenantId));
+      if (!isCurrentRequest()) return;
+      const validationError = handoffResponseError(
+        conversation,
+        target.id,
+        target.ref,
+        requestTenantId
+      );
+      if (validationError) {
+        if (activeIdRef.current === target.id) setLastError(validationError);
         return;
       }
       setConversations((rows) =>
-        rows.map((row) => (row.id === conversation.id ? conversation : row))
+        replaceHandoffConversation(rows, conversation, requestTenantId)
       );
       setDetail((current) =>
-        current?.conversation.id === target.id && activeIdRef.current === target.id
-          ? { ...current, conversation }
-          : current
+        replaceHandoffDetail(
+          current,
+          conversation,
+          target.id,
+          requestTenantId,
+          activeIdRef.current
+        )
       );
     } catch (error) {
-      if (activeIdRef.current === target.id)
+      if (isCurrentRequest() && activeIdRef.current === target.id)
         setLastError(
           error instanceof Error ? error.message : "handoff runtime unavailable"
         );
     } finally {
-      setHandoffPending(false);
+      if (isCurrentRequest()) setHandoffPending(false);
     }
   }, [activeDetail, client, handoffPending, selectedTenantId, status]);
 
@@ -282,6 +300,45 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
 
 function isSelectedTenant(conversation: ConversationRow, selectedTenantId: string) {
   return conversation.tenantId === selectedTenantId;
+}
+
+function handoffResponseError(
+  conversation: ConversationRow,
+  targetId: string,
+  targetRef: string,
+  requestTenantId: string
+) {
+  if (conversation.id !== targetId)
+    return `handoff response did not match ${targetRef}`;
+  if (!isSelectedTenant(conversation, requestTenantId))
+    return tenantMismatchError("handoff", requestTenantId);
+  return "";
+}
+
+function replaceHandoffConversation(
+  rows: ConversationRow[],
+  conversation: ConversationRow,
+  requestTenantId: string
+) {
+  return rows.map((row) =>
+    row.id === conversation.id && row.tenantId === requestTenantId ? conversation : row
+  );
+}
+
+function replaceHandoffDetail(
+  current: ConversationDetail | null,
+  conversation: ConversationRow,
+  targetId: string,
+  requestTenantId: string,
+  activeId: string
+) {
+  if (
+    current?.conversation.id !== targetId ||
+    current.conversation.tenantId !== requestTenantId ||
+    activeId !== targetId
+  )
+    return current;
+  return { ...current, conversation };
 }
 
 function riskRank(conversation: ConversationRow) {

@@ -32,16 +32,17 @@ This branch implements `tenant.knowledge` as a UI-first degraded/mock/read-only 
 |---|---|---|
 | `git diff --check origin/codex/m7-ui-31-orders-visible-ui...HEAD` | pass | No whitespace errors. |
 | `$NODE scripts/guards/doc-trigger-paths.mjs` | pass | `doc-trigger-paths: ok`. |
-| `$NODE scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-32-knowledge-resources-page.md --include-worktree` | pass | 10 changed files: source 5, docs 4, test 1. |
+| `$NODE scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-32-knowledge-resources-page.md --include-worktree --pr-body-file /tmp/m7-ui-32-pr-body.md` | pass | Passes when the PR metadata file includes `Spec ID`, `Spec file`, `Exception: large_change_exception` and `External API evidence: none`; this is a proposed governance exception for owner/coordinator review, not self-approval. |
 | `$NODE scripts/guards/prettier-ignore-boundary.mjs --base origin/codex/m7-ui-31-orders-visible-ui` | pass | Baseline markers unchanged; monitored diff ok. |
 | `$NODE node_modules/prettier/bin/prettier.cjs --check ...` | pass | All matched files use Prettier style. |
 | `$NODE node_modules/eslint/bin/eslint.js ...` | pass | Focused touched source/test lint passed. |
 | `$NODE node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false` | pass | No TypeScript output; log: `/tmp/uzmax-m7-ui-32-tsc.log`. |
-| `PATH=... node_modules/.bin/playwright test apps/admin/tests/m7-ui-knowledge-resources.spec.ts` | pass | 8 passed. Local preview server was started manually because this runtime has no `npm`, while `playwright.config.ts` webServer uses `npm run build:admin && npx vite preview`. |
-| `$NODE node_modules/vite/bin/vite.js build apps/admin --emptyOutDir` | pass | Built successfully; Vite reported the existing >500 kB chunk warning. |
+| `PATH=$NPM_PATH node_modules/.bin/playwright test apps/admin/tests/m7-ui-knowledge-resources.spec.ts` | pass | 8 passed. `NPM_PATH` let Playwright `webServer` resolve `npm`/`npx` directly, so the focused spec ran in its normal config path and regenerated the three screenshots under `/tmp/uzmax-m7-ui-32-knowledge-resources-visible-ui-v2`. |
+| `$NODE node_modules/vite/bin/vite.js build apps/admin --emptyOutDir` | pass | Built successfully; Vite still reports the existing >500 kB chunk warning for `apps/admin/dist/assets/index-DSrEx-aj.js`. |
+
+Default-budget behavior without PR metadata: local `guard:pr-shape` fails this slice because the visible page plus focused test exceeds the default source-size budget (`net source LOC 904 > 600`). The passing result above requires the explicit `/tmp/m7-ui-32-pr-body.md` metadata file and should be reviewed by the owner/coordinator in PR context.
 
 ## Environment Notes
 
-- This v2 worktree initially had no `node_modules`.
-- The runtime provides `node` and `pnpm`, but not `npm`; `pnpm --frozen-lockfile` cannot run because this repo has `package-lock.json` and no `pnpm-lock.yaml`.
-- To keep worker isolation while avoiding lockfile changes, `node_modules` was copied into this v2 worktree from the base M7-UI-31 worktree. No package or lockfile was changed.
+- This v2 worktree already contains the dependency tree needed for focused validation; no package or lockfile change was made in this closeout pass.
+- The temp PR metadata file used for local `guard:pr-shape` validation is `/tmp/m7-ui-32-pr-body.md` and is intentionally not committed.

@@ -6,57 +6,59 @@ export type KnowledgeTab =
   "journey" | "facts" | "public" | "private" | "assets" | "templates";
 export type KnowledgeViewState =
   "degraded" | "empty" | "error" | "gate" | "loading" | "permission";
+type FeedbackLevel = "high" | "low" | "medium";
+type FactEvaluation = "blocked" | "passed" | "queued";
+type TemplateStatus = "has-update" | "local-change" | "synced";
 type Tone = "danger" | "info" | "neutral" | "ok" | "warn";
+
+interface IdentifiedRow {
+  id: string;
+  title: string;
+}
+
+interface CategorizedRow extends IdentifiedRow {
+  category: string;
+}
 
 export interface JourneyStage {
   assets: string[];
-  feedback: "high" | "low" | "medium";
+  feedback: FeedbackLevel;
   id: string;
   name: string;
   rate: number;
 }
-export interface KnowledgeFact {
-  category: string;
+export type KnowledgeFact = {
   content: string;
-  evaluation: "blocked" | "passed" | "queued";
+  evaluation: FactEvaluation;
   feedback: number;
   hits: number;
-  id: string;
   redline: boolean;
   sourceRef: string;
-  title: string;
   version: string;
-}
-export interface KnowledgeSnippet {
-  category: string;
+} & CategorizedRow;
+export type KnowledgeSnippet = CategorizedRow & {
   content: string;
   edited: string;
-  id: string;
   scope: "private" | "public";
-  title: string;
-}
-export interface KnowledgeAsset {
+};
+export type KnowledgeAsset = IdentifiedRow & {
   cached: boolean;
   content: string;
   description: string;
   format: string;
-  id: string;
   referenced: boolean;
   ref: string;
   size: string;
   stage: string;
-  title: string;
   type: string;
-}
-export interface TemplateSource {
+};
+export type TemplateSource = IdentifiedRow & {
   copied: string;
-  id: string;
   localVersion: string;
   sourceRef: string;
   sourceVersion: string;
-  status: "has-update" | "local-change" | "synced";
-  title: string;
-}
+  status: TemplateStatus;
+};
 
 export const knowledgeTabs: { id: KnowledgeTab; label: string }[] = [
   { id: "journey", label: "教程旅程" },
@@ -97,13 +99,6 @@ export const stages: JourneyStage[] = [
     id: "SYN-KB-STAGE-003",
     name: "Mock 下单",
     rate: 69
-  },
-  {
-    assets: ["SYN-KB-ASSET-001"],
-    feedback: "medium",
-    id: "SYN-KB-STAGE-004",
-    name: "Mock 售后",
-    rate: 78
   }
 ];
 
@@ -204,15 +199,6 @@ export const templateSources: TemplateSource[] = [
     sourceVersion: "SYN-KB-S2",
     status: "synced",
     title: "Mock FAQ 模板"
-  },
-  {
-    copied: "mock 07-02",
-    id: "SYN-KB-TMPL-002",
-    localVersion: "SYN-KB-L1",
-    sourceRef: "controlled://mock/templates/asset",
-    sourceVersion: "SYN-KB-S3",
-    status: "has-update",
-    title: "Mock 素材模板"
   }
 ];
 
@@ -249,7 +235,6 @@ export const feedbackLabel = {
   low: "低负反馈",
   medium: "中负反馈"
 } as const;
-
 export const evalLabel = {
   blocked: "gate blocked",
   passed: "mock passed",
@@ -262,10 +247,8 @@ export const templateStatusLabel = {
   synced: "已同步"
 } as const;
 
-export function templateTone(status: TemplateSource["status"]) {
-  if (status === "synced") return "ok";
-  return status === "has-update" ? "warn" : "info";
-}
+export const templateTone = (status: TemplateSource["status"]) =>
+  status === "synced" ? "ok" : status === "has-update" ? "warn" : "info";
 
 export function KnowledgeRuntimeNote() {
   return h(

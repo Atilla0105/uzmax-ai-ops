@@ -78,8 +78,8 @@ Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.h
 | `npm run lint` | pass | ESLint completed cleanly; `TicketsPage.tsx` remains under the 250-line React file limit. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript completed cleanly. |
 | `npm run build:admin` | pass | Vite admin build completed; bundle size unchanged from current admin baseline for this worker's purposes. |
-| `npm run playwright -- apps/admin/tests/m7-ui-ticket-page.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-group-overview.spec.ts apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | pass | 22/22 tests passed. |
-| `npm run playwright` | pass | Full admin Playwright suite: 58/58 tests passed. |
+| `npm run playwright -- apps/admin/tests/m7-ui-ticket-page.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-group-overview.spec.ts apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | pass | 23/23 tests passed. |
+| `npm run playwright` | pass | Full admin Playwright suite: 59/59 tests passed. |
 | `git branch --no-merged main` | checked | Listed `codex/m7-ui-11-release-acceptance-page-impl`, `codex/m7-ui-12-group-overview-visible-ui`, `codex/m7-ui-20-conversation-workbench-page-impl`, this branch and `codex/req-g01a-code-01-db-api-foundation-impl`; no branch was modified by this worker except this branch. |
 | `gh pr list --state open --limit 50` | unavailable | `gh` command is not installed/available in this shell. |
 

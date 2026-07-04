@@ -69,11 +69,11 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
     "aria-pressed",
     "true"
   );
-  await expect(page.getByRole("button", { name: "展开 AI 轨迹" })).toBeVisible();
-  await page.getByRole("button", { name: "展开 AI 轨迹" }).click();
   await expect(page.getByTestId("m7-conversation-ai-trace")).toContainText(
     "物流时效-中亚 v4"
   );
+  await page.getByRole("button", { name: "收起轨迹" }).click();
+  await expect(page.getByTestId("m7-conversation-ai-trace")).toHaveCount(0);
   await row(page, "conv-calm").click();
   await expect(page.getByTestId("m7-conversation-thread")).toContainText("WB-20419");
   await expect(composer(page)).toHaveValue(/ORD-REF-20419/);

@@ -35,6 +35,7 @@ export function ContextRail({
           <strong>{data.header.name}</strong>
           <span>{data.header.ref}</span>
         </div>
+        <StatusBadge tone="neutral">{data.header.stage}</StatusBadge>
       </header>
       <div aria-label="客户上下文视图" className="uz-conv-rail__tabs">
         {railTabs.map((tab) => (
@@ -162,12 +163,14 @@ function railHeader(active?: ConversationRow) {
     return {
       initial: "?",
       name: "客户上下文不可用",
-      ref: "customer context runtime missing"
+      ref: "customer context runtime missing",
+      stage: "—"
     };
   return {
     initial: displayName(active),
     name: displayName(active),
-    ref: firstText(active.customerRef, active.participantExternalRef)
+    ref: firstText(active.customerRef, active.participantExternalRef),
+    stage: firstText(active.journeyStage, "—")
   };
 }
 

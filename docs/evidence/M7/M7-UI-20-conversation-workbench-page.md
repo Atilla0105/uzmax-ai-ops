@@ -16,6 +16,8 @@ Code quality/design remediation update: PR #182 remains Draft. The runtime no lo
 
 Second code-review remediation update: takeover is now gated by loaded-consistent selected detail, runtime `slaPolicyRef`, actionable conversation status and AI state. Closed, pending handoff and already handoff/human-owned conversations stay disabled/degraded even when a policy ref is present. Handoff POST completion captures the request target and updates detail only if the operator is still viewing the same conversation.
 
+Page-local visual parity update: the PR remains Draft, but desktop first-viewport alignment is closer to the owner HTML. The runtime degraded state is now a compact operational strip instead of a dominant warning slab; provided AI trace data opens in a compact table-like row treatment and remains collapsible; internal/system events render as compact status pills; composer density, disabled action weight and right-rail profile/tags/custom-field/dual-track rhythm are tightened. This update still does not claim owner visual acceptance.
+
 ## Entry Evidence
 
 | Fact | Evidence |
@@ -83,6 +85,7 @@ Second code-review remediation update: takeover is now gated by loaded-consisten
 - Draft hold remediation tightened the default intercepted desktop data to resemble an operator workbench: 7 dense conversation rows, avatar initials, customer names, short previews, relative time, status/SLA chips, compact AI trace rows and customer rail fields/tags/custom fields/dual-track/notes/actions.
 - Raw `controlled://...` refs were removed from the primary default UI. Synthetic Playwright data now uses safe operator-facing labels such as `WB-20413`, `ORD-REF-20413`, `order.lookup(ORD-REF-20413)` and `物流时效-中亚 v4`.
 - Composer caveat remains visible as secondary disabled/read-only context; first-class runtime degradation now lives in the amber workbench bar. Composer draft text now follows the selected conversation order/display ref or generic fallback instead of a fixed production component fixture id.
+- Visual parity pass v6 further compacts the degraded bar, message rhythm, AI trace table rows, internal status events, composer and customer context rail while keeping all runtime gaps honest/read-only. The focused screenshot route intentionally shows one controlled AI trace by default rather than fabricating additional runtime trace records.
 - Prototype side stripes, raw fixtures, inline styles and local demo state were rejected/adapted. List risk uses badges/dots/row tint instead of 3px side bars.
 - Page-local CSS uses existing `--ink-*`, `--state-*`, spacing, radius, font and z-index token variables.
 - Mobile fallback stacks list/thread/rail at 320px and keeps emergency takeover visible; complex editing remains disabled/read-only.
@@ -104,27 +107,27 @@ Generated artifacts are kept outside the repo under `/tmp/uzmax-m7-ui-20-convers
 
 | Artifact | Path |
 |---|---|
-| Desktop 1440 screenshot after UI-06/code-quality remediation | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/desktop-1440-after-ui06-v5.png` |
-| Mobile 320 screenshot after UI-06/code-quality remediation | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/mobile-320-after-ui06-v5.png` |
+| Desktop 1440 screenshot after page-local visual parity pass | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/desktop-1440-after-ui06-v6.png` |
+| Mobile 320 full-page screenshot after page-local visual parity pass | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/mobile-320-after-ui06-v6.png` |
 | Owner HTML/prototype screenshot | `/tmp/uzmax-m7-ui-20-conversation-workbench-page/owner-html-1440-after-ui06-v2.png` |
 
 Owner HTML/prototype screenshot was feasible from `/Users/atilla/Downloads/运营塔台1.0.html`. The owner screenshot shows the richer prototype runtime/demo data; implementation screenshots intentionally show controlled Playwright route data plus degraded runtime copy instead of importing prototype fixtures.
 
 ## Validation
 
-Latest targeted pending-handoff duplicate-takeover remediation validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
+Latest page-local visual parity validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
 
 - `git diff --check` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run format:check` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run guard:doc-triggers` - pass.
-- `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: 15 changed files, categories source 7 / test 4 / docs 4, source net LOC 1253, new source files 5.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run lint` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run typecheck -- --pretty false` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npm run build:admin` - pass.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npx playwright test apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-foundation.spec.ts` - pass, 12 tests.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH npx playwright test` - pass, 46 tests.
-- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/conversations/ConversationsPage.tsx apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts apps/admin/src/pages/conversations/conversationWorkbenchStyles.tsx apps/admin/src/pages/PageOutlet.tsx apps/admin/src/pages/registry.ts` - pass, `[]`.
-- Screenshot capture - pass, desktop/mobile artifacts refreshed as `*-after-ui06-v5.png` under `/tmp/uzmax-m7-ui-20-conversation-workbench-page/`; owner baseline remains `/tmp/uzmax-m7-ui-20-conversation-workbench-page/owner-html-1440-after-ui06-v2.png`.
+- `PATH=/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run format:check` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run guard:doc-triggers` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`; report: 15 changed files, categories source 7 / test 4 / docs 4, source net LOC 1253, new source files 5.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run lint` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run typecheck -- --pretty false` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run build:admin` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npx playwright test apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-foundation.spec.ts` - pass, 12 tests.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npx playwright test` - pass, 46 tests.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/conversations/ConversationsPage.tsx apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts apps/admin/src/pages/conversations/conversationWorkbenchStyles.tsx` - pass, `[]`.
+- Screenshot capture - pass, desktop/mobile artifacts refreshed as `*-after-ui06-v6.png` under `/tmp/uzmax-m7-ui-20-conversation-workbench-page/`; mobile capture checked `document.body.scrollWidth === 320`; owner baseline remains `/tmp/uzmax-m7-ui-20-conversation-workbench-page/owner-html-1440-after-ui06-v2.png`.
 
 ## Boundary
 

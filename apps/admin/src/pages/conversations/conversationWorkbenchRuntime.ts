@@ -373,7 +373,10 @@ export function useConversationWorkbenchRuntime() {
     select,
     status,
     toggleTrace: (id: string) =>
-      setTraceOpen((current) => ({ ...current, [id]: !current[id] })),
+      setTraceOpen((current) => ({
+        ...current,
+        [id]: !(current[id] ?? true)
+      })),
     traceOpen
   };
 }

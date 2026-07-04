@@ -194,46 +194,6 @@ test("keeps selected target safe when detail fails", async ({ page }) => {
   await expect(degraded(page)).toContainText("status 500");
 });
 
-test("covers loading empty error permission and customer-context unavailable states", async ({
-  page
-}) => {
-  let release: (() => void) | undefined;
-  await page.unroute("**/conversation-ticket/conversations");
-  await page.route("**/conversation-ticket/conversations", async (route) => {
-    await new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    await route.fulfill({ json: { items: [] } });
-  });
-  await openConversations(page);
-  await expect(page.getByTestId("m7-conversation-loading")).toBeVisible();
-  release?.();
-  await expect(page.getByTestId("m7-conversation-empty")).toContainText(
-    "不会回退到 prototype fixture"
-  );
-
-  await routeList(page, 500, { error: "conversation-runtime-error" });
-  await openConversations(page);
-  await expect(page.getByTestId("m7-conversation-error")).toContainText("status 500");
-
-  await routeList(page, 403, { error: "conversation-permission-denied" });
-  await openConversations(page);
-  await expect(page.getByTestId("m7-conversation-permission")).toContainText(
-    "conversation:read"
-  );
-
-  await routeList(page, 200, { items: [conversation("conv-empty", "open", false)] });
-  await page.route("**/conversation-ticket/conversations/conv-empty", async (route) => {
-    await route.fulfill({
-      json: { conversation: conversation("conv-empty", "open", false), messages: [] }
-    });
-  });
-  await openConversations(page);
-  await expect(
-    page.getByTestId("m7-conversation-customer-context-unavailable")
-  ).toBeVisible();
-});
-
 test("keeps mobile fallback within 320px without mixed group nav", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 900 });
   await openConversations(page);

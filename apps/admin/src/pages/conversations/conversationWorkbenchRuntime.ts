@@ -4,8 +4,20 @@ import {
   handoffBlocker,
   handoffTarget
 } from "./conversationWorkbenchHandoff";
+import {
+  firstSyntheticConversationId,
+  syntheticConversationDetail,
+  syntheticConversationRows,
+  syntheticRuntimeUnavailableReason
+} from "./conversationWorkbenchFallback";
+import {
+  canUseSyntheticFallback,
+  createConversationClient,
+  statusForError
+} from "./conversationWorkbenchClient";
 
 export type RuntimeStatus = "empty" | "error" | "loading" | "permission" | "ready";
+type RuntimeSource = "api" | "synthetic";
 type ConversationStatus = "closed" | "handoff" | "open" | "pending_handoff";
 type MessageDirection = "inbound" | "internal" | "outbound";
 
@@ -64,183 +76,8 @@ export const conversationFilters = [
 ] as const;
 export type ConversationFilterId = (typeof conversationFilters)[number]["id"];
 
-type ApiFetcher = (
-  input: string,
-  init?: { body?: string; headers?: Record<string, string>; method?: "GET" | "POST" }
-) => Promise<{ json(): Promise<unknown>; ok: boolean; status: number }>;
-
-const browserFetcher: ApiFetcher = (input, init) => window.fetch(input, init);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function text(value: unknown, fallback = "") {
   return typeof value === "string" && value.trim() ? value : fallback;
-}
-
-function numberValue(value: unknown, fallback = 0) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function bool(value: unknown) {
-  return value === true;
-}
-
-function stringArray(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-}
-
-function pairArray(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter(isRecord).map((item) => ({
-        label: text(item.label, "字段"),
-        value: text(item.value, "—")
-      }))
-    : [];
-}
-
-function notesArray(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter(isRecord).map((item) => ({
-        text: text(item.text, "—"),
-        time: text(item.time, "刚刚"),
-        who: text(item.who, "运营")
-      }))
-    : [];
-}
-
-function tracksArray(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter(isRecord).map((item) => ({
-        stage: text(item.stage, "引导节点"),
-        time: text(item.time, "—"),
-        via: text(item.via, "对话")
-      }))
-    : [];
-}
-
-function readConversation(value: unknown): ConversationRow {
-  const record = isRecord(value) ? value : {};
-  const status = text(record.status, "open") as ConversationStatus;
-  return {
-    aiState: record.aiState === "suspended" ? "suspended" : "active",
-    awaitingReply: bool(record.awaitingReply),
-    channel: text(record.channel, "Business"),
-    customerRef: text(record.customerRef),
-    customFields: pairArray(record.customFields),
-    displayRef: text(record.displayRef),
-    dualTracks: tracksArray(record.dualTracks),
-    externalConversationRef: text(
-      record.externalConversationRef,
-      "external-ref-unavailable"
-    ),
-    journeyStage: text(record.journeyStage),
-    language: text(record.language, "中 / ru"),
-    id: text(record.id, "conversation-unavailable"),
-    inFlightAiMessages: Array.isArray(record.inFlightAiMessages)
-      ? record.inFlightAiMessages.filter(isRecord).map((message) => ({
-          id: text(message.id, "ai-message"),
-          status: text(message.status, "pending_cancel")
-        }))
-      : [],
-    lastMessageAt: text(record.lastMessageAt),
-    lastPreview: text(record.lastPreview),
-    memberLabel: text(record.memberLabel),
-    notes: notesArray(record.notes),
-    orderRef: text(record.orderRef),
-    participantExternalRef: text(
-      record.participantExternalRef,
-      "customer-ref-unavailable"
-    ),
-    quoteRef: text(record.quoteRef),
-    slaPolicyRef: text(record.slaPolicyRef),
-    slaRisk: bool(record.slaRisk),
-    slaText: text(record.slaText),
-    status: ["closed", "handoff", "open", "pending_handoff"].includes(status)
-      ? status
-      : "open",
-    subject: text(record.subject),
-    tags: stringArray(record.tags),
-    tenantId: text(record.tenantId, "tenant-unavailable"),
-    ticketRef: text(record.ticketRef),
-    timeLabel: text(record.timeLabel, text(record.relativeTime)),
-    unreadCount: numberValue(record.unreadCount)
-  };
-}
-
-function readMessage(value: unknown): MessageRow {
-  const record = isRecord(value) ? value : {};
-  return {
-    content: isRecord(record.content) ? record.content : {},
-    contentKind: text(record.contentKind, "text"),
-    direction:
-      record.direction === "internal" || record.direction === "outbound"
-        ? record.direction
-        : "inbound",
-    id: text(record.id, "message-unavailable"),
-    occurredAt: text(record.occurredAt)
-  };
-}
-
-async function readJson(
-  fetcher: ApiFetcher,
-  path: string,
-  init: Parameters<ApiFetcher>[1] = { method: "GET" }
-) {
-  const response = await fetcher(path, init);
-  if (!response.ok)
-    throw new Error(
-      `conversation-ticket request failed with status ${response.status}`
-    );
-  const payload = await response.json();
-  if (!isRecord(payload))
-    throw new Error("conversation-ticket response must be an object");
-  return payload;
-}
-
-function createConversationClient(fetcher: ApiFetcher = browserFetcher) {
-  return {
-    async detail(conversationId: string) {
-      const payload = await readJson(
-        fetcher,
-        `/conversation-ticket/conversations/${encodeURIComponent(conversationId)}`
-      );
-      return {
-        conversation: readConversation(payload.conversation),
-        messages: Array.isArray(payload.messages)
-          ? payload.messages.map(readMessage)
-          : []
-      };
-    },
-    async handoff(conversationId: string, slaPolicyRef: string) {
-      const payload = await readJson(
-        fetcher,
-        `/conversation-ticket/conversations/${encodeURIComponent(conversationId)}/handoff`,
-        {
-          body: JSON.stringify({
-            reason: "M7 conversation workbench operator takeover",
-            slaPolicyRef
-          }),
-          headers: { "content-type": "application/json" },
-          method: "POST"
-        }
-      );
-      return readConversation(payload.conversation);
-    },
-    async list() {
-      const payload = await readJson(fetcher, "/conversation-ticket/conversations");
-      return Array.isArray(payload.items) ? payload.items.map(readConversation) : [];
-    }
-  };
-}
-
-function statusForError(error: unknown): RuntimeStatus {
-  return error instanceof Error && error.message.includes("status 403")
-    ? "permission"
-    : "error";
 }
 
 export function useConversationWorkbenchRuntime() {
@@ -249,6 +86,7 @@ export function useConversationWorkbenchRuntime() {
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
   const [lastError, setLastError] = useState("");
+  const [runtimeSource, setRuntimeSource] = useState<RuntimeSource>("api");
   const [status, setStatus] = useState<RuntimeStatus>("loading");
   const [traceOpen, setTraceOpen] = useState<Record<string, boolean>>({});
   const [handoffPending, setHandoffPending] = useState(false);
@@ -260,6 +98,7 @@ export function useConversationWorkbenchRuntime() {
 
   const loadList = useCallback(async () => {
     setStatus("loading");
+    setRuntimeSource("api");
     setDetail(null);
     setLastError("");
     try {
@@ -269,6 +108,16 @@ export function useConversationWorkbenchRuntime() {
       setActiveId((current) => current || ordered[0]?.id || "");
       setStatus(ordered.length === 0 ? "empty" : "ready");
     } catch (error) {
+      if (canUseSyntheticFallback(error)) {
+        const fallbackActiveId = firstSyntheticConversationId();
+        setRuntimeSource("synthetic");
+        setLastError(syntheticRuntimeUnavailableReason);
+        setConversations(syntheticConversationRows);
+        setActiveId(fallbackActiveId);
+        setDetail(syntheticConversationDetail(fallbackActiveId));
+        setStatus("ready");
+        return;
+      }
       setLastError(
         error instanceof Error ? error.message : "conversation workbench failed"
       );
@@ -283,6 +132,11 @@ export function useConversationWorkbenchRuntime() {
 
   useEffect(() => {
     if (!activeId || status !== "ready") return;
+    if (runtimeSource === "synthetic") {
+      setDetail(syntheticConversationDetail(activeId));
+      setLastError(syntheticRuntimeUnavailableReason);
+      return;
+    }
     let cancelled = false;
     setDetail(null);
     void client
@@ -306,7 +160,7 @@ export function useConversationWorkbenchRuntime() {
     return () => {
       cancelled = true;
     };
-  }, [activeId, client, status]);
+  }, [activeId, client, runtimeSource, status]);
 
   const activeDetail = detail?.conversation.id === activeId ? detail : null;
   const activeConversation =
@@ -314,11 +168,16 @@ export function useConversationWorkbenchRuntime() {
   const handoffDisabledReason = handoffBlocker(status, activeDetail, handoffPending);
   const canRequestHandoff = !handoffDisabledReason;
 
-  const select = useCallback((conversationId: string) => {
-    setActiveId(conversationId);
-    setDetail(null);
-    setLastError("");
-  }, []);
+  const select = useCallback(
+    (conversationId: string) => {
+      setActiveId(conversationId);
+      setDetail(null);
+      setLastError(
+        runtimeSource === "synthetic" ? syntheticRuntimeUnavailableReason : ""
+      );
+    },
+    [runtimeSource]
+  );
 
   const requestHandoff = useCallback(async () => {
     const target = handoffTarget(status, activeDetail, handoffPending);
@@ -370,6 +229,7 @@ export function useConversationWorkbenchRuntime() {
     lastError,
     reload: loadList,
     requestHandoff,
+    runtimeSource,
     select,
     status,
     toggleTrace: (id: string) =>

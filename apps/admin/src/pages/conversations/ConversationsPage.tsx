@@ -51,6 +51,7 @@ export function ConversationsPage() {
   return (
     <section
       className="uz-page-conversations"
+      data-runtime-source={runtime.runtimeSource}
       data-runtime-state={runtime.status === "ready" ? "degraded" : runtime.status}
       data-testid="m7-conversation-workbench-page"
     >

@@ -36,7 +36,11 @@ export function PageOutlet({
 
   if (page.id === "tenant.conversations") {
     return (
-      <section data-page-id={page.id} data-testid="page-outlet">
+      <section
+        className="uz-conversation-outlet"
+        data-page-id={page.id}
+        data-testid="page-outlet"
+      >
         <ConversationsPage />
       </section>
     );

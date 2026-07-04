@@ -71,11 +71,12 @@ Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.h
 
 | Command | Result | Notes |
 |---|---|---|
+| `npm run guard:prettier-ignore -- --base origin/codex/m7-ui-12-group-overview-visible-ui` | pass | CI follow-up guard clean: 8 baseline files, 89/89 markers; no diff-added `prettier-ignore` in monitored source/test paths. |
 | `npm run format:check` | pass | Prettier clean after targeted formatting of new page/test files. |
 | `git diff --check` | pass | No whitespace output. |
 | `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-12-group-overview-visible-ui --spec docs/specs/M7-UI-21-ticket-page.md --include-worktree` | pass | `changedFiles: 10`; categories `source: 4`, `docs: 5`, `test: 1`; all paths are spec-listed, including the required incident record. |
-| `npm run lint` | pass | ESLint completed cleanly; `TicketsPage.tsx` remains under the 250-line React file limit. |
+| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-12-group-overview-visible-ui --spec docs/specs/M7-UI-21-ticket-page.md --include-worktree` | pass | `changedFiles: 11`; categories `source: 5`, `docs: 5`, `test: 1`; source `netLoc: 577`, `newFiles: 3`; all paths are spec-listed, including the required incident record. |
+| `npm run lint` | pass | ESLint completed cleanly; `TicketsPage.tsx` and ticket-scoped `TicketHtml.ts` remain within file-length limits. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript completed cleanly. |
 | `npm run build:admin` | pass | Vite admin build completed; bundle size unchanged from current admin baseline for this worker's purposes. |
 | `npm run playwright -- apps/admin/tests/m7-ui-ticket-page.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-group-overview.spec.ts apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | pass | 23/23 tests passed. |

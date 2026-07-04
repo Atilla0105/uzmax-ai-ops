@@ -42,6 +42,7 @@ feature
   - `docs/incidents/INC-2026-07-04-m7-ui-21-root-patch-target.md`
   - `apps/admin/src/pages/PageOutlet.tsx`
   - `apps/admin/src/pages/registry.ts`
+  - `apps/admin/src/pages/tickets/TicketHtml.ts`
   - `apps/admin/src/pages/tickets/TicketsPage.tsx`
   - `apps/admin/src/pages/tickets/ticketFallback.ts`
   - `apps/admin/tests/m7-ui-ticket-page.spec.ts`
@@ -50,9 +51,9 @@ feature
 
 ## 变更预算与路径分类
 
-- source changed files: <= 4
+- source changed files: <= 5
 - source net LOC: <= 600
-- new source files: <= 2
+- new source files: <= 3
 - test files changed: <= 1 focused Playwright spec
 - docs changed: <= 5 evidence/ledger/spec updates including the required incident record
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0

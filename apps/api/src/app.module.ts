@@ -62,6 +62,10 @@ import type {
   CustomerAssetPrismaClientPort,
   PrismaCustomerAssetPersistenceGateway
 } from "./customer-asset.prisma-gateway.ts";
+import { GroupOverviewController } from "./group-overview.controller.ts";
+import { GROUP_OVERVIEW_REPOSITORY } from "./group-overview.contracts.ts";
+import { createGroupOverviewRepositoryProviderFromEnv } from "./group-overview.runtime.ts";
+import { GroupOverviewService } from "./group-overview.service.ts";
 import type {
   CustomerAssetPersistenceGateway,
   CustomerAssetPersistenceScope,
@@ -290,6 +294,7 @@ class TelegramBotWebhookController {
     ConfirmationQueueController,
     ConversationTicketController,
     CustomerAssetController,
+    GroupOverviewController,
     LogsAnalyticsRuntimeController,
     OrderImportController,
     TemplateCopyRuntimeController,
@@ -308,6 +313,7 @@ class TelegramBotWebhookController {
     },
     ConversationTicketService,
     CustomerAssetService,
+    GroupOverviewService,
     OrderImportService,
     {
       provide: TELEGRAM_BOT_INGRESS_QUEUE,
@@ -343,6 +349,10 @@ class TelegramBotWebhookController {
     {
       provide: TEMPLATE_COPY_RUNTIME_REPOSITORY,
       useFactory: () => createTemplateCopyRuntimeRepositoryProviderFromEnv()
+    },
+    {
+      provide: GROUP_OVERVIEW_REPOSITORY,
+      useFactory: () => createGroupOverviewRepositoryProviderFromEnv()
     },
     InMemoryConversationTicketRepository,
     InMemoryCustomerAssetRepository,

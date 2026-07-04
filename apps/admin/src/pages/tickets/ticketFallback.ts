@@ -29,7 +29,7 @@ export interface TicketRecord {
   tone: "human" | "warn" | "ai" | "ok" | "off";
 }
 
-export interface TicketNote {
+interface TicketNote {
   text: string;
   time: string;
   who: string;

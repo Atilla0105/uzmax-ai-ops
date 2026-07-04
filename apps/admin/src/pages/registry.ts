@@ -165,7 +165,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-20-conversation-workbench-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "工单",
     id: "tenant.tickets",
     label: "工单",
@@ -175,9 +175,9 @@ const adminPageRegistry = [
     order: 9,
     requiredStates: [...stateMatrix, "close-result-required"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/tickets/TicketsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/tickets/TicketsPage.tsx",
-    targetSpecId: "M7-UI-04I-tenant-tickets"
+    targetSpecId: "M7-UI-21-ticket-page"
   },
   {
     evidenceStatus: "not_started",

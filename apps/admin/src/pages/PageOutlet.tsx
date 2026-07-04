@@ -5,6 +5,7 @@ import { ConversationsPage } from "./conversations/ConversationsPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, legacyEvidencePageId, type AdminPageId } from "./registry";
+import { TicketsPage } from "./tickets/TicketsPage";
 
 export interface PageOutletProps {
   activePageId: AdminPageId;
@@ -59,6 +60,18 @@ export function PageOutlet({
         data-testid="page-outlet"
       >
         <ConversationsPage selectedTenantId={selectedTenantId} />
+      </section>
+    );
+  }
+
+  if (page.id === "tenant.tickets") {
+    return (
+      <section
+        data-page-id={page.id}
+        data-tenant-id={selectedTenantId}
+        data-testid="page-outlet"
+      >
+        <TicketsPage selectedTenantId={selectedTenantId} />
       </section>
     );
   }

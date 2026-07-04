@@ -41,16 +41,22 @@ docs
   - `docs/evidence/M7/M7-UI-12-group-overview-page.md`
   - `docs/admin-ui-page-migration-ledger.md`
   - `docs/evidence/M7/README.md`
-  - `apps/admin/src/pages/group/GroupOverviewPage.tsx`
-  - `apps/admin/src/pages/PageOutlet.tsx`
-  - `apps/admin/src/pages/registry.ts`
-  - `apps/admin/tests/m7-ui-group-overview.spec.ts`
-  - `apps/admin/tests/m7-ui-page-router.spec.ts`
 - 说明/备注：
   - This PR may touch only the four docs paths above.
-  - Future implementation may touch the listed `apps/admin` page/router/test paths only after coordinator approval.
+  - Future implementation paths are listed separately below and are not part of this docs-only PR touch list.
+  - A future implementation PR must add or confirm its own machine-readable implementation touch list before code changes.
   - If future implementation needs a shared group aggregate ApiClient/hook outside the listed paths, backend/API routes, WebSocket contracts, package/lock, token package, shared patterns, CI/guard scripts or DB/schema changes, stop and split to a separate approved spec.
 - 未列出的模块默认不可改。
+
+## Future Implementation Candidate Paths (Non-Guard)
+
+This section is intentionally descriptive and is not the machine-readable touch list consumed by `guard:pr-shape`. A future implementation PR must add or confirm its own implementation touch list before changing code.
+
+- apps/admin/src/pages/group/GroupOverviewPage.tsx
+- apps/admin/src/pages/PageOutlet.tsx
+- apps/admin/src/pages/registry.ts
+- apps/admin/tests/m7-ui-group-overview.spec.ts
+- apps/admin/tests/m7-ui-page-router.spec.ts
 
 ## 变更预算与路径分类
 

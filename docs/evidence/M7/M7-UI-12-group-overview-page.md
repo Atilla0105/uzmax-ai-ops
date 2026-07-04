@@ -46,6 +46,12 @@ This is not page implementation, M7 closeout, owner acceptance, GA-0 opening, pr
 - Future implementation must wire an approved real aggregate API/hook or render an honest read-only/degraded state. It must not import or copy `unpacked 6` fixtures as runtime truth.
 - Group layer can show authorized aggregate data only. It must not expose customer plaintext, conversation content, phone, Telegram username, raw order payload or cross-tenant private data.
 
+## Review Fix Notes
+
+- PR #185 remains Draft after the touch-list correction.
+- Do not mark PR #185 ready or merge it before #184 is resolved/merged, because #184 carries shared page visual acceptance notes that this spec depends on conceptually. This note does not claim #184 is merged.
+- The spec machine-readable touch list is docs-only. Future implementation candidate paths are recorded in a separate non-guard section, and a future implementation PR must add or confirm its own implementation touch list before code changes.
+
 ## Page Contract Highlights
 
 - Objects: group health summary, tenant row, tenant health category, eval state, order connector state, last abnormal event and tenant navigation target.

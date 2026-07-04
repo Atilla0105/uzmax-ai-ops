@@ -37,19 +37,19 @@ export interface GroupOverviewRow {
 }
 
 export const groupOverviewFallbackMeta = {
-  label: "4 mock rows · aggregate runtime unavailable",
+  label: "4 个租户 · fallback",
   reason:
-    "aggregate runtime unavailable: centralized mock/degraded rows only, not production metrics.",
+    "aggregate runtime unavailable: source-shaped mock/degraded fallback only, not production metrics.",
   source: "centralized-mock-degraded"
 } as const;
 
 export const groupHealthCards: GroupHealthCard[] = [
-  { filter: "total", label: "租户总数", tone: "neutral", value: "4 mock" },
-  { filter: "abnormal", label: "异常租户", tone: "warn", value: "mock" },
-  { filter: "aiTrip", label: "AI 熔断", tone: "danger", value: "mock" },
-  { filter: "modelFault", label: "模型故障", tone: "ok", value: "—" },
-  { filter: "orderFault", label: "订单 connector 故障", tone: "warn", value: "mock" },
-  { filter: "redline", label: "红线事件 / 今日", tone: "danger", value: "mock" }
+  { filter: "total", label: "租户总数", tone: "neutral", value: "4" },
+  { filter: "abnormal", label: "异常租户", tone: "warn", value: "2" },
+  { filter: "aiTrip", label: "AI 熔断", tone: "danger", value: "1" },
+  { filter: "modelFault", label: "模型故障", tone: "ok", value: "0" },
+  { filter: "orderFault", label: "订单 connector 故障", tone: "warn", value: "1" },
+  { filter: "redline", label: "红线事件 / 今日", tone: "danger", value: "7" }
 ];
 
 export const groupOverviewRows: GroupOverviewRow[] = [

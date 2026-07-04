@@ -19,14 +19,14 @@ This is not page implementation, M7 closeout, owner acceptance, GA-0 opening, pr
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
 | root/main status/head before edits | `## main...origin/main`; `2193a51` |
 | root `git branch --no-merged main` before edits | `codex/m7-ui-07-page-visual-acceptance-notes`; `codex/m7-ui-11-release-acceptance-page-impl`; `codex/m7-ui-20-conversation-workbench-page-impl` |
-| open PR audit | #178 Draft/Paused (`codex/m7-ui-11-release-acceptance-page-impl`, CI success); #182 Draft conversation implementation candidate (`codex/m7-ui-20-conversation-workbench-page-impl`, CI success); #184 Draft docs PR (`codex/m7-ui-07-page-visual-acceptance-notes`, CI success, not merged). |
+| open PR/base audit | #178 Draft/Paused (`codex/m7-ui-11-release-acceptance-page-impl`, CI success at initial draft); #182 Draft conversation implementation candidate (`codex/m7-ui-20-conversation-workbench-page-impl`, CI success at initial draft); #184 page visual acceptance notes later squash-merged to `origin/main` as `d7ea071`, and this branch is rebased onto that base. |
 | Codex Node/npm PATH note | Plain `node`, `npm` and `gh` were not initially on shell PATH. Validation uses Codex Node/npm and bundled `gh` paths. |
 
 ## Required Reads / Mapping
 
 - Required reads completed before drafting: `AGENTS.md`, the four v1.1 source-of-truth docs, `docs/admin-design-system.md`, `docs/admin-ui-page-migration-ledger.md`, `docs/admin-ui-prototype-migration-index.md`, `docs/evidence/M7/README.md`, current `apps/admin/src/pages/registry.ts`, current `apps/admin/src/pages/PageOutlet.tsx`, and owner prototype group overview sources.
 - Owner prototype files read: `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx`, `/Users/atilla/源码/unpacked 6/fixtures/group.ts`, `/Users/atilla/源码/unpacked 6/App.tsx`, `/Users/atilla/源码/unpacked 6/shell/navigation.ts`, and `/Users/atilla/Downloads/运营塔台1.0.html` as visual reference only.
-- #184 read-only acceptance notes were inspected from `/Users/atilla/.codex/worktrees/m7-ui-07-page-visual-acceptance-notes`; no #184 files were edited.
+- #184 acceptance notes are now present in `origin/main` via `d7ea071`; initial drafting inspected the #184 worktree read-only and no #184 files were edited.
 - Adopted Impeccable/product-register guidance: dense operational admin UI, status-first hierarchy, visible permission/degraded states, desktop primary, mobile fallback only and no decorative/legacy-shell visual language.
 - Rejected prototype/runtime behavior: raw inline styling as repo target, raw fixtures as runtime truth, local demo state, old shell visuals, old `--uzmax-*` visual target and any group-layer customer plaintext.
 
@@ -49,7 +49,7 @@ This is not page implementation, M7 closeout, owner acceptance, GA-0 opening, pr
 ## Review Fix Notes
 
 - At touch-list correction time, PR #185 was Draft, and this fix did not mark it ready.
-- Do not mark PR #185 ready or merge it before #184 is resolved/merged, because #184 carries shared page visual acceptance notes that this spec depends on conceptually. This note does not claim #184 is merged.
+- After rebase, #184 is resolved in base via `d7ea071`; PR #185 remains Draft and must not be marked ready or merged by this worker. This note does not claim group overview visual acceptance, runtime closure or release readiness.
 - The spec machine-readable touch list is docs-only. Future implementation candidate paths are recorded in a separate non-guard section, and a future implementation PR must add or confirm its own implementation touch list before code changes.
 
 ## Page Contract Highlights

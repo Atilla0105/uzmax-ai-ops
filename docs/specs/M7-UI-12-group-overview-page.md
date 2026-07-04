@@ -105,7 +105,7 @@ Required reads completed for this spec-only PR:
 - `/Users/atilla/源码/unpacked 6/App.tsx`
 - `/Users/atilla/源码/unpacked 6/shell/navigation.ts`
 - `/Users/atilla/Downloads/运营塔台1.0.html` as visual reference only; no large HTML content copied.
-- #184 read-only acceptance notes from `/Users/atilla/.codex/worktrees/m7-ui-07-page-visual-acceptance-notes` for owner visual-baseline rules. No #184 files were edited.
+- #184 page visual acceptance notes, now merged to `origin/main` via `d7ea071`, for owner visual-baseline rules. Initial drafting inspected the #184 worktree read-only; no #184 branch/worktree files were edited.
 - Impeccable context and product register: dense product/admin UI, status-first hierarchy, complete loading/empty/error/permission/degraded states, desktop control-room primary, mobile fallback only, and no decorative/legacy-shell visual drift.
 
 Worktree / branch entry evidence:
@@ -119,7 +119,7 @@ Worktree / branch entry evidence:
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
 | root/main status/head before edits | `## main...origin/main`; `2193a51` |
 | root `git branch --no-merged main` before edits | `codex/m7-ui-07-page-visual-acceptance-notes`; `codex/m7-ui-11-release-acceptance-page-impl`; `codex/m7-ui-20-conversation-workbench-page-impl` |
-| open PR audit | #178 Draft/Paused (`codex/m7-ui-11-release-acceptance-page-impl`, CI success); #182 Draft conversation implementation candidate (`codex/m7-ui-20-conversation-workbench-page-impl`, CI success); #184 Draft docs PR (`codex/m7-ui-07-page-visual-acceptance-notes`, CI success, not merged). |
+| open PR/base audit | #178 Draft/Paused (`codex/m7-ui-11-release-acceptance-page-impl`, CI success at initial draft); #182 Draft conversation implementation candidate (`codex/m7-ui-20-conversation-workbench-page-impl`, CI success at initial draft); #184 page visual acceptance notes later squash-merged to `origin/main` as `d7ea071`, and this branch is rebased onto that base. |
 
 ## Source Mapping
 

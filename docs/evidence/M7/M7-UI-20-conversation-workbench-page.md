@@ -18,6 +18,8 @@ Second code-review remediation update: takeover is now gated by loaded-consisten
 
 Page-local visual parity update: the PR remains Draft, but desktop first-viewport alignment is closer to the owner HTML. The runtime degraded state is now a compact operational strip instead of a dominant warning slab; provided AI trace data opens in a compact table-like row treatment and remains collapsible; internal/system events render as compact status pills; composer density, disabled action weight and right-rail profile/tags/custom-field/dual-track rhythm are tightened. This update still does not claim owner visual acceptance.
 
+Owner v6 screenshot review update: PR #182 remains Draft and is only an owner visual review candidate. The owner feedback is that the visual direction is broadly aligned, but the current desktop screenshot is not yet a complete one-to-one replication of `/Users/atilla/Downloads/运营塔台1.0.html`; it is not visual acceptance and is not merge-ready.
+
 ## Entry Evidence
 
 | Fact | Evidence |
@@ -86,9 +88,12 @@ Page-local visual parity update: the PR remains Draft, but desktop first-viewpor
 - Raw `controlled://...` refs were removed from the primary default UI. Synthetic Playwright data now uses safe operator-facing labels such as `WB-20413`, `ORD-REF-20413`, `order.lookup(ORD-REF-20413)` and `物流时效-中亚 v4`.
 - Composer caveat remains visible as secondary disabled/read-only context; first-class runtime degradation now lives in the amber workbench bar. Composer draft text now follows the selected conversation order/display ref or generic fallback instead of a fixed production component fixture id.
 - Visual parity pass v6 further compacts the degraded bar, message rhythm, AI trace table rows, internal status events, composer and customer context rail while keeping all runtime gaps honest/read-only. The focused screenshot route intentionally shows one controlled AI trace by default rather than fabricating additional runtime trace records.
+- Owner v6 feedback keeps the next pass desktop-first: compare the implementation against owner HTML and frozen `/Users/atilla/源码/unpacked 6` at detailed pixel-level before any visual acceptance claim.
+- Page workers must inspect the page-specific owner source carefully because the HTML/unpacked source already contains the relevant layout and code details; layout gaps should be corrected from that source, not invented locally.
+- Sidebar parity is now an explicit acceptance item: owner HTML groups sidebar functions by category, and the collapse-sidebar control is located at the bottom.
 - Prototype side stripes, raw fixtures, inline styles and local demo state were rejected/adapted. List risk uses badges/dots/row tint instead of 3px side bars.
 - Page-local CSS uses existing `--ink-*`, `--state-*`, spacing, radius, font and z-index token variables.
-- Mobile fallback stacks list/thread/rail at 320px and keeps emergency takeover visible; complex editing remains disabled/read-only.
+- Mobile fallback stacks list/thread/rail at 320px and keeps emergency takeover visible; complex editing remains disabled/read-only. Owner feedback allows the current mobile fallback to remain for now; pixel-level mobile redesign/polish is deferred to a later mobile-specific pass.
 - Default runtime may show degraded/error if `/conversation-ticket` is unavailable; this is intentional and does not imply backend/runtime closure.
 
 ## PR Hygiene / Budget
@@ -113,6 +118,15 @@ Generated artifacts are kept outside the repo under `/tmp/uzmax-m7-ui-20-convers
 
 Owner HTML/prototype screenshot was feasible from `/Users/atilla/Downloads/运营塔台1.0.html`. The owner screenshot shows the richer prototype runtime/demo data; implementation screenshots intentionally show controlled Playwright route data plus degraded runtime copy instead of importing prototype fixtures.
 
+## Owner Visual Feedback / Next Acceptance Criteria
+
+- PR #182 remains Draft / owner visual review candidate only; this evidence update does not approve visual acceptance, merge readiness, runtime closure, M7 closeout, GA-0, production or 1.0 release.
+- Desktop acceptance requires a detailed pixel-level adjustment pass against `/Users/atilla/Downloads/运营塔台1.0.html` and frozen `/Users/atilla/源码/unpacked 6`, including the page-specific source files named in this evidence/spec.
+- The next pass must derive layout, density, spacing, sidebar behavior, component anatomy, state treatment and microcopy shape from the owner HTML/unpacked source instead of inventing missing structure.
+- Sidebar parity must be verified concretely: owner sidebar functions are grouped by category, and the collapse-sidebar control sits at the bottom.
+- Mobile can remain as the current fallback for this PR cycle; mobile pixel-level redesign and polish is explicitly deferred to a later mobile-specific pass.
+- No PR body or GitHub comment was updated in this worker pass because the coordinator session reported an expired GitHub connector token; this is a docs-only local evidence update.
+
 ## Validation
 
 Latest page-local visual parity validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
@@ -128,6 +142,13 @@ Latest page-local visual parity validation run from `/Users/atilla/.codex/worktr
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npx playwright test` - pass, 46 tests.
 - `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/conversations/ConversationsPage.tsx apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts apps/admin/src/pages/conversations/conversationWorkbenchStyles.tsx` - pass, `[]`.
 - Screenshot capture - pass, desktop/mobile artifacts refreshed as `*-after-ui06-v6.png` under `/tmp/uzmax-m7-ui-20-conversation-workbench-page/`; mobile capture checked `document.body.scrollWidth === 320`; owner baseline remains `/tmp/uzmax-m7-ui-20-conversation-workbench-page/owner-html-1440-after-ui06-v2.png`.
+
+Evidence-only owner-feedback recording validation run from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
+
+- `git diff --check` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH npm run guard:doc-triggers` - pass.
+- `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass with PR metadata / `large_change_exception`.
+- Playwright not run; this update is docs-only and did not change code.
 
 ## Boundary
 

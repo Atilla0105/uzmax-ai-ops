@@ -118,11 +118,21 @@ export async function withVisibleSmokePage(
     });
 
     await page.goto(`${runtime.adminBaseUrl}/design`);
+    await openLegacyEvidenceRoute(page);
     await callback(page.getByTestId("m4-order-runtime-state"), page);
   } finally {
     await page.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {});
     await page.close().catch(() => {});
   }
+}
+
+async function openLegacyEvidenceRoute(page) {
+  await page
+    .getByRole("button", { name: "Open legacy evidence route" })
+    .click({ timeout: visibleStateTimeoutMs });
+  await page
+    .getByTestId("legacy-evidence-route")
+    .waitFor({ state: "visible", timeout: visibleStateTimeoutMs });
 }
 
 export async function assertVisibleText(locator, text) {

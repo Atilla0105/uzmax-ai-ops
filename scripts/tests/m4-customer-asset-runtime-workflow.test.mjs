@@ -103,6 +103,15 @@ describe("M4-43 customer asset runtime workflow", () => {
     );
   });
 
+  it("opens the explicit legacy evidence route before customer runtime lookup", () => {
+    assert.match(visibleHarness, /Open legacy evidence route/);
+    assert.match(visibleHarness, /legacy-evidence-route/);
+    assert.match(
+      visibleHarness,
+      /page\.goto\(`\$\{runtime\.adminBaseUrl\}\/design`\);\s+await openLegacyEvidenceRoute\(page\);\s+await callback\(page\.getByTestId\("m4-customer-runtime-state"\), page\);/
+    );
+  });
+
   it("keeps admin runtime readback smoke-only and default design synthetic", () => {
     assert.match(adminRuntimeState, /__UZMAX_M4_CUSTOMER_ASSET_RUNTIME_SMOKE__/);
     assert.match(adminRuntimeState, /createCustomerAssetApiClient/);

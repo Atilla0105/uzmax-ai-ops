@@ -55,6 +55,12 @@ describe("M4-39 order import admin visible stale/missing true DB smoke", () => {
     assert.match(visibleHarnessSource, /page\.route\("\*\*\/order-import\/\*\*"/);
     assert.match(visibleHarnessSource, /route\.fetch/);
     assert.match(visibleHarnessSource, /x-tenant-id/);
+    assert.match(visibleHarnessSource, /Open legacy evidence route/);
+    assert.match(visibleHarnessSource, /legacy-evidence-route/);
+    assert.match(
+      visibleHarnessSource,
+      /page\.goto\(`\$\{runtime\.adminBaseUrl\}\/design`\);\s+await openLegacyEvidenceRoute\(page\);\s+await callback\(page\.getByTestId\("m4-order-runtime-state"\), page\);/
+    );
     assert.match(smokeSource, /order_snapshot_stale/);
     assert.match(smokeSource, /order_snapshot_missing/);
     assert.ok(

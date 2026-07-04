@@ -52,6 +52,7 @@ Artifacts captured under `/tmp/uzmax-m7-ui-30-customer-assets-visible-ui/`:
 - React desktop customer detail screenshot: `/tmp/uzmax-m7-ui-30-customer-assets-visible-ui/react-customer-detail-desktop.png`
 - React mobile 320 screenshot: `/tmp/uzmax-m7-ui-30-customer-assets-visible-ui/react-customer-mobile-320.png`
 - Owner/source HTML screenshot: `/tmp/uzmax-m7-ui-30-customer-assets-visible-ui/source-html-customer-assets.png`
+- Owner/source HTML 5s retry screenshot: `/tmp/uzmax-m7-ui-30-customer-assets-visible-ui/source-html-customer-assets-wait5s.png`
 - Metrics JSON: `/tmp/uzmax-m7-ui-30-customer-assets-visible-ui/metrics.json`
 
 Measured React metrics:
@@ -68,7 +69,7 @@ Measured React metrics:
 | desktop body/viewport overflow | `1440 / 1440`, `false` |
 | mobile body/viewport overflow | `320 / 320`, `false` |
 
-Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.html` defaulted away from the customer page; clicking the left sidebar text `客户资产` produced the source customer screenshot. The target is text/DOM-clickable rather than `role=button`. The source screenshot supports layout/source comparison, but no owner visual acceptance is claimed.
+Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.html` defaulted away from the customer page; clicking the left sidebar text `客户资产` produced the source customer screenshot. After a 5s retry, the source HTML still displayed the customer-assets shell/header/tabs/filter/count/table frame, but did not render full customer row text under `file://`. The source screenshots support shell/filter/table-frame comparison. Row/detail anatomy is verified against `/Users/atilla/源码/unpacked 6/pages/customers/*`, `/Users/atilla/源码/unpacked 6/fixtures/customers.ts` and `/Users/atilla/源码/unpacked 6/hooks/useCustomers.ts`; no owner visual acceptance is claimed.
 
 ## Validation
 

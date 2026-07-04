@@ -45,6 +45,12 @@ describe("M4-38 order import admin visible true DB smoke", () => {
     assert.match(visibleHarnessSource, /route\.fetch/);
     assert.match(visibleHarnessSource, /visibleStateTimeoutMs = 65_000/);
     assert.match(visibleHarnessSource, /x-tenant-id/);
+    assert.match(visibleHarnessSource, /Open legacy evidence route/);
+    assert.match(visibleHarnessSource, /legacy-evidence-route/);
+    assert.match(
+      visibleHarnessSource,
+      /page\.goto\(`\$\{runtime\.adminBaseUrl\}\/design`\);\s+await openLegacyEvidenceRoute\(page\);\s+await callback\(page\.getByTestId\("m4-order-runtime-state"\), page\);/
+    );
     assert.match(smokeSource, /residue=0/);
     assert.match(smokeSource, /storage:\/\/order-imports\/m4-38-admin-visible/);
   });

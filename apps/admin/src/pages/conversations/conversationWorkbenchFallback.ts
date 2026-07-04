@@ -67,9 +67,7 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
       { label: "runtime", value: "read-only preview" }
     ],
     displayRef: "SYN-WB-002",
-    dualTracks: [
-      { stage: "synthetic 物流说明", time: "mock", via: "Telegram Bot" }
-    ],
+    dualTracks: [{ stage: "synthetic 物流说明", time: "mock", via: "Telegram Bot" }],
     externalConversationRef: "synthetic-bot-thread-002",
     id: "synthetic-awaiting",
     inFlightAiMessages: [],
@@ -78,9 +76,7 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     lastPreview:
       "【synthetic/mock】物流节点说明待确认；真实 conversation-ticket runtime 未返回。",
     memberLabel: "AI Bukhara · synthetic",
-    notes: [
-      { text: "筛选计数来自 mock rows。", time: "mock", who: "system" }
-    ],
+    notes: [{ text: "筛选计数来自 mock rows。", time: "mock", who: "system" }],
     orderRef: "SYN-ORDER-002",
     participantExternalRef: "SYN-CU-002",
     quoteRef: "SYN-QUOTE-disabled",
@@ -104,16 +100,13 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
       { label: "handoff", value: "already human-owned preview" }
     ],
     displayRef: "SYN-WB-003",
-    dualTracks: [
-      { stage: "synthetic 人工接管", time: "mock", via: "Business" }
-    ],
+    dualTracks: [{ stage: "synthetic 人工接管", time: "mock", via: "Business" }],
     externalConversationRef: "synthetic-business-thread-003",
     id: "synthetic-human",
     inFlightAiMessages: [],
     journeyStage: "synthetic 人工处理中",
     language: "乌·西里尔 / mock",
-    lastPreview:
-      "【synthetic/mock】人工外部回复区域可见，但所有发送动作保持禁用。",
+    lastPreview: "【synthetic/mock】人工外部回复区域可见，但所有发送动作保持禁用。",
     memberLabel: "Ops Han · synthetic",
     notes: [
       { text: "真实外发、备注、标签写入均未启用。", time: "mock", who: "system" }

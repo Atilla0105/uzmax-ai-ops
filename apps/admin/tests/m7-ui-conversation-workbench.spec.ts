@@ -3,7 +3,9 @@ import { expect, test, type Page } from "@playwright/test";
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const tenantLabels =
-  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split("|");
+  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
+    "|"
+  );
 const handoffs: unknown[] = [];
 const handoffTargets: string[] = [];
 type RouteOptions = { slaPolicyRef?: string; tenantId?: string };
@@ -379,12 +381,35 @@ function message(id: string, direction: string, text: string, trace?: Trace) {
   };
 }
 
-const conversationIds = ["conv-risk", "conv-calm", "conv-awaiting", "conv-human", "conv-ai", "conv-closed", "conv-late"];
-const fieldPairs = [{ label: "国家/城市", value: "UZ · Tashkent" }, { label: "偏好语言", value: "中文 / ru" }, { label: "最近渠道", value: "Telegram Business" }];
-const dualTracks = [{ stage: "物流说明已触达", time: "今天 12:18", via: "Business" }, { stage: "售后复核待确认", time: "今天 12:22", via: "AI 草稿" }];
-const inFlightAiMessages = [{ id: "ai-1", status: "withdrawn" }, { id: "ai-2", status: "pending_cancel" }];
-const notes = [{ text: "偏好先给预计节点，再解释异常原因。", time: "12:10", who: "Ops Lin" }];
-const conversationData: Record<string, readonly [string, string, string, string, string]> = {
+const conversationIds = [
+  "conv-risk",
+  "conv-calm",
+  "conv-awaiting",
+  "conv-human",
+  "conv-ai",
+  "conv-closed",
+  "conv-late"
+];
+const fieldPairs = [
+  { label: "国家/城市", value: "UZ · Tashkent" },
+  { label: "偏好语言", value: "中文 / ru" },
+  { label: "最近渠道", value: "Telegram Business" }
+];
+const dualTracks = [
+  { stage: "物流说明已触达", time: "今天 12:18", via: "Business" },
+  { stage: "售后复核待确认", time: "今天 12:22", via: "AI 草稿" }
+];
+const inFlightAiMessages = [
+  { id: "ai-1", status: "withdrawn" },
+  { id: "ai-2", status: "pending_cancel" }
+];
+const notes = [
+  { text: "偏好先给预计节点，再解释异常原因。", time: "12:10", who: "Ops Lin" }
+];
+const conversationData: Record<
+  string,
+  readonly [string, string, string, string, string]
+> = {
   "conv-risk": ["Nodira Karimova", "WB-20413", "ORD-REF-20413", "SLA 16m", "2分钟"],
   "conv-calm": ["Aziz Bek", "WB-20419", "ORD-REF-20419", "", "14分钟"],
   "conv-awaiting": ["Madina S.", "WB-20421", "ORD-REF-20421", "", "11分钟"],

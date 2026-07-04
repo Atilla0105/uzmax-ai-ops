@@ -27,11 +27,7 @@ import {
 const listQueryDegradedCopy =
   "runtime 查询参数未接入，当前按 SLA、待人工和待回复固定优先级展示。";
 
-export function ConversationsPage({
-  selectedTenantId
-}: {
-  selectedTenantId: string;
-}) {
+export function ConversationsPage({ selectedTenantId }: { selectedTenantId: string }) {
   const runtime = useConversationWorkbenchRuntime(selectedTenantId);
   const [filter, setFilter] = useState<ConversationFilterId>("all");
   const [railTab, setRailTab] = useState<RailTab>("profile");

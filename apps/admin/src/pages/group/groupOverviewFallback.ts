@@ -7,6 +7,7 @@ export type GroupHealthFilter =
   | "redline";
 
 export type GroupOverviewSortKey = "sessions" | "human" | "sla" | "handoff" | "cost";
+export type StatusTone = "danger" | "info" | "neutral" | "ok" | "warn";
 
 export interface GroupHealthCard {
   filter: GroupHealthFilter;
@@ -35,6 +36,27 @@ export interface GroupOverviewRow {
   slaSort: number;
   tenantName: string;
 }
+
+export const evalMeta = {
+  blocked: ["mock 阻断", "danger"],
+  pass: ["mock 通过", "ok"],
+  running: ["mock 运行中", "info"],
+  unavailable: ["—", "neutral"]
+} as const satisfies Record<
+  GroupOverviewRow["evalState"],
+  readonly [string, StatusTone]
+>;
+export const orderMeta = {
+  degraded: ["mock 降级", "warn"],
+  fault: ["mock 故障", "danger"],
+  normal: ["mock 正常", "ok"],
+  unavailable: ["—", "neutral"]
+} as const satisfies Record<
+  GroupOverviewRow["orderState"],
+  readonly [string, StatusTone]
+>;
+export const healthDot = (health: GroupOverviewRow["health"]) =>
+  health === "tripped" ? "breaker" : health;
 
 export const groupOverviewFallbackMeta = {
   label: "4 个租户 · fallback",

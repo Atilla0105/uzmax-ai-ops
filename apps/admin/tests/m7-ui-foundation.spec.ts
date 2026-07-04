@@ -46,7 +46,16 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
   await expect(page.getByRole("button", { name: "集团总览" })).toBeVisible();
   await expect(page.getByRole("button", { name: "发布与验收" })).toBeVisible();
   await expect(page.getByRole("button", { name: "确认队列" })).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.getByTestId("app-shell-nav").locator(".uz-nav-group p").allTextContents()
+    )
+    .toEqual(["总览", "平台", "治理"]);
+  await expect(page.getByText("GROUP", { exact: true })).toHaveCount(0);
 
+  await expect(page.getByRole("button", { name: "Collapse navigation" })).toContainText(
+    "收起导航"
+  );
   await expect(
     page.getByRole("button", { name: "Collapse navigation" }).locator("svg")
   ).toBeVisible();
@@ -66,6 +75,7 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
   await page.getByRole("button", { name: "Collapse navigation" }).click();
   await expect.poll(async () => navWidth(page)).toBe(68);
   await expect.poll(async () => navIconCount(page)).toBe(7);
+  await expect(page.getByText("收起导航", { exact: true })).toHaveCount(0);
   expect(
     await page.getByTestId("app-shell-nav").evaluate((nav) => {
       const navRect = nav.getBoundingClientRect();
@@ -93,6 +103,12 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
   await expect(page.getByText("Tenant B - Connector degraded")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "确认队列" })).toBeVisible();
   await expect(page.getByRole("button", { name: "集团总览" })).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.getByTestId("app-shell-nav").locator(".uz-nav-group p").allTextContents()
+    )
+    .toEqual(["运营", "数据", "智能", "管理", "洞察"]);
+  await expect(page.getByText("TENANT", { exact: true })).toHaveCount(0);
   await expect(page.getByTestId("environment-marker")).toContainText("PRODUCTION");
   await expect(page.getByTestId("page-scaffold")).toContainText(
     "M7-UI-04H-tenant-conversations"

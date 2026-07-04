@@ -24,13 +24,25 @@ const tenantLabels = [
   "分析",
   "日志"
 ];
+const groupSectionLabels = ["总览", "平台", "治理"];
+const tenantSectionLabels = ["运营", "数据", "智能", "管理", "洞察"];
 
 async function expectLayerNav(
   page: Page,
+  visibleSectionLabels: readonly string[],
+  hiddenSectionLabels: readonly string[],
   visibleLabels: readonly string[],
   hiddenLabels: readonly string[]
 ) {
   const nav = page.getByTestId("app-shell-nav");
+
+  await expect
+    .poll(() => nav.locator(".uz-nav-group p").allTextContents())
+    .toEqual(visibleSectionLabels);
+
+  for (const label of hiddenSectionLabels) {
+    await expect(nav.locator(".uz-nav-group p", { hasText: label })).toHaveCount(0);
+  }
 
   for (const label of visibleLabels) {
     await expect(nav.getByRole("button", { name: label, exact: true })).toBeVisible();
@@ -58,7 +70,13 @@ test("starts at group overview with group-only navigation", async ({ page }) => 
     "group.overview"
   );
   await expect(page.getByTestId("legacy-evidence-route")).toHaveCount(0);
-  await expectLayerNav(page, groupLabels, tenantLabels);
+  await expectLayerNav(
+    page,
+    groupSectionLabels,
+    tenantSectionLabels,
+    groupLabels,
+    tenantLabels
+  );
 });
 
 test("tenant selection enters tenant conversations with tenant-only navigation", async ({
@@ -77,7 +95,13 @@ test("tenant selection enters tenant conversations with tenant-only navigation",
   );
   await expect(page.getByTestId("active-layer-badge")).toContainText("租户层");
   await expect(page.getByTestId("route-breadcrumb")).toContainText("丝路数码");
-  await expectLayerNav(page, tenantLabels, groupLabels);
+  await expectLayerNav(
+    page,
+    tenantSectionLabels,
+    groupSectionLabels,
+    tenantLabels,
+    groupLabels
+  );
 });
 
 test("group release and tenant queue never expose the opposite nav tree", async ({
@@ -97,7 +121,13 @@ test("group release and tenant queue never expose the opposite nav tree", async 
     "data-shell-level",
     "group"
   );
-  await expectLayerNav(page, groupLabels, tenantLabels);
+  await expectLayerNav(
+    page,
+    groupSectionLabels,
+    tenantSectionLabels,
+    groupLabels,
+    tenantLabels
+  );
 
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
   await page.getByRole("button", { name: "确认队列" }).click();
@@ -110,7 +140,13 @@ test("group release and tenant queue never expose the opposite nav tree", async 
     "tenant"
   );
   await expect(page.getByTestId("m7-confirmation-queue-page")).toBeVisible();
-  await expectLayerNav(page, tenantLabels, groupLabels);
+  await expectLayerNav(
+    page,
+    tenantSectionLabels,
+    groupSectionLabels,
+    tenantLabels,
+    groupLabels
+  );
 
   await page.getByRole("button", { name: "Back to group overview" }).click();
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
@@ -121,5 +157,11 @@ test("group release and tenant queue never expose the opposite nav tree", async 
     "data-active-page-id",
     "group.overview"
   );
-  await expectLayerNav(page, groupLabels, tenantLabels);
+  await expectLayerNav(
+    page,
+    groupSectionLabels,
+    tenantSectionLabels,
+    groupLabels,
+    tenantLabels
+  );
 });

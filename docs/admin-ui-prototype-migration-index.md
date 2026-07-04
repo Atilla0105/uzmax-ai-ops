@@ -124,10 +124,11 @@ Page worker hard rules:
 
 - Every migrated page must connect a real repo ApiClient/hook or explicitly documented read-only API contract, and must include loading, empty, error, permission denied and degraded behavior. A page that only renders `unpacked 6` fixtures is a prototype preview, not a repo migration.
 - Owner HTML `/Users/atilla/Downloads/运营塔台1.0.html` and frozen `/Users/atilla/源码/unpacked 6` are the hard visual/source baseline. Current #182 direction is broadly aligned but not one-to-one visual acceptance, owner approval or merge readiness.
-- Before implementation and before any visual acceptance claim, every page worker must inspect the exact target `/Users/atilla/源码/unpacked 6/pages/**` source and the relevant owner HTML region. The source already contains layout/component details; do not invent layouts, freely rearrange UI or carry old shell visuals.
-- Desktop acceptance requires detailed pixel/detail-level adjustment against the owner HTML and target unpacked source.
-- Shared shell/sidebar acceptance must verify owner sidebar category grouping and the bottom collapse-sidebar control when the sidebar is visible.
-- Mobile remains an acceptable/readable fallback for this migration phase; pixel-level mobile redesign/polish belongs to a later mobile-specific pass.
+- Before implementation and before any visual acceptance claim, every page worker must inspect the exact target `/Users/atilla/源码/unpacked 6/pages/**` source, source components and the relevant owner HTML region. The source already contains layout/component details; do not invent layouts, freely rearrange UI or carry old shell visuals.
+- Desktop acceptance is a parity check, not a loose similarity check. Workers must tune against the owner HTML and target unpacked source until remaining visual deltas are explicitly listed and accepted.
+- Shared shell/sidebar acceptance must verify owner sidebar category grouping, item order, icon treatment, expanded/collapsed dimensions and the bottom collapse-sidebar control when the sidebar is visible.
+- Mobile remains an acceptable/readable/no-overflow fallback for this migration phase; pixel-level mobile redesign/polish belongs to a later mobile-specific pass.
+- Page workers may not spend current migration budget on creative re-layouts or mobile redesign unless a later spec explicitly changes this priority.
 - Group and tenant layers remain separate: `/design` or admin/home opens group layer/group overview; selecting a tenant enters tenant layer.
 - Release/acceptance remains transitional/low business value and must not displace high-value real admin pages.
 
@@ -182,8 +183,10 @@ Each implementation worker must report:
 - source files searched with `rg` before adding new files;
 - why the target layer was extended instead of creating a parallel implementation;
 - exact mapping from `unpacked 6` source files to repo paths;
-- exact owner HTML region and target `unpacked 6/pages/**` sources inspected for desktop pixel/detail acceptance;
-- sidebar category grouping and bottom collapse-control parity result when the shell/sidebar is visible;
+- exact owner HTML region or screenshot and target `unpacked 6/pages/**` files/components inspected for desktop pixel/detail acceptance;
+- sidebar category grouping, item order, icon treatment, expanded/collapsed dimensions and bottom collapse-control parity result when the shell/sidebar is visible;
+- 320px mobile readable/no-overflow fallback result, without claiming mobile pixel redesign;
+- remaining desktop visual deltas and whether each is owner-accepted, runtime/permission/degraded-state justified, or still blocking visual acceptance;
 - which fixture values were ignored, sanitized or converted to tests;
 - which Impeccable/design-system suggestions were accepted, adapted or rejected and why;
 - page state coverage and API/hook wiring evidence;

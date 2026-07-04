@@ -226,6 +226,7 @@ export function App() {
         activePageId={route.pageId}
         legacyEvidence={legacyEvidence}
         onPageChange={setActivePageId}
+        selectedTenantId={selectedTenant.id}
       />
     </AppShell>
   );

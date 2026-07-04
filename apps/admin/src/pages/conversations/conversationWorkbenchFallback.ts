@@ -7,7 +7,7 @@ import type {
 export const syntheticRuntimeUnavailableReason =
   "runtime-unavailable: conversation-ticket API absent/non-JSON in local preview; showing centralized synthetic/mock workbench data, not production metrics.";
 
-export const syntheticConversationRows: ConversationRow[] = [
+const syntheticConversationRowsTemplate: ConversationRow[] = [
   {
     aiState: "suspended",
     awaitingReply: true,
@@ -52,7 +52,7 @@ export const syntheticConversationRows: ConversationRow[] = [
     status: "pending_handoff",
     subject: "Synthetic Dilnoza R.",
     tags: ["synthetic", "mock", "runtime-unavailable"],
-    tenantId: "tenant-b",
+    tenantId: "",
     ticketRef: "SYN-TICKET-disabled",
     timeLabel: "mock",
     unreadCount: 2
@@ -89,7 +89,7 @@ export const syntheticConversationRows: ConversationRow[] = [
     status: "open",
     subject: "Synthetic Ivan P.",
     tags: ["synthetic", "awaiting", "mock"],
-    tenantId: "tenant-b",
+    tenantId: "",
     ticketRef: "SYN-TICKET-disabled",
     timeLabel: "mock",
     unreadCount: 1
@@ -126,7 +126,7 @@ export const syntheticConversationRows: ConversationRow[] = [
     status: "handoff",
     subject: "Synthetic Aziz K.",
     tags: ["synthetic", "human", "mock"],
-    tenantId: "tenant-b",
+    tenantId: "",
     ticketRef: "SYN-TICKET-disabled",
     timeLabel: "mock",
     unreadCount: 0
@@ -193,14 +193,24 @@ const syntheticMessages: Record<string, MessageRow[]> = {
   ]
 };
 
-export function firstSyntheticConversationId() {
-  return syntheticConversationRows[0]?.id ?? "";
+export function syntheticConversationRows(selectedTenantId: string) {
+  return syntheticConversationRowsTemplate.map((row) => ({
+    ...row,
+    tenantId: selectedTenantId
+  }));
+}
+
+export function firstSyntheticConversationId(selectedTenantId: string) {
+  return syntheticConversationRows(selectedTenantId)[0]?.id ?? "";
 }
 
 export function syntheticConversationDetail(
-  conversationId: string
+  conversationId: string,
+  selectedTenantId: string
 ): ConversationDetail | null {
-  const conversation = syntheticConversationRows.find((row) => row.id === conversationId);
+  const conversation = syntheticConversationRows(selectedTenantId).find(
+    (row) => row.id === conversationId
+  );
   if (!conversation) return null;
   return {
     conversation,

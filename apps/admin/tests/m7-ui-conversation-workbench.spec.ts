@@ -3,12 +3,10 @@ import { expect, test, type Page } from "@playwright/test";
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const tenantLabels =
-  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
-    "|"
-  );
+  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split("|");
 const handoffs: unknown[] = [];
 const handoffTargets: string[] = [];
-type RouteOptions = { slaPolicyRef?: string };
+type RouteOptions = { slaPolicyRef?: string; tenantId?: string };
 type Trace = Record<string, string>;
 const composer = (page: Page) => page.getByLabel("Conversation composer");
 const degraded = (page: Page) => page.getByTestId("m7-conversation-degraded");
@@ -176,6 +174,34 @@ test("ignores stale handoff response detail", async ({ page }) => {
   await expect(rail(page)).toContainText("ORD-REF-20427");
 });
 
+test("rejects handoff responses from another tenant", async ({ page }) => {
+  const policyRoute = { slaPolicyRef: "tenant-b-sla-policy" };
+  await routeConversationReady(page, policyRoute);
+  await page.unroute("**/conversation-ticket/conversations/*/handoff");
+  await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
+    const targetId = handoffTargetFromUrl(route.request().url());
+    handoffs.push(JSON.parse(route.request().postData() ?? "{}"));
+    handoffTargets.push(targetId);
+    await route.fulfill({
+      json: {
+        conversation: conversation(targetId, "pending_handoff", true, {
+          ...policyRoute,
+          tenantId: "tenant-c"
+        })
+      }
+    });
+  });
+
+  await openConversations(page);
+  await row(page, "conv-calm").click();
+  await takeover(page).click();
+  await expect.poll(() => handoffTargets).toEqual(["conv-calm"]);
+  await expect(degraded(page)).toContainText(
+    "handoff response did not match selected tenant tenant-b"
+  );
+  await expect(row(page, "conv-calm")).not.toContainText("待人工");
+});
+
 test("keeps selected target safe when detail fails", async ({ page }) => {
   await page.unroute(/\/conversation-ticket\/conversations\/[^/]+$/).catch(() => {});
   await page.route(/\/conversation-ticket\/conversations\/[^/]+$/, async (route) => {
@@ -203,9 +229,9 @@ test("keeps mobile fallback within 320px without mixed group nav", async ({ page
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
-async function openConversations(page: Page) {
+async function openConversations(page: Page, tenantId = "tenant-b") {
   await page.goto("/design");
-  await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await page.getByTestId("tenant-switcher").selectOption(tenantId);
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-shell-level",
     "tenant"
@@ -226,15 +252,9 @@ async function expectTenantOnlyNav(page: Page) {
 
 async function routeConversationReady(page: Page, options: RouteOptions = {}) {
   await routeList(page, 200, {
-    items: [
-      conversation("conv-risk", "pending_handoff", true, options),
-      conversation("conv-calm", "open", false, options),
-      conversation("conv-awaiting", "open", false, options),
-      conversation("conv-human", "handoff", false, options),
-      conversation("conv-ai", "open", false, options),
-      conversation("conv-closed", "closed", false, options),
-      conversation("conv-late", "open", true, options)
-    ]
+    items: conversationIds.map((id) =>
+      conversation(id, statusForId(id), riskForId(id), options)
+    )
   });
   await page.unroute(/\/conversation-ticket\/conversations\/[^/]+$/).catch(() => {});
   await page.route(/\/conversation-ticket\/conversations\/[^/]+$/, async (route) => {
@@ -274,32 +294,18 @@ function conversation(
     awaitingReply: risk || id === "conv-awaiting",
     channel: "Business",
     customerRef: `CU-${displayRef.slice(3)}`,
-    customFields: [
-      { label: "国家/城市", value: "UZ · Tashkent" },
-      { label: "偏好语言", value: "中文 / ru" },
-      { label: "最近渠道", value: "Telegram Business" }
-    ],
+    customFields: fieldPairs,
     displayRef,
-    dualTracks: [
-      { stage: "物流说明已触达", time: "今天 12:18", via: "Business" },
-      { stage: "售后复核待确认", time: "今天 12:22", via: "AI 草稿" }
-    ],
+    dualTracks: dualTracks,
     externalConversationRef: displayRef,
     id,
-    inFlightAiMessages: risk
-      ? [
-          { id: "ai-1", status: "withdrawn" },
-          { id: "ai-2", status: "pending_cancel" }
-        ]
-      : [],
+    inFlightAiMessages: risk ? inFlightAiMessages : [],
     journeyStage: "售后跟进",
     language: "中文 / ru",
     lastMessageAt: "2026-07-03T12:24:00.000Z",
     lastPreview: `${orderRef} 节点复核中，建议给客户确认口径。`,
     memberLabel: "AI Samarkand",
-    notes: [
-      { text: "偏好先给预计节点，再解释异常原因。", time: "12:10", who: "Ops Lin" }
-    ],
+    notes,
     orderRef,
     participantExternalRef: `CU-${displayRef.slice(3)}`,
     quoteRef: "QT-REF-1907",
@@ -309,7 +315,7 @@ function conversation(
     status,
     subject,
     tags: ["高频客户", "售后", "Business"],
-    tenantId: "tenant-b",
+    tenantId: options.tenantId ?? "tenant-b",
     ticketRef: "TK-REF-3842",
     timeLabel,
     unreadCount: risk ? 2 : 0
@@ -373,10 +379,12 @@ function message(id: string, direction: string, text: string, trace?: Trace) {
   };
 }
 
-const conversationData: Record<
-  string,
-  readonly [string, string, string, string, string]
-> = {
+const conversationIds = ["conv-risk", "conv-calm", "conv-awaiting", "conv-human", "conv-ai", "conv-closed", "conv-late"];
+const fieldPairs = [{ label: "国家/城市", value: "UZ · Tashkent" }, { label: "偏好语言", value: "中文 / ru" }, { label: "最近渠道", value: "Telegram Business" }];
+const dualTracks = [{ stage: "物流说明已触达", time: "今天 12:18", via: "Business" }, { stage: "售后复核待确认", time: "今天 12:22", via: "AI 草稿" }];
+const inFlightAiMessages = [{ id: "ai-1", status: "withdrawn" }, { id: "ai-2", status: "pending_cancel" }];
+const notes = [{ text: "偏好先给预计节点，再解释异常原因。", time: "12:10", who: "Ops Lin" }];
+const conversationData: Record<string, readonly [string, string, string, string, string]> = {
   "conv-risk": ["Nodira Karimova", "WB-20413", "ORD-REF-20413", "SLA 16m", "2分钟"],
   "conv-calm": ["Aziz Bek", "WB-20419", "ORD-REF-20419", "", "14分钟"],
   "conv-awaiting": ["Madina S.", "WB-20421", "ORD-REF-20421", "", "11分钟"],

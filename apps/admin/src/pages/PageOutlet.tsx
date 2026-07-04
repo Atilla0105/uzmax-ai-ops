@@ -9,12 +9,14 @@ export interface PageOutletProps {
   activePageId: AdminPageId;
   legacyEvidence: ReactNode;
   onPageChange: (pageId: AdminPageId) => void;
+  selectedTenantId: string;
 }
 
 export function PageOutlet({
   activePageId,
   legacyEvidence,
-  onPageChange
+  onPageChange,
+  selectedTenantId
 }: PageOutletProps) {
   const page = getAdminPage(activePageId);
 
@@ -39,9 +41,10 @@ export function PageOutlet({
       <section
         className="uz-conversation-outlet"
         data-page-id={page.id}
+        data-tenant-id={selectedTenantId}
         data-testid="page-outlet"
       >
-        <ConversationsPage />
+        <ConversationsPage selectedTenantId={selectedTenantId} />
       </section>
     );
   }

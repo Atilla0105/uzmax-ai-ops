@@ -27,8 +27,12 @@ import {
 const listQueryDegradedCopy =
   "runtime 查询参数未接入，当前按 SLA、待人工和待回复固定优先级展示。";
 
-export function ConversationsPage() {
-  const runtime = useConversationWorkbenchRuntime();
+export function ConversationsPage({
+  selectedTenantId
+}: {
+  selectedTenantId: string;
+}) {
+  const runtime = useConversationWorkbenchRuntime(selectedTenantId);
   const [filter, setFilter] = useState<ConversationFilterId>("all");
   const [railTab, setRailTab] = useState<RailTab>("profile");
   const active = runtime.activeConversation;
@@ -53,6 +57,7 @@ export function ConversationsPage() {
       className="uz-page-conversations"
       data-runtime-source={runtime.runtimeSource}
       data-runtime-state={runtime.status === "ready" ? "degraded" : runtime.status}
+      data-tenant-id={selectedTenantId}
       data-testid="m7-conversation-workbench-page"
     >
       <ConversationWorkbenchStyles />
@@ -180,6 +185,7 @@ function ConversationListRow({
   return (
     <button
       className={rowClassName(active)}
+      data-tenant-id={row.tenantId}
       data-testid={`m7-conversation-row-${row.id}`}
       onClick={() => select(row.id)}
       type="button"

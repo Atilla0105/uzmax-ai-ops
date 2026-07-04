@@ -5,7 +5,7 @@ const degraded = (page: Page) => page.getByTestId("m7-conversation-degraded");
 const rail = (page: Page) => page.getByTestId("m7-conversation-context-rail");
 const takeover = (page: Page) => page.getByRole("button", { name: "接管会话 T" });
 
-test("falls back to centralized synthetic degraded workbench when no API returns Vite HTML", async ({
+test("scopes synthetic fallback to the selected tenant when no API returns Vite HTML", async ({
   page
 }) => {
   await page.route("**/conversation-ticket/conversations", async (route) => {
@@ -16,15 +16,28 @@ test("falls back to centralized synthetic degraded workbench when no API returns
     });
   });
 
-  await openConversations(page);
+  await openConversations(page, "tenant-c");
 
   const workbench = page.getByTestId("m7-conversation-workbench-page");
   await expect(workbench).toBeVisible();
   await expect(workbench).toHaveAttribute("data-runtime-source", "synthetic");
   await expect(workbench).toHaveAttribute("data-runtime-state", "degraded");
+  await expect(workbench).toHaveAttribute("data-tenant-id", "tenant-c");
   await expect(page.getByTestId("m7-conversation-error")).toHaveCount(0);
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-page-id",
+    "tenant.conversations"
+  );
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
+  );
   await expect(page.getByTestId("m7-conversation-list")).toContainText(
     "Synthetic Dilnoza R."
+  );
+  await expect(page.getByTestId("m7-conversation-row-synthetic-risk")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
   );
   await expect(page.getByTestId("m7-conversation-thread")).toContainText(
     "Business draft generated"
@@ -35,6 +48,9 @@ test("falls back to centralized synthetic degraded workbench when no API returns
   await expect(degraded(page)).toContainText("not production metrics");
   await expect(takeover(page)).toBeDisabled();
   await expect(composer(page)).toBeDisabled();
+  await expect
+    .poll(() => workbench.evaluate((node) => node.outerHTML))
+    .not.toContain("tenant-b");
 });
 
 test("covers loading empty error permission and customer-context unavailable states", async ({
@@ -75,9 +91,25 @@ test("covers loading empty error permission and customer-context unavailable sta
   ).toBeVisible();
 });
 
-async function openConversations(page: Page) {
+test("does not render API rows from another tenant as selected tenant data", async ({
+  page
+}) => {
+  await routeList(page, 200, { items: [conversation("conv-foreign")] });
+  await openConversations(page, "tenant-c");
+  const workbench = page.getByTestId("m7-conversation-workbench-page");
+  await expect(workbench).toHaveAttribute("data-tenant-id", "tenant-c");
+  await expect(workbench).toHaveAttribute("data-runtime-source", "api");
+  await expect(workbench).toHaveAttribute("data-runtime-state", "empty");
+  await expect(page.getByTestId("m7-conversation-error")).toHaveCount(0);
+  await expect(page.getByTestId("m7-conversation-list")).not.toContainText(
+    "Context Empty"
+  );
+  await expect(page.getByTestId("m7-conversation-empty")).toBeVisible();
+});
+
+async function openConversations(page: Page, tenantId = "tenant-b") {
   await page.goto("/design");
-  await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await page.getByTestId("tenant-switcher").selectOption(tenantId);
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-shell-level",
     "tenant"

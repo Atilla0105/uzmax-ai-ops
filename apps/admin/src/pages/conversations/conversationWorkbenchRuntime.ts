@@ -76,11 +76,14 @@ export const conversationFilters = [
 ] as const;
 export type ConversationFilterId = (typeof conversationFilters)[number]["id"];
 
+const tenantMismatchError = (scope: string, selectedTenantId: string) =>
+  `${scope} response did not match selected tenant ${selectedTenantId}`;
+
 function text(value: unknown, fallback = "") {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
 
-export function useConversationWorkbenchRuntime() {
+export function useConversationWorkbenchRuntime(selectedTenantId: string) {
   const client = useMemo(() => createConversationClient(), []);
   const [activeId, setActiveId] = useState("");
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
@@ -91,30 +94,46 @@ export function useConversationWorkbenchRuntime() {
   const [traceOpen, setTraceOpen] = useState<Record<string, boolean>>({});
   const [handoffPending, setHandoffPending] = useState(false);
   const activeIdRef = useRef(activeId);
+  const listRequestIdRef = useRef(0);
 
   useEffect(() => {
     activeIdRef.current = activeId;
   }, [activeId]);
 
   const loadList = useCallback(async () => {
+    const requestId = listRequestIdRef.current + 1;
+    listRequestIdRef.current = requestId;
     setStatus("loading");
     setRuntimeSource("api");
     setDetail(null);
+    setConversations([]);
     setLastError("");
     try {
       const rows = await client.list();
-      const ordered = rows.sort((left, right) => riskRank(left) - riskRank(right));
+      if (requestId !== listRequestIdRef.current) return;
+      const ordered = rows
+        .filter((row) => isSelectedTenant(row, selectedTenantId))
+        .sort((left, right) => riskRank(left) - riskRank(right));
       setConversations(ordered);
-      setActiveId((current) => current || ordered[0]?.id || "");
+      setActiveId((current) =>
+        ordered.some((row) => row.id === current) ? current : ordered[0]?.id || ""
+      );
+      setLastError(
+        rows.length > 0 && ordered.length === 0
+          ? tenantMismatchError("conversation list", selectedTenantId)
+          : ""
+      );
       setStatus(ordered.length === 0 ? "empty" : "ready");
     } catch (error) {
+      if (requestId !== listRequestIdRef.current) return;
       if (canUseSyntheticFallback(error)) {
-        const fallbackActiveId = firstSyntheticConversationId();
+        const fallbackRows = syntheticConversationRows(selectedTenantId);
+        const fallbackActiveId = firstSyntheticConversationId(selectedTenantId);
         setRuntimeSource("synthetic");
         setLastError(syntheticRuntimeUnavailableReason);
-        setConversations(syntheticConversationRows);
+        setConversations(fallbackRows);
         setActiveId(fallbackActiveId);
-        setDetail(syntheticConversationDetail(fallbackActiveId));
+        setDetail(syntheticConversationDetail(fallbackActiveId, selectedTenantId));
         setStatus("ready");
         return;
       }
@@ -122,18 +141,23 @@ export function useConversationWorkbenchRuntime() {
         error instanceof Error ? error.message : "conversation workbench failed"
       );
       setConversations([]);
+      setActiveId("");
       setStatus(statusForError(error));
     }
-  }, [client]);
+  }, [client, selectedTenantId]);
 
   useEffect(() => {
+    setActiveId("");
+    setDetail(null);
+    setTraceOpen({});
+    setHandoffPending(false);
     void loadList();
-  }, [loadList]);
+  }, [loadList, selectedTenantId]);
 
   useEffect(() => {
     if (!activeId || status !== "ready") return;
     if (runtimeSource === "synthetic") {
-      setDetail(syntheticConversationDetail(activeId));
+      setDetail(syntheticConversationDetail(activeId, selectedTenantId));
       setLastError(syntheticRuntimeUnavailableReason);
       return;
     }
@@ -145,6 +169,11 @@ export function useConversationWorkbenchRuntime() {
         if (cancelled) return;
         if (next.conversation.id !== activeId) {
           setLastError("conversation detail response did not match selection");
+          setDetail(null);
+          return;
+        }
+        if (!isSelectedTenant(next.conversation, selectedTenantId)) {
+          setLastError(tenantMismatchError("conversation detail", selectedTenantId));
           setDetail(null);
           return;
         }
@@ -160,11 +189,16 @@ export function useConversationWorkbenchRuntime() {
     return () => {
       cancelled = true;
     };
-  }, [activeId, client, runtimeSource, status]);
+  }, [activeId, client, runtimeSource, selectedTenantId, status]);
 
-  const activeDetail = detail?.conversation.id === activeId ? detail : null;
+  const activeDetail =
+    detail?.conversation.id === activeId &&
+    isSelectedTenant(detail.conversation, selectedTenantId)
+      ? detail
+      : null;
   const activeConversation =
-    activeDetail?.conversation ?? conversations.find((row) => row.id === activeId);
+    activeDetail?.conversation ??
+    conversations.find((row) => row.id === activeId && isSelectedTenant(row, selectedTenantId));
   const handoffDisabledReason = handoffBlocker(status, activeDetail, handoffPending);
   const canRequestHandoff = !handoffDisabledReason;
 
@@ -194,6 +228,11 @@ export function useConversationWorkbenchRuntime() {
           setLastError(`handoff response did not match ${target.ref}`);
         return;
       }
+      if (!isSelectedTenant(conversation, selectedTenantId)) {
+        if (activeIdRef.current === target.id)
+          setLastError(tenantMismatchError("handoff", selectedTenantId));
+        return;
+      }
       setConversations((rows) =>
         rows.map((row) => (row.id === conversation.id ? conversation : row))
       );
@@ -210,7 +249,7 @@ export function useConversationWorkbenchRuntime() {
     } finally {
       setHandoffPending(false);
     }
-  }, [activeDetail, client, handoffPending, status]);
+  }, [activeDetail, client, handoffPending, selectedTenantId, status]);
 
   return {
     activeId,
@@ -239,6 +278,10 @@ export function useConversationWorkbenchRuntime() {
       })),
     traceOpen
   };
+}
+
+function isSelectedTenant(conversation: ConversationRow, selectedTenantId: string) {
+  return conversation.tenantId === selectedTenantId;
 }
 
 function riskRank(conversation: ConversationRow) {

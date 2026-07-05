@@ -197,6 +197,39 @@ Evidence/spec metadata sync validation from `74f90c6f6be37f1e6d6316945fbf4ac7e97
 - `git diff --check` - pass.
 - `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-20-conversation-workbench-page.md --include-worktree --pr-body-file ../../../../../tmp/uzmax-m7-ui-20-conversation-workbench-page/pr-body.md` - pass; report: changedFiles 20, source 10 files, test 6 files, docs 4 files, net source LOC 1678, new source files 7.
 
+## UI-First Fallback Visual Calibration Update
+
+This update keeps PR #182 Draft/read-only and moves only the visible no-API/degraded fallback closer to the owner HTML/unpacked conversation workbench. It does not connect DB/API/WebSocket/runtime, does not enable Business send/handoff/customer-rail writes, and does not claim owner visual acceptance.
+
+Second-round P0/P1 convergence removes the list search/sort/degraded tool strip, removes the center amber degraded bar, restores the source-like list density to `8 / 8`, changes selected rows to a 3px status stripe plus light background, keeps degraded/runtime-unavailable copy in small header/composer caveats, removes noisy composer buttons (`已撤回` / `取消中` / `需人工确认` / `拒绝`), and reduces visible `mock/read-only/runtime unavailable` text in primary list/thread/rail nodes.
+
+Changed fallback content now uses owner-source-like Dilnoza/Ivan/Aziz/Madina/Sergey/Nodira/Oleg/Gulnora workbench data: `Dilnoza R.` in the list/thread, `Dilnoza Rashidova` in the context rail, `UZ-20413`, SLA chips, Telegram Bot/AI trace rows, Business draft copy, customer tags/custom fields, dual-track guidance, notes and quick actions. Runtime source still reports `synthetic` and runtime state remains `degraded`; the page remains visibly disabled/read-only for unbacked writes.
+
+Artifacts are outside the repo under `/tmp/uzmax-m7-ui-20-conversation-workbench-visual-calibration/`.
+
+| Artifact | Path |
+|---|---|
+| Desktop fallback screenshot | `/tmp/uzmax-m7-ui-20-conversation-workbench-visual-calibration/desktop-1440x900.png` |
+| Mobile fallback screenshot | `/tmp/uzmax-m7-ui-20-conversation-workbench-visual-calibration/mobile-320x900.png` |
+| Geometry JSON | `/tmp/uzmax-m7-ui-20-conversation-workbench-visual-calibration/geometry.json` |
+
+Geometry captured from production preview:
+
+| Viewport | List | Thread | Rail | Topbar | Sidebar | Body scroll width |
+|---|---:|---:|---:|---:|---:|---:|
+| Desktop 1440x900 | x 232 / y 53 / w 316 / h 1190 | x 548 / y 53 / w 552 / h 1190 | x 1100 / y 53 / w 340 / h 1190 | x 232 / y 0 / w 1208 / h 53 | x 0 / y 0 / w 232 / h 1243 | 1440 |
+| Mobile 320x900 | x 0 / y 295 / w 320 / h 891 | x 0 / y 1186 / w 320 / h 1454 | x 0 / y 2639 / w 320 / h 997 | x 0 / y 242 / w 320 / h 53 | x 0 / y 0 / w 320 / h 242 | 320 |
+
+Validation from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
+
+- `git diff --check` - pass.
+- `npm run format:check` - pass.
+- `npm run lint` - pass.
+- `npm run typecheck -- --pretty false` - pass.
+- `npm run build:admin` - pass; produced `apps/admin/dist/assets/index-BzGgF0GJ.js`.
+- `npm run playwright -- apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` - pass, 11/11.
+- Screenshot/geometry capture from `node node_modules/vite/bin/vite.js preview apps/admin --host 127.0.0.1 --port 4173` - pass; runtime source `synthetic`, runtime state `degraded`, mobile `document.body.scrollWidth === 320`.
+
 ## Boundary
 
 This evidence does not approve page implementation, M7 closeout, owner acceptance, GA-0, production, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release.

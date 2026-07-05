@@ -3,6 +3,7 @@ type AdminPageNavSection = "group" | "tenant";
 type AdminPageStatus =
   | "legacy_evidence"
   | "not_started"
+  | "implementation_candidate_pending_pr_review"
   | "implemented_in_worker_pending_pr";
 interface AdminPageRegistryEntry {
   evidenceStatus: string;
@@ -294,9 +295,9 @@ const adminPageRegistry = [
     order: 16,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/team/TeamPage.tsx",
-    status: "not_started",
+    status: "implementation_candidate_pending_pr_review",
     targetPath: "apps/admin/src/pages/team/TeamPage.tsx",
-    targetSpecId: "M7-UI-04P-tenant-team"
+    targetSpecId: "M7-UI-53-team-page"
   },
   {
     evidenceStatus: "not_started",

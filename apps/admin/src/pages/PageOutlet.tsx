@@ -15,6 +15,7 @@ import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
 import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, legacyEvidencePageId, type AdminPageId } from "./registry";
+import { TeamPage } from "./team/TeamPage";
 import { TicketsPage } from "./tickets/TicketsPage";
 
 export interface PageOutletProps {
@@ -69,6 +70,9 @@ const tenantPageRenderers: Partial<Record<AdminPageId, PageRenderer>> = {
   "tenant.queue": () => <QueuePage />,
   "tenant.tickets": ({ selectedTenantId }) => (
     <TicketsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+  ),
+  "tenant.team": ({ selectedTenantId }) => (
+    <TeamPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
   )
 };
 

@@ -2,11 +2,13 @@
 
 ## Goal
 
-Refresh the existing visible UI-first `group.tenants` / `租户管理` page on top of `origin/codex/m7-ui-72-connection-center-source-parity-refresh` (#214 stack) so tenant management remains browser-comparable against the owner HTML, frozen unpacked tenant-management source and latest stacked group shell.
+Refresh the existing visible UI-first `group.tenants` / `租户管理` page on top of `origin/codex/m7-ui-72-connection-center-source-parity-refresh` (#214 stack) so tenant management follows the actual rendered owner HTML truth, while explicitly recording the discrepancy with `/Users/atilla/源码/unpacked 6/pages/group/GroupTenantPage.tsx`.
 
 This is a source parity refresh, not a tenant runtime implementation. Primary scope is evidence/test/docs; small `apps/admin/src/pages/group/**` corrections are allowed only where owner/source/browser comparison proves an obvious current React mismatch that must be fixed now. This slice does not implement tenant DB/API/runtime/authz, audit writes, production tenant changes, tenant config persistence, connector or feature flag persistence, owner visual acceptance, merge, GA-0, production deployment, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
 
-Owner HTML `/Users/atilla/Downloads/运营塔台1.0.html`, frozen unpacked source `/Users/atilla/源码/unpacked 6`, and `docs/admin-design-system.md` remain the visible UI source set. Tenant data must stay centralized synthetic `mock/degraded/read-only` fallback and visibly `browser-local only`, `synthetic tenant metrics`, `no production tenant change`, `no tenant config persistence`, `no connector or feature flag change` and `no audit write`.
+Owner HTML `/Users/atilla/Downloads/运营塔台1.0.html` is the visual acceptance baseline for this返修. Browser inspection shows its rendered `租户管理` page is a table/new-tenant shape, not the unpacked card-grid shape: header `租户管理 4 个租户`, `新建租户` button, a bordered table/panel whose visible rendered row exposes only `管理`, and note `停用租户须填写原因 · 停用后保留只读审计与数据导出入口`. The `新建租户` modal is reachable with name, line, language, timezone, capability chips and template fields. The unpacked 6 tenant page remains a conflicting/stale secondary mapping for this page until owner supplies a newer source package or HTML state proving the card grid is visible.
+
+Tenant data must stay centralized synthetic `mock/degraded/read-only` fallback and visibly `browser-local only`, `synthetic tenant metrics`, `no production tenant change`, `no tenant config persistence`, `no connector or feature flag change` and `no audit write`.
 
 ## Owner Confirmation Points And AI Agent Responsibility
 
@@ -22,8 +24,8 @@ AI agent:
 - Work only in `/Users/atilla/.codex/worktrees/m7-ui-73-tenant-management-source-parity-refresh` on branch `codex/m7-ui-73-tenant-management-source-parity-refresh`.
 - Keep `/Users/atilla/Applications/UZMAX智能运营` root/main read-only except worktree creation.
 - Read AGENTS, M7-UI-52 spec/evidence, current tenant-management source/tests, owner unpacked tenant-management page/fixtures/navigation and owner HTML before edits.
-- Record browser evidence comparing owner HTML/source sample, unpacked source mapping and React desktop/drawer/local-action/collapsed/mobile metrics.
-- Preserve group-only routing, source-shaped centralized synthetic fallback data, browser-local drawer/actions and visible degraded/mock/read-only runtime boundaries.
+- Record browser evidence comparing actual rendered owner HTML table/new-modal sample, conflicting unpacked source mapping and React desktop/new-modal/local-action/collapsed/mobile metrics.
+- Preserve group-only routing, centralized synthetic fallback data, browser-local new-tenant preview and visible degraded/mock/read-only runtime boundaries.
 
 ## Timebox
 
@@ -41,6 +43,7 @@ feature
   - `docs/evidence/M7/README.md`
   - `docs/admin-ui-page-migration-ledger.md`
   - `apps/admin/tests/m7-ui-tenant-management-source-parity.spec.ts`
+  - `apps/admin/tests/m7-ui-tenant-management.spec.ts`
 - Conditional source scope, only if browser/source comparison proves a mismatch that must be fixed now:
   - `apps/admin/src/pages/group/GroupTenantPage.tsx`
   - `apps/admin/src/pages/group/GroupTenantViews.tsx`
@@ -52,7 +55,7 @@ feature
 - source changed files: <= 3 conditional only
 - source net LOC: <= 90 conditional only
 - new source files: 0
-- test files changed/added: <= 1 focused Playwright spec
+- test files changed/added: <= 2 focused tenant-management Playwright specs
 - docs changed/added: <= 4
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config/shared shell/sidebar/topbar/registry/PageOutlet: 0
 - external API/SDK/provider/connector/adapter basis: none; only browser evidence and local UI fallback state are in scope.
@@ -64,6 +67,7 @@ source:
   - apps/admin/src/pages/group/groupTenantFallback.ts
 test:
   - apps/admin/tests/m7-ui-tenant-management-source-parity.spec.ts
+  - apps/admin/tests/m7-ui-tenant-management.spec.ts
 docs:
   - docs/specs/M7-UI-73-tenant-management-source-parity-refresh.md
   - docs/evidence/M7/M7-UI-73-tenant-management-source-parity-refresh.md
@@ -96,19 +100,21 @@ Required reads:
 
 | Source | Required use |
 |---|---|
-| Owner HTML | Browser screenshot or DOM/text sample for the tenant-management owner HTML region. The HTML is a bundled executable oracle, not source to copy. |
-| Unpacked group tenant page | Primary structured source for title/subtitle, four-card grid, card dot/name/status badge, line/template row, members/AI/connection stats, right drawer, language/timezone selects, channel capability rows, disabled note, disable/restore action and reason-required confirm modal. |
-| Unpacked `fixtures/groupPlatform.ts` | Field-shape reference for `GROUP_TENANTS`, `TENANT_STATUS_COLORS` and capability values. React must keep centralized synthetic fallback data with visible degraded/mock/read-only labels. |
+| Owner HTML | Primary visual baseline. Browser evidence must capture the rendered table/new-tenant state: no four tenant names, no card grid, no visible table columns, no capability rows on default page, visible `新建租户`, visible inert `管理`, and visible disable-reason note. |
+| Owner HTML embedded bundle | Secondary explanation of intended table/new-modal/drawer templates. It contains `tenantCols`, `tenantNewOpen`, `tenantManageOpen` and `tenantDisableOpen`, but the rendered default page does not materialize rows/columns and `管理` does not open the drawer. |
+| Unpacked group tenant page | Conflicting/stale secondary source for this page. It still describes a four-card grid/right drawer/reason confirm flow; do not use it as the React visual target for this返修. |
+| Unpacked `fixtures/groupPlatform.ts` | Secondary field-shape reference for synthetic tenant count/names only. React must not expose production-looking tenant rows when owner HTML rendered state does not show them. |
 | Unpacked `navigation.ts` | Group-only navigation category and `g_tenant`/tenant-management shell mapping reference. |
 | v1.1 docs | Product/runtime boundary: tenant management exists as group scope, but this slice is UI evidence only and does not imply real tenant disable/restore/config/authz/audit closure. |
 
 ## Required Evidence
 
-- Owner/source screenshot and DOM/text sample for the tenant-management-related owner HTML region.
-- Unpacked source mapping summary for title/subtitle/card grid/dot/name/status badge/line/template/stats/drawer/selects/capability rows/confirm modal/disable/restore/local toast.
+- Owner HTML screenshot and DOM/text sample for the rendered tenant-management table/new-tenant state, including booleans proving tenant names/card grid/capability rows/table columns are absent.
+- Owner HTML new-tenant modal screenshot and DOM/text sample.
+- Owner HTML `管理` click no-op screenshot/sample proving the drawer fields are not reachable in the rendered state.
+- Unpacked source mapping summary that explicitly flags the card-grid/drawer source as conflicting/stale for this page.
 - React desktop screenshot.
-- React drawer screenshot.
-- React local-action/confirm screenshot.
+- React new-tenant modal/local-create screenshot.
 - React collapsed-sidebar screenshot.
 - React mobile `320px` screenshot.
 - Metrics JSON with at least:
@@ -117,28 +123,28 @@ Required reads:
   - no `data-tenant-id`
   - nav width `232` expanded / `68` collapsed
   - topbar height about `53`
-  - header/grid/card/drawer/action/control dimensions and body/document scroll widths
+  - header/table-panel/table-scroll/new-button/modal/action/control dimensions and body/document scroll widths
   - runtime labels `degraded/mock/read-only/browser-local only/synthetic tenant metrics/no production tenant change/no tenant config persistence/no connector or feature flag change/no audit write`
-  - source-like booleans for title/subtitle/card grid/dot/name/status badge/line/template/stats/drawer/selects/capability rows/confirm modal/disable/restore/local toast
+  - source-like booleans for title/subtitle/new-tenant button/table panel/blank management action/source note/new-tenant modal/local create/local toast, plus absence booleans for card grid/drawer/tenant names/capability rows on default page
   - group sidebar categories only: `总览/平台/治理`; tenant categories absent.
 
 ## Impeccable / Design Decision Record
 
-Adopted by default: dense product UI, source-derived tenant-management anatomy, four-card grid, compact status dots/badges, source-shaped row values, right-side management drawer, native selects, accessible switches, reason-required destructive confirm, group-only sidebar parity, explicit local-only/no-production/no-config/no-connector/no-audit boundary copy and mobile readable/no-overflow fallback.
+Adopted by default: owner HTML rendered table/new-tenant anatomy, compact page header, `新建租户` button, bordered horizontally scrollable table/panel with the visible `管理` action, disable-reason note, reachable create-new-tenant modal, native inputs/selects, capability chips, group-only sidebar parity, explicit local-only/no-production/no-config/no-connector/no-audit boundary copy and mobile readable/no-overflow fallback.
 
-Rejected: free redesign, old shell visual language, old `--uzmax-*` as visual target, production-looking unlabeled tenant metrics, real tenant creation/disable/restore, tenant config persistence, connector or feature flag mutation, audit writes and any owner-acceptance/runtime/release claim.
+Rejected: using the unpacked 6 card-grid/right-drawer page as the visual target for this返修, because the actual owner HTML rendered page does not show tenant names, card grid, table columns, drawer fields or capability rows. Also rejected: free redesign, old shell visual language, old `--uzmax-*` as visual target, production-looking tenant rows, real tenant creation/disable/restore, tenant config persistence, connector or feature flag mutation, audit writes and any owner-acceptance/runtime/release claim.
 
-Accessibility/source-shape tradeoff: frozen source shows primary values without `mock` prefixes. React keeps primary visible card/drawer/capability values source-shaped (`运行中`, `成员`, `AI`, `连接`, `已启用/已停用`) and preserves old compatibility strings only as visually hidden text where existing tests may need them. Runtime/mock boundaries remain visible in page notes, toasts, evidence and tests.
+Accessibility/source-shape tradeoff: owner HTML uses a span-like `管理` action inside a partially rendered table row. React keeps the same visible table/new-modal anatomy but uses accessible buttons and explicit local-only toasts. Runtime/mock boundaries remain visible in page notes, toasts, evidence and tests.
 
 ## Pass Conditions
 
 - `group.tenants` renders inside group shell after opening `/design` on the latest #214 stack.
-- Focused browser evidence proves owner/source/React comparison, desktop/drawer/local-action/collapsed/mobile geometry, group-only sidebar categories and 320px no-overflow fallback.
-- Header title/subtitle, four tenant cards, card dot/name/status badge, line/template row, members/AI/connection stats, drawer title/status/close, default language/timezone selects, channel capability rows, disabled note, full-width disable/restore action and reason-required confirm modal match source anatomy.
-- Primary visible card/drawer/capability values are source-shaped, not prefixed with `mock`.
-- Language/timezone/capability/disable/restore interactions stay browser-local only and show local toasts with no-production/no-config/no-connector/no-audit boundary copy.
+- Focused browser evidence proves owner HTML rendered table/new-modal truth, conflicting unpacked source mapping, React desktop/new-modal/local-create/collapsed/mobile geometry, group-only sidebar categories and 320px no-overflow fallback.
+- Header title/subtitle, `新建租户`, table/panel, visible inert `管理`, disable-reason note and new-tenant modal fields match the owner HTML rendered state.
+- Default React page does not show four tenant cards, tenant names, drawer fields, capability rows or card-grid stats.
+- New-tenant modal interactions stay browser-local only and show local toasts with no-production/no-config/no-connector/no-audit boundary copy.
 - Existing tenant-management forced-state and interaction coverage remains intact.
-- Synthetic/degraded/mock/read-only labels remain visible at page/runtime/action boundaries without dominating source-shaped row values.
+- Synthetic/degraded/mock/read-only labels remain visible at page/runtime/action boundaries without inventing production-looking tenant rows.
 - Any React visual corrections are small and limited to `apps/admin/src/pages/group/**`.
 - No disallowed files are changed.
 

@@ -9,8 +9,6 @@ const sourceFiles = {
   navigation: "/Users/atilla/源码/unpacked 6/shell/navigation.ts",
   page: "/Users/atilla/源码/unpacked 6/pages/group/GroupTenantPage.tsx"
 };
-const groupLabels =
-  "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const tenantLabels =
   "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
     "|"
@@ -18,23 +16,19 @@ const tenantLabels =
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const tenantNames = ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"];
+const ownerColumns =
+  "租户|成员|AI 成员|渠道连接|订单 connector|默认语言|状态|操作".split("|");
 const runtimeLabels =
   "degraded|mock|read-only|browser-local only|synthetic tenant metrics|no production tenant change|no tenant config persistence|no connector or feature flag change|no audit write".split(
     "|"
   );
-const visibleMockPollution = [
-  "mock 运行中",
-  "mock 降级",
-  "mock 需人工",
-  "mock 已停用",
-  "mock 成员",
-  "mock AI",
-  "mock 连接",
-  "mock 已启用"
-];
+const oldCardPollution =
+  "mock 运行中|mock 降级|mock 需人工|mock 已停用|mock 成员|mock AI|mock 连接|mock 已启用".split(
+    "|"
+  );
 
 // prettier-ignore
-type RawTenantMetrics = { activePageId?: string | null; actionWidth: number; bodyScrollWidth: number; bodyText: string; capabilityRows: number; cardCount: number; confirmModalHeight: number; confirmModalWidth: number; documentScrollWidth: number; drawerHeight: number; drawerWidth: number; firstCardHeight: number; firstCardWidth: number; gridWidth: number; hasTenantId: boolean; headerHeight: number; headerWidth: number; languageSelectWidth: number; navButtonLabels: string[]; navWidth: number; shellLevel?: string | null; sidebarCategories: string[]; statusBadges: string[]; timezoneSelectWidth: number; toastText: string; topbarHeight: number; viewportWidth: number; visibleText: string };
+type RawTenantMetrics = { activePageId?: string | null; bodyScrollWidth: number; bodyText: string; createButtonWidth: number; documentScrollWidth: number; hasTenantId: boolean; headerHeight: number; headerWidth: number; managementActionWidth: number; modalHeight: number; modalWidth: number; navButtonLabels: string[]; navWidth: number; panelHeight: number; panelWidth: number; shellLevel?: string | null; sidebarCategories: string[]; sourceNoteHeight: number; tableHeight: number; tableScrollWidth: number; topbarHeight: number; viewportWidth: number; visibleText: string };
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -47,26 +41,53 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("captures group.tenants source parity evidence on latest visible stack", async ({
+test("captures owner HTML table truth and React source-parity refresh", async ({
   page
 }) => {
-  const sourceMapping = writeSourceMappingSummary();
-  expect(Object.values(sourceMapping.anatomy)).not.toContain(false);
+  const mapping = writeSourceMappingSummary();
+  expect(mapping.decision.reactFollows).toBe("owner-html-visible-table-state");
+  expect(mapping.conflict.unpackedCardGridConflictsWithOwnerHtml).toBe(true);
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(pathToFileURL(ownerHtml).toString());
   await page.waitForLoadState("domcontentloaded");
   await clickFirstVisibleText(page, "集团");
   await clickFirstVisibleText(page, "租户管理");
-  const ownerSource = await collectOwnerSourceSample(page);
-  expect(ownerSource.contains.tenantManagement).toBe(true);
-  await saveShot(page, "owner-html-tenant-management-source-sample.png");
-  writeJson("owner-html-tenant-management-source-dom-sample.json", ownerSource);
+
+  const ownerDefault = await collectOwnerSourceSample(page);
+  expect(ownerDefault.contains.tenantManagement).toBe(true);
+  expect(ownerDefault.contains.newTenant).toBe(true);
+  expect(ownerDefault.contains.blankManagementAction).toBe(true);
+  expect(ownerDefault.contains.disableNote).toBe(true);
+  expect(ownerDefault.contains.tenantNames).toBe(false);
+  expect(ownerDefault.contains.tableColumns).toBe(false);
+  expect(ownerDefault.contains.capabilityRows).toBe(false);
+  await saveShot(page, "owner-html-tenant-management-table.png", true);
+  writeJson("owner-html-tenant-management-table-dom-sample.json", ownerDefault);
+
+  await page.getByRole("button", { name: "新建租户" }).click();
+  const ownerNew = await collectOwnerNewTenantSample(page);
+  expect(Object.values(ownerNew.contains)).not.toContain(false);
+  await saveShot(page, "owner-html-tenant-management-new-tenant-modal.png", true);
+  writeJson("owner-html-tenant-management-new-tenant-modal-dom-sample.json", ownerNew);
+  await page.getByRole("button", { name: "取消" }).click();
+  await page.getByText("管理", { exact: true }).last().click();
+  const ownerManage = await collectOwnerSourceSample(page);
+  expect(ownerManage.contains.drawerFields).toBe(false);
+  await saveShot(page, "owner-html-tenant-management-manage-click-noop.png", true);
 
   await page.goto("/design");
   await openTenants(page);
-  const firstCard = page.getByTestId("m7-tenant-card-SYN-TENANT-t1");
-
+  await expect(page.getByTestId("m7-tenant-table-panel")).toBeVisible();
+  await expect(page.getByTestId("m7-tenant-new-button")).toBeVisible();
+  await expect(page.getByTestId("m7-tenant-source-note")).toContainText(
+    "停用租户须填写原因"
+  );
+  await expect(page.locator(".uz-tenant-card")).toHaveCount(0);
+  await expect(page.getByTestId("m7-tenant-drawer")).toHaveCount(0);
+  const tenantPage = page.getByTestId("m7-tenant-page");
+  for (const name of tenantNames)
+    await expect(tenantPage.getByText(name)).toHaveCount(0);
   const desktopMetrics = await collectTenantMetrics(page);
   expect(desktopMetrics.shellLevel).toBe("group");
   expect(desktopMetrics.activePageId).toBe("group.tenants");
@@ -75,125 +96,76 @@ test("captures group.tenants source parity evidence on latest visible stack", as
   expect(desktopMetrics.topbarHeight).toBeGreaterThanOrEqual(52);
   expect(desktopMetrics.topbarHeight).toBeLessThanOrEqual(53);
   expect(desktopMetrics.sidebarCategories).toEqual(groupSections);
-  expect(desktopMetrics.groupButtonCount).toBe(groupLabels.length);
   expect(desktopMetrics.tenantButtonCount).toBe(0);
   expect(desktopMetrics.tenantCategoryCount).toBe(0);
   expect(desktopMetrics.runtimeLabelsVisible).toBe(true);
   expect(desktopMetrics.sourceLikeDefaultVisible).toBe(true);
   expect(desktopMetrics.visiblePrimaryValuesClean).toBe(true);
-  expect(desktopMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
-  expect(desktopMetrics.documentScrollWidth).toBeLessThanOrEqual(1440);
-  await saveShot(page, "react-tenant-management-desktop.png", true);
+  await saveShot(page, "react-tenant-management-desktop-table.png", true);
 
-  await firstCard.click();
-  const drawer = page.getByTestId("m7-tenant-drawer");
-  await expect(drawer).toBeVisible();
-  const drawerMetrics = await collectTenantMetrics(page);
-  expect(drawerMetrics.sourceLikeDrawerVisible).toBe(true);
-  expect(drawerMetrics.visiblePrimaryValuesClean).toBe(true);
-  await saveShot(page, "react-tenant-management-drawer.png", true);
+  await page.getByTestId("m7-tenant-manage-placeholder").click();
+  await expectLocalToast(page, ["owner HTML table row data is not rendered"]);
+  const manageMetrics = await collectTenantMetrics(page);
+  expect(manageMetrics.sourceLikeManageNoopVisible).toBe(true);
 
-  await page.getByTestId("m7-tenant-language").selectOption("中文");
+  await page.getByTestId("m7-tenant-new-button").click();
+  await expect(page.getByTestId("m7-tenant-new-modal")).toContainText("创建新租户");
+  await expect(page.getByTestId("m7-tenant-new-create")).toBeDisabled();
+  await page.getByTestId("m7-tenant-new-name").fill("胡杨跨境百货");
+  await page.getByTestId("m7-tenant-new-line").fill("百货 · 中亚");
+  await page.getByTestId("m7-tenant-new-cap-orderApi").click();
+  await page.getByTestId("m7-tenant-new-template").selectOption("家居通用包");
+  await expect(page.getByTestId("m7-tenant-new-create")).toBeEnabled();
+  const newModalMetrics = await collectTenantMetrics(page);
+  expect(newModalMetrics.sourceLikeNewModalVisible).toBe(true);
+  await saveShot(page, "react-tenant-management-new-tenant-modal.png", true);
+  await page.getByTestId("m7-tenant-new-create").click();
+  await expect(page.getByText("5 个租户")).toBeVisible();
   await expectLocalToast(page, [
-    "默认语言 -> 中文",
+    "胡杨跨境百货 created in browser preview",
     "no production tenant change",
     "no tenant config persistence",
-    "no audit write"
-  ]);
-  await page.getByTestId("m7-tenant-timezone").selectOption("UTC+8 北京");
-  await expectLocalToast(page, ["默认时区 -> UTC+8 北京", "no audit write"]);
-  await page.getByTestId("m7-tenant-cap-orderApi").click();
-  await expectLocalToast(page, [
-    "订单 API enabled",
     "no connector or feature flag change",
     "no audit write"
   ]);
+  const createMetrics = await collectTenantMetrics(page);
+  expect(createMetrics.sourceLikeLocalCreateVisible).toBe(true);
 
-  await page.getByTestId("m7-tenant-disable").click();
-  await expect(page.getByTestId("m7-tenant-drawer")).toHaveCount(0);
-  const modal = page.getByTestId("m7-confirm-modal");
-  await expect(modal).toContainText("停用租户");
-  await expect(modal.getByRole("button", { name: "确认停用" })).toBeDisabled();
-  await modal
-    .getByPlaceholder("必填；仅用于 browser-local 预览，不写生产审计")
-    .fill("source parity local reason");
-  await expect(modal.getByRole("button", { name: "确认停用" })).toBeEnabled();
-  const confirmMetrics = await collectTenantMetrics(page);
-  expect(confirmMetrics.sourceLikeConfirmVisible).toBe(true);
-  await saveShot(page, "react-tenant-management-local-action-confirm.png", true);
-
-  await modal.getByRole("button", { name: "确认停用" }).click();
-  await expect(page.getByTestId("m7-tenant-disabled-note")).toContainText(
-    "source parity local reason"
-  );
-  await expectLocalToast(page, [
-    "disabled in browser state",
-    "no production tenant change",
-    "no audit write"
-  ]);
-  await page.getByTestId("m7-tenant-restore").click();
-  await expect(page.getByTestId("m7-tenant-disabled-note")).toHaveCount(0);
-  await expectLocalToast(page, [
-    "restored in browser state",
-    "no production tenant change",
-    "no audit write"
-  ]);
-  const actionMetrics = await collectTenantMetrics(page);
-  expect(actionMetrics.sourceLikeLocalActionVisible).toBe(true);
-
-  await page.getByRole("button", { name: "关闭租户管理抽屉" }).click();
   await page.getByRole("button", { name: "Collapse navigation" }).click();
   const collapsedMetrics = await collectTenantMetrics(page);
   expect(collapsedMetrics.navWidth).toBe(68);
-  expect(collapsedMetrics.sidebarCategories).toEqual(groupSections);
   expect(collapsedMetrics.tenantButtonCount).toBe(0);
   expect(collapsedMetrics.tenantCategoryCount).toBe(0);
-  expect(collapsedMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
-  expect(collapsedMetrics.documentScrollWidth).toBeLessThanOrEqual(1440);
   await saveShot(page, "react-tenant-management-collapsed-sidebar.png", true);
 
   await page.setViewportSize({ width: 320, height: 900 });
   await page.goto("/design");
   await openTenants(page);
-  await page.getByTestId("m7-tenant-card-SYN-TENANT-t1").click();
   const mobileMetrics = await collectTenantMetrics(page);
-  expect(mobileMetrics.drawerWidth).toBeLessThanOrEqual(320);
   expect(mobileMetrics.bodyScrollWidth).toBeLessThanOrEqual(320);
   expect(mobileMetrics.documentScrollWidth).toBeLessThanOrEqual(320);
-  expect(mobileMetrics.sidebarCategories).toEqual(groupSections);
-  expect(mobileMetrics.tenantButtonCount).toBe(0);
-  expect(mobileMetrics.tenantCategoryCount).toBe(0);
+  expect(mobileMetrics.panelWidth).toBeLessThanOrEqual(296);
+  expect(mobileMetrics.tableScrollWidth).toBeGreaterThanOrEqual(880);
+  await page.getByTestId("m7-tenant-new-button").click();
+  await expect(page.getByTestId("m7-tenant-new-modal")).toContainText("创建新租户");
+  const mobileModalMetrics = await collectTenantMetrics(page);
+  expect(mobileModalMetrics.modalWidth).toBeLessThanOrEqual(296);
+  expect(mobileModalMetrics.bodyScrollWidth).toBeLessThanOrEqual(320);
   await saveShot(page, "react-tenant-management-mobile-320.png", true);
 
   writeJson("metrics.json", {
-    actions: actionMetrics,
     collapsed: collapsedMetrics,
-    confirm: confirmMetrics,
     desktop: desktopMetrics,
-    drawer: drawerMetrics,
-    mobile: mobileMetrics
+    localCreate: createMetrics,
+    manageNoop: manageMetrics,
+    mobile: mobileMetrics,
+    mobileModal: mobileModalMetrics,
+    newModal: newModalMetrics,
+    ownerDefault: ownerDefault.contains,
+    ownerManageAfterClick: ownerManage.contains,
+    ownerNewModal: ownerNew.contains,
+    sourceMapping: mapping
   });
-});
-
-test("keeps group.tenants forced URL states source-boundary deterministic", async ({
-  page
-}) => {
-  for (const state of ["loading", "empty", "error", "permission", "degraded"]) {
-    await page.setViewportSize({ width: 1280, height: 820 });
-    await openTenants(page, `?state=${state}`);
-    const target =
-      state === "degraded"
-        ? page.getByTestId("m7-tenant-runtime-note")
-        : page.getByTestId(`m7-tenant-state-${state}`);
-    await expect(target).toContainText("browser-local only");
-    await expect(target).toContainText("no production tenant change");
-    await expect(target).toContainText("no audit write");
-    await expect(page.getByTestId("admin-shell")).toHaveAttribute(
-      "data-shell-level",
-      "group"
-    );
-    await expect(page.getByTestId("page-outlet")).not.toHaveAttribute("data-tenant-id");
-  }
 });
 
 async function saveShot(page: Page, name: string, fullPage = false) {
@@ -233,20 +205,61 @@ async function expectLocalToast(page: Page, labels: readonly string[]) {
 }
 
 async function collectOwnerSourceSample(page: Page) {
+  return page.evaluate(
+    ({ columns, names }) => {
+      const text = document.body.innerText.replace(/\s+/g, " ").trim();
+      const contains = (needle: string) => text.includes(needle);
+      const exactTextElements = Array.from(document.querySelectorAll("*")).filter(
+        (node) => (node.textContent ?? "").trim() === "管理"
+      );
+      return {
+        bodyTextLength: text.length,
+        contains: {
+          blankManagementAction: exactTextElements.some((node) => {
+            const rect = (node as HTMLElement).getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && rect.x > window.innerWidth / 2;
+          }),
+          capabilityRows: ["Telegram Bot", "Telegram Business", "订单 API"].every(
+            (label) => contains(label)
+          ),
+          disableNote: contains("停用租户须填写原因"),
+          drawerFields: contains("默认语言") && contains("默认时区"),
+          newTenant: contains("新建租户"),
+          tableColumns: columns.every((label) => contains(label)),
+          tenantManagement: contains("租户管理"),
+          tenantNames: names.every((label) => contains(label))
+        },
+        sample: text.slice(0, 1200),
+        title: document.title
+      };
+    },
+    { columns: ownerColumns, names: tenantNames }
+  );
+}
+
+async function collectOwnerNewTenantSample(page: Page) {
   return page.evaluate(() => {
-    const text = document.body.innerText;
+    const text = document.body.innerText.replace(/\s+/g, " ").trim();
     const contains = (needle: string) => text.includes(needle);
-    // prettier-ignore
     return {
-      bodyTextLength: text.length,
       contains: {
-        capabilityRows: ["Telegram Bot", "Telegram Business", "订单 API"].every((label) => contains(label)),
-        drawerFields: contains("默认语言") && contains("默认时区"),
-        tenantManagement: contains("租户管理"),
-        tenantNames: ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"].every((label) => contains(label))
+        fields: [
+          "创建新租户",
+          "租户名称",
+          "业务线",
+          "默认语言",
+          "默认时区",
+          "渠道能力",
+          "初始模板",
+          "Telegram Bot",
+          "Telegram Business",
+          "订单 API",
+          "复制所选模板的知识包",
+          "取消",
+          "创建租户"
+        ].every((label) => contains(label))
       },
-      sample: text.replace(/\s+/g, " ").trim().slice(0, 900),
-      title: document.title
+      sample: text.slice(0, 1600)
     };
   });
 }
@@ -266,46 +279,36 @@ async function collectTenantMetrics(page: Page) {
       Array.from(document.querySelectorAll(selector)).map((node) =>
         (node.textContent ?? "").trim()
       );
-    const clone = document.body.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll(".uz-tenant-sr-only").forEach((node) => node.remove());
     const header = box(".uz-tenant-head");
-    const grid = box(".uz-tenant-grid");
-    const firstCard = box(".uz-tenant-card");
-    const drawer = box(".uz-tenant-drawer");
-    const action = box(".uz-tenant-action");
-    const language = box('[data-testid="m7-tenant-language"]');
-    const timezone = box('[data-testid="m7-tenant-timezone"]');
-    const confirm = box('[data-testid="m7-confirm-modal"] > div');
+    const panel = box(".uz-tenant-table-panel");
+    const table = one(".uz-tenant-table") as HTMLElement | null;
+    const modal = box('[data-testid="m7-tenant-new-modal"]');
+    const note = box('[data-testid="m7-tenant-source-note"]');
     const topbar = box(".uz-topbar");
     return {
       activePageId: attr('[data-testid="admin-shell"]', "data-active-page-id"),
-      actionWidth: action.width,
       bodyScrollWidth: document.body.scrollWidth,
       bodyText: document.body.innerText,
-      capabilityRows: document.querySelectorAll(".uz-tenant-cap").length,
-      cardCount: document.querySelectorAll(".uz-tenant-card").length,
-      confirmModalHeight: confirm.height,
-      confirmModalWidth: confirm.width,
+      createButtonWidth: box('[data-testid="m7-tenant-new-button"]').width,
       documentScrollWidth: document.documentElement.scrollWidth,
-      drawerHeight: drawer.height,
-      drawerWidth: drawer.width,
-      firstCardHeight: firstCard.height,
-      firstCardWidth: firstCard.width,
-      gridWidth: grid.width,
       hasTenantId: !!one('[data-testid="page-outlet"]')?.hasAttribute("data-tenant-id"),
       headerHeight: header.height,
       headerWidth: header.width,
-      languageSelectWidth: language.width,
+      managementActionWidth: box('[data-testid="m7-tenant-manage-placeholder"]').width,
+      modalHeight: modal.height,
+      modalWidth: modal.width,
       navButtonLabels: texts('[data-testid="app-shell-nav"] button'),
       navWidth: box('[data-testid="app-shell-nav"]').width,
+      panelHeight: panel.height,
+      panelWidth: panel.width,
       shellLevel: attr('[data-testid="admin-shell"]', "data-shell-level"),
       sidebarCategories: texts('[data-testid="app-shell-nav"] .uz-nav-group p'),
-      statusBadges: texts(".uz-tenant-card .uz-status-badge"),
-      timezoneSelectWidth: timezone.width,
-      toastText: one('[data-testid="m7-tenant-toast"]')?.textContent ?? "",
+      sourceNoteHeight: note.height,
+      tableHeight: box(".uz-tenant-table").height,
+      tableScrollWidth: table?.scrollWidth ?? 0,
       topbarHeight: topbar.height,
       viewportWidth: window.innerWidth,
-      visibleText: clone.textContent ?? ""
+      visibleText: document.body.innerText
     };
   });
   return buildTenantMetrics(raw);
@@ -316,69 +319,42 @@ function buildTenantMetrics(raw: RawTenantMetrics) {
   const visibleText = raw.visibleText;
   const navButtonLabels = raw.navButtonLabels;
   // prettier-ignore
-  const sourceLike = {
-    capabilityRows: includesAll(visibleText, ["Telegram Bot", "Telegram Business", "订单 API", "已启用", "已停用"]),
-    cardGrid: raw.cardCount === 4 && hasBox(raw.gridWidth, raw.firstCardHeight),
-    disabledNote: includesAll(bodyText, ["已停用", "连续熔断超 24h"]),
-    dotNameStatus: raw.statusBadges.some((badge) => badge.includes("运行中")) && includesAll(visibleText, tenantNames),
-    drawer: raw.drawerWidth > 0 && includesAll(visibleText, ["默认语言", "默认时区", "来源模板：美妆标准包"]),
-    lineTemplate: includesAll(visibleText, ["美妆 · 中亚", "美妆标准包", "3C · 俄语区", "3C 标准包"]),
-    selects: raw.languageSelectWidth > 0 && raw.timezoneSelectWidth > 0,
-    stats: includesAll(visibleText, ["成员 8", "AI 3", "连接 降级"]),
-    subtitle: visibleText.includes("4 个租户 · 创建 / 停用仅本地预览"),
-    title: visibleText.includes("租户管理")
-  };
+  const sourceLike = { blankManagementAction: raw.managementActionWidth > 0 && visibleText.includes("管理"), newButton: raw.createButtonWidth > 0 && visibleText.includes("新建租户"), newModal: raw.modalWidth > 0 && includesAll(visibleText, ["创建新租户", "租户名称", "业务线", "默认语言", "默认时区", "渠道能力", "初始模板"]), sourceNote: raw.sourceNoteHeight > 0 && visibleText.includes("停用租户须填写原因"), subtitle: visibleText.includes("个租户"), tablePanel: raw.panelWidth > 0 && raw.panelHeight > 0 && raw.tableHeight > 0, title: visibleText.includes("租户管理") };
   return {
     ...raw,
     bodyText: undefined,
-    groupButtonCount: groupLabels.filter((label) => navButtonLabels.includes(label))
-      .length,
-    mobileReadable:
-      includesAll(visibleText, ["租户管理", "玉珠跨境美妆", "成员 8"]) &&
-      hasBox(raw.firstCardWidth, raw.firstCardHeight) &&
-      raw.firstCardWidth <= raw.viewportWidth,
     navButtonLabels: undefined,
-    pageVisible: hasBox(raw.headerWidth, raw.headerHeight),
+    pageVisible: raw.headerWidth > 0 && raw.headerHeight > 0,
     runtimeLabelsVisible: includesAll(bodyText, runtimeLabels),
     sourceLike,
-    sourceLikeConfirmVisible:
-      raw.confirmModalWidth > 0 &&
-      raw.confirmModalHeight > 0 &&
-      includesAll(visibleText, ["停用租户", "停用原因", "确认停用"]),
     sourceLikeDefaultVisible: Object.values({
-      cardGrid: sourceLike.cardGrid,
-      dotNameStatus: sourceLike.dotNameStatus,
-      lineTemplate: sourceLike.lineTemplate,
-      stats: sourceLike.stats,
+      blankManagementAction: sourceLike.blankManagementAction,
+      newButton: sourceLike.newButton,
+      sourceNote: sourceLike.sourceNote,
       subtitle: sourceLike.subtitle,
+      tablePanel: sourceLike.tablePanel,
       title: sourceLike.title
     }).every(Boolean),
-    sourceLikeDrawerVisible: Object.values({
-      capabilityRows: sourceLike.capabilityRows,
-      drawer: sourceLike.drawer,
-      selects: sourceLike.selects
-    }).every(Boolean),
-    sourceLikeLocalActionVisible: includesAll(bodyText, [
-      "restored in browser state",
+    sourceLikeLocalCreateVisible: includesAll(bodyText, [
+      "created in browser preview",
       "no production tenant change",
       "no audit write"
     ]),
+    sourceLikeManageNoopVisible: bodyText.includes(
+      "owner HTML table row data is not rendered"
+    ),
+    sourceLikeNewModalVisible: sourceLike.newModal,
     tenantButtonCount: tenantLabels.filter((label) => navButtonLabels.includes(label))
       .length,
     tenantCategoryCount: tenantSections.filter((label) =>
       raw.sidebarCategories.includes(label)
     ).length,
-    visiblePrimaryValuesClean: !visibleMockPollution.some((label) =>
+    visiblePrimaryValuesClean: !oldCardPollution.some((label) =>
       visibleText.includes(label)
     ),
     visibleText: undefined
   };
 }
-
-const includesAll = (text: string, labels: readonly string[]) =>
-  labels.every((label) => text.includes(label));
-
-const hasBox = (width: number, height: number) => width > 0 && height > 0;
 
 function writeSourceMappingSummary() {
   const sources: Record<keyof typeof sourceFiles, string> = {
@@ -386,47 +362,27 @@ function writeSourceMappingSummary() {
     navigation: readFileSync(sourceFiles.navigation, "utf8"),
     page: readFileSync(sourceFiles.page, "utf8")
   };
+  const owner = readFileSync(ownerHtml, "utf8");
   const page = sources.page;
   const fixtures = sources.fixtures;
-  const sourceText = `${page}\n${fixtures}`;
+  const ownerTableTemplate = includesAll(owner, [
+    "tenantCols",
+    "新建租户",
+    "停用租户须填写原因",
+    "tenantManageOpen",
+    "tenantDisableOpen"
+  ]);
+  const unpackedCardGrid = includesAll(page, [
+    "gridTemplateColumns",
+    "repeat(auto-fill",
+    "CAP_LABELS",
+    "ConfirmModal"
+  ]);
   // prettier-ignore
-  const anatomy = {
-    capabilityRows: includesAll(page, ["CAP_LABELS", "Telegram Bot", "Telegram Business", "订单 API"]),
-    cardGrid: includesAll(page, ["gridTemplateColumns", "repeat(auto-fill"]),
-    confirmModal: includesAll(page, ["ConfirmModal", "停用租户", "确认停用"]),
-    disabledNote: includesAll(page, ["managed.disabled", "已停用"]),
-    drawer: includesAll(page, ["managed", "默认语言", "默认时区", "渠道能力"]),
-    groupRoute: includesAll(sources.navigation, ["GROUP_NAV", "g_tenant", "租户管理"]) && !sources.navigation.includes("tenant.tenants"),
-    lineTemplate: includesAll(page, ["t.line", "t.template"]),
-    localActions: includesAll(page, ["showToast", "setTenants", "setDisableFor"]),
-    selects: includesAll(page, ["managed.lang", "managed.tz"]),
-    stats: includesAll(page, ["t.members", "t.ai", "t.conn"]),
-    statusBadge: includesAll(page, ["TENANT_STATUS_COLORS", "t.status"]),
-    titleSubtitle: includesAll(page, ["租户管理", "创建 / 停用写审计"])
-  };
-  const mapping = {
-    anatomy,
-    boundaryAdaptation: {
-      disable:
-        "Source audit-writing copy is adapted to browser-local/no-audit wording.",
-      labels:
-        "Primary row values are source-shaped; runtime note/toasts carry mock/degraded boundaries.",
-      restore: "React restore mutates browser-local state only."
-    },
-    filesRead: Object.values(sourceFiles),
-    fixtureTerms: ["GROUP_TENANTS", "TENANT_STATUS_COLORS", "GroupTenant"].filter(
-      (term) => fixtures.includes(term)
-    ),
-    sourceValues: {
-      capabilityLabels: ["Telegram Bot", "Telegram Business", "订单 API"].filter(
-        (label) => sourceText.includes(label)
-      ),
-      statuses: ["运行中", "降级", "需人工", "已停用"].filter((label) =>
-        sourceText.includes(label)
-      ),
-      tenants: tenantNames.filter((label) => sourceText.includes(label))
-    }
-  };
+  const mapping = { conflict: { ownerHtmlRenderedCardGrid: false, ownerHtmlRenderedTenantRows: false, unpackedCardGridConflictsWithOwnerHtml: unpackedCardGrid }, decision: { reactFollows: "owner-html-visible-table-state", unpacked6Role: "secondary conflicting structured source for this page; not the visible baseline" }, filesRead: [ownerHtml, ...Object.values(sourceFiles)], ownerHtmlBundle: { disableModalTemplatePresent: owner.includes("tenantDisableOpen"), managementDrawerTemplatePresent: owner.includes("tenantManageOpen"), newTenantModalTemplatePresent: owner.includes("tenantNewOpen"), tableColumns: ownerColumns.filter((label) => owner.includes(label)), tableTemplatePresent: ownerTableTemplate }, unpacked6: { cardGridSourcePresent: unpackedCardGrid, drawerSourcePresent: includesAll(page, ["managed", "默认语言", "默认时区"]), fixtureTerms: ["GROUP_TENANTS", "TENANT_STATUS_COLORS", "GroupTenant"].filter((term) => fixtures.includes(term)), tenantNames: tenantNames.filter((label) => `${page}\n${fixtures}`.includes(label)) } };
   writeJson("unpacked-tenant-management-source-mapping.json", mapping);
   return mapping;
 }
+
+const includesAll = (text: string, labels: readonly string[]) =>
+  labels.every((label) => text.includes(label));

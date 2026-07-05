@@ -1,111 +1,72 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
-import { X } from "lucide-react";
-import { IconSlot, StatusBadge, Toggle } from "../../primitives";
+import { useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 import {
-  badgeTone,
   tenantCapabilities,
   tenantLanguages,
+  tenantTemplates,
   tenantTimezones,
-  toneClass,
-  type TenantCapability,
-  type TenantCard
+  type NewTenantForm,
+  type TenantCapabilityKey
 } from "./groupTenantFallback";
 
-type GridProps = {
-  onOpen: (tenant: TenantCard, trigger: HTMLButtonElement) => void;
-  tenants: TenantCard[];
-};
-type DrawerProps = {
-  onChangeLanguage: (tenant: TenantCard, value: string) => void;
-  onChangeTimezone: (tenant: TenantCard, value: string) => void;
-  onClose: () => void;
-  onDisable: (tenant: TenantCard) => void;
-  onRestore: (tenant: TenantCard) => void;
-  onToggleCapability: (tenant: TenantCard, capability: TenantCapability) => void;
-  tenant: TenantCard;
-};
-type SelectFieldProps = {
-  label: string;
-  onChange: (value: string) => void;
-  options: string[];
-  testId: string;
-  value: string;
-};
+type NewTenantTextField = Exclude<keyof NewTenantForm, "capabilities">;
+// prettier-ignore
+type NewTenantModalProps = { form: NewTenantForm; onCancel: () => void; onCreate: () => void; onFieldChange: (field: NewTenantTextField, value: string) => void; onToggleCapability: (key: TenantCapabilityKey) => void; ready: boolean };
+// prettier-ignore
+type TextFieldProps = { label: string; onChange: (value: string) => void; placeholder: string; refEl?: RefObject<HTMLInputElement | null>; testId: string; value: string };
+// prettier-ignore
+type SelectFieldProps = { help?: string; label: string; onChange: (value: string) => void; options: string[]; testId: string; value: string };
 
 const focusableSelector =
   "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
 
-export function TenantGrid({ onOpen, tenants }: GridProps) {
+export function TenantHtmlTable({
+  onManageUnavailable
+}: {
+  onManageUnavailable: () => void;
+}) {
   return (
-    <section aria-label="租户卡片" className="uz-tenant-grid">
-      {tenants.map((tenant) => (
-        <button
-          aria-label={`管理租户 ${tenant.name} · ${tenant.status}`}
-          className={`uz-tenant-card${tenant.disabled ? " is-disabled" : ""}`}
-          data-testid={`m7-tenant-card-${tenant.id}`}
-          key={tenant.id}
-          onClick={(event) => onOpen(tenant, event.currentTarget)}
-          type="button"
-        >
-          <div className="uz-tenant-card-head">
-            <span className={`uz-tenant-dot ${toneClass(tenant.dotTone)}`} />
-            <strong className="uz-tenant-card-name">{tenant.name}</strong>
-            <StatusBadge tone={badgeTone(tenant.statusTone)}>
-              {tenant.status}
-              <span className="uz-tenant-sr-only">{`mock ${tenant.status}`}</span>
-            </StatusBadge>
-          </div>
-          <div className="uz-tenant-line">
-            {tenant.line} · {tenant.template}
-          </div>
-          <div className="uz-tenant-stats">
-            <span>
-              <span>成员 </span>
-              <span className="uz-tenant-sr-only">mock 成员 </span>
-              <span className="uz-tenant-mono">{tenant.members}</span>
-            </span>
-            <span>
-              <span>AI </span>
-              <span className="uz-tenant-sr-only">mock AI </span>
-              <span className="uz-tenant-mono">{tenant.ai}</span>
-            </span>
-            <span>
-              <span>连接 </span>
-              <span className="uz-tenant-sr-only">mock 连接 </span>
-              <strong className={`uz-tenant-conn ${toneClass(tenant.connectionTone)}`}>
-                {tenant.connection}
-              </strong>
-            </span>
-          </div>
-        </button>
-      ))}
+    <section
+      aria-label="租户列表"
+      className="uz-tenant-table-panel"
+      data-testid="m7-tenant-table-panel"
+    >
+      <table className="uz-tenant-table">
+        <tbody>
+          <tr>
+            <td className="uz-tenant-management-cell">
+              <button
+                className="uz-tenant-link-action"
+                data-testid="m7-tenant-manage-placeholder"
+                onClick={onManageUnavailable}
+                type="button"
+              >
+                管理
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
   );
 }
 
-export function TenantDrawer({
-  onChangeLanguage,
-  onChangeTimezone,
-  onClose,
-  onDisable,
-  onRestore,
+export function TenantNewModal({
+  form,
+  onCancel,
+  onCreate,
+  onFieldChange,
   onToggleCapability,
-  tenant
-}: DrawerProps) {
-  const closeRef = useRef<HTMLButtonElement | null>(null);
+  ready
+}: NewTenantModalProps) {
   const dialogRef = useRef<HTMLElement | null>(null);
-  const actionClass = tenant.disabled
-    ? "uz-tenant-action uz-tenant-action--restore"
-    : "uz-tenant-action";
-  const actionLabel = tenant.disabled ? "恢复租户" : "停用租户";
-  const actionTestId = tenant.disabled ? "m7-tenant-restore" : "m7-tenant-disable";
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => closeRef.current?.focus(), [tenant.id]);
+  useEffect(() => nameRef.current?.focus(), []);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
-      onClose();
+      onCancel();
       return;
     }
     if (event.key === "Tab") trapDialogTab(event, dialogRef.current);
@@ -113,104 +74,101 @@ export function TenantDrawer({
 
   return (
     <div
-      className="uz-tenant-scrim"
-      data-testid="m7-tenant-drawer-scrim"
-      onClick={onClose}
+      className="uz-tenant-modal-scrim"
+      data-testid="m7-tenant-new-modal-scrim"
+      onClick={onCancel}
     >
       <section
-        aria-labelledby="m7-tenant-drawer-title"
+        aria-labelledby="m7-tenant-new-title"
         aria-modal="true"
-        className="uz-tenant-drawer"
-        data-testid="m7-tenant-drawer"
+        className="uz-tenant-new-modal"
+        data-testid="m7-tenant-new-modal"
         onClick={(event) => event.stopPropagation()}
         onKeyDown={handleKeyDown}
         ref={dialogRef}
         role="dialog"
       >
-        <header className="uz-tenant-drawer-head">
-          <span className={`uz-tenant-dot ${toneClass(tenant.dotTone)}`} />
-          <div className="uz-tenant-drawer-title">
-            <h3 id="m7-tenant-drawer-title">{tenant.name}</h3>
-            <span className="uz-tenant-muted">{tenant.line}</span>
-          </div>
-          <StatusBadge tone={badgeTone(tenant.statusTone)}>
-            {tenant.status}
-            <span className="uz-tenant-sr-only">{`mock ${tenant.status}`}</span>
-          </StatusBadge>
-          <button
-            aria-label="关闭租户管理抽屉"
-            className="uz-tenant-close"
-            onClick={onClose}
-            ref={closeRef}
-            type="button"
-          >
-            <IconSlot icon={X} size="sm" />
-          </button>
-        </header>
-        <div className="uz-tenant-drawer-body">
-          <div className="uz-tenant-field-grid">
-            <SelectField
-              label="默认语言"
-              onChange={(value) => onChangeLanguage(tenant, value)}
-              options={tenantLanguages}
-              testId="m7-tenant-language"
-              value={tenant.language}
+        <div className="uz-tenant-new-body">
+          <h3 id="m7-tenant-new-title">创建新租户</h3>
+          <div className="uz-tenant-new-stack">
+            <TextField
+              label="租户名称"
+              onChange={(value) => onFieldChange("name", value)}
+              placeholder="例如：胡杨跨境百货"
+              refEl={nameRef}
+              testId="m7-tenant-new-name"
+              value={form.name}
             />
-            <SelectField
-              label="默认时区"
-              onChange={(value) => onChangeTimezone(tenant, value)}
-              options={tenantTimezones}
-              testId="m7-tenant-timezone"
-              value={tenant.timezone}
+            <TextField
+              label="业务线"
+              onChange={(value) => onFieldChange("line", value)}
+              placeholder="例如：百货 · 中亚"
+              testId="m7-tenant-new-line"
+              value={form.line}
             />
-          </div>
-          <section aria-label="渠道能力">
-            <div className="uz-tenant-section-label">渠道能力</div>
-            <div className="uz-tenant-cap-list">
-              {tenantCapabilities.map((capability) => {
-                const enabled = tenant.capabilities[capability.key];
-                return (
-                  <div className="uz-tenant-cap" key={capability.key}>
-                    <strong>{capability.label}</strong>
-                    <span>
-                      {enabled ? "已启用" : "已停用"}
-                      <span className="uz-tenant-sr-only">
-                        {enabled ? "mock 已启用" : "mock 已停用"}
-                      </span>
-                    </span>
-                    <Toggle
-                      aria-label={`${tenant.name} ${capability.label} browser-local capability`}
-                      checked={enabled}
-                      data-testid={`m7-tenant-cap-${capability.key}`}
-                      onClick={() => onToggleCapability(tenant, capability)}
-                    />
-                  </div>
-                );
-              })}
+            <div className="uz-tenant-new-two">
+              <SelectField
+                label="默认语言"
+                onChange={(value) => onFieldChange("language", value)}
+                options={tenantLanguages}
+                testId="m7-tenant-new-language"
+                value={form.language}
+              />
+              <SelectField
+                label="默认时区"
+                onChange={(value) => onFieldChange("timezone", value)}
+                options={tenantTimezones}
+                testId="m7-tenant-new-timezone"
+                value={form.timezone}
+              />
             </div>
-          </section>
-          <div className="uz-tenant-muted">来源模板：{tenant.template}</div>
-          {tenant.disabled ? (
-            <div
-              className="uz-tenant-disabled-note"
-              data-testid="m7-tenant-disabled-note"
-            >
-              已停用 · {tenant.disabledAt || "browser-local now"} · 原因：
-              {tenant.disableReason || "browser-local only"}
-            </div>
-          ) : null}
-          <div className="uz-tenant-section-label">
-            停用/恢复仅更新浏览器状态；生产审计未写入
+            <section aria-label="渠道能力" className="uz-tenant-new-section">
+              <div className="uz-tenant-new-label">渠道能力</div>
+              <div className="uz-tenant-cap-chips">
+                {tenantCapabilities.map((capability) => {
+                  const on = form.capabilities[capability.key];
+                  return (
+                    <button
+                      aria-pressed={on}
+                      className={`uz-tenant-cap-chip${on ? " is-on" : ""}`}
+                      data-testid={`m7-tenant-new-cap-${capability.key}`}
+                      key={capability.key}
+                      onClick={() => onToggleCapability(capability.key)}
+                      type="button"
+                    >
+                      {capability.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+            <SelectField
+              help="创建后将复制所选模板的知识包 / AI 成员 / 配置到该租户独立空间"
+              label="初始模板"
+              onChange={(value) => onFieldChange("template", value)}
+              options={tenantTemplates}
+              testId="m7-tenant-new-template"
+              value={form.template}
+            />
           </div>
         </div>
-        <footer className="uz-tenant-drawer-foot">
+        <footer className="uz-tenant-new-foot">
           <button
-            className={actionClass}
-            data-testid={actionTestId}
-            onClick={() => (tenant.disabled ? onRestore(tenant) : onDisable(tenant))}
+            className="uz-tenant-secondary"
+            data-testid="m7-tenant-new-cancel"
+            onClick={onCancel}
             type="button"
           >
-            {actionLabel}
+            取消
+          </button>
+          <button
+            className="uz-tenant-primary"
+            data-testid="m7-tenant-new-create"
+            disabled={!ready}
+            onClick={onCreate}
+            type="button"
+          >
+            创建租户
           </button>
         </footer>
       </section>
@@ -218,7 +176,36 @@ export function TenantDrawer({
   );
 }
 
-function SelectField({ label, onChange, options, testId, value }: SelectFieldProps) {
+function TextField({
+  label,
+  onChange,
+  placeholder,
+  refEl,
+  testId,
+  value
+}: TextFieldProps) {
+  return (
+    <label className="uz-tenant-field">
+      <span>{label}</span>
+      <input
+        data-testid={testId}
+        onChange={(event) => onChange(event.currentTarget.value)}
+        placeholder={placeholder}
+        ref={refEl}
+        value={value}
+      />
+    </label>
+  );
+}
+
+function SelectField({
+  help,
+  label,
+  onChange,
+  options,
+  testId,
+  value
+}: SelectFieldProps) {
   return (
     <label className="uz-tenant-field">
       <span>{label}</span>
@@ -233,6 +220,7 @@ function SelectField({ label, onChange, options, testId, value }: SelectFieldPro
           </option>
         ))}
       </select>
+      {help ? <small>{help}</small> : null}
     </label>
   );
 }

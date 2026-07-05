@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("renders group tenant management with local-only boundaries and drawer", async ({
+test("renders group tenant management as owner HTML table/new-tenant shape", async ({
   page
 }) => {
   await openTenants(page);
@@ -36,7 +36,15 @@ test("renders group tenant management with local-only boundaries and drawer", as
   );
   await expect(page.getByTestId("page-outlet")).not.toHaveAttribute("data-tenant-id");
   await expect(page.getByRole("heading", { name: "租户管理" })).toBeVisible();
-  await expect(page.getByText("4 个租户 · 创建 / 停用仅本地预览")).toBeVisible();
+  await expect(page.getByText("4 个租户")).toBeVisible();
+  await expect(page.getByTestId("m7-tenant-new-button")).toContainText("新建租户");
+  await expect(page.getByTestId("m7-tenant-table-panel")).toBeVisible();
+  await expect(page.getByTestId("m7-tenant-manage-placeholder")).toContainText("管理");
+  await expect(page.locator(".uz-tenant-card")).toHaveCount(0);
+  await expect(page.getByTestId("m7-tenant-drawer")).toHaveCount(0);
+  const tenantPage = page.getByTestId("m7-tenant-page");
+  for (const name of ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"])
+    await expect(tenantPage.getByText(name)).toHaveCount(0);
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
   for (const label of [
     "degraded",
@@ -51,36 +59,6 @@ test("renders group tenant management with local-only boundaries and drawer", as
   ])
     await expect(page.getByTestId("m7-tenant-runtime-note")).toContainText(label);
 
-  await expect(page.locator(".uz-tenant-card")).toHaveCount(4);
-  const firstCard = page.getByRole("button", { name: /管理租户 玉珠跨境美妆/ });
-  await expect(firstCard).toContainText("mock 运行中");
-  await expect(firstCard).toContainText("美妆 · 中亚");
-  await expect(firstCard).toContainText("美妆标准包");
-  await expect(firstCard).toContainText("mock 成员 8");
-  await expect(firstCard).toContainText("mock AI 3");
-  await expect(firstCard).toContainText("mock 连接 降级");
-  await expect(page.getByTestId("m7-tenant-card-SYN-TENANT-t4")).toContainText(
-    "mock 已停用"
-  );
-  await page.screenshot({
-    fullPage: true,
-    path: `${artifactDir}/react-tenant-management-desktop.png`
-  });
-
-  await firstCard.click();
-  const drawer = page.getByTestId("m7-tenant-drawer");
-  await expect(drawer).toHaveAttribute("role", "dialog");
-  await expect(drawer).toContainText("玉珠跨境美妆");
-  await expect(drawer).toContainText("来源模板：美妆标准包");
-  await expect(page.getByTestId("m7-tenant-language")).toHaveValue(
-    "乌兹别克语（拉丁）"
-  );
-  await expect(page.getByTestId("m7-tenant-timezone")).toHaveValue("UTC+5 塔什干");
-  await expect(page.getByTestId("m7-tenant-cap-bot")).toHaveAttribute("role", "switch");
-  await expect(page.getByTestId("m7-tenant-cap-orderApi")).toHaveAttribute(
-    "aria-checked",
-    "false"
-  );
   const metrics = await collectMetrics(page);
   writeFileSync(
     `${artifactDir}/react-tenant-management-metrics.json`,
@@ -88,81 +66,61 @@ test("renders group tenant management with local-only boundaries and drawer", as
   );
   await page.screenshot({
     fullPage: true,
-    path: `${artifactDir}/react-tenant-management-drawer.png`
+    path: `${artifactDir}/react-tenant-management-desktop.png`
   });
 });
 
-test("drawer keyboard behavior traps focus and returns to tenant card", async ({
-  page
-}) => {
+test("new tenant modal stays browser-local only", async ({ page }) => {
   await openTenants(page);
-  const card = page.getByTestId("m7-tenant-card-SYN-TENANT-t1");
-  await card.focus();
-  await page.keyboard.press("Enter");
-  const closeButton = page.getByRole("button", { name: "关闭租户管理抽屉" });
-  await expect(closeButton).toBeFocused();
-  await page.keyboard.press("Shift+Tab");
-  await expect(page.getByTestId("m7-tenant-disable")).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(closeButton).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("m7-tenant-drawer")).toHaveCount(0);
-  await expect(card).toBeFocused();
-});
+  await page.getByTestId("m7-tenant-manage-placeholder").click();
+  await expectLocalToast(page, ["owner HTML table row data is not rendered"]);
 
-test("drawer edits and disable restore stay browser-local only", async ({ page }) => {
-  await openTenants(page);
-  await page.getByTestId("m7-tenant-card-SYN-TENANT-t1").click();
-  await page.getByTestId("m7-tenant-language").selectOption("中文");
+  await page.getByTestId("m7-tenant-new-button").click();
+  const modal = page.getByTestId("m7-tenant-new-modal");
+  await expect(modal).toHaveAttribute("role", "dialog");
+  for (const label of [
+    "创建新租户",
+    "租户名称",
+    "业务线",
+    "默认语言",
+    "默认时区",
+    "渠道能力",
+    "初始模板"
+  ])
+    await expect(modal).toContainText(label);
+  await expect(page.getByTestId("m7-tenant-new-create")).toBeDisabled();
+  await page.getByTestId("m7-tenant-new-name").fill("胡杨跨境百货");
+  await page.getByTestId("m7-tenant-new-line").fill("百货 · 中亚");
+  await page.getByTestId("m7-tenant-new-cap-business").click();
+  await page.getByTestId("m7-tenant-new-template").selectOption("家居通用包");
+  await expect(page.getByTestId("m7-tenant-new-create")).toBeEnabled();
+  await page.screenshot({
+    fullPage: true,
+    path: `${artifactDir}/react-tenant-management-new-tenant-modal.png`
+  });
+  await page.getByTestId("m7-tenant-new-create").click();
+  await expect(page.getByTestId("m7-tenant-new-modal")).toHaveCount(0);
+  await expect(page.getByText("5 个租户")).toBeVisible();
   await expectLocalToast(page, [
-    "默认语言 -> 中文",
+    "created in browser preview",
     "no production tenant change",
     "no tenant config persistence",
-    "no audit write"
-  ]);
-  await page.getByTestId("m7-tenant-timezone").selectOption("UTC+8 北京");
-  await expectLocalToast(page, ["默认时区 -> UTC+8 北京", "no audit write"]);
-
-  const orderSwitch = page.getByTestId("m7-tenant-cap-orderApi");
-  await expect(orderSwitch).toHaveAttribute("aria-checked", "false");
-  await orderSwitch.click();
-  await expect(orderSwitch).toHaveAttribute("aria-checked", "true");
-  await expectLocalToast(page, [
-    "订单 API enabled",
     "no connector or feature flag change",
     "no audit write"
   ]);
+});
 
-  await page.getByTestId("m7-tenant-disable").click();
-  await expect(page.getByTestId("m7-tenant-drawer")).toHaveCount(0);
-  await expect(page.getByRole("dialog")).toHaveCount(1);
-  await expect(page.locator('[aria-modal="true"]')).toHaveCount(1);
-  const modal = page.getByTestId("m7-confirm-modal");
-  await expect(modal).toContainText("停用租户");
-  await expect(modal.getByRole("button", { name: "确认停用" })).toBeDisabled();
-  await modal
-    .getByPlaceholder("必填；仅用于 browser-local 预览，不写生产审计")
-    .fill("local UI test reason");
-  await expect(modal.getByRole("button", { name: "确认停用" })).toBeEnabled();
-  await modal.getByRole("button", { name: "确认停用" }).click();
-  await expect(page.getByTestId("m7-tenant-disabled-note")).toContainText(
-    "local UI test reason"
-  );
-  await expect(page.getByRole("dialog")).toHaveCount(1);
-  await expect(page.locator('[aria-modal="true"]')).toHaveCount(1);
-  await expectLocalToast(page, [
-    "disabled in browser state",
-    "no production tenant change",
-    "no audit write"
-  ]);
-
-  await page.getByTestId("m7-tenant-restore").click();
-  await expect(page.getByTestId("m7-tenant-disabled-note")).toHaveCount(0);
-  await expectLocalToast(page, [
-    "restored in browser state",
-    "no production tenant change",
-    "no audit write"
-  ]);
+test("new tenant modal traps focus and closes without persistence", async ({
+  page
+}) => {
+  await openTenants(page);
+  await page.getByTestId("m7-tenant-new-button").click();
+  await expect(page.getByTestId("m7-tenant-new-name")).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.getByTestId("m7-tenant-new-cancel")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("m7-tenant-new-modal")).toHaveCount(0);
+  await expect(page.getByText("4 个租户")).toBeVisible();
 });
 
 test("forced URL states stay deterministic", async ({ page }) => {
@@ -178,7 +136,7 @@ test("forced URL states stay deterministic", async ({ page }) => {
   }
 });
 
-test("sidebar collapse and mobile 320 drawer remain bounded", async ({ page }) => {
+test("sidebar collapse and mobile 320 table/modal remain bounded", async ({ page }) => {
   await openTenants(page);
   await page.getByRole("button", { name: "Collapse navigation" }).click();
   await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty("offsetWidth", 68);
@@ -186,16 +144,15 @@ test("sidebar collapse and mobile 320 drawer remain bounded", async ({ page }) =
 
   await page.setViewportSize({ width: 320, height: 900 });
   await openTenants(page);
-  await expect(page.getByTestId("m7-tenant-page")).toBeVisible();
-  await expect(page.locator(".uz-tenant-card").first()).toBeVisible();
+  await expect(page.getByTestId("m7-tenant-table-panel")).toBeVisible();
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
-  await page.getByTestId("m7-tenant-card-SYN-TENANT-t1").click();
-  await expect(page.getByTestId("m7-tenant-drawer")).toBeVisible();
+  await page.getByTestId("m7-tenant-new-button").click();
+  await expect(page.getByTestId("m7-tenant-new-modal")).toBeVisible();
   expect(
     await page
-      .getByTestId("m7-tenant-drawer")
+      .getByTestId("m7-tenant-new-modal")
       .evaluate((node) => Math.round((node as HTMLElement).offsetWidth))
-  ).toBeLessThanOrEqual(320);
+  ).toBeLessThanOrEqual(296);
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
   await page.screenshot({
     fullPage: true,
@@ -249,18 +206,17 @@ async function collectMetrics(page: Page) {
       .getByTestId("admin-shell")
       .getAttribute("data-active-page-id"),
     bodyScrollWidth: await page.evaluate(() => document.body.scrollWidth),
-    cardCount: await page.locator(".uz-tenant-card").count(),
-    drawerWidth: await page
-      .getByTestId("m7-tenant-drawer")
-      .evaluate((node) => Math.round((node as HTMLElement).offsetWidth)),
-    firstCardWidth: await page
-      .locator(".uz-tenant-card")
-      .first()
+    modalCount: await page.getByTestId("m7-tenant-new-modal").count(),
+    panelWidth: await page
+      .getByTestId("m7-tenant-table-panel")
       .evaluate((node) => Math.round((node as HTMLElement).offsetWidth)),
     shellLevel: await page.getByTestId("admin-shell").getAttribute("data-shell-level"),
     sidebarExpandedWidth: await page
       .getByTestId("app-shell-nav")
       .evaluate((node) => (node as HTMLElement).offsetWidth),
+    tableScrollWidth: await page
+      .locator(".uz-tenant-table")
+      .evaluate((node) => Math.round((node as HTMLElement).scrollWidth)),
     topbarHeight: await page
       .locator(".uz-topbar")
       .evaluate((node) => (node as HTMLElement).offsetHeight)

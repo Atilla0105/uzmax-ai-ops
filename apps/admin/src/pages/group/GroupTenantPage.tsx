@@ -1,32 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Lock } from "lucide-react";
+import { Lock, Plus } from "lucide-react";
 import { IconSlot, StatusBadge } from "../../primitives";
-import { ConfirmModal } from "../../patterns";
-import { TenantDrawer, TenantGrid } from "./GroupTenantViews";
+import { TenantHtmlTable, TenantNewModal } from "./GroupTenantViews";
 import {
-  initialTenantCards,
+  createInitialTenantForm,
+  initialTenantSeeds,
+  isTenantCreateReady,
   readTenantViewState,
-  tenantCapabilityToast,
-  tenantDisableToast,
-  tenantFieldToast,
+  tenantCreateToast,
+  tenantManageUnavailableToast,
   tenantMeta,
-  tenantRestoreToast,
   tenantRuntimeLabels,
   tenantStyles,
-  type TenantCapability,
-  type TenantCard
+  type TenantCapabilityKey
 } from "./groupTenantFallback";
+
+type NewTenantTextField = "language" | "line" | "name" | "template" | "timezone";
 
 export function GroupTenantPage() {
   const viewState = readTenantViewState();
-  const [tenants, setTenants] = useState(initialTenantCards);
-  const [drawerTenantId, setDrawerTenantId] = useState<string | null>(null);
-  const [confirmTenant, setConfirmTenant] = useState<TenantCard | null>(null);
-  const [disableReason, setDisableReason] = useState("");
+  const [tenantCount, setTenantCount] = useState(initialTenantSeeds.length);
+  const [newTenantOpen, setNewTenantOpen] = useState(false);
+  const [newTenantForm, setNewTenantForm] = useState(createInitialTenantForm);
   const [toast, setToast] = useState("");
-  const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
   const toastTimerRef = useRef<number | null>(null);
-  const drawerTenant = tenants.find((tenant) => tenant.id === drawerTenantId) ?? null;
+  const createReady = isTenantCreateReady(newTenantForm);
 
   useEffect(
     () => () => {
@@ -43,71 +41,26 @@ export function GroupTenantPage() {
       toastTimerRef.current = null;
     }, 3200);
   };
-  const patchTenant = (id: string, next: (tenant: TenantCard) => TenantCard) => {
-    setTenants((items) =>
-      items.map((tenant) => (tenant.id === id ? next(tenant) : tenant))
-    );
+
+  const openNewTenant = () => {
+    setNewTenantForm(createInitialTenantForm());
+    setNewTenantOpen(true);
   };
-  const openDrawer = (tenant: TenantCard, trigger: HTMLButtonElement) => {
-    drawerTriggerRef.current = trigger;
-    setDrawerTenantId(tenant.id);
+  const closeNewTenant = () => setNewTenantOpen(false);
+  const changeNewField = (field: NewTenantTextField, value: string) => {
+    setNewTenantForm((form) => ({ ...form, [field]: value }));
   };
-  const closeDrawer = () => {
-    setDrawerTenantId(null);
-    window.setTimeout(() => drawerTriggerRef.current?.focus(), 0);
-  };
-  const changeLanguage = (tenant: TenantCard, value: string) => {
-    patchTenant(tenant.id, (item) => ({ ...item, language: value }));
-    showToast(tenantFieldToast(tenant, "默认语言", value));
-  };
-  const changeTimezone = (tenant: TenantCard, value: string) => {
-    patchTenant(tenant.id, (item) => ({ ...item, timezone: value }));
-    showToast(tenantFieldToast(tenant, "默认时区", value));
-  };
-  const toggleCapability = (tenant: TenantCard, capability: TenantCapability) => {
-    const enabled = !tenant.capabilities[capability.key];
-    patchTenant(tenant.id, (item) => ({
-      ...item,
-      capabilities: { ...item.capabilities, [capability.key]: enabled }
+  const toggleNewCapability = (key: TenantCapabilityKey) => {
+    setNewTenantForm((form) => ({
+      ...form,
+      capabilities: { ...form.capabilities, [key]: !form.capabilities[key] }
     }));
-    showToast(tenantCapabilityToast(tenant, capability, enabled));
   };
-  const askDisable = (tenant: TenantCard) => {
-    setDisableReason("");
-    setDrawerTenantId(null);
-    setConfirmTenant(tenant);
-  };
-  const cancelDisable = () => {
-    const tenantId = confirmTenant?.id;
-    setConfirmTenant(null);
-    if (tenantId) setDrawerTenantId(tenantId);
-  };
-  const confirmDisable = () => {
-    if (!confirmTenant) return;
-    const reason = disableReason.trim();
-    const tenantId = confirmTenant.id;
-    patchTenant(confirmTenant.id, (tenant) => ({
-      ...tenant,
-      disabled: true,
-      disabledAt: "browser-local now",
-      disableReason: reason,
-      status: "已停用",
-      statusTone: "neutral"
-    }));
-    showToast(tenantDisableToast(confirmTenant, reason));
-    setConfirmTenant(null);
-    setDrawerTenantId(tenantId);
-  };
-  const restoreTenant = (tenant: TenantCard) => {
-    patchTenant(tenant.id, (item) => ({
-      ...item,
-      disabled: false,
-      disabledAt: "",
-      disableReason: "",
-      status: "运行中",
-      statusTone: "ok"
-    }));
-    showToast(tenantRestoreToast(tenant));
+  const createTenant = () => {
+    if (!createReady) return;
+    showToast(tenantCreateToast(newTenantForm));
+    setTenantCount((count) => count + 1);
+    setNewTenantOpen(false);
   };
 
   return (
@@ -118,7 +71,7 @@ export function GroupTenantPage() {
       data-testid="m7-tenant-page"
     >
       <style>{tenantStyles}</style>
-      <TenantHeader />
+      <TenantHeader count={tenantCount} onNewTenant={openNewTenant} />
       <TenantRuntimeNote />
       {toast ? (
         <div
@@ -128,53 +81,60 @@ export function GroupTenantPage() {
           data-testid="m7-tenant-toast"
           role="status"
         >
-          {toast}
+          <span>{toast}</span>
         </div>
       ) : null}
       {viewState === "degraded" ? (
         <main className="uz-tenant-scroll">
-          <TenantGrid onOpen={openDrawer} tenants={tenants} />
+          <TenantHtmlTable
+            onManageUnavailable={() => showToast(tenantManageUnavailableToast())}
+          />
+          <div className="uz-tenant-source-note" data-testid="m7-tenant-source-note">
+            <IconSlot icon={Lock} size="sm" />
+            <span>
+              停用租户须填写原因 · 停用后保留只读审计与数据导出入口 · browser-local only
+              · no production tenant change · no audit write
+            </span>
+          </div>
         </main>
       ) : (
         <TenantStatePanel state={viewState} />
       )}
-      {drawerTenant ? (
-        <TenantDrawer
-          onChangeLanguage={changeLanguage}
-          onChangeTimezone={changeTimezone}
-          onClose={closeDrawer}
-          onDisable={askDisable}
-          onRestore={restoreTenant}
-          onToggleCapability={toggleCapability}
-          tenant={drawerTenant}
+      {newTenantOpen ? (
+        <TenantNewModal
+          form={newTenantForm}
+          onCancel={closeNewTenant}
+          onCreate={createTenant}
+          onFieldChange={changeNewField}
+          onToggleCapability={toggleNewCapability}
+          ready={createReady}
         />
       ) : null}
-      <ConfirmModal
-        confirmLabel="确认停用"
-        danger
-        description="Reason required. This preview changes browser-local mock state only; no production tenant change and no audit write happens."
-        onCancel={cancelDisable}
-        onConfirm={confirmDisable}
-        open={!!confirmTenant}
-        reason={{
-          label: "停用原因",
-          onChange: setDisableReason,
-          placeholder: "必填；仅用于 browser-local 预览，不写生产审计",
-          required: true,
-          value: disableReason
-        }}
-        title={`停用租户「${confirmTenant?.name ?? ""}」？`}
-      />
     </section>
   );
 }
 
-function TenantHeader() {
+function TenantHeader({
+  count,
+  onNewTenant
+}: {
+  count: number;
+  onNewTenant: () => void;
+}) {
   return (
     <header className="uz-tenant-head">
       <h2 className="uz-tenant-title">{tenantMeta.title}</h2>
-      <span className="uz-tenant-subtitle">{tenantMeta.subtitle}</span>
+      <span className="uz-tenant-subtitle">{count} 个租户</span>
       <StatusBadge tone="warn">{tenantMeta.descriptor}</StatusBadge>
+      <button
+        className="uz-tenant-new-button"
+        data-testid="m7-tenant-new-button"
+        onClick={onNewTenant}
+        type="button"
+      >
+        <IconSlot icon={Plus} size="sm" />
+        新建租户
+      </button>
     </header>
   );
 }

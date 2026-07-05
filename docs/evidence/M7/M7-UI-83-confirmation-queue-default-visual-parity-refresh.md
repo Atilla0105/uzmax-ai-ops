@@ -62,7 +62,7 @@ No owner visual acceptance, M7 closeout, runtime/API/DB foundation closure, dist
 | Command | Result | Notes |
 |---|---|---|
 | `git diff --check` | pass | No whitespace errors in the final worktree diff. |
-| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-82-group-overview-default-visual-parity-refresh --spec docs/specs/M7-UI-83-confirmation-queue-default-visual-parity-refresh.md --include-worktree` | pass | 12 changed files: source 5, test 3, docs 4; source net LOC 0, new source files 0. |
+| `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-82-group-overview-default-visual-parity-refresh --spec docs/specs/M7-UI-83-confirmation-queue-default-visual-parity-refresh.md --include-worktree` | pass | 12 changed files: source 5, test 3, docs 4; source net LOC 44, new source files 0. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npx prettier --check <touched files>` | pass | All touched queue source/test/docs files use Prettier style. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH node node_modules/eslint/bin/eslint.js <touched queue source/tests>` | pass | Focused ESLint passed after keeping `QueueSupport.tsx` within file-length budget. |
 | `PATH=/Users/atilla/Applications/Codex/tools/node-v24.14.0-darwin-arm64/bin:$PATH npm run typecheck` | pass | Extra validation; TypeScript no-emit check passed. |

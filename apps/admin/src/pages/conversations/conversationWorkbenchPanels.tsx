@@ -78,10 +78,10 @@ export function ContextRail({
               创建工单
             </Button>
             <Button disabled icon={<IconSlot icon={ClipboardList} />}>
-              完整档案
+              生成报价
             </Button>
-            <Button disabled>订单快照</Button>
-            <Button disabled>生成报价</Button>
+            <Button disabled>身份归并</Button>
+            <Button disabled>完整档案</Button>
           </div>
         </section>
       </div>
@@ -168,7 +168,7 @@ function railHeader(active?: ConversationRow) {
     };
   return {
     initial: displayName(active),
-    name: displayName(active),
+    name: firstText(active.customerName, displayName(active)),
     ref: firstText(active.customerRef, active.participantExternalRef),
     stage: firstText(active.journeyStage, "—")
   };

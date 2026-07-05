@@ -7,6 +7,7 @@ import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
 import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
+import { GroupTemplatePage } from "./group/GroupTemplatePage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
 import { QueuePage } from "./queue/QueuePage";
@@ -61,6 +62,14 @@ export function PageOutlet({
     return (
       <section data-page-id={page.id} data-testid="page-outlet">
         <GroupModelRiskPage onEnterTenant={onEnterTenant} />
+      </section>
+    );
+  }
+
+  if (page.id === "group.templates") {
+    return (
+      <section data-page-id={page.id} data-testid="page-outlet">
+        <GroupTemplatePage />
       </section>
     );
   }

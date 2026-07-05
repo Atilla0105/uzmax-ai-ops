@@ -6,6 +6,7 @@ export interface TicketRecord {
   closeNote: string;
   closeResult: string | null;
   customer: string;
+  customerFull: string;
   customerMeta: string;
   customerRef: string;
   id: string;
@@ -36,10 +37,9 @@ interface TicketNote {
 }
 
 export const ticketFallbackMeta = {
-  label: "6 mock tickets · ticket runtime unavailable",
-  reason:
-    "ticket runtime unavailable: synthetic degraded rows only, read-only product evidence and not production ticket data.",
-  source: "centralized-synthetic-mock-degraded"
+  label: "6 tickets",
+  reason: "degraded mock · read-only evidence only · not production ticket data",
+  source: "prototype-shaped-synthetic-mock-degraded"
 } as const;
 
 export const ticketTabs = [
@@ -68,50 +68,182 @@ export const ticketCloseStatus: Record<string, string> = {
 };
 
 export const ticketRecords: TicketRecord[] = [
-  ticket("T-MOCK-1042", "mock 物流延迟投诉 · 要求退款", "Mock 客户 A", "待处理", {
+  ticket("T-1042", "物流延迟投诉 · 要求退款", "Dilnoza R.", "待处理", {
     assignee: "未认领",
+    channel: "Telegram",
+    customerFull: "Dilnoza Rashidova",
+    customerMeta: "VIP · 4 单 · ¥1,026",
+    customerRef: "@dilnoza_r",
     priority: "高",
-    sla: "mock 04:12",
+    sla: "04:12",
+    order: { id: "UZ-20413", meta: "¥268 · 运输中 · 塔什干分拣" },
+    quotes: [
+      {
+        item: "护肤入门套装",
+        price: "¥268",
+        result: "已下单",
+        time: "06-25",
+        via: "AI 报价"
+      }
+    ],
+    snippet: [
+      {
+        color: "human",
+        text: "Pulni qaytarib bering, men kutmoqchi emasman.",
+        who: "客户"
+      },
+      {
+        color: "ai",
+        text: "已识别退款意图，红线拦截自动回复，转人工。",
+        who: "AI"
+      }
+    ],
+    summary:
+      "客户 Dilnoza 5 天前下单（UZ-20413），尚未收到，已两次催促，最新一条提出退款诉求，触发红线后 AI 暂停自动回复并转人工。",
+    suggestion:
+      "核实物流当前在塔什干分拣中心（预计 1-2 天）。建议先安抚并提供两个方案：①继续等待并赠优惠券；②取消未签收订单全额退款。退款金额 ¥268 在自动审批额度内。",
     tabs: ["unclaimed", "sla"],
+    timeline: [
+      { dot: "ai", text: "AI 接入并尝试物流查询", time: "09:14", who: "AI" },
+      { dot: "human", text: "触发红线（退款）· 转人工", time: "09:21", who: "系统" },
+      { dot: "warn", text: "生成工单并标记高优先级", time: "09:21", who: "系统" }
+    ],
     tone: "human"
   }),
-  ticket("T-MOCK-1039", "mock 商品破损 · 退货退款", "Mock 客户 B", "待处理", {
+  ticket("T-1039", "商品破损 · 退货退款", "Иван П.", "待处理", {
     assignee: "未认领",
+    channel: "Telegram",
+    customerFull: "Иван Петров",
+    customerMeta: "首单客户",
+    customerRef: "@ivan_p",
     priority: "高",
-    sla: "mock 01:48",
+    sla: "01:48",
+    order: { id: "UZ-20408", meta: "¥320 · 退款中" },
+    quotes: [],
+    snippet: [
+      {
+        color: "human",
+        text: "Товар пришёл разбитым, хочу вернуть деньги.",
+        who: "客户"
+      },
+      {
+        color: "ai",
+        text: "已识别退款意图，触发红线，转人工。",
+        who: "AI"
+      }
+    ],
+    summary: "客户 Иван 收到商品破损，要求退货退款；首次售后，需谨慎处理避免流失。",
+    suggestion:
+      "建议直接批准退货退款并优先安排换新，避免流失新客；金额 ¥320 在自动审批额度内。",
     tabs: ["unclaimed", "sla"],
+    timeline: [
+      { dot: "ai", text: "AI 接入", time: "11:02", who: "AI" },
+      { dot: "human", text: "触发红线（退款）· 转人工", time: "11:05", who: "系统" }
+    ],
     tone: "warn"
   }),
-  ticket("T-MOCK-1051", "mock 套装报价咨询转人工", "Mock 客户 C", "处理中", {
+  ticket("T-1051", "套装报价咨询转人工", "Азиз К.", "处理中", {
     assignee: "韩雪",
+    channel: "Telegram",
+    customerFull: "Азиз Каримов",
+    customerMeta: "新客",
+    customerRef: "@aziz_k",
     priority: "中",
-    sla: "mock 06:30",
+    sla: "06:30",
+    order: { id: "UZ-20401", meta: "¥198 · 待支付" },
+    quotes: [
+      {
+        item: "护肤入门套装",
+        price: "¥268",
+        result: "待支付",
+        time: "06-28",
+        via: "AI 报价"
+      }
+    ],
+    snippet: [
+      { color: "neutral", text: "Chegirma bera olasizmi?", who: "客户" },
+      { color: "ai", text: "超出自动折扣权限，转人工跟进。", who: "AI" }
+    ],
+    summary: "客户多次询价套装折扣，尚未确认订单；AI 未获得折扣授权，转人工跟进。",
+    suggestion: "可提供 5% 满减券促成下单，报价 ¥268 → ¥255，避免流失价格敏感新客。",
     tabs: ["mine", "follow"],
+    timeline: [
+      { dot: "ai", text: "AI 报价", time: "06-28 14:02", who: "AI" },
+      { dot: "warn", text: "转人工跟进折扣申请", time: "06-28 14:05", who: "系统" }
+    ],
     tone: "warn"
   }),
-  ticket("T-MOCK-1033", "mock 重复下单需合并", "Mock 客户 D", "已重开", {
+  ticket("T-1033", "重复下单需合并", "Madina S.", "已重开", {
     assignee: "李航",
+    channel: "Telegram",
+    customerFull: "Madina Saidova",
+    customerMeta: "复购客户",
+    customerRef: "@madina_s",
     priority: "中",
-    sla: "mock 重开",
+    sla: "重开",
+    order: { id: "UZ-20377", meta: "¥232 · 已完成" },
+    quotes: [],
+    snippet: [
+      { color: "neutral", text: "Men ikki marta buyurtma berib qo‘ydim.", who: "客户" }
+    ],
+    summary:
+      "客户误重复下单两笔相同商品，要求合并为一笔并退还多余款项；此前处理后客户反馈未生效，工单已重开。",
+    suggestion:
+      "确认物流未发出的一笔可直接取消退款；已发出的一笔正常收货，无需额外补偿。",
     tabs: ["reopened", "follow"],
+    timeline: [
+      { dot: "ok", text: "首次处理完成", time: "06-27 10:00", who: "李航" },
+      { dot: "ai", text: "客户反馈未处理 · 工单重开", time: "06-29 08:40", who: "系统" }
+    ],
     tone: "ai"
   }),
-  ticket("T-MOCK-1028", "mock 无响应跟进 · 第2次", "Mock 客户 E", "待处理", {
+  ticket("T-1028", "无响应跟进 · 第2次", "Сергей Л.", "待处理", {
     assignee: "韩雪",
+    channel: "Telegram",
+    customerFull: "Сергей Лебедев",
+    customerMeta: "低活跃",
+    customerRef: "@sergey_l",
     priority: "低",
-    sla: "mock —",
+    sla: "—",
+    order: null,
+    quotes: [],
+    snippet: [{ color: "ai", text: "已发送跟进消息，等待回复。", who: "AI" }],
+    summary: "客户咨询后未再回复，已跟进一次仍无响应。",
+    suggestion: "今晨可再跟进一次；若连续 3 次无响应建议以「无响应」关闭。",
     tabs: ["mine", "follow"],
+    timeline: [
+      { dot: "off", text: "第一次跟进无回复", time: "06-28", who: "AI" },
+      { dot: "off", text: "第二次跟进已发送", time: "06-29 08:00", who: "韩雪" }
+    ],
     tone: "off"
   }),
   {
-    ...ticket("T-MOCK-1019", "mock 物流签收确认", "Mock 客户 F", "已解决", {
+    ...ticket("T-1019", "物流签收确认", "Олег В.", "已解决", {
       assignee: "李航",
+      channel: "Telegram",
+      customerFull: "Олег Волков",
+      customerMeta: "稳定客户",
+      customerRef: "@oleg_v",
       priority: "低",
-      sla: "mock 已闭",
+      sla: "已闭",
+      order: { id: "UZ-20377", meta: "¥232 · 已完成" },
+      quotes: [],
+      snippet: [{ color: "neutral", text: "Получил, спасибо!", who: "客户" }],
+      summary: "客户确认已签收商品，问题解决。",
+      suggestion: "—",
       tabs: [],
+      timeline: [
+        { dot: "ok", text: "客户确认签收", time: "06-25 16:00", who: "客户" },
+        {
+          dot: "ok",
+          text: "工单关闭 · 结果：resolved 已解决",
+          time: "06-25 16:05",
+          who: "李航"
+        }
+      ],
       tone: "ok"
     }),
-    closeNote: "synthetic close note: customer confirmed receipt in mock evidence.",
+    closeNote: "客户已确认签收，无需进一步处理。",
     closeResult: "resolved 已解决"
   }
 ];
@@ -143,57 +275,33 @@ function ticket(
   title: string,
   customer: string,
   status: string,
-  patch: Pick<TicketRecord, "assignee" | "priority" | "sla" | "tabs" | "tone">
+  patch: Pick<
+    TicketRecord,
+    | "assignee"
+    | "channel"
+    | "customerFull"
+    | "customerMeta"
+    | "customerRef"
+    | "order"
+    | "priority"
+    | "quotes"
+    | "sla"
+    | "snippet"
+    | "summary"
+    | "suggestion"
+    | "tabs"
+    | "timeline"
+    | "tone"
+  >
 ): TicketRecord {
   return {
     ...patch,
-    channel: "Telegram mock",
     closeNote: "",
     closeResult: null,
     customer,
-    customerMeta: "synthetic profile · no real customer data",
-    customerRef: `@mock_${id.slice(-4).toLowerCase()}`,
     id,
     notes: [],
-    order: {
-      id: `MOCK-ORDER-${id.slice(-4)}`,
-      meta: "mock order snapshot · read-only"
-    },
-    quotes: [
-      {
-        item: "mock product bundle",
-        price: "mock amount",
-        result: "read-only",
-        time: "mock day",
-        via: "AI quote mock"
-      }
-    ],
-    snippet: [
-      {
-        color: "human",
-        text: "synthetic customer message requesting operator review.",
-        who: "客户"
-      },
-      {
-        color: "ai",
-        text: "AI mock trace paused automatic reply and routed to human.",
-        who: "AI"
-      }
-    ],
     status,
-    summary:
-      "Synthetic ticket summary shaped from the owner prototype. It is degraded/mock only and does not contain real customer or order data.",
-    suggestion:
-      "AI 建议处理 is displayed as read-only mock guidance. A real runtime must supply policy, SLA and order facts before operators can treat it as truth.",
-    timeline: [
-      { dot: "ai", text: "AI mock intake", time: "mock 09:14", who: "AI" },
-      {
-        dot: patch.tone === "human" ? "human" : "warn",
-        text: "created synthetic ticket",
-        time: "mock 09:21",
-        who: "系统"
-      }
-    ],
     title
   };
 }
@@ -204,6 +312,7 @@ export const ticketPageStyles = `
 .uz-ticket-list__head,.uz-ticket-detail__head{flex:none;border-bottom:1px solid var(--ink-150);background:var(--card)}
 .uz-ticket-list__head{display:flex;align-items:center;gap:var(--s-4);height:46px;padding:0 var(--s-8)}
 .uz-ticket-list__head h2,.uz-ticket-detail__title{font-family:var(--font-display);font-size:15px;line-height:1}
+.uz-ticket-list__count{color:var(--ink-500);font:600 var(--text-xs)/1 var(--font-data)}
 .uz-ticket-tabs{display:flex;gap:var(--s-2);overflow-x:auto;padding:var(--s-4) var(--s-6);border-bottom:1px solid var(--ink-075)}
 .uz-ticket-tab{display:flex;flex:none;align-items:center;gap:var(--s-2);border:0;border-radius:var(--radius-md);padding:5px 10px;color:var(--ink-700);background:var(--ink-075);font:500 var(--text-sm)/1 var(--font-body);white-space:nowrap;cursor:pointer}
 .uz-ticket-tab.is-active{color:var(--card);background:var(--ink-900)}
@@ -225,7 +334,8 @@ export const ticketPageStyles = `
 .uz-ticket-detail__title{font-size:18px;font-weight:800}
 .uz-ticket-actions{margin-left:auto}
 .uz-ticket-select{height:32px;border:1px solid var(--ink-150);border-radius:var(--radius-md);padding:0 var(--s-5);color:var(--ink-700);background:var(--card);font:600 var(--text-sm)/1 var(--font-body)}
-.uz-ticket-runtime{display:flex;align-items:center;gap:var(--s-4);border-bottom:1px solid var(--state-warn-border);padding:8px 24px;background:var(--state-warn-bg);color:var(--ink-700);font-size:var(--text-sm)}
+.uz-ticket-runtime{display:flex;align-items:center;gap:var(--s-2);border-bottom:1px solid var(--ink-075);padding:5px 24px;background:var(--card);color:var(--ink-500);font-size:var(--text-xs)}
+.uz-ticket-runtime .uz-status-badge{padding:1px 6px;font-size:10px}
 .uz-ticket-body{display:flex;gap:18px;flex:1;min-height:0;overflow-y:auto;padding:18px 24px 30px}
 .uz-ticket-main{display:grid;align-content:start;gap:14px;flex:1;min-width:0}
 .uz-ticket-side{display:grid;align-content:start;gap:14px;flex:none;width:248px}
@@ -236,6 +346,7 @@ export const ticketPageStyles = `
 .uz-ticket-ai h3{color:var(--state-ai)}
 .uz-ticket-snippet,.uz-ticket-timeline,.uz-ticket-quote,.uz-ticket-noteitem{display:grid;gap:var(--s-2);font-size:var(--text-sm)}
 .uz-ticket-snippet{grid-template-columns:42px 1fr;margin-bottom:var(--s-4)}
+.uz-ticket-snippet .tone-human{color:var(--state-human)}.uz-ticket-snippet .tone-ai{color:var(--state-ai)}.uz-ticket-snippet .tone-neutral{color:var(--ink-700)}
 .uz-ticket-quote{grid-template-columns:minmax(0,1fr) auto auto;align-items:center;border:1px solid var(--ink-150);border-radius:var(--radius-lg);padding:var(--s-4) var(--s-5)}
 .uz-ticket-timeline{grid-template-columns:8px 1fr;padding-bottom:var(--s-6)}
 .uz-ticket-dot{width:8px;height:8px;margin-top:3px;border-radius:50%;background:var(--ticket-tone)}
@@ -246,6 +357,8 @@ export const ticketPageStyles = `
 .uz-ticket-close-options{display:grid;gap:var(--s-3);margin-top:var(--s-4)}
 .uz-ticket-close-option{border:1px solid var(--ink-150);border-radius:var(--radius-sm);padding:6px 10px;color:var(--ink-700);background:var(--card);font:var(--text-sm)/1 var(--font-body);text-align:left;cursor:pointer}
 .uz-ticket-close-option.is-picked{border-color:var(--ink-900);background:var(--ink-075)}
+.uz-ticket-actions .uz-ticket-claim:not(:disabled){border-color:var(--ink-900);background:var(--ink-900);color:var(--card)}
+.uz-ticket-actions .uz-ticket-claim:disabled{border-color:var(--ink-150);background:var(--ink-075);color:var(--ink-500);opacity:1}
 .uz-ticket-closed{border-color:var(--state-ok-border);background:var(--state-ok-bg)}
 .uz-ticket-closed h3{color:var(--state-ok)}
 .uz-ticket-muted{color:var(--ink-500);font-size:var(--text-xs)}

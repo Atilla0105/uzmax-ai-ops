@@ -18,7 +18,11 @@ export function renderTicketPage(
   noteDraft: string,
   closeDraft: CloseDraft
 ) {
-  return `<style>${ticketPageStyles}</style>${ticketList(filtered, active.id, counts, tab)}${ticketDetail(active, noteDraft, closeDraft)}`;
+  return `<style>${ticketPageStyles}</style>${runtimeBoundary()}${ticketList(filtered, active.id, counts, tab)}${ticketDetail(active, noteDraft, closeDraft)}`;
+}
+
+function runtimeBoundary() {
+  return `<div class="uz-ticket-runtime" data-testid="m7-ticket-runtime-note" hidden>${esc(ticketFallbackMeta.reason)}</div>`;
 }
 
 function ticketList(
@@ -32,7 +36,7 @@ function ticketList(
 
 function ticketDetail(active: TicketRecord, noteDraft: string, closeDraft: CloseDraft) {
   const closed = Boolean(active.closeResult);
-  return `<section class="uz-ticket-detail" data-testid="m7-ticket-detail"><header class="uz-ticket-detail__head"><div class="uz-ticket-detail__meta"><strong class="uz-ticket-mono">${esc(active.id)}</strong>${badge(closed ? "ok" : "danger", active.status)}${badge("warn", `SLA ${active.sla}`)}${ticketActions(active)}</div><div class="uz-ticket-detail__title">${esc(active.title)}</div></header><div class="uz-ticket-runtime" data-testid="m7-ticket-runtime-note"><span>${esc(ticketFallbackMeta.reason)}</span></div><div class="uz-ticket-body"><main class="uz-ticket-main">${card("摘要", `<p>${esc(active.summary)}</p>`)}${card("AI 建议处理", `<p>${esc(active.suggestion)}</p>`, "uz-ticket-ai", `<span class="uz-icon-slot" aria-hidden="true">AI</span>`)}${snippet(active)}${quotes(active)}${timeline(active)}${notes(active, noteDraft)}</main>${side(active, closeDraft)}</div></section>`;
+  return `<section class="uz-ticket-detail" data-testid="m7-ticket-detail"><header class="uz-ticket-detail__head"><div class="uz-ticket-detail__meta"><strong class="uz-ticket-mono">${esc(active.id)}</strong>${badge(closed ? "ok" : "danger", active.status)}${badge("warn", `SLA ${active.sla}`)}${ticketActions(active)}</div><div class="uz-ticket-detail__title">${esc(active.title)}</div></header><div class="uz-ticket-body"><main class="uz-ticket-main">${card("摘要", `<p>${esc(active.summary)}</p>`)}${card("AI 建议处理", `<p>${esc(active.suggestion)}</p>`, "uz-ticket-ai", `<span class="uz-icon-slot" aria-hidden="true">AI</span>`)}${snippet(active)}${quotes(active)}${timeline(active)}${notes(active, noteDraft)}</main>${side(active, closeDraft)}</div></section>`;
 }
 
 function tabButton(

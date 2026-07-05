@@ -86,6 +86,7 @@ export function TicketsPage({ selectedTenantId }: { selectedTenantId: string }) 
   return (
     <section
       className="uz-ticket-page"
+      data-runtime-boundary={ticketFallbackMeta.reason}
       data-runtime-source={ticketFallbackMeta.source}
       data-runtime-state="degraded"
       data-tenant-id={selectedTenantId}

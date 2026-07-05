@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 
-const artifactDir = "/tmp/uzmax-m7-ui-64-ticket-source-parity-refresh";
+const artifactDir = "/tmp/uzmax-m7-ui-79-ticket-default-visual-parity-refresh";
 const ownerHtml = "/Users/atilla/Downloads/运营塔台1.0.html";
 const unpackedTicketsPage =
   "/Users/atilla/源码/unpacked 6/pages/tickets/TicketsPage.tsx";
@@ -12,6 +12,7 @@ const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const groupSections = ["总览", "平台", "治理"];
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
+const runtimeLabels = ["degraded", "mock", "read-only", "not production ticket data"];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -21,30 +22,26 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("captures tenant.tickets source parity evidence on latest shell stack", async ({
+test("keeps tenant.tickets default body free of engineering labels while preserving runtime evidence", async ({
   page
 }) => {
-  writeSourceMappingSummary();
+  const mapping = writeSourceMappingSummary();
+  expect(mapping.ticketsPage.listColumn).toBe(true);
+  expect(mapping.ticketsPage.detailSideColumn).toBe(true);
+  expect(mapping.hook.localActions).toEqual([
+    "claim",
+    "reassign",
+    "addNote",
+    "confirmClose"
+  ]);
 
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(pathToFileURL(ownerHtml).toString());
-  await page.waitForLoadState("domcontentloaded");
-  await clickFirstVisibleText(page, "工单");
-  const ownerSource = await collectOwnerSourceSample(page);
-  expect(ownerSource.bodyTextLength).toBeGreaterThan(100);
+  const ownerSource = await captureOwnerTicketSample(page);
   expect(ownerSource.contains.tickets).toBe(true);
-  await page.screenshot({
-    fullPage: false,
-    path: `${artifactDir}/owner-html-ticket-source-sample.png`
-  });
-  writeFileSync(
-    `${artifactDir}/owner-html-ticket-source-dom-sample.json`,
-    `${JSON.stringify(ownerSource, null, 2)}\n`
-  );
+  expect(ownerSource.contains.closeTicket).toBe(true);
 
-  await page.goto("/design");
   await openTickets(page);
-
+  await expect(page.getByTestId("m7-ticket-runtime-note")).toBeHidden();
   const desktopMetrics = await collectTicketMetrics(page);
   expect(desktopMetrics.shellLevel).toBe("tenant");
   expect(desktopMetrics.activePageId).toBe("tenant.tickets");
@@ -61,13 +58,25 @@ test("captures tenant.tickets source parity evidence on latest shell stack", asy
   expect(desktopMetrics.tenantCategories).toEqual(tenantSections);
   expect(desktopMetrics.groupCategoryCount).toBe(0);
   expect(desktopMetrics.groupButtonCount).toBe(0);
+  expect(desktopMetrics.primaryTicketVisible).toBe(true);
   expect(desktopMetrics.runtimeLabelsPresent).toBe(true);
   expect(desktopMetrics.runtimeLabelsVisibleInBody).toBe(false);
-  expect(desktopMetrics.primaryTicketVisible).toBe(true);
+  expect(desktopMetrics.runtimeNoteVisible).toBe(false);
   await page.screenshot({
     fullPage: false,
-    path: `${artifactDir}/react-ticket-desktop.png`
+    path: `${artifactDir}/react-ticket-desktop-default.png`
   });
+
+  await page.getByTestId("m7-ticket-claim").click();
+  await page.getByTestId("m7-ticket-transfer").selectOption("王敏");
+  await page.getByTestId("m7-ticket-note-input").fill("local evidence note only");
+  await page.getByTestId("m7-ticket-add-note").click();
+  await expect(page.getByTestId("m7-ticket-detail")).toContainText(
+    "local evidence note only"
+  );
+  const actionMetrics = await collectTicketMetrics(page);
+  expect(actionMetrics.runtimeLabelsPresent).toBe(true);
+  expect(actionMetrics.runtimeLabelsVisibleInBody).toBe(false);
 
   await page.getByRole("button", { name: "Collapse navigation" }).click();
   await expect(page.getByTestId("admin-shell")).toHaveClass(/is-nav-collapsed/);
@@ -78,13 +87,13 @@ test("captures tenant.tickets source parity evidence on latest shell stack", asy
   expect(collapsedMetrics.tenantCategories).toEqual(tenantSections);
   expect(collapsedMetrics.groupCategoryCount).toBe(0);
   expect(collapsedMetrics.groupButtonCount).toBe(0);
+  expect(collapsedMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await page.screenshot({
     fullPage: false,
     path: `${artifactDir}/react-ticket-collapsed.png`
   });
 
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto("/design");
   await openTickets(page);
   const mobileMetrics = await collectTicketMetrics(page);
   expect(mobileMetrics.shellLevel).toBe("tenant");
@@ -97,6 +106,7 @@ test("captures tenant.tickets source parity evidence on latest shell stack", asy
   expect(mobileMetrics.tenantCategories).toEqual(tenantSections);
   expect(mobileMetrics.groupCategoryCount).toBe(0);
   expect(mobileMetrics.groupButtonCount).toBe(0);
+  expect(mobileMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await page.screenshot({
     fullPage: true,
     path: `${artifactDir}/react-ticket-mobile-320.png`
@@ -105,14 +115,38 @@ test("captures tenant.tickets source parity evidence on latest shell stack", asy
   writeFileSync(
     `${artifactDir}/metrics.json`,
     `${JSON.stringify(
-      { collapsed: collapsedMetrics, desktop: desktopMetrics, mobile: mobileMetrics },
+      {
+        action: actionMetrics,
+        collapsed: collapsedMetrics,
+        desktop: desktopMetrics,
+        mobile: mobileMetrics,
+        ownerSource,
+        sourceMapping: mapping
+      },
       null,
       2
     )}\n`
   );
 });
 
+async function captureOwnerTicketSample(page: Page) {
+  await page.goto(pathToFileURL(ownerHtml).toString());
+  await page.waitForLoadState("domcontentloaded");
+  await clickFirstVisibleText(page, "工单");
+  await page.screenshot({
+    fullPage: false,
+    path: `${artifactDir}/owner-html-ticket-source-sample.png`
+  });
+  const sample = await collectOwnerSourceSample(page);
+  writeFileSync(
+    `${artifactDir}/owner-html-ticket-source-dom-sample.json`,
+    `${JSON.stringify(sample, null, 2)}\n`
+  );
+  return sample;
+}
+
 async function openTickets(page: Page) {
+  await page.goto("/design");
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-shell-level",
@@ -134,8 +168,7 @@ async function clickFirstVisibleText(page: Page, text: string) {
   try {
     await target.click({ timeout: 3000 });
   } catch {
-    // The bundled owner HTML may already expose the ticket text without needing
-    // a route click; the DOM sample below records which source terms rendered.
+    // Owner HTML may already expose the ticket terms without route interaction.
   }
 }
 
@@ -226,15 +259,9 @@ async function collectTicketMetrics(page: Page) {
       bodyText.includes("关闭工单"),
     navText: undefined,
     primaryTicketVisible: bodyText.includes("T-1042") && bodyText.includes("UZ-20413"),
-    runtimeLabelsPresent: [
-      "degraded",
-      "mock",
-      "read-only",
-      "not production ticket data"
-    ].every((label) => runtimeText.includes(label)),
-    runtimeLabelsVisibleInBody: ["degraded", "mock", "not production ticket data"].some(
-      (label) => bodyText.includes(label)
-    )
+    runtimeLabelsPresent: runtimeLabels.every((label) => runtimeText.includes(label)),
+    runtimeLabelsVisibleInBody: runtimeLabels.some((label) => bodyText.includes(label)),
+    runtimeNoteVisible: await page.getByTestId("m7-ticket-runtime-note").isVisible()
   };
 }
 
@@ -242,41 +269,40 @@ function writeSourceMappingSummary() {
   const ticketsPage = readFileSync(unpackedTicketsPage, "utf8");
   const hook = readFileSync(unpackedTicketsHook, "utf8");
   const fixtures = readFileSync(unpackedTicketsFixture, "utf8");
+  const mapping = {
+    fixtures: {
+      closeOptions: fixtures.includes("TICKET_CLOSE_OPTIONS"),
+      lineCount: fixtures.split("\n").length,
+      records: ["T-1042", "T-1039", "T-1051", "T-1033", "T-1028", "T-1019"].filter(
+        (id) => fixtures.includes(id)
+      )
+    },
+    hook: {
+      closeRequiresNote: hook.includes("!closeDraft.note.trim()"),
+      lineCount: hook.split("\n").length,
+      localActions: ["claim", "reassign", "addNote", "confirmClose"].filter((name) =>
+        hook.includes(name)
+      )
+    },
+    ticketsPage: {
+      detailSideColumn: ticketsPage.includes("width: 248"),
+      lineCount: ticketsPage.split("\n").length,
+      listColumn: ticketsPage.includes("width: 380"),
+      noRuntimeBanner: !ticketsPage.includes("mock/degraded"),
+      sections: [
+        "摘要",
+        "AI 建议处理",
+        "会话片段",
+        "报价记录",
+        "事件时间线",
+        "备注",
+        "关闭工单"
+      ].filter((label) => ticketsPage.includes(label))
+    }
+  };
   writeFileSync(
     `${artifactDir}/unpacked-ticket-source-mapping.json`,
-    `${JSON.stringify(
-      {
-        fixtures: {
-          closeOptions: fixtures.includes("TICKET_CLOSE_OPTIONS"),
-          lineCount: fixtures.split("\n").length,
-          records: ["T-1042", "T-1039", "T-1051", "T-1033", "T-1028", "T-1019"].filter(
-            (id) => fixtures.includes(id)
-          )
-        },
-        hook: {
-          closeRequiresNote: hook.includes("!closeDraft.note.trim()"),
-          lineCount: hook.split("\n").length,
-          localActions: ["claim", "reassign", "addNote", "confirmClose"].filter(
-            (name) => hook.includes(name)
-          )
-        },
-        ticketsPage: {
-          detailSideColumn: ticketsPage.includes("width: 248"),
-          lineCount: ticketsPage.split("\n").length,
-          listColumn: ticketsPage.includes("width: 380"),
-          sections: [
-            "摘要",
-            "AI 建议处理",
-            "会话片段",
-            "报价记录",
-            "事件时间线",
-            "备注",
-            "关闭工单"
-          ].filter((label) => ticketsPage.includes(label))
-        }
-      },
-      null,
-      2
-    )}\n`
+    `${JSON.stringify(mapping, null, 2)}\n`
   );
+  return mapping;
 }

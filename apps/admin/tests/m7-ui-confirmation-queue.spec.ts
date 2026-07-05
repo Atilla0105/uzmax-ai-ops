@@ -19,11 +19,9 @@ test("renders tenant.queue as the M7 confirmation queue page", async ({ page }) 
   await expect(page.getByTestId("m7-confirmation-queue-page")).toBeVisible();
   await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
   await expect(page.getByTestId("m7-queue-stats")).toContainText("今日候选");
-  await expect(page.getByTestId("m7-queue-stats")).toContainText("runtime 2");
-  await expect(page.getByTestId("m7-queue-stats")).not.toContainText("mock 6 / 5");
-  await expect(page.getByTestId("m7-queue-degraded")).toContainText(
-    "缺少已批准 API 合约"
-  );
+  await expect(page.getByTestId("m7-queue-stats")).toContainText("2");
+  await expect(page.getByTestId("m7-queue-stats")).not.toContainText("6 / 5");
+  await expect(page.getByTestId("m7-queue-degraded")).toContainText("仍需已批准合约");
   await expect(page.getByTestId("m7-queue-card-m7-normal")).toContainText(
     "controlled://m7-ui-10/candidate/m7-normal"
   );
@@ -130,18 +128,22 @@ test("covers loading then degraded visible fallback for empty error and permissi
   await expect(page.getByTestId("m7-queue-loading")).toBeVisible();
   release?.();
   await expect(page.getByTestId("m7-queue-flow")).toBeVisible();
-  await expect(page.getByTestId("m7-queue-degraded")).toContainText("mock/degraded");
-  await expect(page.getByTestId("m7-queue-stats")).toContainText("mock 6 / 5");
+  await expect(page.getByTestId("m7-queue-degraded")).toContainText("待连接");
+  await expect(page.getByTestId("m7-queue-stats")).toContainText("6 / 5");
+  await expect(page.getByTestId("m7-queue-runtime-note")).toContainText(
+    "mock/degraded"
+  );
 
   await routeList(page, 500, { error: "controlled://m7-ui-10/error" });
   await openQueue(page);
   await expect(page.getByTestId("m7-queue-flow")).toBeVisible();
-  await expect(page.getByTestId("m7-queue-degraded")).toContainText("status 500");
+  await expect(page.getByTestId("m7-queue-degraded")).toContainText("受控引用");
+  await expect(page.getByTestId("m7-queue-runtime-note")).toContainText("status 500");
 
   await routeList(page, 403, { error: "controlled://m7-ui-10/permission" });
   await openQueue(page);
   await expect(page.getByTestId("m7-queue-flow")).toBeVisible();
-  await expect(page.getByTestId("m7-queue-degraded")).toContainText(
+  await expect(page.getByTestId("m7-queue-runtime-note")).toContainText(
     "permission blocked"
   );
 });

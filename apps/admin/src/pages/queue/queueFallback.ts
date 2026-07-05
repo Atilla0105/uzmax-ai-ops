@@ -20,6 +20,9 @@ export type DisplayQueueItem = ConfirmationQueueItem & {
   displayMode: QueueMode;
 };
 
+export const queueRuntimeBoundary =
+  "mock/degraded | mock | read-only | runtime unavailable | no runtime contract | no production truth | no write | no DB/API/runtime closure";
+
 export const fallbackUnavailableCopy = {
   empty: "list API returned empty; showing mock/degraded read-only queue shell",
   error: "list API unavailable; showing mock/degraded read-only queue shell",
@@ -27,11 +30,14 @@ export const fallbackUnavailableCopy = {
     "confirmation permission blocked; showing mock/degraded read-only queue shell"
 } as const;
 
+export const fallbackVisibleCopy =
+  "确认队列待连接：先展示受控引用和人工确认流程，所有候选须人工确认后生效。";
+
 export const fallbackItems = [
   {
     candidatePayload: {
-      candidateRef: "controlled://m7-ui-63/mock/candidate/knowledge-primary",
-      summaryRef: "controlled://m7-ui-63/mock/summary/knowledge-primary"
+      candidateRef: "controlled://m7-ui-83/fallback/candidate/knowledge-primary",
+      summaryRef: "controlled://m7-ui-83/fallback/summary/knowledge-primary"
     },
     createdAt: "2026-07-05T00:00:00.000Z",
     diffPayload: undefined,
@@ -40,71 +46,69 @@ export const fallbackItems = [
         {
           label: "来源",
           mono: true,
-          value: "controlled://m7-ui-63/mock/source/knowledge-primary"
+          value: "controlled://m7-ui-83/fallback/source/knowledge-primary"
         },
         {
           label: "候选内容",
-          value: "mock/degraded read-only · sanitized controlled knowledge candidate"
+          value: "受控知识候选，等待人工确认后生效"
         },
         {
-          label: "运行时",
-          value: "runtime unavailable · no production truth · no write"
+          label: "处理边界",
+          value: "待连接；仅展示受控引用"
         }
       ],
-      score: "mock 0.86",
-      title: "知识候选 · mock/degraded 示例"
+      score: "0.86",
+      title: "知识候选 · 孕期可用性"
     },
     displayMode: "degraded",
     id: "mock-degraded-normal",
     kind: "knowledge_candidate",
-    orgId: "org-m7-ui-63-mock",
-    sourceRef: "controlled://m7-ui-63/mock/source/knowledge-primary",
+    orgId: "org-m7-ui-83-fallback",
+    sourceRef: "controlled://m7-ui-83/fallback/source/knowledge-primary",
     status: "pending",
-    tenantId: "tenant-m7-ui-63-mock"
+    tenantId: "tenant-m7-ui-83-fallback"
   },
   {
     candidatePayload: {
-      candidateRef: "controlled://m7-ui-63/mock/candidate/conflict-primary"
+      candidateRef: "controlled://m7-ui-83/fallback/candidate/conflict-primary"
     },
     createdAt: "2026-07-05T00:01:00.000Z",
     diffPayload: {
-      current: { ref: "controlled://m7-ui-63/mock/current/conflict-primary" },
-      candidate: { ref: "controlled://m7-ui-63/mock/candidate/conflict-primary" }
+      current: { ref: "controlled://m7-ui-83/fallback/current/conflict-primary" },
+      candidate: { ref: "controlled://m7-ui-83/fallback/candidate/conflict-primary" }
     },
     display: {
       candidate: {
         label: "候选值引用",
         mono: true,
-        value: "controlled://m7-ui-63/mock/candidate/conflict-primary"
+        value: "controlled://m7-ui-83/fallback/candidate/conflict-primary"
       },
-      conflictNote:
-        "mock/degraded read-only · conflict buttons are visible but runtime decisions are unavailable.",
+      conflictNote: "冲突候选需人工查看并排差异；处理后才可进入正式知识。",
       current: {
         label: "当前值引用",
         mono: true,
-        value: "controlled://m7-ui-63/mock/current/conflict-primary"
+        value: "controlled://m7-ui-83/fallback/current/conflict-primary"
       },
       fields: [
         {
           label: "冲突来源",
           mono: true,
-          value: "controlled://m7-ui-63/mock/source/conflict-primary"
+          value: "controlled://m7-ui-83/fallback/source/conflict-primary"
         },
         {
           label: "处理边界",
-          value: "runtime unavailable · keep-current has no approved API action"
+          value: "保留当前值需后续合约确认"
         }
       ],
-      score: "mock conflict",
-      title: "冲突候选 · mock/degraded 示例"
+      title: "冲突候选 · 物流时效"
     },
     displayMode: "degraded",
     id: "mock-degraded-conflict",
     kind: "conflict_candidate",
-    orgId: "org-m7-ui-63-mock",
-    sourceRef: "controlled://m7-ui-63/mock/source/conflict-primary",
+    orgId: "org-m7-ui-83-fallback",
+    sourceRef: "controlled://m7-ui-83/fallback/source/conflict-primary",
     status: "pending",
-    tenantId: "tenant-m7-ui-63-mock"
+    tenantId: "tenant-m7-ui-83-fallback"
   }
 ] satisfies DisplayQueueItem[];
 

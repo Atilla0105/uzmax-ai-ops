@@ -10,6 +10,7 @@ import { PageState } from "../../patterns";
 import {
   fallbackItems,
   fallbackUnavailableCopy,
+  queueRuntimeBoundary,
   runtimeDisplayItem,
   type DisplayQueueItem,
   type QueueMetric,
@@ -27,6 +28,13 @@ type Act = Pick<ButtonProps, "className" | "disabled" | "kbd" | "variant"> & {
   label: string;
   loading?: boolean;
   onRun?: () => void;
+  runtimeBoundary?: string;
+};
+type EditActionsProps = {
+  canSave: boolean;
+  readOnly: boolean;
+  onCancel: () => void;
+  onSave: () => void;
 };
 
 const browserFetcher: ConfirmationQueueApiFetcher = (input, init) =>
@@ -99,16 +107,8 @@ export function useQueueRuntime() {
     [client, mode]
   );
 
-  return {
-    canWrite: mode === "runtime",
-    items,
-    lastError,
-    mode,
-    reload,
-    status,
-    submit,
-    submittingId
-  };
+  const canWrite = mode === "runtime";
+  return { canWrite, items, lastError, mode, reload, status, submit, submittingId };
 }
 
 function click(action?: () => void): ButtonProps["onClick"] {
@@ -120,17 +120,27 @@ function click(action?: () => void): ButtonProps["onClick"] {
     : undefined;
 }
 
-export function ActionButton({ icon, label, loading, onRun, ...props }: Act) {
-  return h(
-    Button,
-    {
-      ...props,
-      icon: icon ? h(IconSlot, { icon }) : undefined,
-      isLoading: loading,
-      onClick: click(onRun)
-    },
-    label
-  );
+export function ActionButton({
+  icon,
+  label,
+  loading,
+  onRun,
+  runtimeBoundary,
+  ...props
+}: Act) {
+  const boundary = props.disabled
+    ? (runtimeBoundary ?? queueRuntimeBoundary)
+    : undefined;
+  const buttonProps = {
+    ...props,
+    "aria-description": boundary,
+    "data-runtime-boundary": boundary,
+    icon: icon ? h(IconSlot, { icon }) : undefined,
+    isLoading: loading,
+    onClick: click(onRun),
+    title: boundary
+  };
+  return h(Button, buttonProps, label);
 }
 
 export function cardActions(
@@ -144,14 +154,14 @@ export function cardActions(
       {
         disabled: readOnly,
         icon: Check,
-        label: readOnly ? "采纳候选值 · runtime unavailable" : "采纳候选值",
+        label: "采纳候选值",
         loading: submitting,
         onRun: handlers.onApprove,
         variant: "success"
       },
       {
         disabled: true,
-        label: readOnly ? "保留当前值 · no runtime contract" : "保留当前值",
+        label: "保留当前值",
         variant: "secondary"
       }
     ];
@@ -161,7 +171,7 @@ export function cardActions(
       disabled: readOnly,
       icon: Check,
       kbd: "A",
-      label: readOnly ? "通过 · read-only" : "通过",
+      label: "通过",
       loading: submitting,
       onRun: handlers.onApprove,
       variant: "success"
@@ -171,25 +181,25 @@ export function cardActions(
       disabled: readOnly,
       icon: Pencil,
       kbd: "E",
-      label: readOnly ? "编辑 · local-only" : "编辑",
+      label: "编辑",
       onRun: handlers.onEdit
     },
     {
       className: "uz-queue-mobile-only",
       disabled: true,
-      label: readOnly ? "桌面编辑 · read-only" : "桌面编辑"
+      label: "桌面编辑"
     },
     {
       disabled: readOnly,
       icon: Trash2,
       kbd: "D",
-      label: readOnly ? "丢弃 · read-only" : "丢弃",
+      label: "丢弃",
       onRun: handlers.onDiscard
     },
     {
       disabled: readOnly,
       icon: Ban,
-      label: readOnly ? "拦截 · read-only" : "拦截",
+      label: "拦截",
       onRun: handlers.onBlock,
       variant: "danger"
     }
@@ -211,24 +221,20 @@ export function QueueStats({ stats }: { stats: QueueMetric[] }) {
   );
 }
 
-export function EditActions({
-  canSave,
-  readOnly,
-  onCancel,
-  onSave
-}: {
-  canSave: boolean;
-  readOnly: boolean;
-  onCancel: () => void;
-  onSave: () => void;
-}) {
+export function EditActions({ canSave, readOnly, onCancel, onSave }: EditActionsProps) {
+  const boundary = readOnly ? queueRuntimeBoundary : undefined;
+  const saveProps = {
+    "aria-description": boundary,
+    "data-runtime-boundary": boundary,
+    disabled: !canSave,
+    key: "save",
+    onClick: onSave,
+    title: boundary,
+    variant: "success" as const
+  };
   return [
     h(Button, { key: "cancel", onClick: onCancel, variant: "secondary" }, "取消编辑"),
-    h(
-      Button,
-      { disabled: !canSave, key: "save", onClick: onSave, variant: "success" },
-      readOnly ? "runtime unavailable · read-only" : "保存并通过"
-    )
+    h(Button, saveProps, "保存并通过")
   ];
 }
 
@@ -237,7 +243,7 @@ export function renderQueueState(status: LoadStatus) {
   return h(PageState, {
     "data-testid": "m7-queue-loading",
     kind: status,
-    message: "正在读取确认队列运行时；若不可用将进入 mock/degraded read-only 可见壳。",
+    message: "正在读取确认队列；必要时展示待连接的受控引用流程。",
     title: "确认队列加载中"
   } as unknown as Parameters<typeof PageState>[0]);
 }

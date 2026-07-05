@@ -1,7 +1,7 @@
 import { Input } from "../../primitives";
 import { ConfirmModal, SidePanel } from "../../patterns";
 import { EditActions } from "./QueueSupport";
-import { type DisplayQueueItem } from "./queueFallback";
+import { queueRuntimeBoundary, type DisplayQueueItem } from "./queueFallback";
 
 export function QueueEditPanel({
   canWrite,
@@ -31,7 +31,7 @@ export function QueueEditPanel({
       meta={
         canWrite
           ? "仅接受 controlled/manifest/storage 引用；不提交 raw 内容。"
-          : "mock/degraded read-only: runtime unavailable, save disabled."
+          : "待连接：仅展示受控引用，连接完成后才能保存。"
       }
       onClose={onCancel}
       open={open}
@@ -41,6 +41,8 @@ export function QueueEditPanel({
         <span>editedPayloadRef</span>
         <Input
           aria-label="edited payload ref"
+          aria-description={canWrite ? undefined : queueRuntimeBoundary}
+          data-runtime-boundary={canWrite ? undefined : queueRuntimeBoundary}
           onChange={(event) => onEditRefChange(event.currentTarget.value)}
           value={editRef}
         />

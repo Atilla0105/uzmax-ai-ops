@@ -19,7 +19,11 @@ import {
   type SubmitAction
 } from "./QueueSupport";
 import { QueueBlockModal, QueueEditPanel } from "./QueueOverlays";
-import { type DisplayQueueItem } from "./queueFallback";
+import {
+  fallbackVisibleCopy,
+  queueRuntimeBoundary,
+  type DisplayQueueItem
+} from "./queueFallback";
 
 const focusMove: Record<string, number> = { arrowdown: 1, arrowup: -1, j: 1, k: -1 };
 
@@ -63,10 +67,7 @@ export function QueuePage() {
 
   async function decide(item: DisplayQueueItem, action: SubmitAction) {
     if (!queue.canWrite) {
-      toast.show(
-        "runtime unavailable: mock/degraded read-only mode cannot write",
-        "warning"
-      );
+      toast.show("当前仅展示确认流程，连接完成后才能提交。", "warning");
       return;
     }
     try {
@@ -80,10 +81,7 @@ export function QueuePage() {
 
   function startEdit(item: DisplayQueueItem) {
     if (!queue.canWrite) {
-      toast.show(
-        "runtime unavailable: edit is read-only in mock/degraded mode",
-        "warning"
-      );
+      toast.show("当前仅展示候选内容，连接完成后才能编辑。", "warning");
       return;
     }
     setEditingId(item.id);
@@ -151,8 +149,18 @@ export function QueuePage() {
   const isDegraded = queue.mode === "degraded";
 
   return (
-    <section className="uz-page-queue" data-testid="m7-confirmation-queue-page">
+    <section
+      aria-describedby="m7-queue-runtime-note"
+      className="uz-page-queue"
+      data-runtime-boundary={queueRuntimeBoundary}
+      data-runtime-state={queue.mode}
+      data-testid="m7-confirmation-queue-page"
+    >
       <QueueStyles />
+      <span data-testid="m7-queue-runtime-note" hidden id="m7-queue-runtime-note">
+        {queueRuntimeBoundary}
+        {queue.lastError ? ` | ${queue.lastError}` : ""}
+      </span>
       <div className="uz-queue-strip" data-testid="m7-queue-header-strip">
         <h2 className="uz-queue-title">确认队列</h2>
         <QueueStats stats={stats} />
@@ -163,25 +171,43 @@ export function QueuePage() {
             <Kbd>D</Kbd> 丢弃
           </span>
         </div>
-        <StatusBadge className="uz-queue-mode" tone={isDegraded ? "warn" : "ok"}>
-          {isDegraded ? "mock/degraded read-only" : "runtime API"}
+        <StatusBadge
+          className="uz-queue-mode"
+          data-runtime-boundary={isDegraded ? queueRuntimeBoundary : undefined}
+          tone={isDegraded ? "warn" : "ok"}
+        >
+          {isDegraded ? "待连接" : "运行中"}
         </StatusBadge>
       </div>
       <DegradedBar
         action={
           <div className="uz-queue-banner-actions">
-            <Button disabled variant="secondary">
-              查看原因 · read-only
+            <Button
+              aria-description={queueRuntimeBoundary}
+              data-runtime-boundary={queueRuntimeBoundary}
+              disabled
+              title={queueRuntimeBoundary}
+              variant="secondary"
+            >
+              查看原因
             </Button>
-            <Button disabled>恢复每日 · runtime unavailable</Button>
+            <Button
+              aria-description={queueRuntimeBoundary}
+              data-runtime-boundary={queueRuntimeBoundary}
+              disabled
+              title={queueRuntimeBoundary}
+            >
+              恢复每日
+            </Button>
           </div>
         }
         className="uz-queue-banner"
+        data-runtime-boundary={queueRuntimeBoundary}
         data-testid="m7-queue-degraded"
       >
         {isDegraded
-          ? `API unavailable/empty/error -> mock/degraded visible structure; read-only; runtime unavailable. ${queue.lastError}`
-          : "蒸馏健康摘要和人工恢复每日频率缺少已批准 API 合约；运行时决策仍使用现有 API client。"}
+          ? fallbackVisibleCopy
+          : "蒸馏健康摘要和人工恢复每日频率仍需已批准合约；队列决策沿现有运行通道提交。"}
       </DegradedBar>
       <div className="uz-queue-body">
         {state ?? (

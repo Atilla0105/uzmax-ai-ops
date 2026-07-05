@@ -2,7 +2,11 @@ import { createElement as h } from "react";
 import { GitCompare } from "lucide-react";
 import { IconSlot, StatusBadge } from "../../primitives";
 import { ActionButton, cardActions, type QueueHandlers } from "./QueueSupport";
-import { type DisplayQueueItem, type QueueMode } from "./queueFallback";
+import {
+  queueRuntimeBoundary,
+  type DisplayQueueItem,
+  type QueueMode
+} from "./queueFallback";
 
 type Item = DisplayQueueItem;
 type Props = QueueHandlers & {
@@ -71,19 +75,19 @@ export function queueStats(items: Item[], mode: QueueMode) {
   const conflicts = items.filter((item) => item.kind === "conflict_candidate").length;
   if (mode === "degraded") {
     return [
-      { label: "今日候选", tone: "warn", value: "mock 6 / 5" },
-      { label: "7日通过率", tone: "warn", value: "mock 32%" },
-      { label: "蒸馏频率", value: "mock 每日 5" },
-      { label: "冲突待处理", tone: "danger", value: `mock ${conflicts}` },
-      { label: "最近降频", tone: "neutral", value: "mock/degraded" }
+      { label: "今日候选", tone: "warn", value: "6 / 5" },
+      { label: "7日通过率", tone: "warn", value: "32%" },
+      { label: "蒸馏频率", value: "每日 5" },
+      { label: "冲突待处理", tone: "danger", value: `${conflicts}` },
+      { label: "最近降频", tone: "neutral", value: "通过率低" }
     ];
   }
   return [
-    { label: "今日候选", value: `runtime ${pending}` },
-    { label: "7日通过率", tone: "warn", value: "runtime unavailable" },
-    { label: "蒸馏频率", tone: "warn", value: "health API missing" },
-    { label: "冲突待处理", tone: "danger", value: `runtime ${conflicts}` },
-    { label: "最近降频", tone: "neutral", value: "not claimed" }
+    { label: "今日候选", value: `${pending}` },
+    { label: "7日通过率", tone: "warn", value: "待连接" },
+    { label: "蒸馏频率", tone: "warn", value: "待连接" },
+    { label: "冲突待处理", tone: "danger", value: `${conflicts}` },
+    { label: "最近降频", tone: "neutral", value: "待确认" }
   ];
 }
 
@@ -103,9 +107,7 @@ function renderScore(score: string | undefined) {
 }
 
 function renderModeBadge(mode: Item["displayMode"]) {
-  return mode === "degraded"
-    ? h(StatusBadge, { tone: "warn" }, "mock/degraded read-only")
-    : null;
+  return mode === "degraded" ? h(StatusBadge, { tone: "warn" }, "待连接") : null;
 }
 
 function renderActionFooter({
@@ -142,7 +144,11 @@ export function QueueCard({ focused, item, readOnly, submitting, ...handlers }: 
     "article",
     {
       "aria-current": focused ? "true" : undefined,
+      "aria-description":
+        item.displayMode === "degraded" ? queueRuntimeBoundary : undefined,
       className: classes,
+      "data-runtime-boundary":
+        item.displayMode === "degraded" ? queueRuntimeBoundary : undefined,
       "data-kind": item.kind,
       "data-testid": `m7-queue-card-${item.id}`,
       onClick: handlers.onFocus,

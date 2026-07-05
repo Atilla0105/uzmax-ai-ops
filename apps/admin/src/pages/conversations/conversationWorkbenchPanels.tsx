@@ -71,20 +71,20 @@ export function ContextRail({
           items={data.notes.map((note) => [`${note.who} · ${note.time}`, note.text])}
           title="人工备注"
         />
-        <section className="uz-conv-section">
-          <h3>快捷动作</h3>
-          <div className="uz-conv-quick">
-            <Button disabled icon={<IconSlot icon={Ticket} />}>
-              创建工单
-            </Button>
-            <Button disabled icon={<IconSlot icon={ClipboardList} />}>
-              生成报价
-            </Button>
-            <Button disabled>身份归并</Button>
-            <Button disabled>完整档案</Button>
-          </div>
-        </section>
       </div>
+      <section className="uz-conv-rail__quick-actions">
+        <h3>快捷动作</h3>
+        <div className="uz-conv-quick">
+          <Button disabled icon={<IconSlot icon={Ticket} />}>
+            创建工单
+          </Button>
+          <Button disabled icon={<IconSlot icon={ClipboardList} />}>
+            生成报价
+          </Button>
+          <Button disabled>身份归并</Button>
+          <Button disabled>完整档案</Button>
+        </div>
+      </section>
     </aside>
   );
 }

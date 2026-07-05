@@ -72,7 +72,7 @@ Validation notes:
 - The shell does not expose `node`, `npm` or `npx` by default. Commands used the existing Node runtime at `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`.
 - Because `playwright.config.ts` webServer uses `npm`/`npx`, preview was started manually with direct Node and Playwright reused `http://127.0.0.1:4173`.
 - `.prettierignore` ignores `*.md` and `docs/**`; the Prettier command validates matched source/test files and skips docs by repo rule.
-- `guard:pr-shape` output before commit: `changedFiles=10`, categories source `5`, docs `4`, test `1`.
+- `guard:pr-shape` output after the modal fix: `changedFiles=10`, categories source `5`, docs `4`, test `1`, source `netLoc=600`; this is exactly at the `<=600` source budget.
 - Tenant source line counts after review fix: `GroupTenantPage.tsx` 206, `GroupTenantViews.tsx` 245, `groupTenantFallback.ts` 146.
 - Vite emitted the existing large chunk warning and exited 0.
 - Focused tenant management Playwright: `5 passed`.

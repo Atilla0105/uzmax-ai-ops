@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
 import { AgentsPage } from "./agents/AgentsPage";
+import { AnalyticsPage } from "./analytics/AnalyticsPage";
 import { ConfigPage } from "./config/ConfigPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
@@ -52,6 +53,9 @@ const groupPageRenderers: Partial<Record<AdminPageId, PageRenderer>> = {
 const tenantPageRenderers: Partial<Record<AdminPageId, PageRenderer>> = {
   "tenant.aiMembers": ({ selectedTenantId }) => (
     <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+  ),
+  "tenant.analytics": ({ selectedTenantId }) => (
+    <AnalyticsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
   ),
   "tenant.config": ({ selectedTenantId }) => (
     <ConfigPage key={selectedTenantId} selectedTenantId={selectedTenantId} />

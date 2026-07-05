@@ -112,10 +112,13 @@ test("dirty save and version history rollback are browser-local only", async ({
     "no production config write"
   );
   await page.getByRole("button", { name: /版本历史/ }).click();
-  await expect(page.getByTestId("m7-config-history")).toContainText("no audit write");
+  await expect(page.getByTestId("m7-config-history")).toContainText(
+    "版本历史 · 回滚需二次确认并写审计"
+  );
   await page.getByRole("button", { name: "回滚到此版本" }).first().click();
   const modal = page.getByTestId("m7-confirm-modal");
   await expect(modal).toContainText("no production config write");
+  await expect(modal).toContainText("no audit write");
   await expect(modal.getByRole("button", { name: "回滚" })).toBeDisabled();
   await modal.getByRole("textbox").fill("local visual rollback check");
   await modal.getByRole("button", { name: "回滚" }).click();

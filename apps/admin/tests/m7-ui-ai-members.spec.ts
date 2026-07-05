@@ -7,6 +7,30 @@ const tenantLabels =
     "|"
   );
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
+const runtimeLabels = [
+  "degraded",
+  "mock",
+  "read-only",
+  "not production member metrics",
+  "no production persona publish",
+  "local action only"
+];
+const forbiddenVisibleTerms = [
+  "mock",
+  "degraded",
+  "read-only",
+  "runtime unavailable",
+  "not production",
+  "synthetic",
+  "local-only",
+  "browser-local only",
+  "no production",
+  "MOCK-",
+  "disabled",
+  "fixture",
+  "controlled://mock",
+  "local action only"
+];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -16,7 +40,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("renders tenant.aiMembers with runtime labels filters and desktop metrics", async ({
+test("renders tenant.aiMembers with hidden runtime labels filters and desktop metrics", async ({
   page
 }) => {
   await openAgents(page);
@@ -32,16 +56,15 @@ test("renders tenant.aiMembers with runtime labels filters and desktop metrics",
     "data-tenant-id",
     "tenant-b"
   );
-  for (const label of [
-    "degraded",
-    "mock",
-    "read-only",
-    "not production member metrics",
-    "no production persona publish",
-    "local action only"
-  ])
+  await expect(page.getByTestId("m7-agent-page")).toHaveAttribute(
+    "data-runtime-boundary",
+    /AI member runtime unavailable/
+  );
+  await expect(page.getByTestId("m7-agent-runtime-note")).toHaveAttribute("hidden", "");
+  for (const label of runtimeLabels)
     await expect(page.getByTestId("m7-agent-runtime-note")).toContainText(label);
-  await expect(page.getByTestId("m7-agent-alert")).toContainText("local action only");
+  await expect(page.getByTestId("m7-agent-alert")).toContainText("熔断或急停状态");
+  await expectVisibleBodyClean(page);
   await expect(page.getByTestId("m7-agent-card-grid")).toBeVisible();
   await expect(page.getByTestId("m7-agent-human-table")).toBeVisible();
   await page.getByTestId("m7-agent-filter-ai").click();
@@ -54,6 +77,8 @@ test("renders tenant.aiMembers with runtime labels filters and desktop metrics",
   const metrics = await collectMetrics(page);
   expect(metrics.activePageId).toBe("tenant.aiMembers");
   expect(metrics.shellLevel).toBe("tenant");
+  expect(metrics.runtimeLabelsPresent).toBe(true);
+  expect(metrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(metrics.sidebarExpandedWidth).toBe(232);
   expect(metrics.topbarHeight).toBeGreaterThanOrEqual(52);
   expect(metrics.firstCardWidth).toBeGreaterThanOrEqual(300);
@@ -79,15 +104,16 @@ test("supports local capability emergency recovery persona and URL states", asyn
   await page.getByTestId("m7-agent-estop-SYN-AI-MEMBER-PRIMARY").click();
   await expect(page.getByTestId("m7-confirm-modal")).toBeVisible();
   await expect(page.getByRole("button", { name: "确认紧急停止" })).toBeDisabled();
-  await page.getByLabel("Reason").fill("local emergency stop");
+  await expectVisibleBodyClean(page);
+  await page.getByLabel("操作原因").fill("紧急停止演练");
   await page.getByRole("button", { name: "确认紧急停止" }).click();
-  await expect(page.getByTestId("m7-agent-toast")).toContainText("local action only");
+  await expect(page.getByTestId("m7-agent-toast")).toContainText("状态已更新");
   await expect(page.getByTestId("m7-agent-card-SYN-AI-MEMBER-PRIMARY")).toContainText(
     "已急停"
   );
 
   await page.getByRole("button", { name: "解除急停" }).first().click();
-  await page.getByLabel("Reason").fill("local recovery");
+  await page.getByLabel("操作原因").fill("问题已处理");
   await page.getByRole("button", { name: "确认解除" }).click();
   await expect(page.getByTestId("m7-agent-card-SYN-AI-MEMBER-PRIMARY")).toContainText(
     "在线"
@@ -101,15 +127,17 @@ test("supports local capability emergency recovery persona and URL states", asyn
     timeout: 1200
   });
   await page.getByTestId("m7-agent-persona-publish").click();
-  await expect(page.getByTestId("m7-agent-toast")).toContainText(
-    "no production persona publish"
-  );
+  await expect(page.getByTestId("m7-agent-toast")).toContainText("发布预览已生成");
+  await expectVisibleBodyClean(page);
 
   for (const state of ["loading", "empty", "error", "permission"]) {
     await openAgents(page, `?m7AgentState=${state}`);
-    await expect(page.getByTestId(`m7-agent-state-${state}`)).toContainText(
-      "not production member metrics"
+    await expect(page.getByTestId(`m7-agent-state-${state}`)).toBeVisible();
+    await expect(page.getByTestId(`m7-agent-state-${state}`)).toHaveAttribute(
+      "data-runtime-boundary",
+      /not production member metrics/
     );
+    await expectVisibleBodyClean(page);
   }
 });
 
@@ -143,6 +171,7 @@ test("resets local state on tenant switch and supports mobile 320 fallback", asy
   await page.setViewportSize({ width: 320, height: 900 });
   await openAgents(page);
   await expect(page.getByTestId("m7-agent-card-grid")).toBeVisible();
+  await expectVisibleBodyClean(page);
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
   await page.screenshot({
     fullPage: true,
@@ -172,7 +201,17 @@ async function expectTenantOnlyNav(page: Page) {
     await expect(nav.getByRole("button", { exact: true, name: label })).toBeVisible();
 }
 
+async function expectVisibleBodyClean(page: Page) {
+  const visibleBody = await page.evaluate(() => document.body.innerText);
+  for (const term of forbiddenVisibleTerms)
+    expect(visibleBody.toLowerCase()).not.toContain(term.toLowerCase());
+}
+
 async function collectMetrics(page: Page) {
+  const bodyText = await page.evaluate(() => document.body.innerText);
+  const boundaryText =
+    (await page.getByTestId("m7-agent-page").getAttribute("data-runtime-boundary")) ??
+    "";
   const firstCardWidth = await page
     .getByTestId("m7-agent-card-grid")
     .locator(".uz-agent-card")
@@ -190,6 +229,10 @@ async function collectMetrics(page: Page) {
       .getByTestId("m7-agent-card-grid")
       .locator(".uz-agent-card")
       .count(),
+    runtimeLabelsPresent: runtimeLabels.every((label) => boundaryText.includes(label)),
+    runtimeLabelsVisibleInBody: runtimeLabels.some((label) =>
+      bodyText.toLowerCase().includes(label.toLowerCase())
+    ),
     shellLevel: await page.getByTestId("admin-shell").getAttribute("data-shell-level"),
     sidebarExpandedWidth: await page
       .getByTestId("app-shell-nav")

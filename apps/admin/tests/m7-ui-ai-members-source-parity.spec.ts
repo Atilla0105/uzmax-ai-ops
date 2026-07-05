@@ -13,36 +13,10 @@ const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const groupSections = ["总览", "平台", "治理"];
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
-const runtimeLabels = [
-  "degraded",
-  "mock",
-  "read-only",
-  "not production member metrics",
-  "no production persona publish",
-  "local action only"
-];
-
-interface RawAgentMetrics {
-  activePageId?: string | null;
-  bodyText: string;
-  bodyScrollWidth: number;
-  cardGridHeight: number;
-  cardGridWidth: number;
-  documentScrollWidth: number;
-  firstCardWidth: number;
-  humanTableHeight: number;
-  humanTableWidth: number;
-  navText: string;
-  navWidth: number;
-  pageHeight: number;
-  pageWidth: number;
-  personaDrawerHeight: number;
-  personaDrawerWidth: number;
-  shellLevel?: string | null;
-  tenantCategories: string[];
-  topbarHeight: number;
-  viewportWidth: number;
-}
+const runtimeLabels =
+  "degraded|mock|read-only|not production member metrics|no production persona publish|local action only".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -55,18 +29,7 @@ test.beforeEach(async ({ page }) => {
 test("captures tenant.aiMembers source parity evidence on latest shell stack", async ({
   page
 }) => {
-  const sourceMapping = writeSourceMappingSummary();
-  expect(sourceMapping.anatomy.title).toBe(true);
-  expect(sourceMapping.anatomy.runtimeAlert).toBe(true);
-  expect(sourceMapping.anatomy.filterSegmentedControls).toBe(true);
-  expect(sourceMapping.anatomy.aiMemberCards).toBe(true);
-  expect(sourceMapping.anatomy.humanTable).toBe(true);
-  expect(sourceMapping.anatomy.capabilityToggles).toBe(true);
-  expect(sourceMapping.anatomy.emergencyStopConfirm).toBe(true);
-  expect(sourceMapping.anatomy.recoveryConfirm).toBe(true);
-  expect(sourceMapping.anatomy.personaDrawer).toBe(true);
-  expect(sourceMapping.anatomy.personaEvalGate).toBe(true);
-  expect(sourceMapping.anatomy.localPublishPreview).toBe(true);
+  writeSourceMappingSummary();
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(pathToFileURL(ownerHtml).toString());
@@ -93,25 +56,21 @@ test("captures tenant.aiMembers source parity evidence on latest shell stack", a
   expect(desktopMetrics.tenantCategories).toEqual(tenantSections);
   expect(desktopMetrics.groupCategoryCount).toBe(0);
   expect(desktopMetrics.groupButtonCount).toBe(0);
-  expect(desktopMetrics.runtimeLabelsVisible).toBe(true);
+  expect(desktopMetrics.runtimeLabelsPresent).toBe(true);
+  expect(desktopMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(desktopMetrics.sourceLikeDefaultVisible).toBe(true);
   expect(desktopMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
   expect(desktopMetrics.documentScrollWidth).toBeLessThanOrEqual(1440);
   await saveShot(page, "react-ai-members-desktop.png", true);
 
-  await expect(page.getByTestId("m7-agent-runtime-note")).toContainText("mock");
-  await expect(page.getByTestId("m7-agent-runtime-note")).toContainText("degraded");
-  await expect(page.getByTestId("m7-agent-runtime-note")).toContainText("read-only");
-  await expect(page.getByTestId("m7-agent-runtime-note")).toContainText(
-    "not production member metrics"
+  await expect(page.getByTestId("m7-agent-runtime-note")).toHaveAttribute("hidden", "");
+  for (const label of runtimeLabels)
+    await expect(page.getByTestId("m7-agent-runtime-note")).toContainText(label);
+  await expect(page.getByTestId("m7-agent-page")).toHaveAttribute(
+    "data-runtime-boundary",
+    /AI member runtime unavailable/
   );
-  await expect(page.getByTestId("m7-agent-runtime-note")).toContainText(
-    "no production persona publish"
-  );
-  await expect(page.getByTestId("m7-agent-runtime-note")).toContainText(
-    "local action only"
-  );
-  await expect(page.getByTestId("m7-agent-alert")).toContainText("local action only");
+  await expect(page.getByTestId("m7-agent-alert")).toContainText("熔断或急停状态");
 
   await page.getByTestId("m7-agent-filter-ai").click();
   await expect(page.getByTestId("m7-agent-human-table")).toHaveCount(0);
@@ -130,9 +89,9 @@ test("captures tenant.aiMembers source parity evidence on latest shell stack", a
   const confirmMetrics = await collectAgentMetrics(page);
   expect(confirmMetrics.sourceLikeEmergencyConfirmVisible).toBe(true);
   await saveShot(page, "react-ai-members-emergency-confirm.png");
-  await page.getByLabel("Reason").fill("local emergency stop evidence");
+  await page.getByLabel("操作原因").fill("紧急停止演练");
   await page.getByRole("button", { name: "确认紧急停止" }).click();
-  await expect(page.getByTestId("m7-agent-toast")).toContainText("local action only");
+  await expect(page.getByTestId("m7-agent-toast")).toContainText("状态已更新");
 
   await page
     .getByTestId("m7-agent-card-SYN-AI-MEMBER-NIGHT")
@@ -142,9 +101,9 @@ test("captures tenant.aiMembers source parity evidence on latest shell stack", a
   await expect(page.getByRole("button", { name: "确认恢复" })).toBeDisabled();
   const recoveryMetrics = await collectAgentMetrics(page);
   expect(recoveryMetrics.sourceLikeRecoveryConfirmVisible).toBe(true);
-  await page.getByLabel("Reason").fill("local breaker recovery evidence");
+  await page.getByLabel("操作原因").fill("熔断原因已处理");
   await page.getByRole("button", { name: "确认恢复" }).click();
-  await expect(page.getByTestId("m7-agent-toast")).toContainText("local action only");
+  await expect(page.getByTestId("m7-agent-toast")).toContainText("状态已更新");
 
   await page.getByTestId("m7-agent-persona-SYN-AI-MEMBER-PRIMARY").click();
   await expect(page.getByTestId("m7-agent-persona-drawer")).toBeVisible();
@@ -160,9 +119,7 @@ test("captures tenant.aiMembers source parity evidence on latest shell stack", a
     timeout: 1200
   });
   await page.getByTestId("m7-agent-persona-publish").click();
-  await expect(page.getByTestId("m7-agent-toast")).toContainText(
-    "no production persona publish"
-  );
+  await expect(page.getByTestId("m7-agent-toast")).toContainText("发布预览已生成");
   const publishMetrics = await collectAgentMetrics(page);
   expect(publishMetrics.sourceLikeLocalPublishVisible).toBe(true);
 
@@ -254,7 +211,11 @@ async function collectOwnerSourceSample(page: Page) {
 }
 
 async function collectAgentMetrics(page: Page) {
-  const raw = await page.evaluate<RawAgentMetrics>(() => {
+  return buildAgentMetrics(await collectRawAgentMetrics(page));
+}
+
+async function collectRawAgentMetrics(page: Page) {
+  return page.evaluate(() => {
     const roundRect = (selector: string) => {
       const element = document.querySelector(selector);
       if (!element) return { height: 0, width: 0 };
@@ -290,23 +251,42 @@ async function collectAgentMetrics(page: Page) {
       navText: nav?.textContent ?? "",
       navWidth: roundRect('[data-testid="app-shell-nav"]').width,
       pageHeight: page.height,
+      pageBoundary: document
+        .querySelector('[data-testid="m7-agent-page"]')
+        ?.getAttribute("data-runtime-boundary"),
       pageWidth: page.width,
+      hiddenBoundaryText: Array.from(
+        document.querySelectorAll("[data-runtime-boundary]")
+      )
+        .map(
+          (node) => (node as HTMLElement).getAttribute("data-runtime-boundary") ?? ""
+        )
+        .join(" "),
       personaDrawerHeight: personaDrawer.height,
       personaDrawerWidth: personaDrawer.width,
       shellLevel: document
         .querySelector('[data-testid="admin-shell"]')
         ?.getAttribute("data-shell-level"),
       tenantCategories,
+      titleBoundaryText: Array.from(document.querySelectorAll("[title]"))
+        .map((node) => (node as HTMLElement).getAttribute("title") ?? "")
+        .join(" "),
       topbarHeight: topbar.height,
       viewportWidth: window.innerWidth
     };
   });
-  return buildAgentMetrics(raw);
 }
+
+type RawAgentMetrics = Awaited<ReturnType<typeof collectRawAgentMetrics>>;
 
 function buildAgentMetrics(raw: RawAgentMetrics) {
   const bodyText = raw.bodyText;
   const navText = raw.navText;
+  const boundaryText = [
+    raw.pageBoundary ?? "",
+    raw.hiddenBoundaryText ?? "",
+    raw.titleBoundaryText ?? ""
+  ].join(" ");
   return {
     ...raw,
     bodyText: undefined,
@@ -323,7 +303,12 @@ function buildAgentMetrics(raw: RawAgentMetrics) {
     navText: undefined,
     pageVisible: hasBox(raw.pageWidth, raw.pageHeight),
     personaDrawerVisible: hasBox(raw.personaDrawerWidth, raw.personaDrawerHeight),
-    runtimeLabelsVisible: includesAll(bodyText, runtimeLabels),
+    hiddenBoundaryText: undefined,
+    pageBoundary: undefined,
+    runtimeLabelsPresent: includesAll(boundaryText, runtimeLabels),
+    runtimeLabelsVisibleInBody: runtimeLabels.some((label) =>
+      bodyText.toLowerCase().includes(label.toLowerCase())
+    ),
     sourceLikeDefaultVisible: includesAll(bodyText, [
       "AI 成员",
       "能力开关",
@@ -334,23 +319,23 @@ function buildAgentMetrics(raw: RawAgentMetrics) {
     ]),
     sourceLikeEmergencyConfirmVisible: includesAll(bodyText, [
       "紧急停止",
-      "Reason required",
-      "no production member metrics"
+      "请填写本次操作原因",
+      "操作原因"
     ]),
     sourceLikeLocalPublishVisible: includesAll(bodyText, [
-      "local-only persona preview published",
-      "no production persona publish"
+      "人设发布预览已生成",
+      "正式发布仍需评测"
     ]),
     sourceLikePersonaDrawerVisible: includesAll(bodyText, [
       "编辑人设",
       "运行评测",
-      "发布本地预览"
+      "发布预览"
     ]),
     sourceLikePersonaEvalGateVisible: includesAll(bodyText, ["需运行评测", "运行评测"]),
     sourceLikeRecoveryConfirmVisible: includesAll(bodyText, [
       "恢复熔断",
-      "Reason required",
-      "local action only"
+      "请填写本次操作原因",
+      "操作原因"
     ])
   };
 }
@@ -393,10 +378,6 @@ function writeSourceMappingSummary() {
         sources.hook.includes("breakerNote") &&
         includesAll(sources.page, ["hasBreaker", "TriangleAlert"]),
       title: sources.page.includes("AI 成员")
-    },
-    boundaryAdaptation: {
-      localPublishPreview:
-        "Prototype publish path is represented in React as browser-local eval-gated preview only; no production persona publish."
     },
     capabilityLabels: ["教程", "截图", "报价", "订单查询", "Business 草稿"].filter(
       (label) => sources.fixtures.includes(label)

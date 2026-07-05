@@ -1,6 +1,7 @@
 import {
   capabilityDefs,
   humanMembers,
+  runtimeBoundary,
   runtimeLabels,
   statusTone,
   type AgentFilter,
@@ -25,7 +26,7 @@ export function Header({
     <header className="uz-agent-head">
       <h2 className="uz-agent-title">AI 成员</h2>
       <span className="uz-agent-desc">
-        人类成员与 AI 成员 · 能力开关、本地急停、评测门禁预览
+        人类成员与 AI 成员 · 能力开关、熔断/急停、人设版本与评测门禁
       </span>
       <nav aria-label="成员筛选" className="uz-agent-filters">
         {(["all", "ai", "human"] as const).map((id) => (
@@ -47,7 +48,12 @@ export function Header({
 
 export function RuntimeNote() {
   return (
-    <div className="uz-agent-note" data-testid="m7-agent-runtime-note">
+    <div
+      className="uz-agent-note"
+      data-runtime-boundary={runtimeBoundary}
+      data-testid="m7-agent-runtime-note"
+      hidden
+    >
       <span>{runtimeLabels.slice(0, 3).join(" · ")}</span>
       <span>{runtimeLabels.slice(3).join(" · ")}</span>
     </div>
@@ -55,11 +61,21 @@ export function RuntimeNote() {
 }
 
 export function StatePanel({ state }: { state: Exclude<AgentViewState, "degraded"> }) {
+  const copy = {
+    empty: ["暂无成员记录", "当前筛选下没有可展示的 AI 成员或人类成员。"],
+    error: ["成员视图暂不可用", "请稍后重试，或返回租户工作台核对成员配置。"],
+    loading: ["正在载入成员视图", "成员、能力开关与人设版本状态正在准备中。"],
+    permission: ["需要成员管理权限", "当前账号需要授权后才能查看 AI 成员控制面板。"]
+  }[state];
   return (
-    <main className="uz-agent-state" data-testid={`m7-agent-state-${state}`}>
+    <main
+      className="uz-agent-state"
+      data-runtime-boundary={runtimeBoundary}
+      data-testid={`m7-agent-state-${state}`}
+    >
       <div>
-        <h2>{state}</h2>
-        <p>{`Synthetic ${state} state. ${runtimeLabels.join(" · ")}`}</p>
+        <h2>{copy[0]}</h2>
+        <p>{copy[1]}</p>
       </div>
     </main>
   );
@@ -71,8 +87,12 @@ export function AlertBar({ agents }: { agents: AiMember[] }) {
     .map((agent) => agent.name);
   if (!names.length) return null;
   return (
-    <div className="uz-agent-alert" data-testid="m7-agent-alert">
-      <span>{`${names.join("、")} breaker/estop synthetic alert; recovery is local action only.`}</span>
+    <div
+      className="uz-agent-alert"
+      data-runtime-boundary={runtimeBoundary}
+      data-testid="m7-agent-alert"
+    >
+      <span>{`${names.join("、")} 处于熔断或急停状态；恢复前请确认触发原因已处理。`}</span>
     </div>
   );
 }
@@ -115,6 +135,7 @@ function AgentCard({ actions, agent }: { actions: Actions; agent: AiMember }) {
           <button
             aria-pressed={agent.capabilities[key]}
             className="uz-agent-chip"
+            data-runtime-boundary={runtimeBoundary}
             data-testid={`m7-agent-cap-${agent.id}-${key}`}
             key={key}
             onClick={() => actions.toggleCap(agent.id, key)}
@@ -149,27 +170,35 @@ function AgentCard({ actions, agent }: { actions: Actions; agent: AiMember }) {
 }
 
 function StatusButton({ actions, agent }: { actions: Actions; agent: AiMember }) {
-  if (agent.status === "breaker")
+  if (agent.status === "breaker") {
     return <Danger label="熔断恢复" onClick={() => actions.recover(agent)} />;
-  if (agent.status === "estop")
-    return <Danger label="解除急停" onClick={() => actions.release(agent)} />;
+  }
+  const estop = agent.status === "estop";
   return (
     <Danger
-      label="紧急停止"
-      onClick={() => actions.emergency(agent)}
-      testId={`m7-agent-estop-${agent.id}`}
+      label={estop ? "解除急停" : "紧急停止"}
+      onClick={() => (estop ? actions.release(agent) : actions.emergency(agent))}
+      testId={estop ? undefined : `m7-agent-estop-${agent.id}`}
     />
   );
 }
 
-type DangerProps = { label: string; onClick: () => void; testId?: string };
-
-function Danger({ label, onClick, testId }: DangerProps) {
+function Danger({
+  label,
+  onClick,
+  testId
+}: {
+  label: string;
+  onClick: () => void;
+  testId?: string;
+}) {
   return (
     <button
       className="uz-agent-btn uz-agent-btn--danger"
+      data-runtime-boundary={runtimeBoundary}
       data-testid={testId}
       onClick={onClick}
+      title={runtimeBoundary}
       type="button"
     >
       {label}

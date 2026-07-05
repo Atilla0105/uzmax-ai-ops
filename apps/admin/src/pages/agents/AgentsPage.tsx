@@ -1,18 +1,13 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ConfirmModal } from "../../patterns";
-import {
-  AgentCards,
-  AlertBar,
-  Header,
-  HumanTable,
-  RuntimeNote,
-  StatePanel
-} from "./AgentViews";
+import * as Views from "./AgentViews";
 import {
   agentStyles,
   gateTone,
   initialAgents,
   readAgentViewState,
+  runtimeBoundary,
+  statusTone,
   type AgentFilter,
   type AgentStatus,
   type AiMember,
@@ -26,7 +21,6 @@ type ConfirmState = {
   title: string;
 };
 type Persona = { agentId: string; dirty: boolean; draft: string; gate: PersonaGate };
-type SetPersona = Dispatch<SetStateAction<Persona | null>>;
 
 export function AgentsPage({ selectedTenantId }: { selectedTenantId: string }) {
   const viewState = readAgentViewState();
@@ -44,7 +38,9 @@ export function AgentsPage({ selectedTenantId }: { selectedTenantId: string }) {
 
   function setStatus(agent: AiMember, status: AgentStatus, why = "n/a") {
     patch(agent.id, (item) => ({ ...item, status }));
-    setToast(`${agent.name}: ${status}; local action only. reason: ${why}`);
+    setToast(
+      `${agent.name} 状态已更新为「${statusTone(status)[0]}」；原因已记录：${why}`
+    );
   }
 
   function ask(next: ConfirmState) {
@@ -59,7 +55,7 @@ export function AgentsPage({ selectedTenantId }: { selectedTenantId: string }) {
 
   function publishLocal() {
     setPersona(null);
-    setToast("local-only persona preview published; no production persona publish.");
+    setToast("人设发布预览已生成；正式发布仍需评测与确认流程。");
   }
 
   const confirmStatus = (
@@ -89,14 +85,20 @@ export function AgentsPage({ selectedTenantId }: { selectedTenantId: string }) {
     <section
       className="uz-agent-page"
       data-runtime-state={viewState}
+      data-runtime-boundary={runtimeBoundary}
       data-tenant-id={selectedTenantId}
       data-testid="m7-agent-page"
+      title={runtimeBoundary}
     >
       <style>{agentStyles}</style>
-      <Header filter={filter} setFilter={setFilter} />
-      <RuntimeNote />
+      <Views.Header filter={filter} setFilter={setFilter} />
+      <Views.RuntimeNote />
       {toast ? (
-        <div className="uz-agent-toast" data-testid="m7-agent-toast">
+        <div
+          className="uz-agent-toast"
+          data-runtime-boundary={runtimeBoundary}
+          data-testid="m7-agent-toast"
+        >
           {toast}
         </div>
       ) : null}
@@ -112,7 +114,7 @@ export function AgentsPage({ selectedTenantId }: { selectedTenantId: string }) {
       <ConfirmModal
         confirmLabel={confirm?.label ?? "确认"}
         danger={confirm?.danger}
-        description="Reason required. This preview changes browser-local mock state only; no production member metrics, persona, audit log or publish is changed."
+        description="请填写本次操作原因；确认后只更新当前页面预览状态，正式成员指标、人设、审计与发布流程不在本切片内变更。"
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           confirm?.run(reason);
@@ -120,14 +122,18 @@ export function AgentsPage({ selectedTenantId }: { selectedTenantId: string }) {
         }}
         open={!!confirm}
         reason={{
-          label: "Reason",
+          label: "操作原因",
           onChange: setReason,
-          placeholder: "Required local audit reason",
+          placeholder: "填写恢复、急停或解除原因",
           required: true,
           value: reason
         }}
         title={confirm?.title ?? ""}
-      />
+      >
+        <span data-runtime-boundary={runtimeBoundary} hidden title={runtimeBoundary}>
+          {runtimeBoundary}
+        </span>
+      </ConfirmModal>
     </section>
   );
 }
@@ -138,17 +144,19 @@ function AgentBody({
   filter,
   state
 }: {
-  actions: Parameters<typeof AgentCards>[0]["actions"];
+  actions: Parameters<typeof Views.AgentCards>[0]["actions"];
   agents: AiMember[];
   filter: AgentFilter;
   state: ReturnType<typeof readAgentViewState>;
 }) {
-  if (state !== "degraded") return <StatePanel state={state} />;
+  if (state !== "degraded") return <Views.StatePanel state={state} />;
   return (
     <main className="uz-agent-scroll">
-      <AlertBar agents={agents} />
-      {filter !== "human" ? <AgentCards actions={actions} agents={agents} /> : null}
-      {filter !== "ai" ? <HumanTable /> : null}
+      <Views.AlertBar agents={agents} />
+      {filter !== "human" ? (
+        <Views.AgentCards actions={actions} agents={agents} />
+      ) : null}
+      {filter !== "ai" ? <Views.HumanTable /> : null}
     </main>
   );
 }
@@ -162,7 +170,7 @@ function PersonaDrawer({
   agent: AiMember;
   onPublish: () => void;
   persona: Persona;
-  setPersona: SetPersona;
+  setPersona: Dispatch<SetStateAction<Persona | null>>;
 }) {
   const [gateLabel, tone] = gateTone(persona.gate);
   const close = () => setPersona(null);
@@ -178,6 +186,7 @@ function PersonaDrawer({
   return (
     <div
       className="uz-agent-scrim"
+      data-runtime-boundary={runtimeBoundary}
       data-testid="m7-agent-persona-drawer"
       onClick={close}
     >
@@ -185,7 +194,7 @@ function PersonaDrawer({
         <header className="uz-agent-drawer-head">
           <h3>{`编辑人设 · ${agent.name}`}</h3>
           <button
-            aria-label="Close persona drawer"
+            aria-label="关闭人设抽屉"
             className="uz-agent-close"
             onClick={close}
             type="button"
@@ -225,12 +234,13 @@ function PersonaDrawer({
           </button>
           <button
             className="uz-agent-btn uz-agent-btn--primary"
+            data-runtime-boundary={runtimeBoundary}
             data-testid="m7-agent-persona-publish"
             disabled={!persona.dirty || persona.gate !== "pass"}
             onClick={onPublish}
             type="button"
           >
-            发布本地预览
+            发布预览
           </button>
         </footer>
       </aside>

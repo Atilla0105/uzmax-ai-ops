@@ -77,9 +77,11 @@ function readConversation(value: unknown): ConversationRow {
     aiState: record.aiState === "suspended" ? "suspended" : "active",
     awaitingReply: bool(record.awaitingReply),
     channel: text(record.channel, "Business"),
+    customerName: text(record.customerName),
     customerRef: text(record.customerRef),
     customFields: pairArray(record.customFields),
     displayRef: text(record.displayRef),
+    draftText: text(record.draftText),
     dualTracks: tracksArray(record.dualTracks),
     externalConversationRef: text(
       record.externalConversationRef,

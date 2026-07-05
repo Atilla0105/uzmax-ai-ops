@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
-import { ConfirmModal, IconSlot, Toggle } from "../../patterns";
+import { ConfirmModal } from "../../patterns";
+import { IconSlot, Toggle } from "../../primitives";
 import {
   TEAM_MEMBER_COLUMNS,
   TEAM_MEMBER_TYPES,
@@ -167,13 +168,27 @@ export function RoleEditorModal({ draft, onClose, onSave, onUpdate, open }: { dr
 export function MemberDrawer({ member, onClose, onSetNotify, onToggleDisable, onToggleTelegram, roleName }: { member: TeamMember | null; onClose: () => void; onSetNotify: (id: string, value: string) => void; onToggleDisable: (id: string) => void; onToggleTelegram: (id: string) => void; roleName?: string; }) {
   if (!member) return null;
   return (
-    <section className="uz-team-drawer-scrim" onClick={onClose} data-testid="m7-team-member-drawer">
+    <section
+      className="uz-team-drawer-scrim"
+      data-testid="m7-team-member-drawer"
+      onClick={onClose}
+      role="dialog"
+    >
       <article aria-label="成员详情" className="uz-team-drawer" onClick={(event) => event.stopPropagation()} role="dialog">
         <header className="uz-team-drawer-head"><span className="uz-team-avatar" style={{ background: member.avBg, color: member.avColor }}>{member.initial}</span><div><strong>{member.name}</strong><span className="uz-team-mono">{member.account}</span></div><button className="uz-team-btn" onClick={onClose} type="button">×</button></header>
         <div className="uz-team-drawer-body">
           <p>角色：{roleName ?? "—"}</p><p>分组：{member.group}</p><p>成员类型：{member.type === "ai" ? "AI" : "人类"}</p><p>语言偏好：{member.langPref}</p><p>接待上限：{member.cap}</p>
           <label>通知偏好</label><div className="uz-team-switch-row">{TEAM_NOTIFICATION_PREFS.map((pref) => <button aria-pressed={member.notifyPref === pref} className="uz-team-btn" key={pref} onClick={() => onSetNotify(member.id, pref)} type="button">{pref}</button>)}</div>
-          <div className="uz-team-toggle"><Toggle checked={member.telegram} onClick={() => onToggleTelegram(member.id)} /><span>Telegram 绑定 · {member.telegram ? "已绑定" : "未绑定"}</span></div>
+          <div className="uz-team-toggle">
+            <Toggle
+              aria-label="Telegram 绑定"
+              checked={member.telegram}
+              onClick={() => onToggleTelegram(member.id)}
+            />
+            <span>
+              Telegram 绑定 · {member.telegram ? "已绑定" : "未绑定"}
+            </span>
+          </div>
           <button className="uz-team-btn uz-team-btn--primary" data-testid="m7-team-member-toggle-disable" onClick={() => onToggleDisable(member.id)} type="button">{member.disabled ? "恢复账号" : "停用账号"}</button>
         </div>
       </article>
@@ -184,4 +199,3 @@ export function MemberDrawer({ member, onClose, onSetNotify, onToggleDisable, on
 export function RoleDeleteConfirm({ name, onCancel, onConfirm, open }: { name: string; onCancel: () => void; onConfirm: () => void; open: boolean; }) {
   return <ConfirmModal danger confirmLabel="删除角色" description={`本地仅：删除角色「${name}」，不写生产成员/审计`} onCancel={onCancel} onConfirm={onConfirm} open={open} title="删除角色" />;
 }
-

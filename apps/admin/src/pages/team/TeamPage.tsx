@@ -5,13 +5,19 @@ import {
   RoleEditorModal
 } from "./TeamDialogs";
 import { TeamHeader, TeamMembersTab, TeamRolesTab, TeamStatePanel } from "./TeamViews";
-import { teamMeta, teamStyles, useTeamPageState } from "./teamFallback";
+import {
+  TEAM_RUNTIME_BOUNDARY,
+  teamMeta,
+  teamStyles,
+  useTeamPageState
+} from "./teamFallback";
 
 export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
   const s = useTeamPageState();
   return (
     <section
       className="uz-team-page"
+      data-runtime-boundary={TEAM_RUNTIME_BOUNDARY}
       data-runtime-source={teamMeta.source}
       data-runtime-state={s.viewState}
       data-selected-tenant-id={selectedTenantId}
@@ -30,8 +36,10 @@ export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
           aria-atomic="true"
           aria-live="polite"
           className="uz-team-toast"
+          data-runtime-boundary={TEAM_RUNTIME_BOUNDARY}
           data-testid="m7-team-toast"
           role="status"
+          title={TEAM_RUNTIME_BOUNDARY}
         >
           {s.toast}
         </div>

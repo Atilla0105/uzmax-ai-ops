@@ -27,6 +27,10 @@ const tenantLabels = [
 ];
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
+const runtimeLabels =
+  "degraded|mock|read-only|browser-local only|no production authz write|no team mutation|no invite email send|no Telegram binding change|no audit write".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -39,7 +43,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("renders tenant team page in tenant shell with boundary note", async ({
+test("renders tenant team page in tenant shell with hidden boundary note", async ({
   page
 }) => {
   await openTeam(page);
@@ -53,17 +57,15 @@ test("renders tenant team page in tenant shell with boundary note", async ({
   );
   await expect(page.getByTestId("page-outlet")).toHaveAttribute("data-tenant-id");
   await expect(page.getByRole("heading", { name: "团队" })).toBeVisible();
-  await expect(page.getByTestId("m7-team-runtime-note")).toContainText("degraded");
-  for (const label of [
-    "degraded",
-    "mock",
-    "read-only",
-    "browser-local only",
-    "no production authz write",
-    "no audit write"
-  ]) {
+  await expect(page.getByTestId("m7-team-page")).toHaveAttribute(
+    "data-runtime-boundary",
+    /no production authz write/
+  );
+  await expect(page.getByTestId("m7-team-runtime-note")).toHaveAttribute("hidden", "");
+  for (const label of runtimeLabels) {
     await expect(page.getByTestId("m7-team-runtime-note")).toContainText(label);
   }
+  await expectVisibleBodyClean(page);
   await expectLayerNav(page, tenantSections, groupSections, tenantLabels, groupLabels);
   await expect(page.locator(".uz-team-row")).toHaveCount(4);
   await page.screenshot({
@@ -79,12 +81,19 @@ test("renders tenant team page in tenant shell with boundary note", async ({
 
 test("search empty state stays deterministic", async ({ page }) => {
   await openTeam(page);
-  await page.getByTestId("m7-team-search").fill("no matching local row");
+  await page.getByTestId("m7-team-search").fill("不存在成员");
   await expect(page.getByTestId("m7-team-empty")).toContainText("无匹配成员");
+  await expect(page.getByTestId("m7-team-empty")).toHaveAttribute(
+    "data-runtime-boundary",
+    /no team mutation/
+  );
+  await expectVisibleBodyClean(page);
   await expect(page.locator(".uz-team-row")).toHaveCount(0);
 });
 
-test("roles tab role editor save and delete local-only", async ({ page }) => {
+test("roles tab role editor save and delete keeps visible copy operational", async ({
+  page
+}) => {
   await openTeam(page);
   await page.getByTestId("m7-team-tab-roles").click();
   await expect(page.getByRole("button", { name: "新建角色" })).toBeVisible();
@@ -95,7 +104,11 @@ test("roles tab role editor save and delete local-only", async ({ page }) => {
   await page.getByTestId("m7-team-role-save").click();
   await expect(page.locator("tr", { hasText: "本地角色-测试" })).toHaveCount(1);
   await expect(page.getByTestId("m7-team-toast")).toContainText(
-    "created role 本地角色-测试"
+    "角色已创建：本地角色-测试"
+  );
+  await expect(page.getByTestId("m7-team-toast")).toHaveAttribute(
+    "data-runtime-boundary",
+    /no audit write/
   );
 
   const row = page.locator("tr", { hasText: "本地角色-测试" });
@@ -105,8 +118,9 @@ test("roles tab role editor save and delete local-only", async ({ page }) => {
   await modal.getByRole("button", { name: "删除" }).click();
   await expect(row).toHaveCount(0);
   await expect(page.getByTestId("m7-team-toast")).toContainText(
-    "deleted role 本地角色-测试"
+    "角色已删除：本地角色-测试"
   );
+  await expectVisibleBodyClean(page);
 });
 
 test("invite modal requires name+email and adds local member", async ({ page }) => {
@@ -118,9 +132,8 @@ test("invite modal requires name+email and adds local member", async ({ page }) 
   await page.getByTestId("m7-team-invite-email").fill("baiyu@local.io");
   await page.getByTestId("m7-team-invite-send").click();
   await expect(page.getByTestId("m7-team-page")).toContainText("白玉");
-  await expect(page.getByTestId("m7-team-toast")).toContainText(
-    "invite added locally: 白玉"
-  );
+  await expect(page.getByTestId("m7-team-toast")).toContainText("邀请已暂存：白玉");
+  await expectVisibleBodyClean(page);
 });
 
 test("member drawer notification, telegram toggle, disable/restore local controls", async ({
@@ -132,19 +145,20 @@ test("member drawer notification, telegram toggle, disable/restore local control
   await expect(drawer).toBeVisible();
   await expect(drawer).toHaveAttribute("role", "dialog");
   await drawer.getByRole("button", { name: "仅@提及" }).click();
-  await expect(page.getByTestId("m7-team-toast")).toContainText(
-    "notification preference updated"
-  );
+  await expect(page.getByTestId("m7-team-toast")).toContainText("通知偏好已更新");
 
   const tgButton = drawer.getByRole("button", { name: "Telegram 绑定" });
   await tgButton.click();
-  await expect(page.getByTestId("m7-team-toast")).toContainText("telegram");
+  await expect(page.getByTestId("m7-team-toast")).toContainText(
+    "Telegram 绑定预览已更新"
+  );
 
   const disableButton = drawer.getByTestId("m7-team-member-toggle-disable");
   await disableButton.click();
   await expect(disableButton).toHaveText("恢复账号");
   await disableButton.click();
   await expect(disableButton).toHaveText("停用账号");
+  await expectVisibleBodyClean(page);
 });
 
 test("forced URL states are deterministic", async ({ page }) => {
@@ -154,8 +168,17 @@ test("forced URL states are deterministic", async ({ page }) => {
       state === "degraded"
         ? page.getByTestId("m7-team-runtime-note")
         : page.getByTestId(`m7-team-state-${state}`);
-    await expect(target).toContainText("browser-local only");
-    await expect(target).toContainText("no production authz write");
+    if (state === "degraded") {
+      await expect(target).toContainText("browser-local only");
+      await expect(target).toHaveAttribute("hidden", "");
+    } else {
+      await expect(target).toHaveAttribute(
+        "data-runtime-boundary",
+        /browser-local only/
+      );
+      await expect(target).toHaveAttribute("title", /no production authz write/);
+      await expectVisibleBodyClean(page);
+    }
   }
 });
 
@@ -209,6 +232,13 @@ async function expectLayerNav(
       0
     );
   }
+}
+
+async function expectVisibleBodyClean(page: Page) {
+  const body = await page.evaluate(() => document.body.innerText.toLowerCase());
+  for (const term of runtimeLabels) expect(body).not.toContain(term.toLowerCase());
+  for (const term of ["local-only", "local only", "no production"])
+    expect(body).not.toContain(term);
 }
 
 async function collectMetrics(page: Page) {

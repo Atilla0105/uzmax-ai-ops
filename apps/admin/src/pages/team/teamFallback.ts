@@ -51,6 +51,7 @@ export const TEAM_MEMBER_COLUMNS = ["成员", "角色", "成员类型", "分组"
 export const TEAM_ROLE_COLUMNS = ["角色", "类型", "说明", "成员数", "创建时间", "操作"] as const;
 // prettier-ignore
 export const TEAM_PERSISTENCE_WARNING = ["degraded", "mock", "read-only", "browser-local only", "no production authz write", "no team mutation", "no invite email send", "no Telegram binding change", "no audit write"] as const;
+export const TEAM_RUNTIME_BOUNDARY = TEAM_PERSISTENCE_WARNING.join(" · ");
 
 // prettier-ignore
 const permSeeds = [
@@ -177,23 +178,23 @@ export const teamRoles: TeamRole[] = [
 export const teamMeta = {
   header: "团队",
   source: "local fixture + unpacked team source",
-  subtitle: "degraded / mock / read-only / browser-local only"
+  subtitle: "团队成员、角色与权限管理"
 } as const;
 export const teamStateCopy = {
   degraded: {
-    body: "degraded / mock / read-only / browser-local only: local synthetic team rows; no production authz write / no audit write / no team mutation / no invite email."
+    body: "团队成员与角色权限正在按当前租户策略展示。"
   },
   empty: {
-    body: "degraded / mock / read-only / browser-local only: empty synthetic fallback; no production authz write / no audit write / no team mutation / no invite email."
+    body: "当前没有可展示的团队成员。可以先邀请成员或新建角色。"
   },
   error: {
-    body: "degraded / mock / read-only / browser-local only: team runtime unavailable; no production authz write / no audit write / no team mutation / no invite email."
+    body: "团队信息暂时无法加载，请稍后重试或联系管理员。"
   },
   loading: {
-    body: "degraded / mock / read-only / browser-local only: loading synthetic team state; no production authz write / no audit write / no team mutation / no invite email."
+    body: "正在加载团队成员与角色权限…"
   },
   permission: {
-    body: "degraded / mock / read-only / browser-local only: permission denied; no production authz write / no audit write / no team mutation / no invite email."
+    body: "当前账号没有查看团队管理的权限。"
   }
 } as const;
 
@@ -215,8 +216,7 @@ export const makeInviteInitialDraft = (roleId: string): InviteDraft => ({
   roleId,
   type: "human"
 });
-export const localTeamToast = (message: string) =>
-  `browser-local only: ${message} · no production authz write / no team mutation / no invite email / no audit write / no Telegram binding change`;
+export const localTeamToast = (message: string) => message;
 
 const invitedMember = (
   draft: InviteDraft,
@@ -283,7 +283,7 @@ export function useTeamPageState() {
     if (!roleDraft?.name.trim()) return;
     const savedRole = { builtin: false, created: "今天", desc: roleDraft.desc, id: `r-${Date.now()}`, name: roleDraft.name, perms: { ...roleDraft.perms }, type: "自定义" };
     setRoles((current) => roleDraft.id ? current.map((entry) => (entry.id === roleDraft.id ? { ...entry, desc: roleDraft.desc, name: roleDraft.name, perms: roleDraft.perms } : entry)) : [...current, savedRole]);
-    showToast(`${roleDraft.mode === "edit" ? "updated" : "created"} role ${roleDraft.name}`);
+    showToast(`${roleDraft.mode === "edit" ? "角色已更新" : "角色已创建"}：${roleDraft.name}`);
     setRoleDraft(null);
   };
   const onInviteSubmit = () => {
@@ -292,19 +292,19 @@ export function useTeamPageState() {
     if (!name || !email) return;
     setMembers((current) => [...current, invitedMember(inviteDraft, name, email)]);
     setInviteOpen(false);
-    showToast(`invite added locally: ${name}`);
+    showToast(`邀请已暂存：${name}`);
   };
   return { filteredMembers, inviteDraft, inviteOpen, isDegraded: viewState === "degraded", member, membersByRole, roleById, roleDraft, roleToDelete, roles, search, stateCopy: teamStateCopy[viewState].body, tab, toast, viewState,
     onDeleteRole: (item: TeamRole) => !item.builtin && (membersByRole[item.id] ?? 0) === 0 && setRoleToDelete(item.name),
     onDismissDeleteRole: () => setRoleToDelete(""), onInviteClose: () => setInviteOpen(false),
     onInviteOpenMembers: () => { setInviteDraft(makeInviteInitialDraft(roles[1]?.id ?? roles[0]?.id ?? "")); setInviteOpen(true); },
     onInviteSubmit, onInviteUpdate: setInviteDraft, onMemberClose: () => setSelectedMemberId(null),
-    onNotify: (id: string, pref: string) => { patchMember(id, (entry) => ({ ...entry, notifyPref: pref })); showToast(`notification preference updated for ${members.find((entry) => entry.id === id)?.name ?? "member"}`); },
-    onRoleDeleteConfirm: () => { setRoles((current) => current.filter((entry) => entry.name !== roleToDelete)); showToast(`deleted role ${roleToDelete}`); setRoleToDelete(""); },
+    onNotify: (id: string, pref: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, notifyPref: pref })); showToast(`通知偏好已更新：${target?.name ?? "成员"}`); },
+    onRoleDeleteConfirm: () => { setRoles((current) => current.filter((entry) => entry.name !== roleToDelete)); showToast(`角色已删除：${roleToDelete}`); setRoleToDelete(""); },
     onRoleDraftClose: () => setRoleDraft(null), onRoleDraftCreate: () => setRoleDraft(draftFromRole("new")), onRoleDraftEdit: (item: TeamRole) => setRoleDraft(draftFromRole("edit", item)),
     onRoleDraftSave: saveRole, onRoleDraftUpdate: setRoleDraft, onSelectTab: setTab, onSetMember: setSelectedMemberId, onSetSearch: setSearch,
-    onSetState: (id: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, disabled: !entry.disabled })); showToast(target?.disabled ? `restored member ${target.name}` : `disabled member ${target?.name ?? id}`); },
-    onTelegram: (id: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, telegram: !entry.telegram })); showToast(`telegram ${target?.telegram ? "unbound" : "bound"} for ${target?.name ?? id}`); }
+    onSetState: (id: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, disabled: !entry.disabled })); showToast(target?.disabled ? `账号已恢复：${target.name}` : `账号已停用：${target?.name ?? id}`); },
+    onTelegram: (id: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, telegram: !entry.telegram })); showToast(`Telegram 绑定预览已更新：${target?.name ?? id}`); }
   };
 }
 

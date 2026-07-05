@@ -18,6 +18,9 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/conversation-ticket/conversations", async (route) => {
     await route.fulfill({ json: { items: [] } });
   });
+  await page.route("**/confirmation-queue/items?status=pending", async (route) => {
+    await route.fulfill({ json: { items: [] } });
+  });
 });
 
 test("renders group template center with boundaries and desktop evidence", async ({
@@ -63,17 +66,35 @@ test("copy modal requires selected target and confirms local-only toast", async 
   page
 }) => {
   await openTemplate(page);
-  await page.getByTestId("m7-template-copy-SYN-TMPL-tk1").click();
+  const trigger = page.getByTestId("m7-template-copy-SYN-TMPL-tk1");
+  await trigger.click();
   const modal = page.getByTestId("m7-template-copy-modal");
+  const close = page.getByRole("button", { name: "关闭复制弹窗" });
+  await expect(close).toBeFocused();
   await expect(modal).toHaveAttribute("role", "dialog");
   await expect(modal).toContainText("复制「美妆售后知识包 v4.2」");
+  await page.keyboard.press("Escape");
+  await expect(modal).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await expect(close).toBeFocused();
   await expect(
     page.locator("[data-testid^='m7-template-tenant-SYN-COPY-']")
   ).toHaveCount(4);
   const confirm = page.getByTestId("m7-template-confirm-copy");
+  const target = page.getByTestId("m7-template-tenant-SYN-COPY-t1");
   await expect(confirm).toBeDisabled();
-  await page.getByTestId("m7-template-tenant-SYN-COPY-t1").click();
+  await expect(target).toHaveAttribute("role", "checkbox");
+  await expect(target).toHaveAttribute("aria-checked", "false");
+  await target.click();
+  await expect(target).toHaveAttribute("aria-checked", "true");
   await expect(confirm).toBeEnabled();
+  await close.focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(confirm).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
   const metrics = await collectMetrics(page);
   writeFileSync(
     `${artifactDir}/react-template-center-metrics.json`,
@@ -92,10 +113,27 @@ test("copy modal requires selected target and confirms local-only toast", async 
   await expect(toast).toContainText("no audit write");
   await expect(toast).toContainText("no config write");
   await expect(modal).toHaveCount(0);
+  await expect(trigger).toBeFocused();
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-active-page-id",
     "group.templates"
   );
+});
+
+test("tenant queue wrapper keeps prior tenant-id-free contract", async ({ page }) => {
+  await page.goto("/design");
+  await page.getByTestId("tenant-switcher").selectOption("tenant-b");
+  await page.getByRole("button", { name: "确认队列" }).click();
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.queue"
+  );
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-page-id",
+    "tenant.queue"
+  );
+  await expect(page.getByTestId("page-outlet")).not.toHaveAttribute("data-tenant-id");
+  await expect(page.getByTestId("m7-confirmation-queue-page")).toBeVisible();
 });
 
 test("tabs and forced URL states stay deterministic", async ({ page }) => {

@@ -50,7 +50,11 @@ This branch implements a visible UI-first `group.templates` / `模板中心` can
 
 Passed locally on this branch:
 
-- Post-coordinator fix: `PageOutlet.tsx` was refactored from a long route `if` chain into group/tenant renderer maps so targeted ESLint including `PageOutlet.tsx` passes the complexity <= 10 rule without changing route wrappers, tenant ids or page props.
+- Post-coordinator fix: `PageOutlet.tsx` was refactored from a long route `if` chain into group/tenant renderer maps so targeted ESLint including `PageOutlet.tsx` passes the complexity <= 10 rule; the review fix below restores the one queue-wrapper drift from that refactor.
+- Post-read-only-review fix: the copy modal now moves focus to the close control on open, traps Tab/Shift+Tab within the dialog, closes on Escape and returns focus to the originating `复制到租户` trigger after Escape/cancel/confirm.
+- Post-read-only-review fix: tenant target rows now use checkbox semantics inside a labelled group (`role="checkbox"`/`aria-checked`), keep the visual row treatment, and mark the colored status dot decorative with `aria-hidden="true"`.
+- Post-read-only-review fix: `tenant.queue` now renders through the prior tenant-id-free `page-outlet` wrapper again, while tenant pages that need `selectedTenantId` keep the tenant wrapper and `tenant.conversations` keeps its outlet class.
+- PR-shape output after the review fix: `changedFiles=10`, source files `5`, test files `1`, docs `4`, source `netLoc=531`, new source files `3`.
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/prettier/bin/prettier.cjs --check docs/specs/M7-UI-50-template-center-page.md docs/evidence/M7/M7-UI-50-template-center-page.md docs/admin-ui-page-migration-ledger.md docs/evidence/M7/README.md apps/admin/src/pages/PageOutlet.tsx apps/admin/src/pages/registry.ts apps/admin/src/pages/group/GroupTemplatePage.tsx apps/admin/src/pages/group/GroupTemplateViews.tsx apps/admin/src/pages/group/groupTemplateFallback.ts apps/admin/tests/m7-ui-template-center.spec.ts`
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/eslint/bin/eslint.js apps/admin/src/pages/PageOutlet.tsx apps/admin/src/pages/registry.ts apps/admin/src/pages/group/GroupTemplatePage.tsx apps/admin/src/pages/group/GroupTemplateViews.tsx apps/admin/src/pages/group/groupTemplateFallback.ts apps/admin/tests/m7-ui-template-center.spec.ts`
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`
@@ -65,8 +69,8 @@ Validation notes:
 - The shell does not expose `node`, `npm` or `npx` by default. Commands used the bundled Node path via `PATH`.
 - `.prettierignore` ignores `*.md` and `docs/**`; the Prettier check therefore validates matched source/test files and skips docs by repo rule.
 - Vite emitted the existing large chunk warning and exited 0.
-- Focused template center Playwright: `4 passed`.
-- Stacked visible UI regression: `44 passed`.
+- Focused template center Playwright: `5 passed`.
+- Stacked visible UI regression: `45 passed`.
 
 ## Browser Evidence
 

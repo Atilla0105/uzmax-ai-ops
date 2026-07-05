@@ -86,16 +86,19 @@ export function PageOutlet({
   }
 
   const groupPage = groupPageRenderers[pageId];
-  if (groupPage) return renderGroupOutlet(pageId, groupPage(context));
+  if (groupPage) return renderPlainOutlet(pageId, groupPage(context));
 
   const tenantPage = tenantPageRenderers[pageId];
-  if (tenantPage)
+  if (tenantPage) {
+    const tenantContent = tenantPage(context);
+    if (pageId === "tenant.queue") return renderPlainOutlet(pageId, tenantContent);
     return renderTenantOutlet(
       pageId,
-      tenantPage(context),
+      tenantContent,
       selectedTenantId,
       pageId === "tenant.conversations"
     );
+  }
 
   return (
     <section className="page-grid" data-page-id={page.id} data-testid="page-outlet">
@@ -155,7 +158,7 @@ export function PageOutlet({
   );
 }
 
-function renderGroupOutlet(pageId: AdminPageId, children: ReactNode) {
+function renderPlainOutlet(pageId: AdminPageId, children: ReactNode) {
   return (
     <section data-page-id={pageId} data-testid="page-outlet">
       {children}

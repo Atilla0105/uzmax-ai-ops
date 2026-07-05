@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  cardsForTab,
   CopyModal,
   TemplateGrid,
   TemplateHeader,
@@ -9,6 +8,7 @@ import {
 } from "./GroupTemplateViews";
 import {
   readTemplateViewState,
+  templateCardsByTab,
   templateMeta,
   templateStyles,
   templateTabs,
@@ -23,9 +23,10 @@ export function GroupTemplatePage() {
   const [copyCard, setCopyCard] = useState<TemplateCard | null>(null);
   const [selectedTargets, setSelectedTargets] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState("");
+  const copyTriggerRef = useRef<HTMLButtonElement | null>(null);
   const toastTimerRef = useRef<number | null>(null);
   const selectedCount = Object.values(selectedTargets).filter(Boolean).length;
-  const cards = cardsForTab(activeTab);
+  const cards = templateCardsByTab[activeTab];
 
   useEffect(
     () => () => {
@@ -42,13 +43,18 @@ export function GroupTemplatePage() {
       toastTimerRef.current = null;
     }, 3200);
   };
-  const openCopy = (card: TemplateCard) => {
+  const returnCopyFocus = () => {
+    window.setTimeout(() => copyTriggerRef.current?.focus(), 0);
+  };
+  const openCopy = (card: TemplateCard, trigger: HTMLButtonElement) => {
+    copyTriggerRef.current = trigger;
     setCopyCard(card);
     setSelectedTargets({});
   };
   const closeCopy = () => {
     setCopyCard(null);
     setSelectedTargets({});
+    returnCopyFocus();
   };
   const toggleTarget = (id: string) => {
     setSelectedTargets((targets) => ({ ...targets, [id]: !targets[id] }));

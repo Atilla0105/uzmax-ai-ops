@@ -1,7 +1,7 @@
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { Check, Lock, Upload, X } from "lucide-react";
 import { IconSlot, StatusBadge } from "../../primitives";
 import {
-  templateCardsByTab,
   templateCopyLine,
   templateMeta,
   templateRuntimeLabels,
@@ -19,7 +19,7 @@ type HeaderProps = {
 };
 type GridProps = {
   cards: TemplateCard[];
-  onCopy: (card: TemplateCard) => void;
+  onCopy: (card: TemplateCard, trigger: HTMLButtonElement) => void;
 };
 type ModalProps = {
   card: TemplateCard;
@@ -98,6 +98,20 @@ export function CopyModal({
   selected,
   selectedCount
 }: ModalProps) {
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => closeRef.current?.focus(), []);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    if (event.key === "Tab") trapDialogTab(event, dialogRef.current);
+  };
+
   return (
     <div className="uz-template-scrim" data-testid="m7-template-modal-scrim">
       <section
@@ -105,6 +119,8 @@ export function CopyModal({
         aria-modal="true"
         className="uz-template-dialog"
         data-testid="m7-template-copy-modal"
+        onKeyDown={handleKeyDown}
+        ref={dialogRef}
         role="dialog"
       >
         <div className="uz-template-dialog-head">
@@ -118,12 +134,13 @@ export function CopyModal({
             aria-label="关闭复制弹窗"
             className="uz-template-close"
             onClick={onClose}
+            ref={closeRef}
             type="button"
           >
             <IconSlot icon={X} size="sm" />
           </button>
         </div>
-        <div aria-label="目标租户" className="uz-template-targets">
+        <div aria-label="目标租户" className="uz-template-targets" role="group">
           {templateTenantTargets.map((tenant) => (
             <TenantTargetRow
               key={tenant.id}
@@ -157,7 +174,7 @@ function TemplateCardItem({
   onCopy
 }: {
   card: TemplateCard;
-  onCopy: (card: TemplateCard) => void;
+  onCopy: (card: TemplateCard, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <article className="uz-template-card" data-testid={`m7-template-card-${card.id}`}>
@@ -179,7 +196,7 @@ function TemplateCardItem({
       <button
         className="uz-template-action"
         data-testid={`m7-template-copy-${card.id}`}
-        onClick={() => onCopy(card)}
+        onClick={(event) => onCopy(card, event.currentTarget)}
         type="button"
       >
         <IconSlot icon={Upload} size="sm" />
@@ -200,22 +217,43 @@ function TenantTargetRow({
 }) {
   return (
     <button
-      aria-pressed={selected}
+      aria-checked={selected}
       className="uz-template-row"
       data-testid={`m7-template-tenant-${tenant.id}`}
       onClick={() => onToggle(tenant.id)}
+      role="checkbox"
       type="button"
     >
       <span className="uz-template-check">
         {selected ? <IconSlot icon={Check} size="sm" /> : null}
       </span>
-      <span className={`uz-template-dot uz-template-dot--${tenant.tone}`} />
+      <span
+        aria-hidden="true"
+        className={`uz-template-dot uz-template-dot--${tenant.tone}`}
+      />
       <strong>{tenant.name}</strong>
       <span>{tenant.line}</span>
     </button>
   );
 }
 
-export function cardsForTab(tab: TemplateTabId) {
-  return templateCardsByTab[tab];
+function trapDialogTab(event: KeyboardEvent<HTMLElement>, dialog: HTMLElement | null) {
+  const focusable = dialog
+    ? Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])"
+        )
+      )
+    : [];
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!first || !last) {
+    event.preventDefault();
+    return;
+  }
+  const shouldWrapBack = event.shiftKey && document.activeElement === first;
+  const shouldWrapNext = !event.shiftKey && document.activeElement === last;
+  if (!shouldWrapBack && !shouldWrapNext) return;
+  event.preventDefault();
+  (shouldWrapBack ? last : first).focus();
 }

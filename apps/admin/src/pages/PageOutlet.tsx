@@ -14,6 +14,7 @@ import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { GroupTenantPage } from "./group/GroupTenantPage";
 import { GroupTemplatePage } from "./group/GroupTemplatePage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
+import { LogsPage } from "./logs/LogsPage";
 import { OrdersPage } from "./orders/OrdersPage";
 import { QueuePage } from "./queue/QueuePage";
 import { getAdminPage, legacyEvidencePageId, type AdminPageId } from "./registry";
@@ -71,6 +72,9 @@ const tenantPageRenderers: Partial<Record<AdminPageId, PageRenderer>> = {
   ),
   "tenant.knowledge": ({ selectedTenantId }) => (
     <KnowledgePage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+  ),
+  "tenant.logs": ({ selectedTenantId }) => (
+    <LogsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
   ),
   "tenant.orders": ({ selectedTenantId }) => (
     <OrdersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownUp, MessageSquare } from "lucide-react";
-import { Avatar, Button, IconSlot, SearchInput, StatusBadge } from "../../primitives";
+import { ArrowDownUp, ListFilter } from "lucide-react";
+import { Avatar, Button, IconSlot, StatusBadge } from "../../primitives";
 import {
   ContextRail,
   renderConversationState,
@@ -18,14 +18,10 @@ import {
 } from "./conversationWorkbenchRuntime";
 import {
   Composer,
-  ConversationRuntimeBar,
   ConversationWorkbenchStyles,
   MessageBody,
   ThreadHeader
 } from "./conversationWorkbenchStyles";
-
-const listQueryDegradedCopy =
-  "runtime 查询参数未接入，当前按 SLA、待人工和待回复固定优先级展示。";
 
 export function ConversationsPage({ selectedTenantId }: { selectedTenantId: string }) {
   const runtime = useConversationWorkbenchRuntime(selectedTenantId);
@@ -70,12 +66,12 @@ export function ConversationsPage({ selectedTenantId }: { selectedTenantId: stri
           active={active}
           disabled={!runtime.canRequestHandoff}
           disabledReason={runtime.handoffDisabledReason}
+          degradedReason={runtime.degradedReason}
           handoffPending={runtime.handoffPending}
           requestHandoff={() => void runtime.requestHandoff()}
         />
         {runtime.status === "ready" ? (
           <>
-            <ConversationRuntimeBar reason={runtime.degradedReason} />
             <MessageBody
               messages={runtime.detail?.messages ?? []}
               toggleTrace={runtime.toggleTrace}
@@ -115,34 +111,11 @@ function ConversationList({
         <StatusBadge>
           {rows.length} / {counts.all}
         </StatusBadge>
-        <IconSlot icon={MessageSquare} />
-      </header>
-      <div
-        aria-label="Conversation query degraded controls"
-        className="uz-conv-list__tools"
-        data-testid="m7-conversation-query-degraded"
-      >
-        <SearchInput
-          aria-label="搜索会话（降级：runtime 查询未接入）"
-          data-testid="m7-conversation-search-disabled"
-          disabled
-          placeholder="搜索会话"
-          title={listQueryDegradedCopy}
-        />
-        <Button
-          aria-label="排序菜单未接入，当前按 SLA、待人工和待回复固定优先级展示"
-          data-testid="m7-conversation-sort-disabled"
-          disabled
-          icon={<IconSlot icon={ArrowDownUp} />}
-          title={listQueryDegradedCopy}
-        >
-          排序
-        </Button>
-        <span className="uz-conv-query-copy">
-          <StatusBadge tone="warn">查询降级</StatusBadge>
-          runtime 查询未接入
+        <span className="uz-conv-list__icons" aria-hidden="true">
+          <IconSlot icon={ListFilter} />
+          <IconSlot icon={ArrowDownUp} />
         </span>
-      </div>
+      </header>
       <nav aria-label="Conversation filters" className="uz-conv-filters">
         {conversationFilters.map((item) => (
           <Button
@@ -180,7 +153,7 @@ function ConversationListRow({
 }) {
   return (
     <button
-      className={rowClassName(active)}
+      className={rowClassName(active, row)}
       data-tenant-id={row.tenantId}
       data-testid={`m7-conversation-row-${row.id}`}
       onClick={() => select(row.id)}
@@ -193,7 +166,6 @@ function ConversationListRow({
       </span>
       <span className="uz-conv-row__preview">{previewLabel(row)}</span>
       <span className="uz-conv-row__meta">
-        <span className={dotClassName(row)} />
         <ConversationStatusBadge row={row} />
         <OptionalLanguage row={row} />
         <OptionalSla row={row} />
@@ -203,8 +175,8 @@ function ConversationListRow({
   );
 }
 
-function rowClassName(active: boolean) {
-  return `uz-conv-row ${active ? "is-selected" : ""}`;
+function rowClassName(active: boolean, row: ConversationRow) {
+  return `uz-conv-row ${rowToneClass(row)} ${active ? "is-selected" : ""}`;
 }
 
 function avatarTone(row: ConversationRow) {
@@ -217,8 +189,12 @@ function previewLabel(row: ConversationRow) {
   );
 }
 
-function dotClassName(row: ConversationRow) {
-  return `uz-conv-dot ${row.slaRisk ? "is-risk" : ""}`;
+function rowToneClass(row: ConversationRow) {
+  if (row.status === "pending_handoff") return "is-human";
+  if (row.slaRisk) return "is-sla";
+  if (row.status === "handoff") return "is-manual";
+  if (row.status === "closed") return "is-done";
+  return "is-ai";
 }
 
 function OptionalLanguage({ row }: { row: ConversationRow }) {

@@ -32,6 +32,32 @@ const ordersNavContract = {
   ],
   tenantSections: ["运营", "数据", "智能", "管理", "洞察"]
 };
+const runtimeLabels = [
+  "mock/degraded",
+  "mock",
+  "read-only",
+  "order runtime unavailable",
+  "not production order data",
+  "no real read",
+  "no write",
+  "DB/API"
+];
+const forbiddenVisibleTerms = [
+  "mock/degraded",
+  "mock",
+  "read-only",
+  "runtime unavailable",
+  "not production",
+  "synthetic",
+  "local-only",
+  "browser-local only",
+  "no real read",
+  "No real",
+  "DB",
+  "API",
+  "no write",
+  "order runtime unavailable"
+];
 
 test.beforeEach(({ page }) => stubConversationTicket(page));
 
@@ -41,7 +67,7 @@ async function stubConversationTicket(page: Page) {
   });
 }
 
-test("renders tenant.orders with tenant-only nav degraded labels and list geometry", async ({
+test("renders tenant.orders with tenant-only nav hidden boundary and list geometry", async ({
   page
 }) => {
   await openOrders(page);
@@ -54,15 +80,19 @@ test("renders tenant.orders with tenant-only nav degraded labels and list geomet
     "data-runtime-state",
     "degraded"
   );
-  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText("degraded");
-  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText("mock");
-  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText("read-only");
+  const boundary =
+    (await page.getByTestId("m7-orders-page").getAttribute("data-runtime-boundary")) ??
+    "";
+  for (const label of runtimeLabels) expect(boundary).toContain(label);
+  await expect(page.getByTestId("m7-orders-runtime-note")).toBeHidden();
   await expect(page.getByTestId("m7-orders-runtime-note")).toContainText(
-    "not production order data"
+    "order runtime unavailable"
   );
-  await expect(page.getByTestId("m7-orders-runtime-note")).toContainText(
-    "No real CSV/XLSX, order API or DB"
+  await expect(page.getByTestId("m7-orders-snapshot-bar")).toContainText(
+    "订单数据主路径"
   );
+  await expect(page.getByTestId("m7-orders-snapshot-bar")).toContainText("导入快照");
+  await expectNoForbiddenVisibleOrdersText(page);
   await expect(page.locator(".uz-topbar")).toBeVisible();
   const topbarHeight = await page.locator(".uz-topbar").evaluate((node) => {
     return (node as HTMLElement).offsetHeight;
@@ -83,9 +113,9 @@ test("renders tenant.orders with tenant-only nav degraded labels and list geomet
     "更新时间"
   ])
     await expect(page.getByTestId("m7-orders-table")).toContainText(label);
-  await expect(page.getByTestId("m7-orders-list-count")).toContainText(
-    "4 个 synthetic mock 订单"
-  );
+  await expect(page.getByTestId("m7-orders-list-count")).toContainText("4 个订单");
+  await expect(page.getByTestId("m7-orders-table")).toContainText("268.00");
+  await expect(page.getByTestId("m7-orders-table")).toContainText("客户 A");
   const searchWidth = await page
     .getByTestId("m7-orders-search")
     .evaluate((node) =>
@@ -120,19 +150,22 @@ test("opens detail by click and keyboard with stale warning timeline and links",
   await expect(page.getByTestId("m7-orders-linked-affordances")).toContainText(
     "关联工单"
   );
+  await expect(page.getByTestId("m7-orders-linked-affordances")).toContainText("查看");
 
   await page.getByTestId("m7-orders-back").click();
   const staleRow = page.getByRole("button", { name: "打开订单 SYN-ORD-004" });
   await staleRow.focus();
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("m7-orders-detail")).toContainText("SYN-ORD-004");
-  await expect(page.getByTestId("m7-orders-stale-warning")).toContainText(
-    "stale snapshot"
-  );
-  await expect(page.getByTestId("m7-orders-stale-warning")).toContainText(
-    "不能作为生产订单状态"
-  );
+  await expect(page.getByTestId("m7-orders-stale-warning")).toContainText("过期提示");
+  await expect(page.getByTestId("m7-orders-stale-warning")).toContainText("重新导入");
+  expect(
+    (await page
+      .getByTestId("m7-orders-stale-warning")
+      .getAttribute("data-runtime-boundary")) ?? ""
+  ).toContain("not production order data");
   await expect(page.getByTestId("m7-orders-stale-icon").locator("svg")).toBeVisible();
+  await expectNoForbiddenVisibleOrdersText(page);
   await page.screenshot({
     fullPage: true,
     path: `${ordersArtifactsDir}/react-orders-detail-desktop.png`
@@ -146,11 +179,18 @@ test("supports local import modal upload progress result history and rollback", 
 
   await page.getByTestId("m7-orders-import").click();
   await expect(page.getByTestId("m7-orders-import-modal")).toContainText(
-    "local mock only"
+    "导入订单快照"
   );
   await expect(page.getByTestId("m7-orders-import-modal")).toContainText(
-    "不读取真实文件"
+    "选择订单快照"
   );
+  expect(
+    (await page.locator(".uz-orders-dialog").getAttribute("data-runtime-boundary")) ??
+      ""
+  ).toContain("no write");
+  expect(
+    (await page.getByTestId("m7-orders-file-drop").getAttribute("title")) ?? ""
+  ).toContain("no real read");
   await expect(
     page.getByTestId("m7-orders-modal-runtime-icon").locator("svg")
   ).toBeVisible();
@@ -162,7 +202,7 @@ test("supports local import modal upload progress result history and rollback", 
   await page.getByTestId("m7-orders-file-drop").click();
   await expect(page.getByTestId("m7-orders-drop-icon").locator("svg")).toBeVisible();
   await expect(page.getByTestId("m7-orders-file-drop")).toContainText(
-    "synthetic-orders-snapshot.csv"
+    "orders-snapshot.csv"
   );
   await expect(page.getByTestId("m7-orders-start-import")).toBeEnabled();
   await page.getByTestId("m7-orders-start-import").click();
@@ -175,6 +215,7 @@ test("supports local import modal upload progress result history and rollback", 
   await expect(page.getByTestId("m7-orders-import-result")).toContainText(
     "本次导入已回滚"
   );
+  await expectNoForbiddenVisibleOrdersText(page);
 });
 
 test("covers deterministic loading empty error and permission states", async ({
@@ -183,8 +224,9 @@ test("covers deterministic loading empty error and permission states", async ({
   for (const state of ["loading", "empty", "error", "permission"]) {
     await openOrders(page, `?m7OrderState=${state}`);
     if (state === "empty")
-      await expect(page.getByTestId("m7-orders-empty")).toContainText("empty state");
+      await expect(page.getByTestId("m7-orders-empty")).toContainText("当前没有订单");
     else await expect(page.getByTestId(`m7-orders-state-${state}`)).toBeVisible();
+    await expectNoForbiddenVisibleOrdersText(page);
   }
 });
 
@@ -264,4 +306,11 @@ async function expectTenantOnlyNav(page: Page) {
     await expect(nav.getByRole("button", { exact: true, name: label })).toHaveCount(0);
   for (const label of ordersNavContract.groupSections)
     await expect(sectionLabels.filter({ hasText: label })).toHaveCount(0);
+}
+
+async function expectNoForbiddenVisibleOrdersText(page: Page) {
+  const visibleText = await page
+    .getByTestId("m7-orders-page")
+    .evaluate((node) => (node as HTMLElement).innerText);
+  for (const label of forbiddenVisibleTerms) expect(visibleText).not.toContain(label);
 }

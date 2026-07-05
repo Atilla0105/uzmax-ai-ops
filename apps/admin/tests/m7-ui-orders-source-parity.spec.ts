@@ -18,39 +18,14 @@ const orderAnatomyText =
   "订单|导入快照|物流节点|关联客户|关联客户与会话|关联工单|导入历史|回滚本次导入".split(
     "|"
   );
-
-type NumericMetric =
-  | "bodyScrollWidth"
-  | "detailCardHeight"
-  | "detailCardWidth"
-  | "detailHeight"
-  | "detailWidth"
-  | "documentScrollWidth"
-  | "importModalHeight"
-  | "importModalWidth"
-  | "linkedHeight"
-  | "linkedWidth"
-  | "listHeight"
-  | "listWidth"
-  | "navWidth"
-  | "searchWidth"
-  | "staleHeight"
-  | "staleWidth"
-  | "tableColumnCount"
-  | "tableHeight"
-  | "tableWidth"
-  | "timelineHeight"
-  | "timelineWidth"
-  | "topbarHeight"
-  | "viewportWidth";
-type RawOrdersMetrics = Record<NumericMetric, number> & {
-  activePageId?: string | null;
-  bodyText: string;
-  navText: string;
-  shellLevel?: string | null;
-  tableColumns: string[];
-  tenantCategories: string[];
-};
+const runtimeLabels =
+  "mock/degraded|mock|read-only|order runtime unavailable|not production order data|no real read|no write|DB/API".split(
+    "|"
+  );
+const forbiddenVisibleTerms =
+  "mock/degraded|mock|read-only|runtime unavailable|not production|synthetic|local-only|browser-local only|no real read|No real|DB|API|no write|order runtime unavailable".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -96,7 +71,8 @@ test("captures tenant.orders source parity evidence on latest shell stack", asyn
   expect(desktopListMetrics.tableVisible).toBe(true);
   expect(desktopListMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
   expect(desktopListMetrics.documentScrollWidth).toBeLessThanOrEqual(1440);
-  expect(desktopListMetrics.runtimeLabelsVisible).toBe(true);
+  expect(desktopListMetrics.runtimeLabelsPresent).toBe(true);
+  expect(desktopListMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(desktopListMetrics.tenantCategories).toEqual(tenantSections);
   expect(desktopListMetrics.groupCategoryCount).toBe(0);
   expect(desktopListMetrics.groupButtonCount).toBe(0);
@@ -121,7 +97,7 @@ test("captures tenant.orders source parity evidence on latest shell stack", asyn
 
   await page.getByTestId("m7-orders-import").click();
   await expect(page.getByTestId("m7-orders-import-modal")).toContainText(
-    "local mock only"
+    "导入订单快照"
   );
   await expect(page.getByTestId("m7-orders-import-history")).toContainText(
     "SYN-IMP-001"
@@ -142,6 +118,8 @@ test("captures tenant.orders source parity evidence on latest shell stack", asyn
   expect(importMetrics.importModalWidth).toBeGreaterThanOrEqual(440);
   expect(importMetrics.importModalWidth).toBeLessThanOrEqual(500);
   expect(importMetrics.importFlowVisible).toBe(true);
+  expect(importMetrics.runtimeLabelsPresent).toBe(true);
+  expect(importMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await page.screenshot({
     fullPage: false,
     path: `${artifactDir}/react-orders-import-result.png`
@@ -176,6 +154,8 @@ test("captures tenant.orders source parity evidence on latest shell stack", asyn
   expect(mobileMetrics.timelineVisible).toBe(true);
   expect(mobileMetrics.linkedPanelsVisible).toBe(true);
   expect(mobileMetrics.mobileReadable).toBe(true);
+  expect(mobileMetrics.runtimeLabelsPresent).toBe(true);
+  expect(mobileMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(mobileMetrics.tenantCategories).toEqual(tenantSections);
   expect(mobileMetrics.groupCategoryCount).toBe(0);
   expect(mobileMetrics.groupButtonCount).toBe(0);
@@ -243,7 +223,9 @@ async function collectOwnerSourceSample(page: Page) {
 }
 
 async function collectOrdersMetrics(page: Page) {
-  const raw = await page.evaluate<RawOrdersMetrics>(() => {
+  const raw = await page.evaluate(() => {
+    const attr = (selector: string, name: string) =>
+      document.querySelector(selector)?.getAttribute(name) ?? "";
     const roundRect = (selector: string) => {
       const element = document.querySelector(selector);
       if (!element) return { height: 0, width: 0 };
@@ -255,6 +237,11 @@ async function collectOrdersMetrics(page: Page) {
     };
     const nav = document.querySelector('[data-testid="app-shell-nav"]');
     const bodyText = document.body.innerText;
+    const runtimeBoundaryText = [
+      attr('[data-testid="m7-orders-page"]', "data-runtime-boundary"),
+      document.querySelector('[data-testid="m7-orders-runtime-note"]')?.textContent ??
+        ""
+    ].join(" ");
     const tenantCategories = Array.from(
       nav?.querySelectorAll(".uz-nav-group p") ?? []
     ).map((node) => (node.textContent ?? "").trim());
@@ -290,6 +277,7 @@ async function collectOrdersMetrics(page: Page) {
       listWidth: list.width,
       navText: nav?.textContent ?? "",
       navWidth: roundRect('[data-testid="app-shell-nav"]').width,
+      runtimeBoundaryText,
       searchWidth: search.width,
       shellLevel: document
         .querySelector('[data-testid="admin-shell"]')
@@ -331,14 +319,12 @@ function buildOrdersMetrics(raw: RawOrdersMetrics) {
       hasBox(raw.detailCardWidth, raw.detailCardHeight) &&
       includesAll(bodyText, ["物流节点", "关联客户", "关联客户与会话"]),
     navText: undefined,
-    runtimeLabelsVisible: includesAll(bodyText, [
-      "degraded",
-      "mock",
-      "read-only",
-      "not production order data"
-    ]),
+    runtimeLabelsPresent: includesAll(raw.runtimeBoundaryText, runtimeLabels),
+    runtimeLabelsVisibleInBody: forbiddenVisibleTerms.some((label) =>
+      bodyText.includes(label)
+    ),
     sourceLikeDetailVisible: includesAll(bodyText, [
-      "stale snapshot",
+      "过期提示",
       "物流节点",
       "关联客户",
       "关联客户与会话",

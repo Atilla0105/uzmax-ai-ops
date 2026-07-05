@@ -45,9 +45,10 @@ export interface OrderIconSnippets {
 }
 
 export const orderFallbackMeta = {
-  label: "degraded · mock · read-only",
-  reason:
-    "order runtime unavailable: centralized synthetic degraded rows only, no DB/API/import runtime and not production order data.",
+  boundary:
+    "order runtime unavailable: centralized synthetic mock/degraded/read-only fallback only; no DB/API/import runtime; not production order data; no real read; no write.",
+  label: "导入快照",
+  reason: "订单数据主路径：导入快照。若状态过期，请重新导入快照后再核对。",
   source: "centralized-synthetic-order-mock"
 } as const;
 
@@ -71,87 +72,87 @@ const orderStatusTone: Record<OrderStateKey, "danger" | "info" | "ok" | "warn"> 
 
 export const orderRecords: OrderRecord[] = [
   {
-    amount: "mock 268.00",
+    amount: "268.00",
     batch: "SYN-BATCH-07",
     conversationId: "SYN-CONV-A",
-    customer: "Mock 客户 A",
+    customer: "客户 A",
     customerId: "SYN-CUST-A",
     id: "SYN-ORD-001",
-    logistics: "mock 分拣中心",
-    source: "导入快照 mock",
+    logistics: "分拣中心",
+    source: "导入快照",
     stale: false,
     status: "运输中",
     statusKey: "ship",
     ticketId: "SYN-TICKET-1042",
     timeline: [
-      { done: true, label: "订单创建", time: "mock 07-01 09:02" },
-      { done: true, label: "已发货", time: "mock 07-01 14:30" },
-      { done: true, label: "mock 分拣中心", time: "mock 今天 09:40" },
-      { done: false, label: "派送中（预计 mock 1-2 天）", time: "—" },
+      { done: true, label: "订单创建", time: "07-01 09:02" },
+      { done: true, label: "已发货", time: "07-01 14:30" },
+      { done: true, label: "分拣中心", time: "今天 09:40" },
+      { done: false, label: "派送中（预计 1-2 天）", time: "—" },
       { done: false, label: "已签收", time: "—" }
     ],
-    updated: "mock 11:20"
+    updated: "11:20"
   },
   {
-    amount: "mock 320.00",
+    amount: "320.00",
     batch: "SYN-BATCH-06",
     conversationId: "SYN-CONV-B",
-    customer: "Mock 客户 B",
+    customer: "客户 B",
     customerId: "SYN-CUST-B",
     id: "SYN-ORD-002",
-    logistics: "已签收 · 申请退货 mock",
-    source: "导入快照 mock",
+    logistics: "已签收 · 申请退货",
+    source: "导入快照",
     stale: false,
     status: "退款中",
     statusKey: "refund",
     ticketId: "SYN-TICKET-1039",
     timeline: [
-      { done: true, label: "订单创建", time: "mock 07-01 10:15" },
-      { done: true, label: "已发货", time: "mock 07-01 16:00" },
-      { done: true, label: "已签收", time: "mock 07-03 11:20" },
-      { done: true, label: "申请退货退款", time: "mock 07-04 09:00" },
-      { done: false, label: "退款处理中", time: "mock today" }
+      { done: true, label: "订单创建", time: "07-01 10:15" },
+      { done: true, label: "已发货", time: "07-01 16:00" },
+      { done: true, label: "已签收", time: "07-03 11:20" },
+      { done: true, label: "申请退货退款", time: "07-04 09:00" },
+      { done: false, label: "退款处理中", time: "今天" }
     ],
-    updated: "mock 11:20"
+    updated: "11:20"
   },
   {
-    amount: "mock 198.00",
+    amount: "198.00",
     batch: "SYN-BATCH-08",
     conversationId: "SYN-CONV-C",
-    customer: "Mock 客户 C",
+    customer: "客户 C",
     customerId: "SYN-CUST-C",
     id: "SYN-ORD-003",
-    logistics: "等待支付 mock",
-    source: "导入快照 mock",
+    logistics: "等待支付",
+    source: "导入快照",
     stale: false,
     status: "待支付",
     statusKey: "paid",
     ticketId: "—",
     timeline: [
-      { done: true, label: "订单创建", time: "mock 07-02 15:44" },
+      { done: true, label: "订单创建", time: "07-02 15:44" },
       { done: false, label: "等待支付", time: "—" }
     ],
-    updated: "mock 10:10"
+    updated: "10:10"
   },
   {
-    amount: "mock 396.00",
+    amount: "396.00",
     batch: "SYN-BATCH-05",
     conversationId: "SYN-CONV-D",
-    customer: "Mock 客户 D",
+    customer: "客户 D",
     customerId: "SYN-CUST-D",
     id: "SYN-ORD-004",
-    logistics: "已签收 mock",
-    source: "导入快照 mock",
+    logistics: "已签收",
+    source: "导入快照",
     stale: true,
     status: "已完成",
     statusKey: "done",
     ticketId: "SYN-TICKET-1019",
     timeline: [
-      { done: true, label: "订单创建", time: "mock 06-28 08:20" },
-      { done: true, label: "已发货", time: "mock 06-28 15:00" },
-      { done: true, label: "已签收", time: "mock 06-30 11:30" }
+      { done: true, label: "订单创建", time: "06-28 08:20" },
+      { done: true, label: "已发货", time: "06-28 15:00" },
+      { done: true, label: "已签收", time: "06-30 11:30" }
     ],
-    updated: "mock 3天前"
+    updated: "3天前"
   }
 ];
 
@@ -162,7 +163,7 @@ export const initialImportHistory: ImportTask[] = [
     id: "SYN-IMP-001",
     rolledBack: false,
     success: 84,
-    time: "mock 今天 11:20",
+    time: "今天 11:20",
     total: 84
   }
 ];
@@ -211,11 +212,11 @@ function header(state: RenderState) {
   const search = active
     ? ""
     : `<span class="uz-orders-search" data-testid="m7-orders-search">${state.icons.search}<input aria-label="搜索订单" data-order-input="search" placeholder="客户 / 批次 / 订单号 / 物流节点" value="${esc(state.query)}"></span>`;
-  return `<header class="uz-orders-head"><div class="uz-orders-title">${active ? `<button class="uz-orders-back" data-order-command="back" data-testid="m7-orders-back" type="button">返回</button>` : ""}<h2>订单</h2>${active ? `<span class="uz-orders-crumb">/</span><span class="uz-orders-crumb">${esc(active.id)}</span>` : ""}</div><div class="uz-orders-tools">${search}<button class="uz-orders-action" data-order-command="open-import" data-testid="m7-orders-import" type="button">${state.icons.upload}<span>导入快照</span></button></div></header>`;
+  return `<header class="uz-orders-head"><div class="uz-orders-title">${active ? `<button class="uz-orders-back" data-order-command="back" data-testid="m7-orders-back" type="button">返回</button>` : ""}<h2>订单</h2>${active ? `<span class="uz-orders-crumb">/</span><span class="uz-orders-crumb">${esc(active.id)}</span>` : ""}</div><div class="uz-orders-tools">${search}<button aria-description="${esc(orderFallbackMeta.boundary)}" class="uz-orders-action" data-order-command="open-import" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" data-testid="m7-orders-import" title="${esc(orderFallbackMeta.boundary)}" type="button">${state.icons.upload}<span>导入快照</span></button></div></header>`;
 }
 
 function runtimeBar(icons: OrderIconSnippets) {
-  return `<div class="uz-orders-runtime" data-testid="m7-orders-runtime-note"><span class="uz-orders-runtime-icon" data-testid="m7-orders-runtime-icon">${icons.triangleAlert}</span>${badge("warn", orderFallbackMeta.label)}<span class="uz-orders-runtime-copy">${esc(orderFallbackMeta.reason)} No real CSV/XLSX, order API or DB.</span><button class="uz-orders-link" data-order-command="open-import" type="button">查看导入任务</button></div>`;
+  return `<span class="uz-orders-runtime-evidence" data-testid="m7-orders-runtime-note" hidden>${esc(orderFallbackMeta.boundary)}</span><div class="uz-orders-runtime" data-testid="m7-orders-snapshot-bar"><span class="uz-orders-runtime-icon" data-testid="m7-orders-runtime-icon">${icons.triangleAlert}</span>${badge("warn", orderFallbackMeta.label)}<span class="uz-orders-runtime-copy">${esc(orderFallbackMeta.reason)}</span><button aria-description="${esc(orderFallbackMeta.boundary)}" class="uz-orders-link" data-order-command="open-import" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" title="${esc(orderFallbackMeta.boundary)}" type="button">查看导入任务</button></div>`;
 }
 
 function body(state: RenderState) {
@@ -228,7 +229,7 @@ function body(state: RenderState) {
 }
 
 function list(rows: OrderRecord[], viewState: OrderViewState) {
-  return `<main class="uz-orders-list"><div class="uz-orders-count" data-testid="m7-orders-list-count">${rows.length} 个 synthetic mock 订单</div><div class="uz-orders-table" data-testid="m7-orders-table"><table><thead><tr>${orderColumns.map((col) => `<th>${esc(col)}</th>`).join("")}</tr></thead><tbody>${rows.map(rowHtml).join("")}</tbody></table>${rows.length === 0 ? `<div class="uz-orders-state" data-testid="m7-orders-empty"><span>${viewState === "empty" ? "empty state: 当前没有 synthetic mock 订单。" : "当前搜索没有匹配订单。"}</span></div>` : ""}</div></main>`;
+  return `<main class="uz-orders-list"><div class="uz-orders-count" data-testid="m7-orders-list-count">${rows.length} 个订单</div><div class="uz-orders-table" data-testid="m7-orders-table"><table><thead><tr>${orderColumns.map((col) => `<th>${esc(col)}</th>`).join("")}</tr></thead><tbody>${rows.map(rowHtml).join("")}</tbody></table>${rows.length === 0 ? `<div class="uz-orders-state" data-testid="m7-orders-empty"><span>${viewState === "empty" ? "当前没有订单。" : "当前搜索没有匹配订单。"}</span></div>` : ""}</div></main>`;
 }
 
 function rowHtml(row: OrderRecord) {
@@ -240,7 +241,7 @@ function detail(active: OrderRecord, icons: OrderIconSnippets) {
 }
 
 function staleWarning(icons: OrderIconSnippets) {
-  return `<div class="uz-orders-stale" data-testid="m7-orders-stale-warning"><span class="uz-orders-stale-icon" data-testid="m7-orders-stale-icon">${icons.triangleAlert}</span>${badge("danger", "stale snapshot")}<span>过期提示：该 synthetic 订单来自本地导入快照，已超过 mock 24 小时未更新，不能作为生产订单状态。</span></div>`;
+  return `<div class="uz-orders-stale" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" data-testid="m7-orders-stale-warning" title="${esc(orderFallbackMeta.boundary)}"><span class="uz-orders-stale-icon" data-testid="m7-orders-stale-icon">${icons.triangleAlert}</span>${badge("danger", "过期提示")}<span>该订单数据来自导入快照，已超过 24 小时未更新，可能与实际状态不一致，请重新导入后再核对。</span></div>`;
 }
 
 function timelineStep(
@@ -252,15 +253,16 @@ function timelineStep(
 }
 
 function linkedCard(title: string, primary: string, refId: string) {
-  return `<section class="uz-orders-card"><h3>${esc(title)}</h3><div class="uz-orders-affordance"><span><strong>${esc(primary)}</strong><div class="uz-orders-muted uz-orders-mono">${esc(refId)}</div></span><button class="uz-orders-link" disabled type="button">local-only</button></div></section>`;
+  const actionLabel = refId === "—" ? "待连接" : "查看";
+  return `<section class="uz-orders-card"><h3>${esc(title)}</h3><div class="uz-orders-affordance"><span><strong>${esc(primary)}</strong><div class="uz-orders-muted uz-orders-mono">${esc(refId)}</div></span><button aria-description="${esc(orderFallbackMeta.boundary)}" class="uz-orders-link" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" disabled title="${esc(orderFallbackMeta.boundary)}" type="button">${actionLabel}</button></div></section>`;
 }
 
 function modal(state: RenderState) {
-  return `<div class="uz-orders-modal" data-testid="m7-orders-import-modal"><section aria-modal="true" class="uz-orders-dialog" role="dialog"><div class="uz-orders-dialog-head"><strong>导入订单快照</strong><button aria-label="关闭导入快照" class="uz-orders-close" data-order-command="close-import" type="button">${state.icons.x}</button></div><div class="uz-orders-runtime"><span class="uz-orders-runtime-icon" data-testid="m7-orders-modal-runtime-icon">${state.icons.triangleAlert}</span>${badge("warn", "local mock only")}<span class="uz-orders-runtime-copy">不读取真实文件，不解析 CSV/XLSX，不写入后端。</span></div>${state.importStep === "upload" ? uploadStep(state) : ""}${state.importStep === "progress" ? progressStep() : ""}${state.importStep === "result" && state.task ? resultStep(state.task) : ""}</section></div>`;
+  return `<div class="uz-orders-modal" data-testid="m7-orders-import-modal"><section aria-description="${esc(orderFallbackMeta.boundary)}" aria-modal="true" class="uz-orders-dialog" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" role="dialog" title="${esc(orderFallbackMeta.boundary)}"><div class="uz-orders-dialog-head"><strong>导入订单快照</strong><button aria-label="关闭导入快照" class="uz-orders-close" data-order-command="close-import" type="button">${state.icons.x}</button></div><div class="uz-orders-runtime"><span class="uz-orders-runtime-icon" data-testid="m7-orders-modal-runtime-icon">${state.icons.triangleAlert}</span>${badge("warn", "导入预览")}<span class="uz-orders-runtime-copy">选择订单快照，完成后可在导入历史中查看结果。</span></div>${state.importStep === "upload" ? uploadStep(state) : ""}${state.importStep === "progress" ? progressStep() : ""}${state.importStep === "result" && state.task ? resultStep(state.task) : ""}</section></div>`;
 }
 
 function uploadStep(state: RenderState) {
-  return `<button class="uz-orders-drop" data-order-command="file" data-testid="m7-orders-file-drop" type="button">${state.icons.uploadDrop}<strong>${esc(state.fileName || "选择 synthetic mock 快照")}</strong><span class="uz-orders-muted">CSV / Excel shape only · no real read</span></button><button class="uz-orders-action" data-order-command="start-import" data-testid="m7-orders-start-import" ${state.fileName ? "" : "disabled"} type="button">开始导入</button><div class="uz-orders-history" data-testid="m7-orders-import-history"><strong>导入历史</strong>${state.history.map(historyItem).join("")}</div>`;
+  return `<button aria-description="${esc(orderFallbackMeta.boundary)}" class="uz-orders-drop" data-order-command="file" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" data-testid="m7-orders-file-drop" title="${esc(orderFallbackMeta.boundary)}" type="button">${state.icons.uploadDrop}<strong>${esc(state.fileName || "点击选择文件或拖拽到此处")}</strong><span class="uz-orders-muted">支持 CSV / Excel · 按订单号去重</span></button><button aria-description="${esc(orderFallbackMeta.boundary)}" class="uz-orders-action" data-order-command="start-import" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" data-testid="m7-orders-start-import" ${state.fileName ? "" : "disabled"} title="${esc(orderFallbackMeta.boundary)}" type="button">开始导入</button><div class="uz-orders-history" data-testid="m7-orders-import-history"><strong>导入历史</strong>${state.history.map(historyItem).join("")}</div>`;
 }
 
 function historyItem(item: ImportTask) {
@@ -268,11 +270,11 @@ function historyItem(item: ImportTask) {
 }
 
 function progressStep() {
-  return `<div data-testid="m7-orders-import-progress"><p>正在导入 synthetic mock 快照… 100%</p><div class="uz-orders-progress"><span class="is-complete"></span></div><button class="uz-orders-action" data-order-command="show-result" data-testid="m7-orders-show-result" type="button">查看结果</button></div>`;
+  return `<div data-testid="m7-orders-import-progress"><p>正在导入订单快照… 100%</p><div class="uz-orders-progress"><span class="is-complete"></span></div><button aria-description="${esc(orderFallbackMeta.boundary)}" class="uz-orders-action" data-order-command="show-result" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" data-testid="m7-orders-show-result" title="${esc(orderFallbackMeta.boundary)}" type="button">查看结果</button></div>`;
 }
 
 function resultStep(task: ImportTask) {
-  return `<div data-testid="m7-orders-import-result"><h3>${task.rolledBack ? "本次导入已回滚" : "导入完成，部分行失败"}</h3><div class="uz-orders-stats">${stat("总行数", task.total)}${stat("成功", task.success)}${stat("失败", task.fail)}${stat("批次", task.batch)}</div>${task.rolledBack ? "" : `<button class="uz-orders-action" data-order-command="rollback" data-task-id="${esc(task.id)}" data-testid="m7-orders-rollback-import" type="button">回滚本次导入</button>`}<button class="uz-orders-link" data-order-command="close-import" type="button">关闭</button></div>`;
+  return `<div data-testid="m7-orders-import-result"><h3>${task.rolledBack ? "本次导入已回滚" : "导入完成，部分行失败"}</h3><div class="uz-orders-stats">${stat("总行数", task.total)}${stat("成功", task.success)}${stat("失败", task.fail)}${stat("批次", task.batch)}</div>${task.rolledBack ? "" : `<button aria-description="${esc(orderFallbackMeta.boundary)}" class="uz-orders-action" data-order-command="rollback" data-runtime-boundary="${esc(orderFallbackMeta.boundary)}" data-task-id="${esc(task.id)}" data-testid="m7-orders-rollback-import" title="${esc(orderFallbackMeta.boundary)}" type="button">回滚本次导入</button>`}<button class="uz-orders-link" data-order-command="close-import" type="button">关闭</button></div>`;
 }
 
 function stat(label: string, value: number | string) {
@@ -282,10 +284,10 @@ function stat(label: string, value: number | string) {
 function statePanel(state: "error" | "loading" | "permission") {
   const copy =
     state === "error"
-      ? ["error state", "订单 mock 页面加载失败；未连接后端。"]
+      ? ["加载失败", "订单页面暂时无法打开，请稍后重试或联系管理员。"]
       : state === "loading"
-        ? ["loading state", "正在加载 synthetic mock 订单页面。"]
-        : ["permission denied", "当前身份无权查看订单 mock 页面。"];
+        ? ["加载中", "正在加载订单页面。"]
+        : ["无权查看", "当前身份无权查看订单页面。"];
   return `<main class="uz-orders-state" data-testid="m7-orders-state-${state}"><span><strong>${copy[0]}</strong>${copy[1]}</span></main>`;
 }
 
@@ -308,6 +310,7 @@ const orderPageStyles = `
 .uz-orders-tools{display:flex;align-items:center;gap:8px;margin-left:auto}.uz-orders-search{box-sizing:border-box;display:flex;align-items:center;gap:7px;width:320px;height:32px;border:1px solid var(--ink-150);border-radius:7px;padding:0 11px;color:var(--ink-500);background:var(--paper);font:var(--text-sm)/1.4 var(--font-body)}.uz-orders-search input{min-width:0;flex:1;border:0;outline:0;color:var(--ink-900);background:transparent;font:inherit}
 .uz-orders-back,.uz-orders-action,.uz-orders-link,.uz-orders-row,.uz-orders-drop,.uz-orders-close{cursor:pointer}.uz-orders-back,.uz-orders-action,.uz-orders-link{border:1px solid var(--ink-150);border-radius:7px;background:var(--card);color:var(--ink-700);font:700 var(--text-sm)/1 var(--font-body)}.uz-orders-back{padding:5px 9px}.uz-orders-action{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px}.uz-orders-link{padding:6px 10px}.uz-orders-link[disabled],.uz-orders-action[disabled]{cursor:not-allowed;opacity:.55}
 .uz-orders-runtime{display:flex;align-items:center;gap:10px;margin:14px 24px 0;border:1px solid var(--state-warn-border);border-radius:8px;padding:9px 13px;background:var(--state-warn-bg);color:var(--ink-700);font-size:var(--text-sm)}.uz-orders-runtime-icon,.uz-orders-stale-icon{display:flex;color:var(--state-warn)}.uz-orders-runtime-copy{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uz-orders-runtime-evidence{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .uz-orders-list,.uz-orders-detail{flex:1;min-height:0;overflow:auto;padding:14px 24px 24px}.uz-orders-count{margin-bottom:10px;color:var(--ink-500);font-size:var(--text-sm)}.uz-orders-table{overflow:auto;border:1px solid var(--ink-150);border-radius:10px;background:var(--card)}.uz-orders-table table{width:100%;min-width:980px;border-collapse:collapse}.uz-orders-table th{border-bottom:1px solid var(--ink-150);padding:10px 14px;background:var(--paper);color:var(--ink-500);font:700 11px/1.2 var(--font-body);text-align:left;white-space:nowrap}.uz-orders-table td{border-bottom:1px solid var(--ink-075);padding:11px 14px;font-size:13px;vertical-align:middle;white-space:nowrap}.uz-orders-row:hover,.uz-orders-row:focus-visible{outline:0;background:var(--paper)}.uz-orders-mono{font-family:var(--font-data)}.uz-orders-muted{color:var(--ink-500);font-size:var(--text-xs)}
 .uz-orders-badge{border-radius:6px;padding:2px 8px;font:700 11px/1.2 var(--font-body)}.uz-orders-badge--warn{color:var(--state-warn);background:var(--state-warn-bg)}.uz-orders-badge--danger{color:var(--state-human);background:var(--state-human-bg)}.uz-orders-badge--ok{color:var(--state-ok);background:var(--state-ok-bg)}.uz-orders-badge--info{color:var(--state-ai);background:var(--state-ai-bg)}.uz-orders-badge--neutral{color:var(--ink-700);background:var(--ink-075)}
 .uz-orders-state{display:grid;place-items:center;min-height:220px;border:1px solid var(--ink-150);border-radius:10px;margin:14px 24px 24px;background:var(--card);color:var(--ink-700);text-align:center}.uz-orders-state strong{display:block;margin-bottom:6px;color:var(--ink-900)}

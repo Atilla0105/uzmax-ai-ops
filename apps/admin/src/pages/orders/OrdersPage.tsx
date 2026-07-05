@@ -65,7 +65,7 @@ export function OrdersPage({ selectedTenantId }: { selectedTenantId: string }) {
       id: `SYN-IMP-${history.length + 1}`,
       rolledBack: false,
       success: 42,
-      time: "mock 刚刚",
+      time: "刚刚",
       total: 44
     };
     setHistory((current) => [next, ...current]);
@@ -112,7 +112,7 @@ export function OrdersPage({ selectedTenantId }: { selectedTenantId: string }) {
   ) {
     const commands: Record<string, () => void> = {
       back: () => setActiveId(null),
-      file: () => setFileName("synthetic-orders-snapshot.csv"),
+      file: () => setFileName("orders-snapshot.csv"),
       open: () => data.orderId && setActiveId(data.orderId),
       "close-import": () => setImportOpen(false),
       "open-import": openImport,
@@ -133,6 +133,7 @@ export function OrdersPage({ selectedTenantId }: { selectedTenantId: string }) {
   return (
     <section
       className="uz-orders-page"
+      data-runtime-boundary={orderFallbackMeta.boundary}
       data-runtime-source={orderFallbackMeta.source}
       data-runtime-state="degraded"
       data-tenant-id={selectedTenantId}

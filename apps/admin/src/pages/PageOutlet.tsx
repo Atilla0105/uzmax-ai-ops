@@ -8,6 +8,7 @@ import { EvalPage } from "./evals/EvalPage";
 import { GroupConnectionPage } from "./group/GroupConnectionPage";
 import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
+import { GroupTenantPage } from "./group/GroupTenantPage";
 import { GroupTemplatePage } from "./group/GroupTemplatePage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
@@ -40,6 +41,7 @@ const groupPageRenderers: Partial<Record<AdminPageId, PageRenderer>> = {
       onOpenLegacyEvidence={() => onPageChange(legacyEvidencePageId)}
     />
   ),
+  "group.tenants": () => <GroupTenantPage />,
   "group.templates": () => <GroupTemplatePage />
 };
 

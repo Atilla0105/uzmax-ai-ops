@@ -61,7 +61,7 @@ Playwright note: this shell did not expose `npm`/`npx`, and Codex app Node hit a
 
 Source shape:
 
-- Fresh coordinator `pr-shape` source result: changedFiles 5, netLoc 571, newFiles 3.
+- Fresh coordinator `pr-shape` source result: changedFiles 5, netLoc 599, newFiles 3.
 - `apps/admin/src/pages/group/GroupModelRiskPage.tsx`: 75 lines.
 - `apps/admin/src/pages/group/GroupModelRiskViews.tsx`: 237 lines.
 - `apps/admin/src/pages/group/groupModelRiskFallback.ts`: 249 lines.

@@ -36,8 +36,8 @@ test("renders group overview with group-only shell and degraded mock data", asyn
   );
   await expect(page.getByTestId("m7-group-overview-page")).toBeVisible();
   await expect(page.getByRole("heading", { name: "集团总览" })).toBeVisible();
-  await expect(page.getByTestId("m7-group-overview-degraded-label")).toContainText(
-    "mock"
+  await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
+    "4 个租户"
   );
   await expect(page.getByTestId("m7-group-overview-runtime-note")).toContainText(
     "aggregate runtime unavailable"
@@ -52,17 +52,17 @@ test("renders group overview with group-only shell and degraded mock data", asyn
 
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
   await expect(page.locator(".uz-group-health__card")).toHaveCount(6);
-  for (const label of [
-    "租户总数",
-    "异常租户",
-    "AI 熔断",
-    "模型故障",
-    "订单 connector 故障",
-    "红线事件 / 今日"
-  ]) {
-    await expect(page.getByTestId("m7-group-overview-health-cards")).toContainText(
-      label
-    );
+  for (const [filter, label, value] of [
+    ["total", "租户总数", "4"],
+    ["abnormal", "异常租户", "2"],
+    ["aiTrip", "AI 熔断", "1"],
+    ["modelFault", "模型故障", "0"],
+    ["orderFault", "订单 connector 故障", "1"],
+    ["redline", "红线事件 / 今日", "7"]
+  ] as const) {
+    const card = page.getByTestId(`m7-group-health-card-${filter}`);
+    await expect(card).toContainText(label);
+    await expect(card.locator("strong")).toHaveText(value);
   }
   for (const header of tableHeaders) {
     await expect(
@@ -71,6 +71,10 @@ test("renders group overview with group-only shell and degraded mock data", asyn
       })
     ).toBeVisible();
   }
+  await expect(page.getByTestId("m7-group-overview-empty")).toContainText(
+    "没有匹配的租户"
+  );
+  await expect(page.locator("[data-testid^='m7-group-overview-row-']")).toHaveCount(0);
 
   await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty("offsetWidth", 232);
   const topbarHeight = await page.locator(".uz-topbar").evaluate((node) => {
@@ -88,7 +92,7 @@ test("supports search filters clear and sort without claiming runtime truth", as
 
   await page.getByTestId("m7-group-overview-search").fill("租户 C");
   await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
-    "mock rows"
+    "显示 1 / 4 家租户"
   );
   await expect(table.getByText("Mock 租户 C")).toBeVisible();
   await expect(table.getByText("Mock 租户 A")).toHaveCount(0);
@@ -117,7 +121,9 @@ test("supports search filters clear and sort without claiming runtime truth", as
     "Mock 租户 A",
     "Mock 租户 C"
   ]);
-  await expect(page.getByTestId("m7-group-overview-page")).toContainText("mock");
+  await expect(page.getByTestId("m7-group-overview-runtime-note")).toContainText(
+    "mock/degraded"
+  );
 });
 
 test("tenant entry button click enters tenant conversations and tenant-only navigation", async ({
@@ -125,6 +131,7 @@ test("tenant entry button click enters tenant conversations and tenant-only navi
 }) => {
   await page.goto("/design");
 
+  await page.getByTestId("m7-group-health-card-total").click();
   await page.getByTestId("m7-group-enter-tenant-tenant-b").click();
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-shell-level",
@@ -145,11 +152,13 @@ test("tenant entry button click enters tenant conversations and tenant-only navi
 test("tenant entry supports keyboard Enter and Space", async ({ page }) => {
   await page.goto("/design");
 
+  await page.getByTestId("m7-group-health-card-total").click();
   await page.getByTestId("m7-group-enter-tenant-tenant-b").focus();
   await page.keyboard.press("Enter");
   await expectTenantRoute(page, "tenant-b");
 
   await page.goto("/design");
+  await page.getByTestId("m7-group-health-card-total").click();
   await page.getByTestId("m7-group-enter-tenant-tenant-c").focus();
   await page.keyboard.press("Space");
   await expectTenantRoute(page, "tenant-c");

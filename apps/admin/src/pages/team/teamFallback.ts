@@ -181,19 +181,19 @@ export const teamMeta = {
 } as const;
 export const teamStateCopy = {
   degraded: {
-    body: "Interactive synthetic team rows only; all role/member actions are browser-local."
+    body: "degraded / mock / read-only / browser-local only: local synthetic team rows; no production authz write / no audit write / no team mutation / no invite email."
   },
   empty: {
-    body: "browser-local only: empty synthetic fallback. no production authz write, no team mutation, no invite email."
+    body: "degraded / mock / read-only / browser-local only: empty synthetic fallback; no production authz write / no audit write / no team mutation / no invite email."
   },
   error: {
-    body: "browser-local only: team runtime unavailable; local synthetic preview only, no production authz write / no team mutation / no audit write."
+    body: "degraded / mock / read-only / browser-local only: team runtime unavailable; no production authz write / no audit write / no team mutation / no invite email."
   },
   loading: {
-    body: "browser-local only: loading synthetic team state; no real team mutation or invite email."
+    body: "degraded / mock / read-only / browser-local only: loading synthetic team state; no production authz write / no audit write / no team mutation / no invite email."
   },
   permission: {
-    body: "browser-local only: permission denied; local synthetic preview only, no authz/write-audit bindings."
+    body: "degraded / mock / read-only / browser-local only: permission denied; no production authz write / no audit write / no team mutation / no invite email."
   }
 } as const;
 

@@ -10,6 +10,69 @@ const navWidth = async (page: Page) =>
 const navIconCount = async (page: Page) =>
   page.getByTestId("app-shell-nav").locator(".uz-nav-item svg").count();
 
+const expectNavIconTreatment = async (page: Page, expectedCount: number) => {
+  const metrics = await page
+    .getByTestId("app-shell-nav")
+    .locator(".uz-nav-item")
+    .evaluateAll((items) =>
+      items.map((item) => {
+        const svgs = Array.from(item.querySelectorAll("svg"));
+        const slot = item.querySelector("[data-icon-slot]") as HTMLElement;
+        const svg = svgs[0] as SVGSVGElement;
+        const svgRect = svg.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+
+        return {
+          iconSlotText: (slot.textContent ?? "").trim(),
+          itemHeight: Math.round(itemRect.height),
+          strokeWidth: svg.getAttribute("stroke-width"),
+          svgCount: svgs.length,
+          svgHeight: svgRect.height,
+          svgWidth: svgRect.width,
+          viewBox: svg.getAttribute("viewBox")
+        };
+      })
+    );
+
+  expect(metrics).toHaveLength(expectedCount);
+  for (const metric of metrics) {
+    expect(metric).toMatchObject({
+      iconSlotText: "",
+      itemHeight: 36,
+      strokeWidth: "1.75",
+      svgCount: 1,
+      viewBox: "0 0 24 24"
+    });
+    expect(metric.svgWidth).toBeGreaterThanOrEqual(18);
+    expect(metric.svgWidth).toBeLessThanOrEqual(20);
+    expect(metric.svgHeight).toBeGreaterThanOrEqual(18);
+    expect(metric.svgHeight).toBeLessThanOrEqual(20);
+  }
+};
+
+const expectCollapsedNavTextHidden = async (page: Page) => {
+  await expect
+    .poll(() =>
+      page
+        .getByTestId("app-shell-nav")
+        .locator(".uz-nav-item")
+        .evaluateAll((items) =>
+          items.every((item) => (item.textContent ?? "").trim() === "")
+        )
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page
+        .getByTestId("app-shell-nav")
+        .locator(".uz-nav-group p")
+        .evaluateAll((labels) =>
+          labels.every((label) => getComputedStyle(label).opacity === "0")
+        )
+    )
+    .toBe(true);
+};
+
 test("renders the group-layer M7 foundation AppShell frame", async ({ page }) => {
   await page.goto("/design");
 
@@ -60,6 +123,7 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
     page.getByRole("button", { name: "Collapse navigation" }).locator("svg")
   ).toBeVisible();
   await expect.poll(async () => navIconCount(page)).toBe(7);
+  await expectNavIconTreatment(page, 7);
   await expect
     .poll(async () =>
       page
@@ -75,6 +139,8 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
   await page.getByRole("button", { name: "Collapse navigation" }).click();
   await expect.poll(async () => navWidth(page)).toBe(68);
   await expect.poll(async () => navIconCount(page)).toBe(7);
+  await expectNavIconTreatment(page, 7);
+  await expectCollapsedNavTextHidden(page);
   await expect(page.getByText("收起导航", { exact: true })).toHaveCount(0);
   expect(
     await page.getByTestId("app-shell-nav").evaluate((nav) => {
@@ -99,6 +165,7 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
     "tenant.conversations"
   );
   await expect.poll(async () => navIconCount(page)).toBe(12);
+  await expectNavIconTreatment(page, 12);
   await expect(page.getByTestId("route-breadcrumb")).toContainText("丝路数码");
   await expect(page.getByText("Tenant B - Connector degraded")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "确认队列" })).toBeVisible();
@@ -112,6 +179,13 @@ test("renders the group-layer M7 foundation AppShell frame", async ({ page }) =>
   await expect(page.getByTestId("environment-marker")).toContainText("PRODUCTION");
   await expect(page.getByTestId("m7-conversation-workbench-page")).toBeVisible();
   await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Collapse navigation" }).click();
+  await expect.poll(async () => navWidth(page)).toBe(68);
+  await expect.poll(async () => navIconCount(page)).toBe(12);
+  await expectNavIconTreatment(page, 12);
+  await expectCollapsedNavTextHidden(page);
+  await expect(page.getByRole("button", { name: "Expand navigation" })).toBeVisible();
 });
 
 test("keeps the M7 foundation shell within the 320px fallback width", async ({

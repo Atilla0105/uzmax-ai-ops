@@ -89,7 +89,7 @@ Validation status:
 
 - PASS: `git diff --check codex/m7-ui-87-ai-members-default-visual-parity-refresh...HEAD`
 - PASS: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node scripts/guards/pr-shape.mjs --base codex/m7-ui-87-ai-members-default-visual-parity-refresh --spec docs/specs/M7-UI-88-team-default-visual-parity-refresh.md --include-worktree`
-  - Exact output: `{"base":"codex/m7-ui-87-ai-members-default-visual-parity-refresh","specPath":"docs/specs/M7-UI-88-team-default-visual-parity-refresh.md","specType":"feature","bootstrapException":false,"changedFiles":11,"categories":{"source":4,"test":3,"docs":4},"source":{"changedFiles":4,"netLoc":0,"newFiles":0}}`
+  - Exact output: `{"base":"codex/m7-ui-87-ai-members-default-visual-parity-refresh","specPath":"docs/specs/M7-UI-88-team-default-visual-parity-refresh.md","specType":"feature","bootstrapException":false,"changedFiles":11,"categories":{"source":4,"test":3,"docs":4},"source":{"changedFiles":4,"netLoc":10,"newFiles":0}}`
 - PASS: touched Prettier check:
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/prettier/bin/prettier.cjs --check apps/admin/src/pages/team/TeamPage.tsx apps/admin/src/pages/team/TeamViews.tsx apps/admin/src/pages/team/TeamDialogs.tsx apps/admin/src/pages/team/teamFallback.ts apps/admin/tests/m7-ui-team-page.spec.ts apps/admin/tests/m7-ui-team-source-parity.spec.ts apps/admin/tests/m7-ui-team-default-visual-parity.spec.ts docs/specs/M7-UI-88-team-default-visual-parity-refresh.md docs/evidence/M7/M7-UI-88-team-default-visual-parity-refresh.md docs/evidence/M7/README.md docs/admin-ui-page-migration-ledger.md`
 - PASS: touched ESLint:

@@ -192,7 +192,7 @@ export function templateCopyLine(card: TemplateCard) {
 }
 
 export function templateToast(card: TemplateCard, count: number, tabLabel: string) {
-  return `browser-local only: ${card.name} ${card.version} -> ${count} target(s) · ${tabLabel}; no production template copy, no audit write, no config write.`;
+  return `已复制「${card.name} ${card.version}」到 ${count} 个租户 · ${tabLabel} · browser-local only · no production template copy · no audit write · no config write`;
 }
 
 function card(

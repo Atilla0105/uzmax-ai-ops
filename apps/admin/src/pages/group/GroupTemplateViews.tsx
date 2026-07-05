@@ -134,7 +134,7 @@ export function CopyModal({
             <h3 id="m7-template-copy-title">
               {`复制「${card.name} ${card.version}」`}
             </h3>
-            <p>选择目标租户 · 复制后只生成浏览器本地独立版本预览</p>
+            <p>选择目标租户 · 复制后生成独立版本，可各自演进 · browser-local only</p>
           </div>
           <button
             aria-label="关闭复制弹窗"

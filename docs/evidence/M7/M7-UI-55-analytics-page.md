@@ -38,14 +38,14 @@
 - `git status --short --branch`: branch `codex/m7-ui-55-analytics-visible-ui` on `origin/codex/m7-ui-54-config-visible-ui`, dirty only in scoped files before commit.
 - Root/main post-cleanup status: no `apps/admin/src/pages/analytics/` entry; unrelated pre-existing untracked `apps/admin/src/pages/knowledge/`, `apps/admin/src/pages/team/`, and `docs/specs/M7-UI-32-knowledge-resources-page.md` remained untouched.
 - `git diff --check origin/codex/m7-ui-54-config-visible-ui`: pass.
-- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-54-config-visible-ui --spec docs/specs/M7-UI-55-analytics-page.md --include-worktree`: pass; changedFiles 10, categories source 4/docs 5/test 1, source changedFiles 4, source netLoc 0, newFiles 0 as reported by guard.
+- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-54-config-visible-ui --spec docs/specs/M7-UI-55-analytics-page.md --include-worktree`: pass; changedFiles 10, categories source 4/test 1/docs 5, source changedFiles 4, source netLoc 429, newFiles 2 as confirmed by coordinator.
 - Targeted Prettier: pass for scoped source/test/docs files.
 - Targeted ESLint: pass for scoped source/test files.
 - Admin-target TypeScript: pass, `node node_modules/typescript/lib/tsc.js --ignoreConfig --noEmit --jsx react-jsx --moduleResolution bundler --module esnext --target es2022 --lib dom,dom.iterable,es2022 --types vite/client,node --strict --skipLibCheck --allowSyntheticDefaultImports --esModuleInterop apps/admin/src/main.tsx apps/admin/tests/m7-ui-analytics-page.spec.ts --pretty false`.
 - Vite admin build: pass via direct script-equivalent command `node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir`; `npm` was unavailable in the runtime PATH, and Vite emitted the existing large chunk warning.
 - Focused Playwright `apps/admin/tests/m7-ui-analytics-page.spec.ts`: pass, 5/5 desktop-chromium; first run exposed a test selector ambiguity only, fixed with exact button matching before final pass.
-- Stacked M7 visible regression `apps/admin/tests/m7-ui-*.spec.ts`: pass, 101/101 desktop-chromium.
-- Dependency hygiene: temporary `node_modules` symlink was removed before final pr-shape and commit.
+- Stacked M7 visible regression `apps/admin/tests/m7-ui-*.spec.ts`: pass, 101/101 desktop-chromium, freshly confirmed by coordinator.
+- Dependency hygiene: temporary `node_modules` symlink was removed before final pr-shape and commit; current worker status is clean except branch upstream metadata.
 
 ## Visual Evidence
 

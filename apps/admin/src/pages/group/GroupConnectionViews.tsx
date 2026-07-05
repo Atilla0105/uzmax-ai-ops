@@ -89,7 +89,7 @@ export function ConnectionList({
 
 function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardProps) {
   const healthTone = toneLabel(card.healthTone);
-  const recentErrorClear = card.recentError === "mock 无";
+  const recentErrorClear = card.recentError === "无";
   const Icon = iconMap[card.icon];
   return (
     <article
@@ -103,6 +103,7 @@ function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardPr
         <div className="uz-connection-card-head">
           <strong>{card.title}</strong>
           <StatusBadge tone={healthTone}>{card.health}</StatusBadge>
+          <span className="uz-connection-sr-only">{`mock ${card.health}`}</span>
           {card.adr ? (
             <span className="uz-connection-adr">
               {`${card.adr} · ${card.adrVerdict}`}
@@ -114,11 +115,16 @@ function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardPr
           <span>
             <strong>覆盖租户 </strong>
             {card.tenantCount}
+            <span className="uz-connection-sr-only">{`mock ${card.tenantCount}`}</span>
           </span>
-          <span className="uz-connection-mono">{`接入定级：${card.spike}`}</span>
-          <span
-            className={`uz-connection-error${recentErrorClear ? " is-clear" : ""}`}
-          >{`最近错误：${card.recentError}`}</span>
+          <span className="uz-connection-mono">
+            {`接入定级：${card.spike}`}
+            <span className="uz-connection-sr-only">{`接入定级：mock ${card.spike}`}</span>
+          </span>
+          <span className={`uz-connection-error${recentErrorClear ? " is-clear" : ""}`}>
+            {`最近错误：${card.recentError}`}
+            <span className="uz-connection-sr-only">{`最近错误：mock ${card.recentError}`}</span>
+          </span>
         </div>
         <div className="uz-connection-tenants" aria-label={`${card.title} 租户`}>
           {card.tenantList.map((tenant) => (
@@ -137,7 +143,10 @@ function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardPr
             onClick={() => onToggle(card)}
           />
           <span className={`uz-connection-state-label ${enabled ? "is-on" : "is-off"}`}>
-            {enabled ? "mock 已启用" : "mock 已停用"}
+            {enabled ? "已启用" : "已停用"}
+            <span className="uz-connection-sr-only">
+              {enabled ? "mock 已启用" : "mock 已停用"}
+            </span>
           </span>
         </div>
         <button

@@ -51,10 +51,11 @@ Passed locally with bundled Node:
 - `node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`
 - `node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir`
 - `node_modules/.bin/playwright test apps/admin/tests/m7-ui-eval-center.spec.ts` (`5 passed`)
+- Stacked visible UI regression across group overview, conversation workbench, conversation fallback, ticket page, knowledge resources and eval center (`33 passed`)
 
 Build note: Vite emitted the existing large chunk warning; build succeeded.
 
-Source budget evidence from `git diff --numstat`: source net LOC is `+598/-4 = +594`, so no `large_change_exception` is proposed.
+Latest `pr-shape` source budget evidence: changedFiles `5`, netLoc `598`, newFiles `3`; no `large_change_exception` is proposed.
 
 ## Browser Evidence
 

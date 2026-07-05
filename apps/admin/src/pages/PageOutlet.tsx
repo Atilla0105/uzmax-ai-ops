@@ -5,6 +5,7 @@ import { AgentsPage } from "./agents/AgentsPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
+import { GroupConnectionPage } from "./group/GroupConnectionPage";
 import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { GroupTemplatePage } from "./group/GroupTemplatePage";
@@ -29,6 +30,7 @@ type PageRenderContext = Pick<
 type PageRenderer = (context: PageRenderContext) => ReactNode;
 
 const groupPageRenderers: Partial<Record<AdminPageId, PageRenderer>> = {
+  "group.connections": () => <GroupConnectionPage />,
   "group.modelRisk": ({ onEnterTenant }) => (
     <GroupModelRiskPage onEnterTenant={onEnterTenant} />
   ),

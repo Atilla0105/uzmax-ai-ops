@@ -130,7 +130,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-52-tenant-management-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_evidence_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "集团日志",
     id: "group.logs",
     label: "集团日志",
@@ -140,9 +141,9 @@ const adminPageRegistry = [
     order: 7,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupLogsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupLogsPage.tsx",
-    targetSpecId: "M7-UI-04G-group-logs"
+    targetSpecId: "M7-UI-57-group-logs-page"
   },
   {
     evidenceStatus: "implementation_evidence_pending_pr_review",

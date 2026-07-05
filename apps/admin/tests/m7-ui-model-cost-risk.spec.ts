@@ -72,14 +72,21 @@ test("supports local export model switch and AllProvidersDown resolve", async ({
 }) => {
   await openModel(page);
   await page.getByTestId("m7-model-export").click();
-  await expect(page.getByTestId("m7-model-toast")).toContainText("local-only");
-  await expect(page.getByTestId("m7-model-toast")).toContainText(
-    "no production CSV export"
-  );
+  const toast = page.getByTestId("m7-model-toast");
+  await expect(toast).toHaveAttribute("role", "status");
+  await expect(toast).toHaveAttribute("aria-live", "polite");
+  await expect(toast).toContainText("local-only");
+  await expect(toast).toContainText("no production CSV export");
 
   const row = page.getByTestId("m7-model-task-SYN-MODEL-TASK-intent");
+  const switchButton = page.getByTestId("m7-model-task-switch-SYN-MODEL-TASK-intent");
   await expect(row).toContainText("SYN-MODEL-PRIMARY-A");
-  await row.click();
+  await expect(switchButton).toHaveAttribute("aria-pressed", "false");
+  await expect(switchButton).toHaveAttribute("aria-label", /未切换/);
+  await switchButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(switchButton).toHaveAttribute("aria-pressed", "true");
+  await expect(switchButton).toHaveAttribute("aria-label", /已切换/);
   await expect(row).toContainText("已切换");
   await expect(row).toContainText("SYN-MODEL-FALLBACK-A");
 

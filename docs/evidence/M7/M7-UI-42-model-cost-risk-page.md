@@ -37,6 +37,11 @@ This branch implements a lean visible UI-first `group.modelRisk` / `模型/成�
 
 ## Validation
 
+Code quality follow-up after reviewer fixes:
+
+- Fixed stale toast timeout cleanup, toast live-region announcement, matrix button keyboard semantics/state exposure, and cost-row keyboard focus visibility.
+- Re-ran the validation set below after these fixes; the focused Playwright spec now covers toast `role`/`aria-live` and matrix keyboard activation with `aria-pressed`.
+
 Passed locally on this branch:
 
 - `git diff --check`

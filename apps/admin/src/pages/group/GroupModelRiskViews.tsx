@@ -190,14 +190,24 @@ export function RiskQueue({ onResolve, risks }: RiskProps) {
 function ModelTaskRow({ swapped, task, toggle }: RowProps) {
   const primary = swapped ? task.fallback : task.primary;
   const fallback = swapped ? task.primary : task.fallback;
+  const switchState = swapped ? "已切换" : "未切换";
+  const switchAction = swapped
+    ? "恢复 primary/fallback local mock"
+    : "切换 primary/fallback local mock";
   return (
     <tr
       className={swapped ? "is-switched" : undefined}
       data-testid={`m7-model-task-${task.id}`}
-      onClick={() => toggle(task.id)}
     >
       <td>
-        <button className="uz-model-row-button" type="button">
+        <button
+          aria-label={`${task.task} ${switchState}; ${switchAction}`}
+          aria-pressed={swapped}
+          className="uz-model-row-button"
+          data-testid={`m7-model-task-switch-${task.id}`}
+          onClick={() => toggle(task.id)}
+          type="button"
+        >
           {task.task}
         </button>
       </td>

@@ -36,7 +36,7 @@ test("renders group connection center with boundaries and desktop evidence", asy
   );
   await expect(page.getByTestId("page-outlet")).not.toHaveAttribute("data-tenant-id");
   await expect(page.getByRole("heading", { name: "连接中心" })).toBeVisible();
-  await expect(page.getByText("集团级连接类型 · 启停/测试写审计")).toBeVisible();
+  await expect(page.getByText("集团级连接类型 · 启停/测试本地预览")).toBeVisible();
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
   for (const label of [
     "degraded",

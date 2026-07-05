@@ -32,7 +32,7 @@ export const connectionMeta = {
   descriptor: "集团级 · mock/degraded · read-only",
   runtime: connectionRuntimeLabels.join(" · "),
   source: "centralized-synthetic-owner-fixture",
-  subtitle: "集团级连接类型 · 启停/测试写审计 · browser-local only",
+  subtitle: "集团级连接类型 · 启停/测试本地预览 · browser-local only",
   title: "连接中心"
 } as const;
 

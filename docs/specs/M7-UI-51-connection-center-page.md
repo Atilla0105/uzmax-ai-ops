@@ -91,7 +91,7 @@ config: []
 
 - Update `registry.ts` so `group.connections` targets `M7-UI-51-connection-center-page`, implemented pending PR, evidence pending not accepted/not runtime closed.
 - Update `PageOutlet.tsx` to render `<GroupConnectionPage />` for `group.connections`; it must not carry `data-tenant-id`.
-- Preserve source structure: group-layer page header, title `连接中心`, subtitle `集团级连接类型 · 启停/测试写审计` adapted with local-only boundary, vertical connection card list, icon block, health badge, optional ADR badge, description, tenant count, spike/ADR classification, recent error, tenant chips, right-side enable/disabled control and `测试连接` action.
+- Preserve source structure: group-layer page header, title `连接中心`, subtitle shape adapted to `集团级连接类型 · 启停/测试本地预览` with local-only boundary, vertical connection card list, icon block, health badge, optional ADR badge, description, tenant count, spike/ADR classification, recent error, tenant chips, right-side enable/disabled control and `测试连接` action.
 - Centralize synthetic data and styles in `groupConnectionFallback.ts`; use `SYN-CONN-*` refs.
 - URL query `?state=loading|empty|error|permission|degraded` and `?m7ConnectionState=...` render deterministic states. Default is degraded/interactive mock.
 - Local interactions only: toggle browser-local enabled state and run a synthetic test action that only updates UI/toast copy.

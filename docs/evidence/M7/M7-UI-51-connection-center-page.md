@@ -34,7 +34,7 @@ This branch implements a visible UI-first `group.connections` / `连接中心` c
 
 | Surface | Owner / unpacked source | React candidate | Result |
 |---|---|---|---|
-| Header | `连接中心` plus subtitle `集团级连接类型 · 启停/测试写审计` | Same title/subtitle plus explicit `browser-local only` and degraded/mock badge | Aligned; boundary copy prevents production interpretation |
+| Header | `连接中心` plus subtitle shape `集团级连接类型 · 启停/测试...` | React uses `集团级连接类型 · 启停/测试本地预览 · browser-local only` plus degraded/mock badge | Aligned; adapted boundary copy prevents production/audit-write interpretation |
 | Card list | Vertical list with icon block, name, health badge, ADR badge, description, meta row and tenant chips | Same structure with centralized `SYN-CONN-*` synthetic rows | Aligned with mock/read-only labeling |
 | Controls | Right-side toggle and `测试连接` action | Same controls using `role="switch"`/`aria-checked`; actions mutate browser state only | Aligned; no persistence or connector call |
 | Runtime states | Prototype shows default page | React adds deterministic loading/empty/error/permission/degraded states | Required M7 state coverage |

@@ -159,6 +159,7 @@ test("captures group.connections source parity evidence on latest visible stack"
   expect(mobileMetrics.shellLevel).toBe("group");
   expect(mobileMetrics.activePageId).toBe("group.connections");
   expect(mobileMetrics.bodyScrollWidth).toBeLessThanOrEqual(320);
+  expect(mobileMetrics.documentScrollWidth).toBeLessThanOrEqual(320);
   expect(mobileMetrics.mobileReadable).toBe(true);
   expect(mobileMetrics.sidebarCategories).toEqual(groupSections);
   expect(mobileMetrics.tenantButtonCount).toBe(0);

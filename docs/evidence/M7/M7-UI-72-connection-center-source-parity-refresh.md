@@ -47,6 +47,7 @@ This branch refreshes browser-comparable source-parity evidence for `group.conne
 - Kept older M7-UI-51 Playwright compatibility strings as screen-reader-only compatibility text so existing forced-state coverage remains intact while the visual row shape is source-like.
 - Updated local toggle/test toasts to start with source-shaped Chinese action feedback while retaining `browser-local only`, `synthetic test finished`, `no production connector change`, `no real connection test` and `no audit write`.
 - Kept the subtitle adaptation: frozen source says `启停/测试写审计`; React keeps `启停/测试` but uses local-only/no-audit wording because this slice cannot imply production audit writes.
+- Fixed the 320px mobile overflow blocker: browser inspection showed `.uz-connection-meta span` was also widening hidden `.uz-connection-sr-only` compatibility spans to `320px`, producing the rejected `documentScrollWidth=603`; the mobile rule now targets direct meta children only and keeps the document at `320px`.
 
 ## Data And Runtime Boundary
 
@@ -91,7 +92,7 @@ Validation notes:
 - Playwright config's `webServer` command calls `npm`, which is unavailable in this shell. A Vite preview server was manually started with `node node_modules/vite/bin/vite.js preview apps/admin --host 127.0.0.1 --port 4173`, reused for Playwright, then stopped.
 - Vite emitted the existing large chunk warning and exited 0.
 - Focused Playwright result: `5 passed`.
-- PR-shape output: `changedFiles=7`, categories `source=2`, `docs=4`, `test=1`, source `changedFiles=2`, source `netLoc=0`, new source files `0`.
+- PR-shape output: `changedFiles=7`, categories `source=2`, `docs=4`, `test=1`, source `changedFiles=2`, source `netLoc=9`, new source files `0`.
 
 Metrics summary from `/tmp/uzmax-m7-ui-72-connection-center-source-parity-refresh/metrics.json`:
 
@@ -99,13 +100,11 @@ Metrics summary from `/tmp/uzmax-m7-ui-72-connection-center-source-parity-refres
 - Desktop anatomy: header width `894`, list width `820`, first card width `820`, icon block `40x40`, action width `72`, four connector rows, `sourceLikeDefaultVisible=true`.
 - Local actions: order API local toggle and Telegram Business synthetic test screenshots captured; toast copy included `browser-local only`, `synthetic test finished`, `no production connector change`, `no real connection test` and `no audit write`.
 - Collapsed: `navWidth=68`, group categories `总览/平台/治理`, tenant category/button count `0`.
-- Mobile 320: `bodyScrollWidth=320`, first card width `296`, icon block `40x40`, action width `266`, `mobileReadable=true`, group categories `总览/平台/治理`, tenant category/button count `0`.
-- Mobile `documentScrollWidth=603` because the shared shell/topbar/nav baseline still contributes width at 320px; this slice did not alter shared shell. The page-local body/card/action fallback remains bounded and readable.
+- Mobile 320: `bodyScrollWidth=320`, `documentScrollWidth=320`, first card width `296`, icon block `40x40`, action width `266`, `mobileReadable=true`, group categories `总览/平台/治理`, tenant category/button count `0`.
 
 ## Remaining Deltas
 
 - Runtime connector DB/API/adapter/feature-flag/audit paths remain intentionally not implemented.
 - Telegram Bot, Telegram Business, order API and import fallback are not real-tested by this page.
 - The row data remains synthetic and connection ids remain `SYN-CONN-*`; source shape is improved, but production-looking ids/statuses are intentionally avoided.
-- Mobile page-local fallback is bounded, but `documentElement.scrollWidth` still records the shared shell/topbar/nav width at 320px; shared shell changes are out of scope for this slice.
 - Owner visual acceptance, merge, runtime closure, GA-0 and 1.0 release approval are still required later and are not claimed here.

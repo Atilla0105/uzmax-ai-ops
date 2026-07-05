@@ -38,10 +38,10 @@
 - `pwd`: `/Users/atilla/.codex/worktrees/m7-ui-54-config-visible-ui`
 - `git status --short --branch`: branch `codex/m7-ui-54-config-visible-ui` on `origin/codex/m7-ui-53-team-visible-ui`, dirty only in scoped files before commit.
 - `git diff --check origin/codex/m7-ui-53-team-visible-ui...HEAD`: pass.
-- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-53-team-visible-ui --spec docs/specs/M7-UI-54-config-page.md --include-worktree`: pass; changedFiles 10, source changedFiles 5, source netLoc 0 as reported by guard.
+- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-53-team-visible-ui --spec docs/specs/M7-UI-54-config-page.md --include-worktree`: pass; changedFiles 9, source changedFiles 4, source netLoc 300, newFiles 2 as reported by coordinator guard.
 - Targeted Prettier: pass for scoped source/test/docs files.
 - Targeted ESLint: pass for scoped source/test files.
-- Admin-target TypeScript: pass, `node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`.
+- Admin-target TypeScript: pass, `node node_modules/typescript/lib/tsc.js --ignoreConfig --noEmit --jsx react-jsx --moduleResolution bundler --module esnext --target es2022 --lib dom,dom.iterable,es2022 --types vite/client,node --strict --skipLibCheck --allowSyntheticDefaultImports --esModuleInterop apps/admin/src/main.tsx apps/admin/tests/m7-ui-config-page.spec.ts --pretty false`.
 - Vite admin build: pass, with existing large chunk warning.
 - Focused Playwright `apps/admin/tests/m7-ui-config-page.spec.ts`: pass, 6/6 desktop-chromium.
 - Stacked M7 visible regression `apps/admin/tests/m7-ui-*.spec.ts`: pass, 96/96 desktop-chromium.
@@ -54,8 +54,16 @@ Artifact directory:
 - `/tmp/uzmax-m7-ui-54-config-page-visible-ui/react-config-mobile-320.png`
 - `/tmp/uzmax-m7-ui-54-config-page-visible-ui/react-config-metrics.json`
 
+Metrics:
+
+- `activePageId`: `tenant.config`
+- `shellLevel`: `tenant`
+- `bodyScrollWidth`: `1280`
+- `internalNavWidth`: `235`
+- `sectionCount`: `8`
+
 ## Browser Comparison Notes
 
 - React visible MVP keeps tenant-layer shell/category grouping, internal 236px-style config navigation, 8 source sections, version header, dirty badge, version history, local save/rollback, channel local controls and connector local switch modal.
 - Mobile fallback uses horizontal/stacked internal config navigation and bounded body scroll at 320px.
-- Remaining visual delta: this is still UI-first synthetic evidence, not owner visual acceptance. Further pixel/detail parity against owner HTML may tighten icon treatment, exact row spacing and deeper config interactions after review.
+- Remaining visual delta: visible MVP has locked the internal 236px nav, 8 sections and version header, but internal nav icons, full source-page deep interactions and exact row-spacing details remain pixel/detail parity follow-up. This is still UI-first synthetic evidence and does not claim owner visual acceptance.

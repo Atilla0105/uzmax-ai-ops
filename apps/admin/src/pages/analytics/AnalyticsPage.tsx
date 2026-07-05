@@ -1,5 +1,4 @@
 import { Download, Plus } from "lucide-react";
-import { StatusBadge } from "../../primitives";
 import {
   analyticsRanges,
   analyticsRuntimeLabels,
@@ -13,6 +12,7 @@ export function AnalyticsPage({ selectedTenantId }: { selectedTenantId: string }
     <section
       className="uz-analytics-page"
       data-runtime-state={state.viewState}
+      data-selected-tenant-id={selectedTenantId}
       data-testid="m7-analytics-page"
     >
       <style>{analyticsStyles}</style>
@@ -30,7 +30,6 @@ export function AnalyticsPage({ selectedTenantId }: { selectedTenantId: string }
             </button>
           ))}
         </nav>
-        <StatusBadge tone="warn">{selectedTenantId} · tenant layer</StatusBadge>
         <div className="uz-analytics-tools">
           <button
             className="uz-analytics-tool"
@@ -126,10 +125,14 @@ function DimMenu({ state }: { state: AnalyticsState }) {
 
 function KpiGrid({ state }: { state: AnalyticsState }) {
   return (
-    <section className="uz-analytics-kpis" data-testid="m7-analytics-kpis">
+    <section
+      className="uz-analytics-kpis"
+      data-runtime-boundary={analyticsRuntimeLabels.join(" | ")}
+      data-testid="m7-analytics-kpis"
+    >
       {state.kpis.map(([label, value, delta, tone]) => (
         <article className="uz-analytics-kpi" key={label}>
-          <span>{label} · mock/degraded · no production analytics metrics</span>
+          <span>{label}</span>
           <strong className={`tone-${tone}`}>{value}</strong>
           <small className={`tone-${tone}`}>{delta}</small>
         </article>

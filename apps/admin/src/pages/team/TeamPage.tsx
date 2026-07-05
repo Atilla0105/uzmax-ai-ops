@@ -2,75 +2,32 @@ import {
   InviteModal,
   MemberDrawer,
   RoleDeleteConfirm,
-  RoleEditorModal,
-  TeamHeader,
-  TeamMembersTab,
-  TeamRolesTab,
-  TeamStatePanel
-} from "./TeamViews";
-import {
-  teamMeta,
-  teamStyles
-} from "./teamFallback";
-import { useTeamPageState } from "./teamPageState";
+  RoleEditorModal
+} from "./TeamDialogs";
+import { TeamHeader, TeamMembersTab, TeamRolesTab, TeamStatePanel } from "./TeamViews";
+import { teamMeta, teamStyles, useTeamPageState } from "./teamFallback";
 
 export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
-  const {
-    filteredMembers,
-    isDegraded,
-    inviteDraft,
-    inviteOpen,
-    member,
-    membersByRole,
-    roleById,
-    roleDraft,
-    roleToDelete,
-    roles,
-    search,
-    stateCopy,
-    tab,
-    toast,
-    viewState,
-    onDeleteRole,
-    onDismissDeleteRole,
-    onInviteClose,
-    onInviteOpenMembers,
-    onInviteSubmit,
-    onInviteUpdate,
-    onMemberClose,
-    onNotify,
-    onRoleDraftClose,
-    onRoleDraftCreate,
-    onRoleDraftEdit,
-    onRoleDraftSave,
-    onRoleDraftUpdate,
-    onRoleDeleteConfirm,
-    onSelectTab,
-    onSetMember,
-    onSetSearch,
-    onSetState,
-    onTelegram
-  } = useTeamPageState();
-
+  const s = useTeamPageState();
   return (
     <section
       className="uz-team-page"
       data-runtime-source={teamMeta.source}
-      data-runtime-state={viewState}
+      data-runtime-state={s.viewState}
       data-testid="m7-team-page"
     >
       <style>{teamStyles}</style>
       <TeamHeader
-        onChangeTab={onSelectTab}
+        onChangeTab={s.onSelectTab}
         onPrimaryAction={
-          tab === "roles" ? onRoleDraftCreate : onInviteOpenMembers
+          s.tab === "roles" ? s.onRoleDraftCreate : s.onInviteOpenMembers
         }
-        search={search}
+        search={s.search}
         selectedTenantId={selectedTenantId}
-        setSearch={onSetSearch}
-        tab={tab}
+        setSearch={s.onSetSearch}
+        tab={s.tab}
       />
-      {toast ? (
+      {s.toast ? (
         <div
           aria-atomic="true"
           aria-live="polite"
@@ -78,57 +35,57 @@ export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
           data-testid="m7-team-toast"
           role="status"
         >
-          {toast}
+          {s.toast}
         </div>
       ) : null}
-      {isDegraded ? (
+      {s.isDegraded ? (
         <main className="uz-team-scroll">
-          {tab === "members" ? (
+          {s.tab === "members" ? (
             <TeamMembersTab
-              members={filteredMembers}
-              onSelect={onSetMember}
-              roleById={roleById}
+              members={s.filteredMembers}
+              onSelect={s.onSetMember}
+              roleById={s.roleById}
             />
           ) : (
             <TeamRolesTab
-              memberRoleMap={membersByRole}
-              onDelete={onDeleteRole}
-              onEdit={onRoleDraftEdit}
-              roles={roles}
+              memberRoleMap={s.membersByRole}
+              onDelete={s.onDeleteRole}
+              onEdit={s.onRoleDraftEdit}
+              roles={s.roles}
             />
           )}
         </main>
       ) : (
-        <TeamStatePanel state={viewState}>{stateCopy}</TeamStatePanel>
+        <TeamStatePanel state={s.viewState}>{s.stateCopy}</TeamStatePanel>
       )}
       <InviteModal
-        draft={inviteDraft}
-        onClose={onInviteClose}
-        onSubmit={onInviteSubmit}
-        onUpdate={onInviteUpdate}
-        open={inviteOpen}
-        roles={roles}
+        draft={s.inviteDraft}
+        onClose={s.onInviteClose}
+        onSubmit={s.onInviteSubmit}
+        onUpdate={s.onInviteUpdate}
+        open={s.inviteOpen}
+        roles={s.roles}
       />
       <RoleEditorModal
-        draft={roleDraft}
-        onClose={onRoleDraftClose}
-        onSave={onRoleDraftSave}
-        onUpdate={onRoleDraftUpdate}
-        open={Boolean(roleDraft)}
+        draft={s.roleDraft}
+        onClose={s.onRoleDraftClose}
+        onSave={s.onRoleDraftSave}
+        onUpdate={s.onRoleDraftUpdate}
+        open={Boolean(s.roleDraft)}
       />
       <MemberDrawer
-        member={member}
-        onClose={onMemberClose}
-        onSetNotify={onNotify}
-        onToggleDisable={onSetState}
-        onToggleTelegram={onTelegram}
-        roleName={member ? roleById(member.roleId)?.name : undefined}
+        member={s.member}
+        onClose={s.onMemberClose}
+        onSetNotify={s.onNotify}
+        onToggleDisable={s.onSetState}
+        onToggleTelegram={s.onTelegram}
+        roleName={s.member ? s.roleById(s.member.roleId)?.name : undefined}
       />
       <RoleDeleteConfirm
-        name={roleToDelete}
-        onCancel={onDismissDeleteRole}
-        onConfirm={onRoleDeleteConfirm}
-        open={Boolean(roleToDelete)}
+        name={s.roleToDelete}
+        onCancel={s.onDismissDeleteRole}
+        onConfirm={s.onRoleDeleteConfirm}
+        open={Boolean(s.roleToDelete)}
       />
     </section>
   );

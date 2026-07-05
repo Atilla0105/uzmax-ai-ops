@@ -39,21 +39,42 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("renders tenant team page in tenant shell with boundary note", async ({ page }) => {
+test("renders tenant team page in tenant shell with boundary note", async ({
+  page
+}) => {
   await openTeam(page);
-  await expect(page.getByTestId("admin-shell")).toHaveAttribute("data-shell-level", "tenant");
-  await expect(page.getByTestId("admin-shell")).toHaveAttribute("data-active-page-id", "tenant.team");
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "tenant"
+  );
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.team"
+  );
   await expect(page.getByTestId("page-outlet")).toHaveAttribute("data-tenant-id");
   await expect(page.getByRole("heading", { name: "团队" })).toBeVisible();
   await expect(page.getByTestId("m7-team-runtime-note")).toContainText("degraded");
-  for (const label of ["degraded", "mock", "read-only", "browser-local only", "no production authz write", "no audit write"]) {
+  for (const label of [
+    "degraded",
+    "mock",
+    "read-only",
+    "browser-local only",
+    "no production authz write",
+    "no audit write"
+  ]) {
     await expect(page.getByTestId("m7-team-runtime-note")).toContainText(label);
   }
   await expectLayerNav(page, tenantSections, groupSections, tenantLabels, groupLabels);
   await expect(page.locator(".uz-team-row")).toHaveCount(4);
-  await page.screenshot({ fullPage: true, path: `${artifactDir}/react-team-desktop.png` });
+  await page.screenshot({
+    fullPage: true,
+    path: `${artifactDir}/react-team-desktop.png`
+  });
   const metrics = await collectMetrics(page);
-  writeFileSync(`${artifactDir}/react-team-metrics.json`, JSON.stringify(metrics, null, 2));
+  writeFileSync(
+    `${artifactDir}/react-team-metrics.json`,
+    JSON.stringify(metrics, null, 2)
+  );
 });
 
 test("search empty state stays deterministic", async ({ page }) => {
@@ -73,7 +94,9 @@ test("roles tab role editor save and delete local-only", async ({ page }) => {
   await page.getByTestId("m7-team-role-desc").fill("本地专用角色");
   await page.getByTestId("m7-team-role-save").click();
   await expect(page.locator("tr", { hasText: "本地角色-测试" })).toHaveCount(1);
-  await expect(page.getByTestId("m7-team-toast")).toContainText("created role 本地角色-测试");
+  await expect(page.getByTestId("m7-team-toast")).toContainText(
+    "created role 本地角色-测试"
+  );
 
   const row = page.locator("tr", { hasText: "本地角色-测试" });
   await row.getByRole("button", { name: "删除" }).click();
@@ -81,7 +104,9 @@ test("roles tab role editor save and delete local-only", async ({ page }) => {
   await expect(modal).toContainText("删除角色");
   await modal.getByRole("button", { name: "删除角色" }).click();
   await expect(row).toHaveCount(0);
-  await expect(page.getByTestId("m7-team-toast")).toContainText("deleted role 本地角色-测试");
+  await expect(page.getByTestId("m7-team-toast")).toContainText(
+    "deleted role 本地角色-测试"
+  );
 });
 
 test("invite modal requires name+email and adds local member", async ({ page }) => {
@@ -93,17 +118,23 @@ test("invite modal requires name+email and adds local member", async ({ page }) 
   await page.getByTestId("m7-team-invite-email").fill("baiyu@local.io");
   await page.getByTestId("m7-team-invite-send").click();
   await expect(page.getByTestId("m7-team-page")).toContainText("白玉");
-  await expect(page.getByTestId("m7-team-toast")).toContainText("invite added locally: 白玉");
+  await expect(page.getByTestId("m7-team-toast")).toContainText(
+    "invite added locally: 白玉"
+  );
 });
 
-test("member drawer notification, telegram toggle, disable/restore local controls", async ({ page }) => {
+test("member drawer notification, telegram toggle, disable/restore local controls", async ({
+  page
+}) => {
   await openTeam(page);
   await page.locator(".uz-team-row").first().click();
   const drawer = page.getByTestId("m7-team-member-drawer");
   await expect(drawer).toBeVisible();
   await expect(drawer).toHaveAttribute("role", "dialog");
   await drawer.getByRole("button", { name: "仅@提及" }).click();
-  await expect(page.getByTestId("m7-team-toast")).toContainText("notification preference updated");
+  await expect(page.getByTestId("m7-team-toast")).toContainText(
+    "notification preference updated"
+  );
 
   const tgButton = drawer.getByRole("button", { name: "Telegram 绑定" });
   await tgButton.click();
@@ -137,7 +168,10 @@ test("collapsed sidebar + mobile 320 screenshot stays bounded", async ({ page })
   await openTeam(page);
   await expect(page.locator(".uz-team-card-list")).toBeVisible();
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
-  await page.screenshot({ fullPage: true, path: `${artifactDir}/react-team-mobile-320.png` });
+  await page.screenshot({
+    fullPage: true,
+    path: `${artifactDir}/react-team-mobile-320.png`
+  });
 });
 
 async function openTeam(page: Page, query = "") {
@@ -147,7 +181,10 @@ async function openTeam(page: Page, query = "") {
     .getByTestId("app-shell-nav")
     .getByRole("button", { exact: true, name: "团队" })
     .click();
-  await expect(page.getByTestId("admin-shell")).toHaveAttribute("data-active-page-id", "tenant.team");
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.team"
+  );
 }
 
 async function expectLayerNav(
@@ -168,17 +205,23 @@ async function expectLayerNav(
     await expect(nav.getByRole("button", { exact: true, name: label })).toHaveCount(0);
   }
   for (const label of hiddenSections) {
-    await expect(nav.locator(".uz-nav-group p").filter({ hasText: label })).toHaveCount(0);
+    await expect(nav.locator(".uz-nav-group p").filter({ hasText: label })).toHaveCount(
+      0
+    );
   }
 }
 
 async function collectMetrics(page: Page) {
   return {
-    activePageId: await page.getByTestId("admin-shell").getAttribute("data-active-page-id"),
+    activePageId: await page
+      .getByTestId("admin-shell")
+      .getAttribute("data-active-page-id"),
     shellLevel: await page.getByTestId("admin-shell").getAttribute("data-shell-level"),
     bodyScrollWidth: await page.evaluate(() => document.body.scrollWidth),
     memberCount: await page.locator(".uz-team-row").count(),
     cardCount: await page.locator(".uz-team-card").count(),
-    navWidth: await page.getByTestId("app-shell-nav").evaluate((node) => node.clientWidth)
+    navWidth: await page
+      .getByTestId("app-shell-nav")
+      .evaluate((node) => node.clientWidth)
   };
 }

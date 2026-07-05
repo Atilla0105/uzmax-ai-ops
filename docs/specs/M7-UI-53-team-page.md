@@ -17,6 +17,7 @@ feature
 - `apps/admin/src/pages/registry.ts`
 - `apps/admin/src/pages/team/TeamPage.tsx`
 - `apps/admin/src/pages/team/TeamViews.tsx`
+- `apps/admin/src/pages/team/TeamDialogs.tsx`
 - `apps/admin/src/pages/team/teamFallback.ts`
 - `apps/admin/tests/m7-ui-team-page.spec.ts`
 - `docs/specs/M7-UI-53-team-page.md`

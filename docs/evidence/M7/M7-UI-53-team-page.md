@@ -10,7 +10,7 @@
 
 - Spec: `docs/specs/M7-UI-53-team-page.md`
 - Route: `tenant.team`
-- Source target: `apps/admin/src/pages/team/TeamPage.tsx`, `apps/admin/src/pages/team/TeamViews.tsx`, `apps/admin/src/pages/team/teamFallback.ts`
+- Source target: `apps/admin/src/pages/team/TeamPage.tsx`, `apps/admin/src/pages/team/TeamViews.tsx`, `apps/admin/src/pages/team/TeamDialogs.tsx`, `apps/admin/src/pages/team/teamFallback.ts`
 - Test target: `apps/admin/tests/m7-ui-team-page.spec.ts`
 
 ## Data Boundary

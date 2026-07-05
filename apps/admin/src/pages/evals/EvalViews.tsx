@@ -12,6 +12,7 @@ import {
 
 export type Gate = "blocked" | "pass" | "running";
 export type ComputedEvalSet = ReturnType<typeof summarizeSet>;
+type StatePanelState = "empty" | "error" | "loading" | "permission";
 
 export function RuntimeNote() {
   return (
@@ -24,27 +25,20 @@ export function RuntimeNote() {
   );
 }
 
-export function StatePanel({
-  state
-}: {
-  state: "empty" | "error" | "loading" | "permission";
-}) {
+export function StatePanel({ state }: { state: StatePanelState }) {
   const copy = {
-    empty: ["empty", "No synthetic mock eval sets are available for this view."],
-    error: ["error", "Mock eval runtime unavailable; no API retry is attempted."],
-    loading: ["loading", "Loading synthetic mock eval center..."],
-    permission: [
-      "permission",
-      "Permission denied; backend authz remains authoritative."
-    ]
+    empty: "No synthetic mock eval sets are available for this view.",
+    error: "Mock eval runtime unavailable; no API retry is attempted.",
+    loading: "Loading synthetic mock eval center...",
+    permission: "Permission denied; backend authz remains authoritative."
   }[state];
   return (
     <section className="uz-eval-page" data-testid="m7-eval-page">
       <style>{evalStyles}</style>
       <main className="uz-eval-state" data-testid={`m7-eval-state-${state}`}>
         <div>
-          <h2>{copy[0]}</h2>
-          <p>{copy[1]}</p>
+          <h2>{state}</h2>
+          <p>{`${copy} ${runtimeLabels.join(" · ")}`}</p>
         </div>
       </main>
     </section>
@@ -61,7 +55,7 @@ export function EvalSetList({
   setSelectedId: (id: string) => void;
 }) {
   return (
-    <nav className="uz-eval-list" data-testid="m7-eval-set-list">
+    <nav aria-label="评测集" className="uz-eval-list" data-testid="m7-eval-set-list">
       {sets.map((set) => (
         <button
           aria-pressed={set.id === selectedId}
@@ -83,11 +77,13 @@ export function EvalSetList({
 export function EvalDetail({
   onOverride,
   runSelected,
+  runDisabled,
   selected,
   setBlind
 }: {
   onOverride: (item: EvalCase) => void;
   runSelected: () => void;
+  runDisabled: boolean;
   selected: ComputedEvalSet;
   setBlind: (setId: string, next: BlindState) => void;
 }) {
@@ -100,7 +96,7 @@ export function EvalDetail({
         <button
           className="uz-eval-btn"
           data-testid="m7-eval-run"
-          disabled={selected.running}
+          disabled={runDisabled}
           onClick={runSelected}
           type="button"
         >
@@ -240,7 +236,10 @@ function renderDiff(caseItem: EvalCase, onOverride: () => void) {
 
 function renderOverrideNote(caseItem: EvalCase) {
   if (caseItem.original !== "fail") return null;
-  return <p className="uz-eval-mono">manual review local only override accepted</p>;
+  const reason = caseItem.overrideReason ? ` · reason: ${caseItem.overrideReason}` : "";
+  return (
+    <p className="uz-eval-mono">{`manual review local only override accepted${reason}`}</p>
+  );
 }
 
 function blindActionLabel(blind: BlindState) {

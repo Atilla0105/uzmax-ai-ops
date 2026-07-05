@@ -67,10 +67,13 @@ test("supports run state blind review toggle and forced URL states", async ({
   await page.getByTestId("m7-eval-run").click();
   await expect(page.getByTestId("m7-eval-gate")).toContainText("运行中");
   await expect(page.getByTestId("m7-eval-run")).toBeDisabled();
+  await page.getByTestId("m7-eval-set-SYN-EVAL-SET-REDLINE").click();
+  await expect(page.getByTestId("m7-eval-run")).toBeDisabled();
   await expect(page.getByTestId("m7-eval-gate")).toContainText("阻断", {
     timeout: 1600
   });
 
+  await page.getByTestId("m7-eval-set-SYN-EVAL-SET-QUOTE").click();
   await expect(page.getByTestId("m7-eval-blind-toggle")).toContainText("盲评进行中");
   await page.getByTestId("m7-eval-blind-toggle").click();
   await expect(page.getByTestId("m7-eval-blind-toggle")).toContainText("盲评已完成");
@@ -83,6 +86,9 @@ test("supports run state blind review toggle and forced URL states", async ({
   for (const state of ["loading", "empty", "error", "permission"]) {
     await openEval(page, `?m7EvalState=${state}`);
     await expect(page.getByTestId(`m7-eval-state-${state}`)).toBeVisible();
+    await expect(page.getByTestId(`m7-eval-state-${state}`)).toContainText(
+      "no production publish"
+    );
   }
 });
 
@@ -107,6 +113,9 @@ test("requires reasons for manual override and local publish preview", async ({
   await expect(page.getByTestId("m7-eval-toast")).toContainText(
     "manual review local only"
   );
+  await expect(page.getByTestId("m7-eval-case-SYN-EVAL-CASE-102")).toContainText(
+    "local manual review reason"
+  );
   await expect(page.getByTestId("m7-eval-publish")).toBeDisabled();
 
   await page.getByTestId("m7-eval-set-SYN-EVAL-SET-REDLINE").click();
@@ -130,6 +139,9 @@ test("requires reasons for manual override and local publish preview", async ({
   await page.getByRole("button", { name: "确认本地发布预览" }).click();
   await expect(page.getByTestId("m7-eval-toast")).toContainText(
     "no production publish"
+  );
+  await expect(page.getByTestId("m7-eval-toast")).toContainText(
+    "local publish review only"
   );
 });
 

@@ -44,6 +44,7 @@ export function EvalPage({ selectedTenantId }: { selectedTenantId: string }) {
   if (!isInteractiveView(viewState)) return <StatePanel state={viewState} />;
 
   function runSelected() {
+    if (runningSetId) return;
     setRunningSetId(selected.id);
     window.setTimeout(() => setRunningSetId(""), 900);
   }
@@ -63,7 +64,9 @@ export function EvalPage({ selectedTenantId }: { selectedTenantId: string }) {
           : {
               ...set,
               cases: set.cases.map((item) =>
-                item.id === overrideCase.id ? { ...item, result: "pass" } : item
+                item.id === overrideCase.id
+                  ? { ...item, overrideReason, result: "pass" }
+                  : item
               )
             }
       )
@@ -76,7 +79,9 @@ export function EvalPage({ selectedTenantId }: { selectedTenantId: string }) {
 
   function publishLocal() {
     setPublishOpen(false);
-    setToast("local-only publish preview recorded; no production publish occurred.");
+    setToast(
+      `local-only publish preview; no production publish. reason: ${publishReason}`
+    );
   }
 
   return (
@@ -131,11 +136,9 @@ export function EvalPage({ selectedTenantId }: { selectedTenantId: string }) {
         </div>
       </header>
       <RuntimeNote />
-      {toast ? (
-        <div className="uz-eval-toast" data-testid="m7-eval-toast">
-          {toast}
-        </div>
-      ) : null}
+      <div className="uz-eval-toast" data-testid="m7-eval-toast" hidden={!toast}>
+        {toast}
+      </div>
       <main className="uz-eval-shell">
         <EvalSetList
           selectedId={selected.id}
@@ -148,6 +151,7 @@ export function EvalPage({ selectedTenantId }: { selectedTenantId: string }) {
             setOverrideReason("");
           }}
           runSelected={runSelected}
+          runDisabled={!!runningSetId}
           selected={selected}
           setBlind={setBlind}
         />

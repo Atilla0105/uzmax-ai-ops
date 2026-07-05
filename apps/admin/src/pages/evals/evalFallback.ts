@@ -14,6 +14,7 @@ export interface EvalCase {
   expected: string;
   id: string;
   input: string;
+  overrideReason?: string;
   original: EvalResult;
   result: EvalResult;
 }

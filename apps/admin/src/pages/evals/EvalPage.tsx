@@ -4,6 +4,7 @@ import {
   evalSets,
   evalStyles,
   readEvalViewState,
+  runtimeLabels,
   type BlindState,
   type EvalCase,
   type EvalSet
@@ -11,7 +12,7 @@ import {
 import {
   EvalDetail,
   EvalSetList,
-  RuntimeNote,
+  RuntimeBoundaryEvidence,
   StatePanel,
   gateCopy,
   gateTone,
@@ -87,6 +88,8 @@ export function EvalPage({ selectedTenantId }: { selectedTenantId: string }) {
   return (
     <section
       className="uz-eval-page"
+      data-runtime-boundary={runtimeLabels.join(" · ")}
+      data-runtime-source="prototype-shaped-synthetic-read-only"
       data-runtime-state="degraded"
       data-tenant-id={selectedTenantId}
       data-testid="m7-eval-page"
@@ -135,7 +138,7 @@ export function EvalPage({ selectedTenantId }: { selectedTenantId: string }) {
           </button>
         </div>
       </header>
-      <RuntimeNote />
+      <RuntimeBoundaryEvidence />
       <div className="uz-eval-toast" data-testid="m7-eval-toast" hidden={!toast}>
         {toast}
       </div>

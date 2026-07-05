@@ -42,6 +42,8 @@ interface RawEvalMetrics {
   pageHeight: number;
   pageWidth: number;
   publishDisabled: boolean;
+  runtimeBoundary: string;
+  runtimeNote: string;
   shellLevel?: string | null;
   tenantCategories: string[];
   topbarHeight: number;
@@ -92,7 +94,8 @@ test("captures tenant.eval source parity evidence on latest shell stack", async 
   expect(blockedMetrics.tenantCategories).toEqual(tenantSections);
   expect(blockedMetrics.groupCategoryCount).toBe(0);
   expect(blockedMetrics.groupButtonCount).toBe(0);
-  expect(blockedMetrics.runtimeLabelsVisible).toBe(true);
+  expect(blockedMetrics.runtimeLabelsPresent).toBe(true);
+  expect(blockedMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(blockedMetrics.gateBlocked).toBe(true);
   expect(blockedMetrics.publishDisabled).toBe(true);
   expect(blockedMetrics.sourceLikeBlockedVisible).toBe(true);
@@ -145,6 +148,7 @@ test("captures tenant.eval source parity evidence on latest shell stack", async 
   expect(collapsedMetrics.tenantCategories).toEqual(tenantSections);
   expect(collapsedMetrics.groupCategoryCount).toBe(0);
   expect(collapsedMetrics.groupButtonCount).toBe(0);
+  expect(collapsedMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(collapsedMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
   expect(collapsedMetrics.documentScrollWidth).toBeLessThanOrEqual(1440);
   await saveShot(page, "react-eval-collapsed.png");
@@ -161,6 +165,7 @@ test("captures tenant.eval source parity evidence on latest shell stack", async 
   expect(mobileMetrics.tenantCategories).toEqual(tenantSections);
   expect(mobileMetrics.groupCategoryCount).toBe(0);
   expect(mobileMetrics.groupButtonCount).toBe(0);
+  expect(mobileMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await saveShot(page, "react-eval-mobile-320.png", true);
 
   writeJson("metrics.json", {
@@ -266,6 +271,13 @@ async function collectEvalMetrics(page: Page) {
       publishDisabled:
         document.querySelector<HTMLButtonElement>('[data-testid="m7-eval-publish"]')
           ?.disabled ?? false,
+      runtimeBoundary:
+        document
+          .querySelector('[data-testid="m7-eval-page"]')
+          ?.getAttribute("data-runtime-boundary") ?? "",
+      runtimeNote:
+        document.querySelector('[data-testid="m7-eval-runtime-note"]')?.textContent ??
+        "",
       shellLevel: document
         .querySelector('[data-testid="admin-shell"]')
         ?.getAttribute("data-shell-level"),
@@ -299,7 +311,11 @@ function buildEvalMetrics(raw: RawEvalMetrics) {
     navText: undefined,
     pageVisible: hasBox(raw.pageWidth, raw.pageHeight),
     publishEnabled: !raw.publishDisabled,
-    runtimeLabelsVisible: includesAll(bodyText, runtimeLabels),
+    runtimeLabelsPresent: includesAll(
+      [raw.runtimeBoundary, raw.runtimeNote].join(" "),
+      runtimeLabels
+    ),
+    runtimeLabelsVisibleInBody: runtimeLabels.some((label) => bodyText.includes(label)),
     sourceLikeBlockedVisible: includesAll(bodyText, [
       "评测中心",
       "Production Gate",

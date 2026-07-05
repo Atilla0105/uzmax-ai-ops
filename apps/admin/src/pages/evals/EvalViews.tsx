@@ -14,9 +14,9 @@ export type Gate = "blocked" | "pass" | "running";
 export type ComputedEvalSet = ReturnType<typeof summarizeSet>;
 type StatePanelState = "empty" | "error" | "loading" | "permission";
 
-export function RuntimeNote() {
+export function RuntimeBoundaryEvidence() {
   return (
-    <div className="uz-eval-note" data-testid="m7-eval-runtime-note">
+    <div className="uz-eval-note" data-testid="m7-eval-runtime-note" hidden>
       <span className="uz-eval-badge uz-eval-badge--warn">
         {runtimeLabels.slice(0, 3).join(" · ")}
       </span>
@@ -208,10 +208,9 @@ export function gateTone(result: Gate | EvalResult | "running") {
 }
 
 export function gateCopy(gate: Gate, sets: ComputedEvalSet[]) {
-  if (gate === "running") return "mock eval running · no production publish";
-  if (gate === "pass")
-    return "all synthetic cases pass · local publish preview enabled";
-  return `${sets.filter((set) => set.failed > 0).length} mock sets blocked`;
+  if (gate === "running") return "评测运行中";
+  if (gate === "pass") return "全部评测集通过 · 可发布配置";
+  return `${sets.filter((set) => set.failed > 0).length} 个评测集未通过 · 发布按钮已禁用`;
 }
 
 function renderDiff(caseItem: EvalCase, onOverride: () => void) {

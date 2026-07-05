@@ -7,6 +7,14 @@ const tenantLabels =
     "|"
   );
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
+const runtimeLabels = [
+  "degraded",
+  "mock",
+  "read-only",
+  "not production eval data",
+  "no production publish",
+  "manual review local only"
+];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -28,15 +36,13 @@ test("renders tenant.eval with tenant-only nav runtime labels and desktop metric
     "data-runtime-state",
     "degraded"
   );
-  for (const label of [
-    "degraded",
-    "mock",
-    "read-only",
-    "not production eval data",
-    "no production publish",
-    "manual review local only"
-  ])
-    await expect(page.getByTestId("m7-eval-runtime-note")).toContainText(label);
+  await expect(page.getByTestId("m7-eval-runtime-note")).toBeHidden();
+  const runtimeBoundary =
+    (await page.getByTestId("m7-eval-page").getAttribute("data-runtime-boundary")) ??
+    "";
+  for (const label of runtimeLabels) expect(runtimeBoundary).toContain(label);
+  for (const label of runtimeLabels)
+    expect(await page.evaluate(() => document.body.innerText)).not.toContain(label);
   await expect(page.getByTestId("m7-eval-gate")).toContainText("Production Gate：阻断");
   await expect(page.getByTestId("m7-eval-publish")).toBeDisabled();
   await expect(page.getByTestId("m7-eval-detail")).toContainText("Expected");

@@ -1,169 +1,169 @@
 {
   "conversationRows": [
     {
-      "channel": "Telegram Bot mock",
-      "customer": "Mock 客户 A",
-      "id": "MOCK-CONV-A1",
+      "channel": "Telegram Bot",
+      "customer": "客户 A",
+      "id": "CV-A1",
       "member": "AI -> 韩雪",
-      "summary": "synthetic logistics complaint routed to human review.",
-      "tags": ["退款 mock", "物流 mock"],
-      "time": "mock today"
+      "summary": "物流延迟，客户提出退款诉求，已转人工复核。",
+      "tags": ["退款", "物流"],
+      "time": "今天"
     },
     {
-      "channel": "Telegram Bot mock",
-      "customer": "Mock 客户 B",
-      "id": "MOCK-CONV-B1",
+      "channel": "Telegram Bot",
+      "customer": "客户 B",
+      "id": "CV-B1",
       "member": "AI -> 李航",
-      "summary": "synthetic damaged item refund conversation.",
-      "tags": ["退款 mock"],
-      "time": "mock today"
+      "summary": "商品破损，客户要求退货退款。",
+      "tags": ["退款"],
+      "time": "今天"
     },
     {
-      "channel": "Telegram Business mock",
-      "customer": "Mock 客户 C",
-      "id": "MOCK-CONV-C1",
+      "channel": "Telegram Business",
+      "customer": "客户 C",
+      "id": "CV-C1",
       "member": "王敏",
-      "summary": "synthetic quote draft waiting for operator confirmation.",
-      "tags": ["报价 mock"],
-      "time": "mock 7d"
+      "summary": "套装报价草稿待运营确认。",
+      "tags": ["报价"],
+      "time": "7天内"
     }
   ],
   "conversationTags": [
     {
-      "count": "48 mock",
-      "desc": "退款相关会话 mock",
+      "count": "48",
+      "desc": "退款相关会话",
       "id": "st-mock-refund",
-      "name": "退款 mock"
+      "name": "退款"
     },
     {
-      "count": "132 mock",
-      "desc": "物流异常 mock",
+      "count": "132",
+      "desc": "物流时效 / 异常",
       "id": "st-mock-logistics",
-      "name": "物流 mock"
+      "name": "物流"
     },
     {
-      "count": "96 mock",
-      "desc": "报价咨询 mock",
+      "count": "96",
+      "desc": "报价 / 价格咨询",
       "id": "st-mock-quote",
-      "name": "报价 mock"
+      "name": "报价"
     },
     {
-      "count": "64 mock",
-      "desc": "教程引导 mock",
+      "count": "64",
+      "desc": "使用方法 / 教程",
       "id": "st-mock-tutorial",
-      "name": "教程 mock"
+      "name": "教程"
     }
   ],
   "customerFields": [
     {
-      "count": "298 mock",
-      "created": "mock date",
+      "count": "298",
+      "created": "2026-03-04",
       "id": "cf-mock-source",
       "name": "客户来源",
       "spec": "广告 / 自然 / 转介绍 / 复购",
       "type": "枚举"
     },
     {
-      "count": "210 mock",
-      "created": "mock date",
+      "count": "210",
+      "created": "2026-04-12",
       "id": "cf-mock-category",
       "name": "偏好品类",
       "spec": "自由文本",
       "type": "文本"
     },
     {
-      "count": "156 mock",
-      "created": "mock date",
+      "count": "156",
+      "created": "2026-05-20",
       "id": "cf-mock-points",
       "name": "累计积分",
-      "spec": "整数 mock",
+      "spec": "整数",
       "type": "数字"
     },
     {
-      "count": "88 mock",
-      "created": "mock date",
+      "count": "88",
+      "created": "2026-05-01",
       "id": "cf-mock-birthday",
       "name": "生日",
-      "spec": "YYYY-MM-DD mock",
+      "spec": "YYYY-MM-DD",
       "type": "日期"
     }
   ],
   "customerRecords": [
     {
       "blocked": false,
-      "channel": "Telegram Bot mock",
-      "conv": "MOCK-CONV-A1",
-      "created": "mock date",
+      "channel": "Telegram Bot",
+      "conv": "CV-A1",
+      "created": "2026-03-02",
       "dual": [
         {
-          "note": "Synthetic journey stage selected from owner customer-assets source anatomy.",
-          "stage": "mock journey",
-          "time": "mock 09:10",
-          "via": "dual-track mock"
+          "note": "推送套装主图与价目表，记录客户关注点。",
+          "stage": "报价",
+          "time": "06-25 09:10",
+          "via": "教程旅程自动定位"
         },
         {
-          "note": "Human review required in mock data.",
-          "stage": "人工介入 mock",
-          "time": "mock 09:18",
-          "via": "runtime unavailable"
+          "note": "退款诉求转人工处理，赠优惠券安抚。",
+          "stage": "人工介入",
+          "time": "06-26 09:18",
+          "via": "红线转人工"
         }
       ],
       "fields": {
-        "偏好品类": "mock category",
-        "客户来源": "mock acquisition",
-        "累计积分": "mock points"
+        "偏好品类": "面部护理",
+        "客户来源": "广告投放",
+        "累计积分": "1280"
       },
-      "handle": "@mock_customer_a",
+      "handle": "@customer_a",
       "history": [
         {
-          "channel": "Telegram mock",
+          "channel": "Telegram",
           "member": "AI -> 韩雪",
-          "tags": ["退款 mock", "物流 mock"],
-          "time": "mock recent",
-          "title": "Mock 客户 A synthetic conversation"
+          "tags": ["退款", "物流"],
+          "time": "2分钟前",
+          "title": "物流延迟 · 退款诉求"
         }
       ],
       "id": "cu-mock-a",
       "initial": "A",
-      "language": "乌兹别克语 mock",
+      "language": "乌兹别克语",
       "notes": [
         {
-          "text": "Synthetic note: waiting for runtime integration.",
-          "time": "mock 10:21",
+          "text": "已安抚，赠 ¥20 优惠券，客户同意继续等待物流。",
+          "time": "06-26 11:24",
           "who": "韩雪"
         }
       ],
-      "openIssue": "退款 mock",
+      "openIssue": "退款",
       "openTone": "danger",
       "orderSnapshots": [
         {
-          "amount": "mock amount",
-          "id": "MOCK-ORDER-A1",
-          "item": "mock product bundle",
-          "status": "人工复核 mock",
-          "tone": "danger"
+          "amount": "¥268",
+          "id": "ORD-A1",
+          "item": "护肤入门套装",
+          "status": "运输中",
+          "tone": "warn"
         }
       ],
-      "orders": "2 mock",
-      "profile": "Synthetic customer profile shaped from the owner prototype. This is mock/read-only evidence and not production customer data.",
+      "orders": "2",
+      "profile": "高频复购护肤客户，对物流时效敏感；偏好乌兹别克语拉丁。曾因延迟发起退款，安抚后保留为 VIP。",
       "quotes": [
         {
-          "item": "mock product bundle",
-          "price": "mock amount",
-          "result": "read-only mock",
-          "time": "mock day",
-          "via": "AI quote mock"
+          "item": "护肤入门套装",
+          "price": "¥268",
+          "result": "已下单",
+          "time": "06-25",
+          "via": "AI 报价"
         }
       ],
-      "script": "拉丁 mock",
-      "spend": "mock amount",
+      "script": "拉丁",
+      "spend": "¥500",
       "stage": "售后",
-      "tags": ["VIP mock", "退款敏感 mock"],
+      "tags": ["VIP", "退款敏感"],
       "tickets": [
         {
-          "id": "T-MOCK-A1",
-          "status": "待处理 mock",
-          "title": "Mock 客户 A synthetic ticket",
+          "id": "T-A1",
+          "status": "待处理",
+          "title": "物流延迟投诉 · 要求退款",
           "tone": "danger"
         }
       ],
@@ -171,73 +171,73 @@
     },
     {
       "blocked": false,
-      "channel": "Telegram Bot mock",
-      "conv": "MOCK-CONV-B1",
-      "created": "mock date",
+      "channel": "Telegram Bot",
+      "conv": "CV-B1",
+      "created": "2026-04-18",
       "dual": [
         {
-          "note": "Synthetic journey stage selected from owner customer-assets source anatomy.",
-          "stage": "mock journey",
-          "time": "mock 09:10",
-          "via": "dual-track mock"
+          "note": "破损商品售后路径命中，收集照片证据。",
+          "stage": "售后",
+          "time": "06-28 09:10",
+          "via": "红线转人工"
         },
         {
-          "note": "No production action implied.",
-          "stage": "自动引导 mock",
-          "time": "mock 09:18",
-          "via": "runtime unavailable"
+          "note": "补充退货登记信息，等待运营确认。",
+          "stage": "人工介入",
+          "time": "06-28 09:18",
+          "via": "售后工单"
         }
       ],
       "fields": {
-        "偏好品类": "mock category",
-        "客户来源": "mock acquisition",
-        "累计积分": "mock points"
+        "偏好品类": "身体护理",
+        "客户来源": "自然",
+        "累计积分": "420"
       },
-      "handle": "@mock_customer_b",
+      "handle": "@customer_b",
       "history": [
         {
-          "channel": "Telegram mock",
-          "member": "AI",
-          "tags": ["报价 mock"],
-          "time": "mock recent",
-          "title": "Mock 客户 B synthetic conversation"
+          "channel": "Telegram",
+          "member": "AI -> 李航",
+          "tags": ["退款", "物流"],
+          "time": "6分钟前",
+          "title": "商品破损 · 退货退款"
         }
       ],
       "id": "cu-mock-b",
       "initial": "B",
-      "language": "俄语 mock",
+      "language": "俄语",
       "notes": [],
-      "openIssue": "报价 mock",
-      "openTone": "warn",
+      "openIssue": "退货",
+      "openTone": "danger",
       "orderSnapshots": [
         {
-          "amount": "mock amount",
-          "id": "MOCK-ORDER-B1",
-          "item": "mock product bundle",
-          "status": "只读 mock",
-          "tone": "ok"
+          "amount": "¥320",
+          "id": "ORD-B1",
+          "item": "身体乳套装",
+          "status": "退款中",
+          "tone": "danger"
         }
       ],
-      "orders": "2 mock",
-      "profile": "Synthetic customer profile shaped from the owner prototype. This is mock/read-only evidence and not production customer data.",
+      "orders": "2",
+      "profile": "俄语客户，收到破损商品要求退货退款；首次售后，需谨慎处理避免流失。",
       "quotes": [
         {
-          "item": "mock product bundle",
-          "price": "mock amount",
-          "result": "read-only mock",
-          "time": "mock day",
-          "via": "AI quote mock"
+          "item": "身体乳套装",
+          "price": "¥320",
+          "result": "待确认",
+          "time": "06-28",
+          "via": "人工报价"
         }
       ],
-      "script": "西里尔 mock",
-      "spend": "mock amount",
+      "script": "西里尔",
+      "spend": "¥542",
       "stage": "购买中",
-      "tags": ["价格敏感 mock"],
+      "tags": ["价格敏感"],
       "tickets": [
         {
-          "id": "T-MOCK-B1",
-          "status": "处理中 mock",
-          "title": "Mock 客户 B synthetic ticket",
+          "id": "T-B1",
+          "status": "处理中",
+          "title": "商品破损 · 退货退款",
           "tone": "warn"
         }
       ],
@@ -245,140 +245,140 @@
     },
     {
       "blocked": false,
-      "channel": "Telegram Business mock",
-      "conv": "MOCK-CONV-C1",
-      "created": "mock date",
+      "channel": "Telegram Business",
+      "conv": "CV-C1",
+      "created": "2026-06-10",
       "dual": [
         {
-          "note": "Synthetic journey stage selected from owner customer-assets source anatomy.",
-          "stage": "mock journey",
-          "time": "mock 09:10",
-          "via": "dual-track mock"
+          "note": "套装报价咨询，推送主图并记录价格敏感分支。",
+          "stage": "报价",
+          "time": "06-28 09:10",
+          "via": "教程旅程自动定位"
         },
         {
-          "note": "No production action implied.",
-          "stage": "自动引导 mock",
-          "time": "mock 09:18",
-          "via": "runtime unavailable"
+          "note": "Business 草稿等待运营确认。",
+          "stage": "自动引导",
+          "time": "06-28 09:18",
+          "via": "报价草稿"
         }
       ],
       "fields": {
-        "偏好品类": "mock category",
-        "客户来源": "mock acquisition",
-        "累计积分": "mock points"
+        "偏好品类": "面部护理",
+        "客户来源": "广告投放",
+        "累计积分": "60"
       },
-      "handle": "@mock_customer_c",
+      "handle": "@customer_c",
       "history": [
         {
-          "channel": "Telegram mock",
+          "channel": "Telegram",
           "member": "AI",
-          "tags": ["报价 mock"],
-          "time": "mock recent",
-          "title": "Mock 客户 C synthetic conversation"
+          "tags": ["报价"],
+          "time": "11分钟前",
+          "title": "套装报价咨询"
         }
       ],
       "id": "cu-mock-c",
       "initial": "C",
-      "language": "乌兹别克语 mock",
+      "language": "乌兹别克语",
       "notes": [],
       "openIssue": "—",
       "openTone": "none",
       "orderSnapshots": [
         {
-          "amount": "mock amount",
-          "id": "MOCK-ORDER-C1",
-          "item": "mock product bundle",
-          "status": "只读 mock",
-          "tone": "ok"
+          "amount": "¥198",
+          "id": "ORD-C1",
+          "item": "护肤入门套装",
+          "status": "待支付",
+          "tone": "info"
         }
       ],
-      "orders": "5 mock",
-      "profile": "Synthetic customer profile shaped from the owner prototype. This is mock/read-only evidence and not production customer data.",
+      "orders": "5",
+      "profile": "新客，多次询价折扣，尚未确认套装订单；价格敏感，适合优惠引导。",
       "quotes": [
         {
-          "item": "mock product bundle",
-          "price": "mock amount",
-          "result": "read-only mock",
-          "time": "mock day",
-          "via": "AI quote mock"
+          "item": "护肤入门套装",
+          "price": "¥268",
+          "result": "待支付",
+          "time": "06-28",
+          "via": "AI 报价"
         }
       ],
-      "script": "拉丁 mock",
-      "spend": "mock amount",
+      "script": "拉丁",
+      "spend": "¥198",
       "stage": "复购",
-      "tags": ["复购老客 mock", "VIP mock"],
+      "tags": ["复购老客", "VIP"],
       "tickets": [],
       "unreachable": false
     },
     {
       "blocked": true,
-      "channel": "Telegram Bot mock",
-      "conv": "MOCK-CONV-D1",
-      "created": "mock date",
+      "channel": "Telegram Bot",
+      "conv": "CV-D1",
+      "created": "2026-03-20",
       "dual": [
         {
-          "note": "Synthetic journey stage selected from owner customer-assets source anatomy.",
-          "stage": "mock journey",
-          "time": "mock 09:10",
-          "via": "dual-track mock"
+          "note": "咨询阶段识别为风控关注客户，进入人工复核。",
+          "stage": "咨询",
+          "time": "06-29 09:10",
+          "via": "风险规则"
         },
         {
-          "note": "Human review required in mock data.",
-          "stage": "人工介入 mock",
-          "time": "mock 09:18",
-          "via": "runtime unavailable"
+          "note": "人工复核通过前保持接待限制。",
+          "stage": "人工介入",
+          "time": "06-29 09:18",
+          "via": "治理动作"
         }
       ],
       "fields": {
-        "偏好品类": "mock category",
-        "客户来源": "mock acquisition",
-        "累计积分": "mock points"
+        "偏好品类": "面部护理",
+        "客户来源": "转介绍",
+        "累计积分": "960"
       },
-      "handle": "@mock_customer_d",
+      "handle": "@customer_d",
       "history": [
         {
-          "channel": "Telegram mock",
+          "channel": "Telegram",
           "member": "AI -> 韩雪",
-          "tags": ["退款 mock", "物流 mock"],
-          "time": "mock recent",
-          "title": "Mock 客户 D synthetic conversation"
+          "tags": ["退款", "物流"],
+          "time": "14分钟前",
+          "title": "物流延迟 · 风控复核"
         }
       ],
       "id": "cu-mock-d",
       "initial": "D",
-      "language": "俄语 mock",
+      "language": "俄语",
       "notes": [],
-      "openIssue": "风控 mock",
+      "openIssue": "风控",
       "openTone": "danger",
       "orderSnapshots": [
         {
-          "amount": "mock amount",
-          "id": "MOCK-ORDER-D1",
-          "item": "mock product bundle",
-          "status": "人工复核 mock",
+          "amount": "¥396",
+          "id": "ORD-D1",
+          "item": "面霜补充装",
+          "status": "人工复核",
           "tone": "danger"
         }
       ],
-      "orders": "2 mock",
-      "profile": "Synthetic customer profile shaped from the owner prototype. This is mock/read-only evidence and not production customer data.",
+      "orders": "2",
+      "profile": "咨询阶段触发风控关注，需完成身份复核后再恢复正常接待。",
       "quotes": [
         {
-          "item": "mock product bundle",
-          "price": "mock amount",
-          "result": "read-only mock",
-          "time": "mock day",
-          "via": "AI quote mock"
+          "item": "面霜补充装",
+          "price": "¥396",
+          "result": "待复核",
+          "time": "06-29",
+          "via": "人工报价"
         }
       ],
-      "script": "西里尔 mock",
-      "spend": "mock amount",
+      "script": "西里尔",
+      "spend": "¥784",
       "stage": "咨询",
-      "tags": ["退款敏感 mock"],
+      "tags": ["退款敏感"],
       "tickets": [
         {
-          "id": "T-MOCK-D1",
-          "status": "待处理 mock",
-          "title": "Mock 客户 D synthetic ticket",
+          "id": "T-D1",
+          "status": "待处理",
+          "title": "接待限制复核",
           "tone": "danger"
         }
       ],
@@ -386,50 +386,50 @@
     },
     {
       "blocked": false,
-      "channel": "Telegram Bot mock",
-      "conv": "MOCK-CONV-E1",
-      "created": "mock date",
+      "channel": "Telegram Bot",
+      "conv": "CV-E1",
+      "created": "2026-05-15",
       "dual": [
         {
-          "note": "Synthetic journey stage selected from owner customer-assets source anatomy.",
-          "stage": "mock journey",
-          "time": "mock 09:10",
-          "via": "dual-track mock"
+          "note": "送达后推送复购满赠活动。",
+          "stage": "已购",
+          "time": "06-10 09:10",
+          "via": "教程旅程自动定位"
         },
         {
-          "note": "No production action implied.",
-          "stage": "自动引导 mock",
-          "time": "mock 09:18",
-          "via": "runtime unavailable"
+          "note": "连续 3 次回访未读，标记为不可达。",
+          "stage": "自动引导",
+          "time": "06-20 09:18",
+          "via": "回访规则"
         }
       ],
       "fields": {
-        "偏好品类": "mock category",
-        "客户来源": "mock acquisition",
-        "累计积分": "mock points"
+        "偏好品类": "面部护理",
+        "客户来源": "广告投放",
+        "累计积分": "120"
       },
-      "handle": "@mock_customer_e",
+      "handle": "@customer_e",
       "history": [
         {
-          "channel": "Telegram mock",
+          "channel": "Telegram",
           "member": "AI",
-          "tags": ["报价 mock"],
-          "time": "mock recent",
-          "title": "Mock 客户 E synthetic conversation"
+          "tags": ["报价"],
+          "time": "2小时前",
+          "title": "送达确认 · 复购引导"
         }
       ],
       "id": "cu-mock-e",
       "initial": "E",
-      "language": "乌兹别克语 mock",
+      "language": "乌兹别克语",
       "notes": [],
       "openIssue": "—",
       "openTone": "none",
       "orderSnapshots": [],
-      "orders": "0 mock",
-      "profile": "Synthetic customer profile shaped from the owner prototype. This is mock/read-only evidence and not production customer data.",
+      "orders": "0",
+      "profile": "单次购买客户，送达确认后多次回访未读，已标记不可达；建议复购召回需谨慎频次。",
       "quotes": [],
-      "script": "拉丁 mock",
-      "spend": "mock none",
+      "script": "拉丁",
+      "spend": "¥0",
       "stage": "已购",
       "tags": [],
       "tickets": [],
@@ -438,28 +438,28 @@
   ],
   "customerTags": [
     {
-      "count": "12 mock",
-      "desc": "高价值 / 优先接待 mock",
+      "count": "12",
+      "desc": "高价值 / 优先接待",
       "id": "ct-mock-vip",
-      "name": "VIP mock"
+      "name": "VIP"
     },
     {
-      "count": "7 mock",
-      "desc": "投诉/退款风险 mock",
+      "count": "7",
+      "desc": "投诉/退款风险",
       "id": "ct-mock-refund",
-      "name": "退款敏感 mock"
+      "name": "退款敏感"
     },
     {
-      "count": "21 mock",
-      "desc": "复购分群 mock",
+      "count": "21",
+      "desc": "复购分群",
       "id": "ct-mock-repeat",
-      "name": "复购老客 mock"
+      "name": "复购老客"
     },
     {
-      "count": "15 mock",
-      "desc": "多次询价 mock",
+      "count": "15",
+      "desc": "多次询价",
       "id": "ct-mock-price",
-      "name": "价格敏感 mock"
+      "name": "价格敏感"
     }
   ],
   "customerTabs": [

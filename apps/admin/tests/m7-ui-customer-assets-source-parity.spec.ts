@@ -22,6 +22,14 @@ const customerAnatomyText =
   "客户资产|客户|语言 / 文字|最近会话|历史会话|订单快照|报价记录|双轨引导记录|客户标签|自定义字段".split(
     "|"
   );
+const runtimeBoundaryTerms =
+  "mock/degraded|mock|read-only|customer assets runtime unavailable|no production customer data|no runtime write|no DB/API closure".split(
+    "|"
+  );
+const forbiddenVisibleTerms =
+  "mock|degraded|read-only|runtime unavailable|not production|synthetic|local-only|browser-local only|no production|MOCK-|disabled|fixture".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -70,7 +78,8 @@ test("captures tenant.customers source parity evidence on latest shell stack", a
   expect(desktopListMetrics.tenantCategories).toEqual(tenantSections);
   expect(desktopListMetrics.groupCategoryCount).toBe(0);
   expect(desktopListMetrics.groupButtonCount).toBe(0);
-  expect(desktopListMetrics.runtimeLabelVisible).toBe(true);
+  expect(desktopListMetrics.runtimeLabelsPresent).toBe(true);
+  expect(desktopListMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(desktopListMetrics.sourceLikeListVisible).toBe(true);
   await page.screenshot({
     fullPage: false,
@@ -85,6 +94,8 @@ test("captures tenant.customers source parity evidence on latest shell stack", a
   expect(detailMetrics.sideColumnWidth).toBeGreaterThanOrEqual(300);
   expect(detailMetrics.sideColumnWidth).toBeLessThanOrEqual(340);
   expect(detailMetrics.sourceLikeDetailVisible).toBe(true);
+  expect(detailMetrics.runtimeLabelsPresent).toBe(true);
+  expect(detailMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await page.screenshot({
     fullPage: false,
     path: `${artifactDir}/react-customer-assets-detail.png`
@@ -117,6 +128,8 @@ test("captures tenant.customers source parity evidence on latest shell stack", a
   expect(mobileMetrics.identityVisible).toBe(true);
   expect(mobileMetrics.sideColumnVisible).toBe(true);
   expect(mobileMetrics.mobileReadable).toBe(true);
+  expect(mobileMetrics.runtimeLabelsPresent).toBe(true);
+  expect(mobileMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(mobileMetrics.tenantCategories).toEqual(tenantSections);
   expect(mobileMetrics.groupCategoryCount).toBe(0);
   expect(mobileMetrics.groupButtonCount).toBe(0);
@@ -187,6 +200,14 @@ async function collectOwnerSourceSample(page: Page) {
 
 async function collectCustomerMetrics(page: Page) {
   const raw = await page.evaluate(() => {
+    const attr = (selector: string, name: string) => {
+      const element = document.querySelector(selector);
+      return element?.getAttribute(name) ?? "";
+    };
+    const attrs = (selector: string, name: string) =>
+      Array.from(document.querySelectorAll(selector)).map(
+        (node) => node.getAttribute(name) ?? ""
+      );
     const roundRect = (selector: string) => {
       const element = document.querySelector(selector);
       if (!element) return { height: 0, width: 0, x: 0, y: 0 };
@@ -199,7 +220,8 @@ async function collectCustomerMetrics(page: Page) {
       };
     };
     const nav = document.querySelector('[data-testid="app-shell-nav"]');
-    const bodyText = document.body.innerText;
+    const pageRoot = document.querySelector('[data-testid="m7-customer-page"]');
+    const bodyText = pageRoot instanceof HTMLElement ? pageRoot.innerText : "";
     const tenantCategories = Array.from(
       nav?.querySelectorAll(".uz-nav-group p") ?? []
     ).map((node) => (node.textContent ?? "").trim());
@@ -225,6 +247,13 @@ async function collectCustomerMetrics(page: Page) {
       listWidth: list.width,
       navText: nav?.textContent ?? "",
       navWidth: roundRect('[data-testid="app-shell-nav"]').width,
+      runtimeBoundaryText: [
+        attr('[data-testid="m7-customer-page"]', "data-runtime-boundary"),
+        document.querySelector('[data-testid="m7-customer-runtime-note"]')
+          ?.textContent ?? "",
+        ...attrs("[data-runtime-boundary]", "data-runtime-boundary"),
+        ...attrs("[title]", "title")
+      ].join(" "),
       searchWidth: search.width,
       shellLevel: document
         .querySelector('[data-testid="admin-shell"]')
@@ -258,11 +287,13 @@ async function collectCustomerMetrics(page: Page) {
       bodyText.includes("客户标签") &&
       bodyText.includes("自定义字段"),
     navText: undefined,
-    runtimeLabelVisible:
-      bodyText.includes("degraded") &&
-      bodyText.includes("mock") &&
-      bodyText.includes("read-only") &&
-      bodyText.includes("not production customer data"),
+    runtimeBoundaryText: undefined,
+    runtimeLabelsPresent: runtimeBoundaryTerms.every((label) =>
+      raw.runtimeBoundaryText.includes(label)
+    ),
+    runtimeLabelsVisibleInBody: forbiddenVisibleTerms.some((label) =>
+      bodyText.includes(label)
+    ),
     sourceLikeDetailVisible:
       "历史会话|订单快照|报价记录|双轨引导记录|客户标签|自定义字段"
         .split("|")

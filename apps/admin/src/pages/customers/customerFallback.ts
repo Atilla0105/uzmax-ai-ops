@@ -91,8 +91,11 @@ interface CustomerTimelineItem {
 }
 
 export const customerFallbackMeta = {
+  boundary:
+    "customer assets runtime unavailable: centralized synthetic mock/degraded/read-only fallback only; no production customer data; no runtime write; no DB/API closure.",
+  label: "客户资产快照",
   reason:
-    "customer assets runtime unavailable: centralized synthetic degraded rows only, read-only product evidence and not production customer data.",
+    "客户资产以当前会话、订单快照与标签字段线索展示；身份治理操作需权限与审计闭环。",
   source: "centralized-synthetic-mock-degraded"
 } as const;
 
@@ -141,7 +144,7 @@ function activeFlagChecks(
 ) {
   return [
     !flags.open || record.openIssue !== "—",
-    !flags.order || record.orders !== "0 mock",
+    !flags.order || record.orders !== "0",
     !flags.quote || record.quotes.length > 0,
     !flags.blocked || record.blocked,
     !flags.unreachable || record.unreachable
@@ -150,7 +153,7 @@ function activeFlagChecks(
 
 export function nowCustomerMinute() {
   const date = new Date();
-  return `mock ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return `今天 ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 interface CustomerFallbackData {

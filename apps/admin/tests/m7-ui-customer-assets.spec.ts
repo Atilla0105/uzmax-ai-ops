@@ -28,6 +28,14 @@ const customerShellExpectations = {
   ],
   tenantSections: ["运营", "数据", "智能", "管理", "洞察"]
 };
+const runtimeBoundaryTerms =
+  "mock/degraded|mock|read-only|customer assets runtime unavailable|no production customer data|no runtime write|no DB/API closure".split(
+    "|"
+  );
+const forbiddenVisibleTerms =
+  "mock|degraded|read-only|runtime unavailable|not production|synthetic|local-only|browser-local only|no production|MOCK-|disabled|fixture".split(
+    "|"
+  );
 
 test.beforeEach(({ page }) => stubConversationTicketList(page));
 
@@ -37,7 +45,7 @@ async function stubConversationTicketList(page: Page) {
   });
 }
 
-test("renders tenant.customers with tenant-only navigation and degraded mock labels", async ({
+test("renders tenant.customers with tenant-only navigation and hidden runtime boundary", async ({
   page
 }) => {
   await openCustomers(page);
@@ -55,13 +63,12 @@ test("renders tenant.customers with tenant-only navigation and degraded mock lab
     "data-runtime-state",
     "degraded"
   );
-  await expect(page.getByTestId("m7-customer-runtime-note")).toContainText("degraded");
-  await expect(page.getByTestId("m7-customer-runtime-note")).toContainText("mock");
-  await expect(page.getByTestId("m7-customer-runtime-note")).toContainText("read-only");
-  await expect(page.getByTestId("m7-customer-runtime-note")).toContainText(
-    "not production customer data"
-  );
+  await expect(page.getByTestId("m7-customer-runtime-note")).toBeHidden();
+  await expectRuntimeBoundary(page);
   await expect(page.getByTestId("m7-customer-page")).toContainText("客户资产");
+  await expect(page.getByTestId("m7-customer-snapshot-bar")).toContainText(
+    "客户资产快照"
+  );
   for (const id of ["list", "search", "ctag", "stag", "field"])
     await expect(page.getByTestId(`m7-customer-tab-${id}`)).toBeVisible();
   await expect(page.getByTestId("m7-customer-tab-list")).toHaveAttribute(
@@ -72,9 +79,8 @@ test("renders tenant.customers with tenant-only navigation and degraded mock lab
   await expect(page.getByTestId("m7-customer-table")).toContainText("客户");
   await expect(page.getByTestId("m7-customer-table")).toContainText("语言 / 文字");
   await expect(page.getByTestId("m7-customer-table")).toContainText("最近会话");
-  await expect(page.getByTestId("m7-customer-list-count")).toContainText(
-    "5 位 mock 客户"
-  );
+  await expect(page.getByTestId("m7-customer-list-count")).toContainText("5 位客户");
+  await expectVisibleCustomerBodyClean(page);
   await expectTenantOnlyNav(page);
 
   const searchWidth = await page.getByTestId("m7-customer-search").evaluate((node) => {
@@ -90,30 +96,26 @@ test("supports filters search row open detail back and local guarded actions", a
   await openCustomers(page);
 
   await page.getByTestId("m7-customer-search").fill("cu-mock-b");
-  await expect(page.getByTestId("m7-customer-list-count")).toContainText(
-    "1 位 mock 客户"
-  );
+  await expect(page.getByTestId("m7-customer-list-count")).toContainText("1 位客户");
   await expect(page.getByTestId("m7-customer-row-cu-mock-b")).toBeVisible();
   await expect(page.getByTestId("m7-customer-row-cu-mock-a")).toHaveCount(0);
 
   await page.getByTestId("m7-customer-search").fill("");
-  await page.getByTestId("m7-customer-select-lang").selectOption("俄语 mock");
+  await page.getByTestId("m7-customer-select-lang").selectOption("俄语");
   await expect(page.getByTestId("m7-customer-row-cu-mock-b")).toBeVisible();
   await expect(page.getByTestId("m7-customer-row-cu-mock-d")).toBeVisible();
   await expect(page.getByTestId("m7-customer-row-cu-mock-a")).toHaveCount(0);
 
   await page.getByTestId("m7-customer-select-lang").selectOption("all");
   await page.getByTestId("m7-customer-flag-blocked").click();
-  await expect(page.getByTestId("m7-customer-list-count")).toContainText(
-    "1 位 mock 客户"
-  );
+  await expect(page.getByTestId("m7-customer-list-count")).toContainText("1 位客户");
   const blockedRow = page.getByRole("button", {
-    name: "打开客户资产 D cu-mock-d"
+    name: "打开客户资产 客户 D"
   });
   await expect(blockedRow).toHaveAttribute("data-testid", "m7-customer-row-cu-mock-d");
   await blockedRow.focus();
   await page.keyboard.press("Space");
-  await expect(page.getByTestId("m7-customer-detail")).toContainText("Mock 客户 D");
+  await expect(page.getByTestId("m7-customer-detail")).toContainText("客户 D");
   await expect(page.getByTestId("m7-customer-detail")).toContainText("档案");
   await expect(page.getByTestId("m7-customer-detail")).toContainText("历史会话");
   await expect(page.getByTestId("m7-customer-detail")).toContainText("订单快照");
@@ -124,9 +126,7 @@ test("supports filters search row open detail back and local guarded actions", a
   await page.getByTestId("m7-customer-restore").click();
   await expect(page.getByTestId("m7-customer-restore")).toHaveCount(0);
   await expect(page.getByTestId("m7-customer-identity")).not.toContainText("拉黑");
-  await expect(page.getByTestId("m7-customer-detail")).toContainText(
-    "Synthetic local restore action"
-  );
+  await expect(page.getByTestId("m7-customer-detail")).toContainText("已解除接待限制");
 
   await page.getByTestId("m7-customer-note-input").fill("tenant-b local customer note");
   await page.getByTestId("m7-customer-add-note").click();
@@ -138,14 +138,12 @@ test("supports filters search row open detail back and local guarded actions", a
   await page
     .getByTestId("m7-customer-tag-picker")
     .getByRole("button", {
-      name: "VIP mock"
+      name: "VIP"
     })
     .click();
-  await expect(page.getByTestId("m7-customer-detail-tags")).toContainText("VIP mock");
-  await page.getByRole("button", { name: "移除 VIP mock" }).click();
-  await expect(page.getByTestId("m7-customer-detail-tags")).not.toContainText(
-    "VIP mock"
-  );
+  await expect(page.getByTestId("m7-customer-detail-tags")).toContainText("VIP");
+  await page.getByRole("button", { name: "移除 VIP" }).click();
+  await expect(page.getByTestId("m7-customer-detail-tags")).not.toContainText("VIP");
 
   await page
     .getByTestId("m7-customer-field-cf-mock-source")
@@ -156,33 +154,35 @@ test("supports filters search row open detail back and local guarded actions", a
 
   await page.getByTestId("m7-customer-back").click();
   await expect(page.getByTestId("m7-customer-table")).toBeVisible();
+  await expectRuntimeBoundary(page);
 });
 
-test("shows non-list tabs as read-only mock configuration surfaces", async ({
-  page
-}) => {
+test("shows non-list tabs as business configuration surfaces", async ({ page }) => {
   await openCustomers(page);
 
   await page.getByTestId("m7-customer-tab-search").click();
-  await expect(page.getByTestId("m7-customer-search-tab")).toContainText(
-    "MOCK-CONV-A1"
-  );
+  await expect(page.getByTestId("m7-customer-search-tab")).toContainText("CV-A1");
   await expect(page.getByTestId("m7-customer-search-tab")).toContainText("跳回会话");
+  await expectVisibleCustomerBodyClean(page);
 
   await page.getByTestId("m7-customer-tab-ctag").click();
   await expect(page.getByTestId("m7-customer-tags-tab")).toContainText(
-    "标签配置为 mock/read-only"
+    "标签配置用于分群"
   );
-  await expect(page.getByTestId("m7-customer-tags-tab")).toContainText("VIP mock");
+  await expect(page.getByTestId("m7-customer-tags-tab")).toContainText("VIP");
+  await expectVisibleCustomerBodyClean(page);
 
   await page.getByTestId("m7-customer-tab-stag").click();
-  await expect(page.getByTestId("m7-customer-tags-tab")).toContainText("退款 mock");
+  await expect(page.getByTestId("m7-customer-tags-tab")).toContainText("退款");
+  await expectVisibleCustomerBodyClean(page);
 
   await page.getByTestId("m7-customer-tab-field").click();
   await expect(page.getByTestId("m7-customer-fields-tab")).toContainText(
-    "自定义字段为 mock/read-only"
+    "本页展示租户字段"
   );
   await expect(page.getByTestId("m7-customer-fields-tab")).toContainText("客户来源");
+  await expectVisibleCustomerBodyClean(page);
+  await expectRuntimeBoundary(page);
 });
 
 test("resets local customer edits when switching tenants in place", async ({
@@ -278,4 +278,22 @@ async function expectTenantOnlyNav(page: Page) {
       expect(sectionLabels.filter({ hasText: section })).toHaveCount(0)
     )
   ]);
+}
+
+async function expectRuntimeBoundary(page: Page) {
+  const boundary =
+    (await page
+      .getByTestId("m7-customer-page")
+      .getAttribute("data-runtime-boundary")) ?? "";
+  for (const label of runtimeBoundaryTerms) expect(boundary).toContain(label);
+  await expect(page.getByTestId("m7-customer-runtime-note")).toContainText(
+    "customer assets runtime unavailable"
+  );
+}
+
+async function expectVisibleCustomerBodyClean(page: Page) {
+  const visibleText = await page
+    .getByTestId("m7-customer-page")
+    .evaluate((node) => (node as HTMLElement).innerText);
+  for (const label of forbiddenVisibleTerms) expect(visibleText).not.toContain(label);
 }

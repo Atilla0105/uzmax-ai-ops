@@ -8,6 +8,7 @@ import {
 import { renderCustomerPage } from "./CustomerHtml";
 import {
   customerFields,
+  customerFallbackMeta,
   customerRecords,
   customerTags,
   matchesCustomerFilter,
@@ -165,7 +166,7 @@ export function CustomersPage({ selectedTenantId }: { selectedTenantId: string }
       blocked: false,
       notes: [
         {
-          text: "Synthetic local restore action. No backend persistence.",
+          text: "已解除接待限制，等待后续审计同步。",
           time: nowCustomerMinute(),
           who: "系统"
         },
@@ -178,6 +179,8 @@ export function CustomersPage({ selectedTenantId }: { selectedTenantId: string }
   return (
     <section
       className="uz-customer-page"
+      data-runtime-boundary={customerFallbackMeta.boundary}
+      data-runtime-source={customerFallbackMeta.source}
       data-runtime-state="degraded"
       data-tenant-id={selectedTenantId}
       data-testid="m7-customer-page"

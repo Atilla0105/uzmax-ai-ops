@@ -5,6 +5,7 @@ import { AgentsPage } from "./agents/AgentsPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
+import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
@@ -52,6 +53,14 @@ export function PageOutlet({
           onEnterTenant={onEnterTenant}
           onOpenLegacyEvidence={() => onPageChange(legacyEvidencePageId)}
         />
+      </section>
+    );
+  }
+
+  if (page.id === "group.modelRisk") {
+    return (
+      <section data-page-id={page.id} data-testid="page-outlet">
+        <GroupModelRiskPage onEnterTenant={onEnterTenant} />
       </section>
     );
   }

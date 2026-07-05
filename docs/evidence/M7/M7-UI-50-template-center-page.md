@@ -50,9 +50,11 @@ This branch implements a visible UI-first `group.templates` / `模板中心` can
 
 Passed locally on this branch:
 
+- Post-coordinator fix: `PageOutlet.tsx` was refactored from a long route `if` chain into group/tenant renderer maps so targeted ESLint including `PageOutlet.tsx` passes the complexity <= 10 rule without changing route wrappers, tenant ids or page props.
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/prettier/bin/prettier.cjs --check docs/specs/M7-UI-50-template-center-page.md docs/evidence/M7/M7-UI-50-template-center-page.md docs/admin-ui-page-migration-ledger.md docs/evidence/M7/README.md apps/admin/src/pages/PageOutlet.tsx apps/admin/src/pages/registry.ts apps/admin/src/pages/group/GroupTemplatePage.tsx apps/admin/src/pages/group/GroupTemplateViews.tsx apps/admin/src/pages/group/groupTemplateFallback.ts apps/admin/tests/m7-ui-template-center.spec.ts`
-- `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/eslint/bin/eslint.js apps/admin/src/pages/group/GroupTemplatePage.tsx apps/admin/src/pages/group/GroupTemplateViews.tsx apps/admin/src/pages/group/groupTemplateFallback.ts apps/admin/tests/m7-ui-template-center.spec.ts`
+- `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/eslint/bin/eslint.js apps/admin/src/pages/PageOutlet.tsx apps/admin/src/pages/registry.ts apps/admin/src/pages/group/GroupTemplatePage.tsx apps/admin/src/pages/group/GroupTemplateViews.tsx apps/admin/src/pages/group/groupTemplateFallback.ts apps/admin/tests/m7-ui-template-center.spec.ts`
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`
+- `git diff --check origin/codex/m7-ui-42-model-cost-risk-visible-ui...HEAD`
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-42-model-cost-risk-visible-ui --spec docs/specs/M7-UI-50-template-center-page.md --include-worktree`
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir`
 - `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node_modules/.bin/playwright test apps/admin/tests/m7-ui-template-center.spec.ts`

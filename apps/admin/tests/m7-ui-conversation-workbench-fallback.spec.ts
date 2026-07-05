@@ -43,12 +43,15 @@ test("scopes synthetic fallback to the selected tenant when no API returns Vite 
   );
   await expect(page.getByTestId("m7-conversation-thread")).toContainText("AI 决策痕迹");
   await expect(composer(page)).toHaveValue(/Hurmatli Dilnoza/);
-  await expect(rail(page)).toContainText("mock");
   await expect(rail(page)).toContainText("Dilnoza Rashidova");
   await expect(rail(page)).toContainText("退款敏感");
-  await expect(degraded(page)).toContainText("runtime-unavailable");
-  await expect(degraded(page)).toContainText("owner-source-like");
-  await expect(degraded(page)).toContainText("not production metrics");
+  await expect(rail(page)).not.toContainText("mock");
+  await expect(page.getByTestId("m7-conversation-list")).not.toContainText("mock");
+  await expect(composer(page)).not.toHaveValue(/mock\/read-only/);
+  await expect(degraded(page)).toContainText("只读预览");
+  await expect(degraded(page)).toHaveAttribute("title", /runtime-unavailable/);
+  await expect(degraded(page)).toHaveAttribute("title", /owner-source-like/);
+  await expect(degraded(page)).toHaveAttribute("title", /not production metrics/);
   await expect(takeover(page)).toBeDisabled();
   await expect(composer(page)).toBeDisabled();
   await expect

@@ -18,7 +18,7 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
       { label: "客户来源", value: "广告投放" },
       { label: "偏好品类", value: "面部护理" },
       { label: "累计积分", value: "1280" },
-      { label: "mock 边界", value: "runtime unavailable / read-only" }
+      { label: "生日", value: "—" }
     ],
     displayRef: "UZ-20413",
     draftText:
@@ -42,26 +42,26 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
       { id: "mock-ai-cancel", status: "pending_cancel" }
     ],
     journeyStage: "售后",
-    language: "乌兹别克语（拉丁）/ mock",
+    language: "乌兹别克语（拉丁）",
     lastPreview: "Juda uzoq-ku! Pulni qaytarib bering, men kutmoqchi emasman.",
-    memberLabel: "AI → 韩雪 · mock",
+    memberLabel: "AI → 韩雪",
     notes: [
       {
-        text: "已安抚，赠 ¥20 优惠券，客户同意继续等待物流。mock 只读预览，不写正式备注。",
+        text: "已安抚，赠 ¥20 优惠券，客户同意继续等待物流。",
         time: "06-26 11:24",
         who: "韩雪"
       }
     ],
     orderRef: "UZ-20413",
     participantExternalRef: "@dilnoza_r",
-    quoteRef: "护肤入门套装 ¥268 · mock",
+    quoteRef: "护肤入门套装 ¥268",
     slaRisk: true,
     slaText: "04:12",
     status: "pending_handoff",
     subject: "Dilnoza R.",
-    tags: ["VIP", "退款敏感", "mock"],
+    tags: ["VIP", "退款敏感"],
     tenantId: "",
-    ticketRef: "T-1042 · mock",
+    ticketRef: "T-1042",
     timeLabel: "2分钟",
     unreadCount: 2
   },
@@ -82,11 +82,15 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     id: "mock-ivan-sla",
     inFlightAiMessages: [],
     journeyStage: "售后",
-    language: "俄语 / mock",
+    language: "俄语",
     lastPreview: "Да, крем вытек прямо в коробке, все запачкано.",
-    memberLabel: "AI → 李航 · mock",
+    memberLabel: "AI → 李航",
     notes: [
-      { text: "真实退货动作未接入；mock 仅展示风险密度。", time: "mock", who: "system" }
+      {
+        text: "已请求补充破损照片，待人工确认退款口径。",
+        time: "今天 11:08",
+        who: "李航"
+      }
     ],
     orderRef: "UZ-20408",
     participantExternalRef: "@ivan_p",
@@ -95,9 +99,9 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     slaText: "01:48",
     status: "open",
     subject: "Иван Петров",
-    tags: ["退款敏感", "mock"],
+    tags: ["退款敏感"],
     tenantId: "",
-    ticketRef: "T-1039 · mock",
+    ticketRef: "T-1039",
     timeLabel: "6分钟",
     unreadCount: 1
   },
@@ -118,9 +122,9 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     id: "mock-aziz-human",
     inFlightAiMessages: [],
     journeyStage: "购买中",
-    language: "乌兹别克语（西里尔）/ mock",
+    language: "乌兹别克语（西里尔）",
     lastPreview: "Салом! Буюртма қачон етиб келади?",
-    memberLabel: "李航 · mock",
+    memberLabel: "李航",
     notes: [
       {
         text: "确认无叠加折扣，已发放新人券引导下单。",
@@ -130,14 +134,14 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     ],
     orderRef: "UZ-20401",
     participantExternalRef: "@aziz_k",
-    quoteRef: "护肤入门套装 ¥268 · mock",
+    quoteRef: "护肤入门套装 ¥268",
     slaRisk: true,
     slaText: "08:30",
     status: "handoff",
     subject: "Азиз К.",
-    tags: ["价格敏感", "mock"],
+    tags: ["价格敏感"],
     tenantId: "",
-    ticketRef: "T-1051 · mock",
+    ticketRef: "T-1051",
     timeLabel: "11分钟",
     unreadCount: 0
   },
@@ -154,31 +158,95 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     id: "mock-madina-ai",
     inFlightAiMessages: [],
     journeyStage: "复购",
-    language: "乌兹别克语（拉丁）/ mock",
+    language: "乌兹别克语（拉丁）",
     lastPreview: "Rahmat! Kremni qanday ishlataman?",
-    memberLabel: "AI · mock",
+    memberLabel: "AI",
     notes: [],
     orderRef: "UZ-20421",
     participantExternalRef: "@madina_s",
-    quoteRef: "教程候选 · mock",
+    quoteRef: "教程候选",
     slaRisk: false,
     slaText: "",
     status: "open",
     subject: "Madina S.",
-    tags: ["复购老客", "mock"],
+    tags: ["复购老客"],
     tenantId: "",
     ticketRef: "—",
     timeLabel: "14分钟",
     unreadCount: 0
-  }
+  },
+  ...compactRows([
+    "mock-sergey-ai|Сергей Л.|Сергей Литвинов|CU-72410836|UZ-20418|Набор для ухода стоит 268 000 сум, дос...|20分钟|俄语|AI|open|AI处理中",
+    "mock-nodira-manual|Nodira A.|Nodira Abdullaeva|CU-83610294|UZ-20415|人工：Buyurtmangizni qaytarishga ro‘yxatd...|34分钟|乌兹别克语（拉丁）|韩雪|handoff|人工处理",
+    "mock-oleg-closed|Oleg B.|Oleg Baranov|CU-51820466|UZ-20398|Рады, что всё дошло! Хорошего дня 🌿|1小时|俄语|AI|closed|已解决",
+    "mock-gulnora-closed|Gulnora T.|Gulnora Temirova|CU-48102657|UZ-20391|Ajoyib! Keyingi xaridingizga 10 000 so‘mlik ...|2小时|乌兹别克语（拉丁）|AI|closed|已解决"
+  ])
 ];
+
+function compactRows(seeds: readonly string[]): ConversationRow[] {
+  return seeds.map(compactRow);
+}
+
+function compactRow(seed: string): ConversationRow {
+  const parts = seed.split("|");
+  const status = field(parts, 9, "open") as ConversationRow["status"];
+  const tagLabel = field(parts, 10);
+  return {
+    aiState: aiStateFor(status),
+    awaitingReply: false,
+    channel: "Telegram Bot",
+    customerName: field(parts, 2),
+    customerRef: field(parts, 3),
+    customFields: [{ label: "偏好品类", value: "面部护理" }],
+    displayRef: field(parts, 4),
+    dualTracks: [
+      {
+        stage: status === "closed" ? "售后" : "报价",
+        time: "06-25",
+        via: "红线转人工"
+      }
+    ],
+    externalConversationRef: `telegram-${field(parts, 0)}`,
+    id: field(parts, 0),
+    inFlightAiMessages: [],
+    journeyStage: status === "closed" ? "售后" : "购买中",
+    language: field(parts, 7),
+    lastPreview: field(parts, 5),
+    memberLabel: field(parts, 8),
+    notes: [],
+    orderRef: field(parts, 4),
+    participantExternalRef: field(parts, 3),
+    quoteRef: "—",
+    slaRisk: false,
+    slaText: "",
+    status,
+    subject: field(parts, 1),
+    tags: tagsFor(tagLabel),
+    tenantId: "",
+    ticketRef: "—",
+    timeLabel: field(parts, 6),
+    unreadCount: 0
+  };
+}
+
+function field(parts: readonly string[], index: number, fallback = "") {
+  return parts[index] ?? fallback;
+}
+
+function aiStateFor(status: ConversationRow["status"]) {
+  return status === "handoff" || status === "pending_handoff" ? "suspended" : "active";
+}
+
+function tagsFor(label: string) {
+  return label ? [label] : [];
+}
 
 const syntheticMessages: Record<string, MessageRow[]> = {
   "mock-dilnoza-risk": [
     message(
       "mock-dilnoza-system",
       "internal",
-      "会话由 Telegram Bot 接入 · 今天 09:14 · mock/read-only",
+      "会话由 Telegram Bot 接入 · 今天 09:14",
       undefined,
       { time: "09:14" }
     ),
@@ -233,7 +301,7 @@ const syntheticMessages: Record<string, MessageRow[]> = {
     message(
       "mock-dilnoza-redline",
       "internal",
-      "触发红线：退款诉求 · AI 已暂停自动回复，转人工确认 · mock/read-only",
+      "触发红线：退款诉求 · AI 已暂停自动回复，转人工确认",
       undefined,
       { time: "09:22" }
     )
@@ -267,7 +335,7 @@ const syntheticMessages: Record<string, MessageRow[]> = {
     message(
       "mock-aziz-system",
       "internal",
-      "语音语言不在支持范围（乌语拉丁/西里尔、俄语）内，已转人工处理。mock/read-only"
+      "语音语言不在支持范围（乌语拉丁/西里尔、俄语）内，已转人工处理。"
     )
   ],
   "mock-madina-ai": [

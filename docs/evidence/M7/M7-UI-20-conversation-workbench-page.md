@@ -201,9 +201,9 @@ Evidence/spec metadata sync validation from `74f90c6f6be37f1e6d6316945fbf4ac7e97
 
 This update keeps PR #182 Draft/read-only and moves only the visible no-API/degraded fallback closer to the owner HTML/unpacked conversation workbench. It does not connect DB/API/WebSocket/runtime, does not enable Business send/handoff/customer-rail writes, and does not claim owner visual acceptance.
 
-Changed fallback content now uses owner-source-like Dilnoza/Ivan/Aziz/Madina workbench data: `Dilnoza R.` in the list/thread, `Dilnoza Rashidova` in the context rail, `UZ-20413`, SLA chips, Telegram Bot/AI trace rows, Business draft copy, customer tags/custom fields, dual-track guidance, notes and quick actions. Runtime copy remains `degraded`, `mock`, `read-only` and `runtime-unavailable`; disabled action buttons are visually muted so the preview does not look write-enabled.
+Second-round P0/P1 convergence removes the list search/sort/degraded tool strip, removes the center amber degraded bar, restores the source-like list density to `8 / 8`, changes selected rows to a 3px status stripe plus light background, keeps degraded/runtime-unavailable copy in small header/composer caveats, removes noisy composer buttons (`已撤回` / `取消中` / `需人工确认` / `拒绝`), and reduces visible `mock/read-only/runtime unavailable` text in primary list/thread/rail nodes.
 
-This pass intentionally continues to reject the prototype's 3px side-stripe list accent because `docs/admin-design-system.md` and Impeccable mark side stripes as design debt. The list uses row selection, status badges, dots and SLA text instead.
+Changed fallback content now uses owner-source-like Dilnoza/Ivan/Aziz/Madina/Sergey/Nodira/Oleg/Gulnora workbench data: `Dilnoza R.` in the list/thread, `Dilnoza Rashidova` in the context rail, `UZ-20413`, SLA chips, Telegram Bot/AI trace rows, Business draft copy, customer tags/custom fields, dual-track guidance, notes and quick actions. Runtime source still reports `synthetic` and runtime state remains `degraded`; the page remains visibly disabled/read-only for unbacked writes.
 
 Artifacts are outside the repo under `/tmp/uzmax-m7-ui-20-conversation-workbench-visual-calibration/`.
 
@@ -217,15 +217,16 @@ Geometry captured from production preview:
 
 | Viewport | List | Thread | Rail | Topbar | Sidebar | Body scroll width |
 |---|---:|---:|---:|---:|---:|---:|
-| Desktop 1440x900 | x 232 / y 53 / w 316 / h 1236 | x 548 / y 53 / w 552 / h 1236 | x 1100 / y 53 / w 340 / h 1236 | x 232 / y 0 / w 1208 / h 53 | x 0 / y 0 / w 232 / h 1289 | 1440 |
-| Mobile 320x900 | x 0 / y 295 / w 320 / h 577 | x 0 / y 872 / w 320 / h 1658 | x 0 / y 2530 / w 320 / h 1032 | x 0 / y 242 / w 320 / h 53 | x 0 / y 0 / w 320 / h 242 | 320 |
+| Desktop 1440x900 | x 232 / y 53 / w 316 / h 1190 | x 548 / y 53 / w 552 / h 1190 | x 1100 / y 53 / w 340 / h 1190 | x 232 / y 0 / w 1208 / h 53 | x 0 / y 0 / w 232 / h 1243 | 1440 |
+| Mobile 320x900 | x 0 / y 295 / w 320 / h 891 | x 0 / y 1186 / w 320 / h 1454 | x 0 / y 2639 / w 320 / h 997 | x 0 / y 242 / w 320 / h 53 | x 0 / y 0 / w 320 / h 242 | 320 |
 
 Validation from `/Users/atilla/.codex/worktrees/m7-ui-20-conversation-workbench-page-impl`:
 
+- `git diff --check` - pass.
 - `npm run format:check` - pass.
 - `npm run lint` - pass.
 - `npm run typecheck -- --pretty false` - pass.
-- `npm run build:admin` - pass; produced `apps/admin/dist/assets/index-Bbnd229w.js`.
+- `npm run build:admin` - pass; produced `apps/admin/dist/assets/index-BzGgF0GJ.js`.
 - `npm run playwright -- apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` - pass, 11/11.
 - Screenshot/geometry capture from `node node_modules/vite/bin/vite.js preview apps/admin --host 127.0.0.1 --port 4173` - pass; runtime source `synthetic`, runtime state `degraded`, mobile `document.body.scrollWidth === 320`.
 

@@ -12,6 +12,9 @@ import {
   type KnowledgeViewState
 } from "./knowledgeFallback";
 
+const stateBoundary =
+  "mock degraded read-only knowledge runtime unavailable no production knowledge data";
+
 export interface DataRow {
   cells: ReactNode[];
   id: string;
@@ -24,18 +27,21 @@ export function StatePanel({
 }: {
   state: Exclude<KnowledgeViewState, "degraded">;
 }) {
+  // prettier-ignore
   const copy = {
-    empty: ["empty", "当前没有 synthetic mock 知识条目。"],
-    error: ["error", "Mock knowledge runtime unavailable; no API retry is attempted."],
-    gate: ["gate", "Eval gate blocks publish; no automatic publish is available."],
-    loading: ["loading", "Loading synthetic mock knowledge view..."],
-    permission: [
-      "permission",
-      "Permission denied; backend authz remains authoritative."
-    ]
+    empty: ["暂无知识条目", "当前没有可展示的知识内容，请从资料导入或确认队列开始整理。"],
+    error: ["知识服务暂不可用", "请稍后重试，或先查看确认队列中的待处理候选。"],
+    gate: ["评测门禁未通过", "请先处理红线条目、负反馈样本或待确认候选，再进入发布流程。"],
+    loading: ["加载知识与资源", "正在整理旅程、事实、话术、素材和模板来源。"],
+    permission: ["权限不足", "当前账号不能查看该租户的知识与资源，请联系管理员确认权限。"]
   }[state];
   return (
-    <main className="uz-knowledge-state" data-testid={`m7-knowledge-state-${state}`}>
+    <main
+      className="uz-knowledge-state"
+      data-runtime-boundary={stateBoundary}
+      data-testid={`m7-knowledge-state-${state}`}
+      title={stateBoundary}
+    >
       <div>
         <h2>{copy[0]}</h2>
         <p>{copy[1]}</p>
@@ -109,7 +115,7 @@ export function JourneyView({
   const hasWarning = stageAssets.some((asset) => !asset.referenced);
   return (
     <main className="uz-knowledge-pad">
-      <p className="uz-knowledge-count">Mock journey stages · source-like pipeline</p>
+      <p className="uz-knowledge-count">阶段管线 · 查看素材关联与负反馈</p>
       <div
         className="uz-knowledge-table-wrap"
         data-testid="m7-knowledge-journey-stages"
@@ -124,7 +130,7 @@ export function JourneyView({
               type="button"
             >
               <strong>{`${index + 1}. ${stage.name}`}</strong>
-              <span className="uz-knowledge-mono">{`auto locate ${stage.rate}%`}</span>
+              <span className="uz-knowledge-mono">{`自动定位 ${stage.rate}%`}</span>
               <br />
               <span>{feedbackLabel[stage.feedback]}</span>
             </button>
@@ -132,24 +138,24 @@ export function JourneyView({
         </div>
       </div>
       <section className="uz-knowledge-detail" data-testid="m7-knowledge-stage-detail">
-        <h3>{activeStage.name} stage detail</h3>
+        <h3>{activeStage.name} 阶段详情</h3>
         <div className="uz-knowledge-stack">
           {stageAssets.map((asset) => (
             <article className="uz-knowledge-card" key={asset.id}>
               <h3>{asset.title}</h3>
-              <p>{`${asset.ref} · ${asset.referenced ? "referenced" : "unreferenced"}`}</p>
+              <p>{`${asset.displayRef} · ${asset.referenced ? "已关联" : "未关联"}`}</p>
             </article>
           ))}
         </div>
         {hasWarning ? (
           <div
             className="uz-knowledge-warning"
+            data-runtime-boundary="mock read-only no formal knowledge write"
             data-testid="m7-knowledge-journey-warning"
+            title="mock read-only no formal knowledge write"
           >
             <IconSlot icon={TriangleAlert} size="sm" />
-            <span>
-              Mock stage has unreferenced asset; no formal knowledge write occurs.
-            </span>
+            <span>该阶段存在未关联素材，建议补充对应话术或关联素材。</span>
           </div>
         ) : null}
       </section>
@@ -186,7 +192,7 @@ export function FactsView({
   return (
     <main className="uz-knowledge-split">
       <section className="uz-knowledge-pad">
-        <p className="uz-knowledge-count">{facts.length} synthetic mock facts</p>
+        <p className="uz-knowledge-count">{facts.length} 条事实条目 · 查看详情与红线</p>
         <DataTable
           columns={["条目", "分类", "命中", "负反馈", "版本", "评测"]}
           onOpen={setFact}
@@ -198,16 +204,24 @@ export function FactsView({
         <aside className="uz-knowledge-side" data-testid="m7-knowledge-fact-detail">
           <h3>{activeFact.title}</h3>
           <p>{activeFact.content}</p>
-          <p className="uz-knowledge-mono">{activeFact.sourceRef}</p>
+          <p
+            className="uz-knowledge-mono"
+            data-source-ref={activeFact.sourceRef}
+            title={`controlled source ${activeFact.sourceRef}`}
+          >
+            来源已归档
+          </p>
           <button
             aria-pressed={activeFact.redline}
             className="uz-knowledge-btn"
+            data-runtime-boundary="read-only local-only no formal knowledge write"
             data-testid="m7-knowledge-redline-toggle"
             onClick={() => toggleRedline(activeFact.id)}
+            title="read-only local-only no formal knowledge write"
             type="button"
           >
             <IconSlot icon={ShieldAlert} size="sm" />
-            {activeFact.redline ? "redline on" : "redline off"}
+            {activeFact.redline ? "红线条目 · 命中必转人工" : "红线标记 · 关闭"}
           </button>
         </aside>
       ) : null}
@@ -224,7 +238,7 @@ export function SnippetsView({
 }) {
   return (
     <main className="uz-knowledge-pad" data-testid={testId}>
-      <p className="uz-knowledge-count">{snippets.length} mock snippets</p>
+      <p className="uz-knowledge-count">{snippets.length} 条话术</p>
       <div className="uz-knowledge-stack">
         {snippets.map((snippet) => (
           <article className="uz-knowledge-card" key={snippet.id}>

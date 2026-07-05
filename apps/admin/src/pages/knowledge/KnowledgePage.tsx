@@ -86,10 +86,13 @@ export function KnowledgePage({ selectedTenantId }: { selectedTenantId: string }
 
   return (
     <section
+      aria-label="知识与资源"
       className="uz-knowledge-page"
+      data-runtime-boundary="mock degraded read-only knowledge runtime unavailable no production knowledge data no formal knowledge write no automatic publish no DB/API closure"
       data-runtime-state="degraded"
       data-tenant-id={selectedTenantId}
       data-testid="m7-knowledge-page"
+      title="mock degraded read-only knowledge runtime unavailable no production knowledge data no formal knowledge write no automatic publish no DB/API closure"
     >
       <style>{knowledgeStyles}</style>
       <header className="uz-knowledge-head">
@@ -168,7 +171,7 @@ export function KnowledgePage({ selectedTenantId }: { selectedTenantId: string }
       return (
         <main className="uz-knowledge-pad">
           <p className="uz-knowledge-count">
-            {filteredAssets.length} synthetic mock assets
+            {filteredAssets.length} 个素材 · 点击行查看 / 编辑详情
           </p>
           <DataTable
             columns={[
@@ -196,7 +199,13 @@ function createAssetRows(rows: KnowledgeAsset[]): DataRow[] {
       asset.title,
       asset.type,
       `${asset.format} · ${asset.size}`,
-      <span className="uz-knowledge-mono">{asset.ref}</span>,
+      <span
+        className="uz-knowledge-mono"
+        data-source-ref={asset.ref}
+        title={`controlled source ${asset.ref}`}
+      >
+        {asset.displayRef}
+      </span>,
       asset.cached ? "已缓存" : "未缓存",
       asset.stage,
       asset.referenced ? "已引用" : "未引用"
@@ -219,14 +228,20 @@ function TemplatesView({ rows }: { rows: TemplateSource[] }) {
       <span className={toneClass(templateTone(row.status))}>
         {templateStatusLabel[row.status]}
       </span>,
-      <span className="uz-knowledge-mono">{row.sourceRef}</span>
+      <span
+        className="uz-knowledge-mono"
+        data-source-ref={row.sourceRef}
+        title={`controlled source ${row.sourceRef}`}
+      >
+        模板库
+      </span>
     ],
     id: row.id
   }));
   return (
     <main className="uz-knowledge-pad" data-testid="m7-knowledge-template-source">
       <p className="uz-knowledge-count">
-        Mock template source table · no automatic publish
+        {rows.length} 个模板来源 · 查看同步状态与评测集入口
       </p>
       <DataTable
         columns={["模板名", "本地版本", "来源版本", "复制时间", "状态", "来源"]}

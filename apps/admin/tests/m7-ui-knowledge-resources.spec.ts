@@ -30,6 +30,10 @@ test("renders tenant.knowledge with tenant-only nav runtime labels and tabs", as
     "data-runtime-state",
     "degraded"
   );
+  await expect(page.getByTestId("m7-knowledge-page")).toHaveAttribute(
+    "data-runtime-boundary",
+    /knowledge runtime unavailable/
+  );
   for (const label of [
     "degraded",
     "mock",
@@ -38,7 +42,11 @@ test("renders tenant.knowledge with tenant-only nav runtime labels and tabs", as
     "no formal knowledge write",
     "no automatic publish"
   ])
-    await expect(page.getByTestId("m7-knowledge-runtime-note")).toContainText(label);
+    await expect(page.getByTestId("m7-knowledge-runtime-note")).toHaveAttribute(
+      "data-runtime-boundary",
+      new RegExp(label)
+    );
+  await expectVisibleBodyClean(page);
   for (const id of ["journey", "facts", "public", "private", "assets", "templates"])
     await expect(page.getByTestId(`m7-knowledge-tab-${id}`)).toBeVisible();
   await expect(page.getByTestId("m7-knowledge-tab-journey")).toHaveAttribute(
@@ -55,16 +63,16 @@ test("renders tenant.knowledge with tenant-only nav runtime labels and tabs", as
 
 test("covers journey default and desktop screenshot", async ({ page }) => {
   await openKnowledge(page);
-  await expect(page.getByTestId("m7-knowledge-journey-stages")).toContainText(
-    "Mock 认知"
-  );
-  await page.getByRole("button", { name: /3\. Mock 下单/ }).click();
+  await expect(page.getByTestId("m7-knowledge-journey-stages")).toContainText("触达");
+  await page.getByRole("button", { name: /3\. 下单/ }).click();
   await expect(page.getByTestId("m7-knowledge-stage-detail")).toContainText(
-    "Mock 未关联素材 D"
+    "物流时效图"
   );
-  await expect(page.getByTestId("m7-knowledge-journey-warning")).toContainText(
-    "no formal knowledge write"
+  await expect(page.getByTestId("m7-knowledge-journey-warning")).toHaveAttribute(
+    "data-runtime-boundary",
+    /no formal knowledge write/
   );
+  await expectVisibleBodyClean(page);
   await page.screenshot({
     fullPage: true,
     path: `${artifactDir}/react-knowledge-journey-desktop.png`
@@ -75,14 +83,19 @@ test("opens facts by keyboard and toggles redline", async ({ page }) => {
   await openKnowledge(page);
   await page.getByTestId("m7-knowledge-tab-facts").click();
   await expect(page.getByTestId("m7-knowledge-toolbar")).toBeVisible();
-  await page.getByTestId("m7-knowledge-search").fill("流程");
-  await expect(page.getByTestId("m7-knowledge-facts-table")).toContainText("SYN-KB-V2");
+  await page.getByTestId("m7-knowledge-search").fill("售后");
+  await expect(page.getByTestId("m7-knowledge-facts-table")).toContainText(
+    "退款流程说明"
+  );
   await page.getByTestId("m7-knowledge-search").fill("");
-  await page.getByTestId("m7-knowledge-fact-row-SYN-KB-FACT-002").focus();
+  await page.getByTestId("m7-knowledge-fact-row-SYN-KB-FACT-001").focus();
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("m7-knowledge-fact-detail")).toContainText(
-    "controlled://mock/knowledge/facts/002"
+    "套装报价口径"
   );
+  await expect(
+    page.getByTestId("m7-knowledge-fact-detail").locator("[data-source-ref]")
+  ).toHaveAttribute("data-source-ref", "controlled://mock/knowledge/facts/001");
   await expect(page.getByTestId("m7-knowledge-redline-toggle")).toHaveAttribute(
     "aria-pressed",
     "false"
@@ -98,11 +111,11 @@ test("renders public and private snippets", async ({ page }) => {
   await openKnowledge(page);
   await page.getByTestId("m7-knowledge-tab-public").click();
   await expect(page.getByTestId("m7-knowledge-public-snippets")).toContainText(
-    "Mock 公共欢迎话术"
+    "物流延迟标准安抚"
   );
   await page.getByTestId("m7-knowledge-tab-private").click();
   await expect(page.getByTestId("m7-knowledge-private-snippets")).toContainText(
-    "Mock 私人备注话术"
+    "我的快捷 · 催付款"
   );
 });
 
@@ -112,20 +125,23 @@ test("supports assets detail edit save cancel delete and screenshot", async ({
   await openKnowledge(page);
   await page.getByTestId("m7-knowledge-tab-assets").click();
   await page.getByTestId("m7-knowledge-asset-row-SYN-KB-ASSET-001").click();
-  await expect(page.getByTestId("m7-knowledge-asset-detail")).toContainText(
+  await expect(page.getByTestId("m7-knowledge-asset-detail")).not.toContainText(
     "controlled://mock/assets/onboarding-a"
   );
+  await expect(
+    page.getByTestId("m7-knowledge-asset-detail").locator("[data-source-ref]")
+  ).toHaveAttribute("data-source-ref", "controlled://mock/assets/onboarding-a");
   await page.getByTestId("m7-knowledge-asset-edit").click();
-  await page.getByLabel("Edit mock asset content").fill("Mock saved asset content");
+  await page.getByLabel("编辑素材内容").fill("已保存的素材内容");
   await page.getByTestId("m7-knowledge-asset-save").click();
   await expect(page.getByTestId("m7-knowledge-asset-detail")).toContainText(
-    "Mock saved asset content"
+    "已保存的素材内容"
   );
   await page.getByTestId("m7-knowledge-asset-edit").click();
-  await page.getByLabel("Edit mock asset content").fill("Mock canceled content");
+  await page.getByLabel("编辑素材内容").fill("取消保存的素材内容");
   await page.getByTestId("m7-knowledge-asset-cancel").click();
   await expect(page.getByTestId("m7-knowledge-asset-detail")).not.toContainText(
-    "Mock canceled content"
+    "取消保存的素材内容"
   );
   await page.screenshot({
     fullPage: true,
@@ -142,11 +158,17 @@ test("covers template source table and URL states", async ({ page }) => {
   await openKnowledge(page);
   await page.getByTestId("m7-knowledge-tab-templates").click();
   await expect(page.getByTestId("m7-knowledge-template-source")).toContainText(
-    "Mock FAQ 模板"
+    "美妆售后知识包"
   );
-  await expect(page.getByTestId("m7-knowledge-template-source")).toContainText(
-    "controlled://mock/templates/faq"
+  await expect(page.getByTestId("m7-knowledge-template-source")).not.toContainText(
+    "controlled://mock"
   );
+  await expect(
+    page
+      .getByTestId("m7-knowledge-template-source")
+      .locator("[data-source-ref]")
+      .first()
+  ).toHaveAttribute("data-source-ref", "controlled://mock/templates/faq");
   for (const state of ["loading", "empty", "error", "permission", "gate"]) {
     await openKnowledge(page, `?m7KnowledgeState=${state}`);
     await expect(page.getByTestId(`m7-knowledge-state-${state}`)).toBeVisible();
@@ -158,7 +180,7 @@ test("resets local asset state when switching tenants", async ({ page }) => {
   await page.getByTestId("m7-knowledge-tab-assets").click();
   await page.getByTestId("m7-knowledge-asset-row-SYN-KB-ASSET-001").click();
   await page.getByTestId("m7-knowledge-asset-edit").click();
-  await page.getByLabel("Edit mock asset content").fill("tenant-b local edit");
+  await page.getByLabel("编辑素材内容").fill("tenant-b local edit");
   await page.getByTestId("m7-knowledge-asset-save").click();
 
   await page.getByTestId("tenant-switcher").selectOption("tenant-c");
@@ -209,6 +231,26 @@ async function openKnowledge(page: Page, query = "") {
     "data-active-page-id",
     "tenant.knowledge"
   );
+}
+
+async function expectVisibleBodyClean(page: Page) {
+  const visibleBody = await page.evaluate(() => document.body.innerText);
+  for (const forbidden of [
+    "mock",
+    "degraded",
+    "read-only",
+    "runtime unavailable",
+    "not production",
+    "synthetic",
+    "local-only",
+    "browser-local only",
+    "no production",
+    "MOCK-",
+    "disabled",
+    "fixture",
+    "controlled://mock"
+  ])
+    expect(visibleBody.toLowerCase()).not.toContain(forbidden.toLowerCase());
 }
 
 async function expectTenantOnlyNav(page: Page) {

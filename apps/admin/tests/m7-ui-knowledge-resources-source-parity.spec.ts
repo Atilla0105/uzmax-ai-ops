@@ -18,37 +18,14 @@ const factsColumns = "条目|分类|命中|负反馈|版本|评测".split("|");
 const assetColumns = "名称|类型|格式 / 大小|storageRef|缓存|阶段|引用".split("|");
 const templateColumns = "模板名|本地版本|来源版本|复制时间|状态|来源".split("|");
 
+// prettier-ignore
 interface RawKnowledgeMetrics {
-  activePageId?: string | null;
-  assetDetailHeight: number;
-  assetDetailWidth: number;
-  bodyText: string;
-  bodyScrollWidth: number;
-  documentScrollWidth: number;
-  factDetailHeight: number;
-  factDetailWidth: number;
-  journeyDetailHeight: number;
-  journeyDetailWidth: number;
-  journeyPipelineHeight: number;
-  journeyPipelineWidth: number;
-  navText: string;
-  navWidth: number;
-  pageHeight: number;
-  pageWidth: number;
-  searchWidth: number;
-  shellLevel?: string | null;
-  sideDetailHeight: number;
-  sideDetailWidth: number;
-  tabCount: number;
-  tableColumns: string[];
-  tableHeight: number;
-  tableWidth: number;
-  tabs: string[];
-  templateSourceHeight: number;
-  templateSourceWidth: number;
-  tenantCategories: string[];
-  topbarHeight: number;
-  viewportWidth: number;
+  activePageId?: string | null; bodyText: string; navText: string; runtimeBoundaryText: string; shellLevel?: string | null;
+  tableColumns: string[]; tabs: string[]; tenantCategories: string[];
+  assetDetailHeight: number; assetDetailWidth: number; bodyScrollWidth: number; documentScrollWidth: number; factDetailHeight: number; factDetailWidth: number;
+  journeyDetailHeight: number; journeyDetailWidth: number; journeyPipelineHeight: number; journeyPipelineWidth: number; navWidth: number; pageHeight: number; pageWidth: number;
+  searchWidth: number; sideDetailHeight: number; sideDetailWidth: number; tabCount: number; tableHeight: number; tableWidth: number; templateSourceHeight: number;
+  templateSourceWidth: number; topbarHeight: number; viewportWidth: number;
 }
 
 mkdirSync(artifactDir, { recursive: true });
@@ -100,15 +77,18 @@ test("captures tenant.knowledge source parity evidence on latest shell stack", a
   expect(journeyMetrics.sourceLikeTitleAndTabsVisible).toBe(true);
   expect(journeyMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
   expect(journeyMetrics.documentScrollWidth).toBeLessThanOrEqual(1440);
-  await page.getByRole("button", { name: /3\. Mock 下单/ }).click();
-  await expect(page.getByTestId("m7-knowledge-journey-warning")).toContainText(
-    "no formal knowledge write"
+  await page.getByRole("button", { name: /3\. 下单/ }).click();
+  await expect(page.getByTestId("m7-knowledge-journey-warning")).toHaveAttribute(
+    "data-runtime-boundary",
+    /no formal knowledge write/
   );
   await saveShot(page, "react-knowledge-journey-desktop.png");
 
   await page.getByTestId("m7-knowledge-tab-facts").click();
-  await page.getByTestId("m7-knowledge-search").fill("流程");
-  await expect(page.getByTestId("m7-knowledge-facts-table")).toContainText("SYN-KB-V2");
+  await page.getByTestId("m7-knowledge-search").fill("售后");
+  await expect(page.getByTestId("m7-knowledge-facts-table")).toContainText(
+    "退款流程说明"
+  );
   await page.getByTestId("m7-knowledge-search").fill("");
   await page.getByTestId("m7-knowledge-fact-row-SYN-KB-FACT-002").click();
   await page.getByTestId("m7-knowledge-redline-toggle").click();
@@ -125,11 +105,11 @@ test("captures tenant.knowledge source parity evidence on latest shell stack", a
 
   await page.getByTestId("m7-knowledge-tab-public").click();
   await expect(page.getByTestId("m7-knowledge-public-snippets")).toContainText(
-    "Mock 公共欢迎话术"
+    "物流延迟标准安抚"
   );
   await page.getByTestId("m7-knowledge-tab-private").click();
   await expect(page.getByTestId("m7-knowledge-private-snippets")).toContainText(
-    "Mock 私人备注话术"
+    "我的快捷 · 催付款"
   );
   const snippetsMetrics = await collectKnowledgeMetrics(page);
   expect(snippetsMetrics.publicPrivateSnippetsVisible).toBe(true);
@@ -140,10 +120,10 @@ test("captures tenant.knowledge source parity evidence on latest shell stack", a
   expect(assetListMetrics.sourceLikeAssetsTableVisible).toBe(true);
   await page.getByTestId("m7-knowledge-asset-row-SYN-KB-ASSET-001").click();
   await page.getByTestId("m7-knowledge-asset-edit").click();
-  await page.getByLabel("Edit mock asset content").fill("M7-UI-67 local-only asset");
+  await page.getByLabel("编辑素材内容").fill("M7-UI-86 素材草稿");
   await page.getByTestId("m7-knowledge-asset-save").click();
   await expect(page.getByTestId("m7-knowledge-asset-detail")).toContainText(
-    "M7-UI-67 local-only asset"
+    "M7-UI-86 素材草稿"
   );
   const assetsMetrics = await collectKnowledgeMetrics(page);
   expect(assetsMetrics.assetDetailVisible).toBe(true);
@@ -295,6 +275,18 @@ async function collectKnowledgeMetrics(page: Page) {
       navWidth: roundRect('[data-testid="app-shell-nav"]').width,
       pageHeight: page.height,
       pageWidth: page.width,
+      runtimeBoundaryText: Array.from(
+        document.querySelectorAll("[data-runtime-boundary]")
+      )
+        .map((node) => {
+          const element = node as HTMLElement;
+          return [
+            element.getAttribute("data-runtime-boundary") ?? "",
+            element.getAttribute("title") ?? "",
+            element.getAttribute("aria-label") ?? ""
+          ].join(" ");
+        })
+        .join(" "),
       searchWidth: search.width,
       shellLevel: document
         .querySelector('[data-testid="admin-shell"]')
@@ -330,19 +322,18 @@ function buildKnowledgeMetrics(raw: RawKnowledgeMetrics) {
     ).length,
     journeyDetailVisible: hasBox(raw.journeyDetailWidth, raw.journeyDetailHeight),
     journeyPipelineVisible: hasBox(raw.journeyPipelineWidth, raw.journeyPipelineHeight),
-    localAssetControlsVisible: includesAll(bodyText, [
-      "delete local-only",
-      "edit local-only"
-    ]),
+    localAssetControlsVisible:
+      includesAll(bodyText, ["删除素材", "编辑内容"]) &&
+      raw.runtimeBoundaryText.includes("local-only"),
     mobileReadable:
-      includesAll(bodyText, ["知识与资源", "素材库", "Mock asset content"]) &&
+      includesAll(bodyText, ["知识与资源", "素材库", "素材内容"]) &&
       hasBox(raw.assetDetailWidth, raw.assetDetailHeight),
     navText: undefined,
     pageVisible: hasBox(raw.pageWidth, raw.pageHeight),
     publicPrivateSnippetsVisible:
-      bodyText.includes("Mock 公共欢迎话术") || bodyText.includes("Mock 私人备注话术"),
-    redlineToggleVisible: bodyText.includes("redline on"),
-    runtimeLabelsVisible: includesAll(bodyText, [
+      bodyText.includes("物流延迟标准安抚") || bodyText.includes("我的快捷 · 催付款"),
+    redlineToggleVisible: bodyText.includes("红线"),
+    runtimeLabelsVisible: includesAll(raw.runtimeBoundaryText, [
       "degraded",
       "mock",
       "read-only",
@@ -353,13 +344,13 @@ function buildKnowledgeMetrics(raw: RawKnowledgeMetrics) {
     sideDetailVisible: hasBox(raw.sideDetailWidth, raw.sideDetailHeight),
     sourceLikeAssetsTableVisible:
       assetColumns.every((label) => raw.tableColumns.includes(label)) &&
-      includesAll(bodyText, ["storageRef", "local-only"]),
+      includesAll(bodyText, ["storageRef", "素材对象"]),
     sourceLikeFactsVisible:
       factsColumns.every((label) => raw.tableColumns.includes(label)) &&
-      includesAll(bodyText, ["controlled://mock/knowledge/facts/002", "redline"]),
+      includesAll(bodyText, ["来源已归档", "红线"]),
     sourceLikeTemplateVisible:
       templateColumns.every((label) => raw.tableColumns.includes(label)) &&
-      bodyText.includes("no automatic publish"),
+      includesAll(bodyText, ["美妆售后知识包", "模板库"]),
     sourceLikeTitleAndTabsVisible:
       bodyText.includes("知识与资源") &&
       knowledgeTabs.every((label) => raw.tabs.includes(label)),
@@ -377,11 +368,9 @@ function hasBox(width: number, height: number) {
 }
 
 function writeSourceMappingSummary() {
-  const sources: Record<keyof typeof sourceFiles, string> = {
-    fixtures: readFileSync(sourceFiles.fixtures, "utf8"),
-    hook: readFileSync(sourceFiles.hook, "utf8"),
-    page: readFileSync(sourceFiles.page, "utf8")
-  };
+  const sources = Object.fromEntries(
+    Object.entries(sourceFiles).map(([key, file]) => [key, readFileSync(file, "utf8")])
+  ) as Record<keyof typeof sourceFiles, string>;
   const page = sources.page;
   const fixtures = sources.fixtures;
   const hook = sources.hook;

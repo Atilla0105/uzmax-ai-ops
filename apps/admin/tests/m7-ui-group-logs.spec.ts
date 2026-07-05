@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-57-group-logs-visible-ui";
 const groupLabels =
@@ -83,11 +83,18 @@ test("renders group logs with group shell and local-only audit boundary", async 
 test("module chips and search filter rows with empty state", async ({ page }) => {
   await openGroupLogs(page);
   const logPage = page.getByTestId("m7-group-logs-page");
-  await logPage.getByRole("button", { exact: true, name: "连接中心" }).click();
+  const connectionChip = logPage.getByRole("button", {
+    exact: true,
+    name: "连接中心"
+  });
+  await connectionChip.click();
   await expect(page.getByTestId("m7-group-logs-active-module")).toHaveText("连接中心");
-  await expect(
-    logPage.getByRole("button", { exact: true, name: "连接中心" })
-  ).toHaveAttribute("aria-pressed", "true");
+  await expect(connectionChip).toHaveAttribute("aria-pressed", "true");
+  await expectPressedChipReadable(connectionChip);
+  await connectionChip.hover();
+  await expectPressedChipReadable(connectionChip);
+  await connectionChip.focus();
+  await expectPressedChipReadable(connectionChip);
   await expect(page.locator(".uz-glog-row")).toHaveCount(1);
   await expect(page.locator(".uz-glog-row")).toContainText("order-api");
 
@@ -169,6 +176,64 @@ async function expectLocalToast(page: Page, labels: readonly string[]) {
   await expect(toast).toHaveAttribute("role", "status");
   await expect(toast).toHaveAttribute("aria-live", "polite");
   for (const label of labels) await expect(toast).toContainText(label);
+}
+
+async function expectPressedChipReadable(chip: Locator) {
+  const colors = await chip.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return {
+      backgroundColor: style.backgroundColor,
+      color: style.color
+    };
+  });
+  expect(colors.color).not.toBe(colors.backgroundColor);
+  expect(contrastRatio(colors.color, colors.backgroundColor)).toBeGreaterThanOrEqual(
+    4.5
+  );
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const fg = relativeLuminance(parseRgbColor(foreground));
+  const bg = relativeLuminance(parseRgbColor(background));
+  const lighter = Math.max(fg, bg);
+  const darker = Math.min(fg, bg);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function parseRgbColor(value: string): [number, number, number] {
+  const match = value.match(/rgba?\(([^)]+)\)/);
+  if (!match) throw new Error(`Unsupported CSS color format: ${value}`);
+  const colorBody = match[1];
+  if (!colorBody) throw new Error(`Unsupported CSS color format: ${value}`);
+
+  const channels = colorBody
+    .split(/[\s,/]+/)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((part) => Number.parseFloat(part));
+  const [red, green, blue] = channels;
+  if (
+    red === undefined ||
+    green === undefined ||
+    blue === undefined ||
+    channels.some((channel) => Number.isNaN(channel))
+  )
+    throw new Error(`Unsupported CSS color format: ${value}`);
+  return [red, green, blue];
+}
+
+function relativeLuminance([red, green, blue]: [number, number, number]) {
+  const r = toLinearRgb(red);
+  const g = toLinearRgb(green);
+  const b = toLinearRgb(blue);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function toLinearRgb(channel: number) {
+  const normalized = channel / 255;
+  return normalized <= 0.03928
+    ? normalized / 12.92
+    : ((normalized + 0.055) / 1.055) ** 2.4;
 }
 
 async function expectLayerNav(

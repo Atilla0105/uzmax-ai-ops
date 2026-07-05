@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
+import { AgentsPage } from "./agents/AgentsPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
@@ -127,6 +128,13 @@ export function PageOutlet({
       </section>
     );
   }
+
+  if (page.id === "tenant.aiMembers")
+    return (
+      <section data-page-id={page.id} data-testid="page-outlet">
+        <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      </section>
+    );
 
   return (
     <section className="page-grid" data-page-id={page.id} data-testid="page-outlet">

@@ -263,7 +263,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-40-eval-center-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "AI 成员",
     id: "tenant.aiMembers",
     label: "AI 成员",
@@ -273,9 +273,9 @@ const adminPageRegistry = [
     order: 15,
     requiredStates: [...stateMatrix, "emergency stop/recovery"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/agents/AgentsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/agents/AgentsPage.tsx",
-    targetSpecId: "M7-UI-04O-tenant-ai-members"
+    targetSpecId: "M7-UI-41-ai-members-page"
   },
   {
     evidenceStatus: "not_started",

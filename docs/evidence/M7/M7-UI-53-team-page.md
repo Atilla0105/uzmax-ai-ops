@@ -23,13 +23,28 @@
 
 ## Validation
 
-待执行（本地环境在命令层面已可复测）：
+已执行并由 coordinator 复核：
 
-- `git diff --check origin/codex/m7-ui-57-group-logs-visible-ui...HEAD`
-- `/Users/atilla/.cache/codex/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-57-group-logs-visible-ui --spec docs/specs/M7-UI-53-team-page.md --include-worktree`
-- `prettier`/`eslint`/`tsc --noEmit` 针对变更文件的目标校验
-- `vite build apps/admin --emptyOutDir`
-- focused Playwright: `PLAYWRIGHT_TEST_BASE_URL=http://127.0.0.1:4173 /Users/atilla/.cache/codex/codex-primary-runtime/dependencies/node/bin/node node_modules/@playwright/test/cli.js test apps/admin/tests/m7-ui-team-page.spec.ts`
+- `git diff --check origin/codex/m7-ui-57-group-logs-visible-ui...HEAD`：通过。
+- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-57-group-logs-visible-ui --spec docs/specs/M7-UI-53-team-page.md --include-worktree`：通过，source netLoc 530，source files 6。
+- Targeted Prettier / ESLint / Vite admin build：通过。
+- Admin-target TypeScript：通过。
+- Root `tsc -p tsconfig.json`：当前 worktree runtime 缺少 repo 后端依赖（Nest/BullMQ/Prisma/Supabase 等），不能作为本页通过证据；admin-target TS 已通过。
+- Focused Playwright `apps/admin/tests/m7-ui-team-page.spec.ts`：7 passed。
+- Stacked M7 visible UI regression：79 passed。
+
+## Visual Evidence
+
+- Desktop screenshot: `/tmp/uzmax-m7-ui-53-team-page-visible-ui/react-team-desktop.png`
+- Mobile 320 screenshot: `/tmp/uzmax-m7-ui-53-team-page-visible-ui/react-team-mobile-320.png`
+- Metrics: `/tmp/uzmax-m7-ui-53-team-page-visible-ui/react-team-metrics.json`
+- Metrics values: `activePageId=tenant.team`, `shellLevel=tenant`, `bodyScrollWidth=1280`, `memberCount=4`, `cardCount=4`, `navWidth=231`
+
+## Browser Comparison Notes
+
+- Source inspected/compared: owner HTML team region, `/Users/atilla/源码/unpacked 6/pages/team/TeamPage.tsx`, `/Users/atilla/源码/unpacked 6/fixtures/team.ts`, and React screenshots above.
+- React candidate keeps the tenant-layer shell, team members/roles split, member drawer, role/invite modals, degraded/mock/read-only/local-only boundary copy, and 320px readable fallback visible.
+- Remaining visual delta: this is still UI-first synthetic evidence and not owner visual acceptance; DB/API/authz/audit/invite/Telegram persistence remain explicitly out of scope.
 
 ## 备注
 

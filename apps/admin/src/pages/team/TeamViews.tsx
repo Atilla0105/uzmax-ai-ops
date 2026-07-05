@@ -27,8 +27,7 @@ type RoleActionProps = {
 
 // prettier-ignore
 function MemberIdentity({ member }: { member: TeamMember }) {
-  const avatarStyle = member.type === "ai" ? { background: "#EBF0F9", color: "#30518C" } : { background: "#F2F3F4", color: "#3F454D" };
-  return <span className="uz-team-inline"><span className="uz-team-avatar" style={avatarStyle}>{member.initial}</span><span><strong>{member.name}</strong><span className="uz-team-mono">{member.account}</span></span></span>;
+  return <span className="uz-team-inline"><span className={`uz-team-avatar uz-team-avatar--${member.type}`}>{member.initial}</span><span><strong>{member.name}</strong><span className="uz-team-mono">{member.account}</span></span></span>;
 }
 
 // prettier-ignore

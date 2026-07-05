@@ -25,9 +25,11 @@ export type ConversationRow = {
   aiState?: "active" | "suspended";
   awaitingReply?: boolean;
   channel?: string;
+  customerName?: string;
   customerRef?: string;
   customFields?: Array<{ label: string; value: string }>;
   displayRef?: string;
+  draftText?: string;
   dualTracks?: Array<{ stage: string; time: string; via: string }>;
   externalConversationRef: string;
   journeyStage?: string;

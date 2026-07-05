@@ -80,7 +80,7 @@ export function GroupLogsPage() {
       ) : null}
       {viewState === "degraded" ? (
         <main className="uz-glog-scroll">
-          <GroupLogTable onOpenDetail={openDetailPreview} rows={rows} />
+          <GroupLogTable onOpenDetail={openDetailPreview} rows={rows} search={search} />
         </main>
       ) : (
         <GroupLogStatePanel state={viewState} />

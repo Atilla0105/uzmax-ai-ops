@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const artifactDir = "/tmp/uzmax-m7-ui-57-group-logs-visible-ui";
+const artifactDir = "/tmp/uzmax-m7-ui-74-group-logs-source-parity-refresh";
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const tenantLabels =
@@ -37,7 +37,7 @@ test("renders group logs with group shell and local-only audit boundary", async 
   await expect(page.getByTestId("page-outlet")).not.toHaveAttribute("data-tenant-id");
   await expect(page.getByRole("heading", { name: "集团日志" })).toBeVisible();
   await expect(page.getByTestId("m7-group-logs-subtitle")).toContainText(
-    "7 条 mock · 全集团操作与审计预览"
+    "操作日志 · 跨租户 · 7 条"
   );
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
   for (const label of [
@@ -59,10 +59,9 @@ test("renders group logs with group shell and local-only audit boundary", async 
     "AI 成员",
     "连接中心",
     "配置",
+    "租户管理",
     "对话",
-    "模板中心",
-    "工单",
-    "租户管理"
+    "工单"
   ])
     await expect(
       logPage.getByRole("button", { exact: true, name: label })
@@ -102,8 +101,12 @@ test("module chips and search filter rows with empty state", async ({ page }) =>
   await expect(page.locator(".uz-glog-row")).toHaveCount(1);
   await page.getByTestId("m7-group-logs-search").fill("no matching local row");
   await expect(page.locator(".uz-glog-row")).toHaveCount(0);
-  await expect(page.getByTestId("m7-group-logs-empty")).toContainText("没有匹配的记录");
-  await expect(page.getByTestId("m7-group-logs-subtitle")).toContainText("0 条 mock");
+  await expect(page.getByTestId("m7-group-logs-empty")).toContainText(
+    "没有匹配「no matching local row」的记录"
+  );
+  await expect(page.getByTestId("m7-group-logs-subtitle")).toContainText(
+    "操作日志 · 跨租户 · 显示 0 / 7 条"
+  );
   await page.screenshot({
     fullPage: true,
     path: `${artifactDir}/react-group-logs-filter-empty.png`

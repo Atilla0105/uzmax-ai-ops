@@ -1,5 +1,5 @@
 import { Download, Lock, Search } from "lucide-react";
-import { IconSlot, StatusBadge } from "../../primitives";
+import { IconSlot } from "../../primitives";
 import {
   groupLogColumns,
   groupLogMeta,
@@ -23,6 +23,7 @@ interface HeaderProps {
 interface TableProps {
   onOpenDetail: (row: GroupLogRow) => void;
   rows: readonly GroupLogRow[];
+  search: string;
 }
 
 export function GroupLogHeader({
@@ -38,18 +39,21 @@ export function GroupLogHeader({
       <div className="uz-glog-head-row">
         <h2 className="uz-glog-title">{groupLogMeta.title}</h2>
         <span className="uz-glog-subtitle" data-testid="m7-group-logs-subtitle">
-          {groupLogSubtitle(resultCount)}
+          {groupLogSubtitle({
+            filtered: Boolean(search.trim()) || activeModule !== "全部模块",
+            resultCount,
+            totalCount: groupLogMeta.totalRows
+          })}
         </span>
-        <StatusBadge tone="warn">{groupLogMeta.descriptor}</StatusBadge>
         <div className="uz-glog-tools">
           <label className="uz-glog-search">
-            <span>搜索本页记录</span>
+            <span>搜索租户 / 操作人 / 对象 / 内容</span>
             <IconSlot icon={Search} size="sm" />
             <input
-              aria-label="搜索集团日志本页 mock 记录"
+              aria-label="搜索集团日志本页记录"
               data-testid="m7-group-logs-search"
               onChange={(event) => onSearch(event.currentTarget.value)}
-              placeholder="搜索本页记录..."
+              placeholder="搜索租户 / 操作人 / 对象 / 内容…"
               type="search"
               value={search}
             />
@@ -96,7 +100,7 @@ export function GroupLogRuntimeNote() {
   );
 }
 
-export function GroupLogTable({ onOpenDetail, rows }: TableProps) {
+export function GroupLogTable({ onOpenDetail, rows, search }: TableProps) {
   return (
     <section aria-label="集团日志表格" className="uz-glog-panel">
       <div className="uz-glog-table-wrap">
@@ -142,7 +146,7 @@ export function GroupLogTable({ onOpenDetail, rows }: TableProps) {
           </article>
         ))}
       </div>
-      {rows.length === 0 ? <GroupLogEmpty /> : null}
+      {rows.length === 0 ? <GroupLogEmpty search={search} /> : null}
     </section>
   );
 }
@@ -163,11 +167,12 @@ export function GroupLogStatePanel({
   );
 }
 
-function GroupLogEmpty() {
+function GroupLogEmpty({ search }: { search: string }) {
+  const query = search.trim();
   return (
     <div className="uz-glog-empty" data-testid="m7-group-logs-empty">
       <div>
-        <strong>没有匹配的记录</strong>
+        <strong>{query ? `没有匹配「${query}」的记录` : "没有匹配的记录"}</strong>
         <span>调整模块或搜索词；此处只筛选浏览器内 synthetic audit rows。</span>
       </div>
     </div>

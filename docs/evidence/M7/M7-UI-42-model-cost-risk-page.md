@@ -48,6 +48,7 @@ Passed locally on this branch:
 - `node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`
 - `node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir`
 - `node_modules/.bin/playwright test apps/admin/tests/m7-ui-model-cost-risk.spec.ts`
+- Coordinator stacked visible UI regression across group overview, conversation workbench, conversation fallback, ticket page, knowledge resources, eval center, AI members and model cost risk: `40 passed`.
 
 Build note: Vite emitted the existing large chunk warning; the build exited 0.
 
@@ -55,6 +56,7 @@ Playwright note: this shell did not expose `npm`/`npx`, and Codex app Node hit a
 
 Source shape:
 
+- Fresh coordinator `pr-shape` source result: changedFiles 5, netLoc 571, newFiles 3.
 - `apps/admin/src/pages/group/GroupModelRiskPage.tsx`: 75 lines.
 - `apps/admin/src/pages/group/GroupModelRiskViews.tsx`: 237 lines.
 - `apps/admin/src/pages/group/groupModelRiskFallback.ts`: 249 lines.

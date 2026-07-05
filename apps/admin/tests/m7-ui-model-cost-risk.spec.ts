@@ -10,6 +10,14 @@ const tenantLabels =
   );
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
+const defaultHiddenBoundaryLabels = [
+  "degraded",
+  "mock",
+  "read-only",
+  "not production cost metrics",
+  "no production model routing",
+  "local action only"
+];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -32,24 +40,13 @@ test("renders group model cost risk with boundaries and desktop evidence", async
     "group.modelRisk"
   );
   await expect(page.getByTestId("page-outlet")).not.toHaveAttribute("data-tenant-id");
-  for (const label of [
-    "degraded",
-    "mock",
-    "read-only",
-    "not production cost metrics",
-    "no production model routing",
-    "local action only"
-  ])
-    await expect(page.getByTestId("m7-model-runtime-note")).toContainText(label);
+  await expect(page.getByTestId("m7-model-runtime-note")).toHaveAttribute(
+    "data-boundary",
+    defaultHiddenBoundaryLabels.join("|")
+  );
 
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
-  await expect(page.getByTestId("m7-model-matrix")).toContainText(
-    "no production model routing"
-  );
-  await expect(page.getByTestId("m7-model-cost")).toContainText(
-    "not production cost metrics"
-  );
-  await expect(page.getByTestId("m7-model-risk")).toContainText("local action only");
+  await expectDefaultBodyClean(page);
 
   const metrics = await collectMetrics(page);
   expect(metrics.activePageId).toBe("group.modelRisk");
@@ -91,12 +88,12 @@ test("supports local export model switch and AllProvidersDown resolve", async ({
   await expect(row).toContainText("SYN-MODEL-FALLBACK-A");
 
   const kpi = page.getByTestId("m7-model-kpi-SYN-MODEL-KPI-down");
-  await expect(kpi).toContainText("mock 1");
+  await expect(kpi).toContainText("1");
   await page.getByTestId("m7-model-resolve-SYN-MODEL-RISK-all-providers-down").click();
   await expect(
     page.getByTestId("m7-model-risk-SYN-MODEL-RISK-all-providers-down")
   ).toHaveCount(0);
-  await expect(kpi).toContainText("mock 0");
+  await expect(kpi).toContainText("0");
   await expect(page.getByTestId("m7-model-toast")).toContainText(
     "no production provider health"
   );
@@ -129,8 +126,16 @@ test("URL states collapse nav and mobile 320 remain bounded", async ({ page }) =
       state === "degraded"
         ? page.getByTestId("m7-model-runtime-note")
         : page.getByTestId(`m7-model-state-${state}`);
-    await expect(target).toContainText("not production cost metrics");
-    await expect(target).toContainText("no production model routing");
+    if (state === "degraded")
+      await expect(target).toHaveAttribute(
+        "data-boundary",
+        defaultHiddenBoundaryLabels.join("|")
+      );
+    else await expect(target).toBeVisible();
+    await expect(page.getByTestId("m7-model-page")).toHaveAttribute(
+      "data-runtime-labels",
+      defaultHiddenBoundaryLabels.join(" · ")
+    );
   }
 
   await page.getByRole("button", { name: "Collapse navigation" }).click();
@@ -155,6 +160,12 @@ async function openModel(page: Page, query = "") {
     "data-active-page-id",
     "group.modelRisk"
   );
+}
+
+async function expectDefaultBodyClean(page: Page) {
+  const bodyText = await page.evaluate(() => document.body.innerText);
+  for (const label of defaultHiddenBoundaryLabels)
+    expect(bodyText).not.toContain(label);
 }
 
 async function expectLayerNav(

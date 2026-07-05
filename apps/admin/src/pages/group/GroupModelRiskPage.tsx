@@ -60,6 +60,7 @@ export function GroupModelRiskPage({ onEnterTenant }: GroupModelRiskPageProps) {
   return (
     <section
       className="uz-model-page"
+      data-runtime-labels={modelRiskMeta.runtime}
       data-runtime-source={modelRiskMeta.source}
       data-runtime-state={viewState}
       data-testid="m7-model-page"

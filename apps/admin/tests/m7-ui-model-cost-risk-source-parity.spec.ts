@@ -28,6 +28,7 @@ const sourceTaskLabels = "意图识别|教程问答|报价计算|截图理解|�
 
 interface RawModelMetrics {
   activePageId?: string | null;
+  hiddenBoundary?: string | null;
   bodyText: string;
   bodyScrollWidth: number;
   costHeight: number;
@@ -102,8 +103,10 @@ test("captures group.modelRisk source parity evidence on latest visible stack", 
   await expect(page.getByText("模型 / 成本 / 风险")).toBeVisible();
   await expect(page.getByText("集团级 · 实时")).toBeVisible();
   await expect(page.getByTestId("m7-model-export")).toContainText("导出成本");
-  for (const label of runtimeLabels)
-    await expect(page.getByTestId("m7-model-runtime-note")).toContainText(label);
+  await expect(page.getByTestId("m7-model-runtime-note")).toHaveAttribute(
+    "data-boundary",
+    runtimeLabels.join("|")
+  );
   for (const label of sourceTaskLabels)
     await expect(page.getByTestId("m7-model-matrix")).toContainText(label);
   await expect(page.getByTestId("m7-model-matrix")).toContainText("gpt-4o-mini");
@@ -131,7 +134,7 @@ test("captures group.modelRisk source parity evidence on latest visible stack", 
   expect(desktopMetrics.tenantCategories).toEqual(groupSections);
   expect(desktopMetrics.tenantCategoryCount).toBe(0);
   expect(desktopMetrics.tenantButtonCount).toBe(0);
-  expect(desktopMetrics.runtimeLabelsVisible).toBe(true);
+  expect(desktopMetrics.runtimeLabelsHidden).toBe(true);
   expect(desktopMetrics.sourceLikeDefaultVisible).toBe(true);
   expect(desktopMetrics.fullWidthMatrixAnatomy).toBe(true);
   expect(desktopMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
@@ -288,6 +291,9 @@ async function collectModelMetrics(page: Page) {
       costTop: cost.top,
       costWidth: cost.width,
       documentScrollWidth: document.documentElement.scrollWidth,
+      hiddenBoundary: document
+        .querySelector('[data-testid="m7-model-runtime-note"]')
+        ?.getAttribute("data-boundary"),
       kpiCount: document.querySelectorAll(".uz-model-kpi").length,
       kpiGridHeight: kpis.height,
       kpiGridTop: kpis.top,
@@ -336,7 +342,7 @@ function buildModelMetrics(raw: RawModelMetrics) {
       raw.matrixWidth <= raw.viewportWidth,
     navButtonLabels: undefined,
     pageVisible: hasBox(raw.pageWidth, raw.pageHeight),
-    runtimeLabelsVisible: includesAll(bodyText, runtimeLabels),
+    runtimeLabelsHidden: raw.hiddenBoundary === runtimeLabels.join("|"),
     sourceLikeDefaultVisible: includesAll(bodyText, [
       "集团级 · 实时",
       "导出成本",
@@ -352,10 +358,7 @@ function buildModelMetrics(raw: RawModelMetrics) {
       "no production provider health",
       "audit closure"
     ]),
-    sourceLikeLocalSwitchVisible: includesAll(bodyText, [
-      "已切换",
-      "no production model routing"
-    ]),
+    sourceLikeLocalSwitchVisible: includesAll(bodyText, ["已切换", "qwen2.5-7b"]),
     tenantButtonCount: tenantLabels.filter((label) => navButtonLabels.includes(label))
       .length,
     tenantCategoryCount: tenantSections.filter((label) =>
@@ -405,11 +408,6 @@ function writeSourceMappingSummary() {
         sources.page.includes("setResolved") && sources.fixtures.includes("恢复确认"),
       riskQueue: includesAll(sources.fixtures, ["RISK_DEFS", "恢复确认", "查看明细"]),
       title: sources.page.includes("模型 / 成本 / 风险")
-    },
-    boundaryAdaptation: {
-      data: "React uses centralized source-shaped synthetic fallback rows, with visible degraded/mock/read-only and no-production boundary labels.",
-      rowInteraction:
-        "Owner source toggles primary/fallback by clicking the table row; React keeps an accessible row button while preserving the visible source shape."
     },
     filesRead: Object.values(sourceFiles),
     sourceTaskLabels: sourceTaskLabels.filter((label) =>

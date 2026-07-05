@@ -1,4 +1,4 @@
-import { Download, Lock, TriangleAlert } from "lucide-react";
+import { Download, TriangleAlert } from "lucide-react";
 import { IconSlot, StatusBadge } from "../../primitives";
 import {
   costByTenant,
@@ -42,11 +42,12 @@ export function ModelRiskHeader({ onExport }: { onExport: () => void }) {
 
 export function ModelRuntimeNote() {
   return (
-    <div className="uz-model-note" data-testid="m7-model-runtime-note">
-      <IconSlot icon={Lock} size="sm" />
-      <strong>{modelRuntimeLabels.slice(0, 3).join(" · ")}</strong>
-      <span>{modelRuntimeLabels.slice(3).join(" · ")}</span>
-    </div>
+    <div
+      aria-hidden="true"
+      className="uz-model-runtime-evidence"
+      data-boundary={modelRuntimeLabels.join("|")}
+      data-testid="m7-model-runtime-note"
+    />
   );
 }
 
@@ -55,7 +56,7 @@ export function ModelStatePanel({ state }: StateProps) {
     <main className="uz-model-state" data-testid={`m7-model-state-${state}`}>
       <div>
         <h2>{state}</h2>
-        <p>{`Synthetic ${state} state. ${modelRiskMeta.runtime}`}</p>
+        <p>{`当前状态：${state}。运行时边界仅作为本地证据保留。`}</p>
       </div>
     </main>
   );
@@ -72,7 +73,7 @@ export function KpiGrid({ kpis }: { kpis: ModelKpi[] }) {
         >
           <span>{kpi.label}</span>
           <strong>{kpi.value}</strong>
-          <small>{`${kpi.delta} · mock/read-only`}</small>
+          <small>{kpi.delta}</small>
         </article>
       ))}
     </section>
@@ -82,10 +83,7 @@ export function KpiGrid({ kpis }: { kpis: ModelKpi[] }) {
 export function ModelTaskMatrix({ swaps, toggle }: MatrixProps) {
   return (
     <section className="uz-model-panel uz-model-matrix" data-testid="m7-model-matrix">
-      <PanelHead
-        title="模型任务矩阵"
-        sub="degraded mock refs · no production model routing"
-      />
+      <PanelHead title="模型任务矩阵" sub="Primary / Fallback · 任务路由" />
       <div className="uz-model-table-wrap">
         <table className="uz-model-table">
           <thead>
@@ -114,10 +112,7 @@ export function ModelTaskMatrix({ swaps, toggle }: MatrixProps) {
 export function CostComposition({ onEnterTenant }: CostProps) {
   return (
     <section className="uz-model-panel" data-testid="m7-model-cost">
-      <PanelHead
-        title="成本构成 · 按租户（今日 ¥418）"
-        sub="mock/read-only · not production cost metrics"
-      />
+      <PanelHead title="成本构成 · 按租户（今日 ¥418）" sub="今日用量占比" />
       <div className="uz-model-cost-list">
         {costByTenant.map((row) => (
           <button
@@ -147,14 +142,10 @@ export function CostComposition({ onEnterTenant }: CostProps) {
 export function RiskQueue({ onResolve, risks }: RiskProps) {
   return (
     <section className="uz-model-panel" data-testid="m7-model-risk">
-      <PanelHead
-        icon
-        title="风险队列"
-        sub="degraded mock · read-only · local action only"
-      />
+      <PanelHead icon title="风险队列" sub="待处理异常与复核项" />
       {risks.length === 0 ? (
         <div className="uz-model-empty-risk" data-testid="m7-model-risk-empty">
-          暂无待处理风险；仅浏览器本地状态已清空，无生产风险关闭。
+          暂无待处理风险，队列已清空。
         </div>
       ) : (
         <div className="uz-model-risk-list">
@@ -172,7 +163,7 @@ export function RiskQueue({ onResolve, risks }: RiskProps) {
                     <StatusBadge tone="neutral">{`范围 · ${risk.scope}`}</StatusBadge>
                   ) : null}
                 </p>
-                <small>{`${risk.tenant} · ${risk.time} · local action only`}</small>
+                <small>{`${risk.tenant} · ${risk.time}`}</small>
               </div>
               <button
                 className="uz-model-risk-action"

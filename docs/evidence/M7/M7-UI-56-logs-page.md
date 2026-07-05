@@ -70,7 +70,9 @@ Validation notes:
 - `playwright.config.ts` hardcodes `http://127.0.0.1:4173` and that port was already serving another local preview, so the focused test uses `PLAYWRIGHT_TEST_BASE_URL` and absolute test navigation to hit this branch's `http://127.0.0.1:4174/` preview.
 - Vite emitted the existing large chunk warning and exited 0.
 - Focused tenant logs Playwright: `5 passed`.
-- Full stacked `apps/admin/tests/m7-ui-*.spec.ts` regression was not run in this compressed slice to avoid false failures against the unrelated 4173 preview service; focused coverage plus build/TS/lint/pr-shape passed.
+- Coordinator follow-up validation stopped the stale M7-UI-55 preview on 4173, started the current M7-UI-56 preview on 4173, then reran focused Playwright `apps/admin/tests/m7-ui-logs-page.spec.ts`: `5/5 passed` on `desktop-chromium`.
+- Coordinator follow-up stacked visible regression `apps/admin/tests/m7-ui-*.spec.ts`: `106/106 passed` on `desktop-chromium`.
+- Coordinator also viewed the desktop, search-empty and mobile screenshots and confirmed the artifacts are present.
 
 ## Browser Evidence
 

@@ -85,7 +85,7 @@ Expected assertions:
 | Command | Result | Notes |
 |---|---|---|
 | `git diff --check` | pass | No whitespace output. |
-| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-83-confirmation-queue-default-visual-parity-refresh --spec docs/specs/M7-UI-84-orders-default-visual-parity-refresh.md --include-worktree` | pass | `changedFiles: 9`; categories `source: 2`, `test: 3`, `docs: 4`; source `netLoc: 0`, `newFiles: 0`. |
+| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-83-confirmation-queue-default-visual-parity-refresh --spec docs/specs/M7-UI-84-orders-default-visual-parity-refresh.md --include-worktree` | pass | `changedFiles: 9`; categories `source: 2`, `test: 3`, `docs: 4`; source net LOC 4 (`netLoc: 4`), `newFiles: 0`. |
 | `node node_modules/prettier/bin/prettier.cjs --check ...touched files...` | pass | Touched orders source/tests/spec/evidence/README/ledger use Prettier style. |
 | `node node_modules/eslint/bin/eslint.js ...touched source/tests...` | pass | Touched orders source and Playwright specs pass complexity/max-lines rules after helper compaction. |
 | `node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir` | pass | Admin build completed; Vite emitted the existing large-chunk warning only. |

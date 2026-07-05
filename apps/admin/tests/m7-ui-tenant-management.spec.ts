@@ -92,6 +92,24 @@ test("renders group tenant management with local-only boundaries and drawer", as
   });
 });
 
+test("drawer keyboard behavior traps focus and returns to tenant card", async ({
+  page
+}) => {
+  await openTenants(page);
+  const card = page.getByTestId("m7-tenant-card-SYN-TENANT-t1");
+  await card.focus();
+  await page.keyboard.press("Enter");
+  const closeButton = page.getByRole("button", { name: "关闭租户管理抽屉" });
+  await expect(closeButton).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.getByTestId("m7-tenant-disable")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(closeButton).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("m7-tenant-drawer")).toHaveCount(0);
+  await expect(card).toBeFocused();
+});
+
 test("drawer edits and disable restore stay browser-local only", async ({ page }) => {
   await openTenants(page);
   await page.getByTestId("m7-tenant-card-SYN-TENANT-t1").click();
@@ -116,6 +134,9 @@ test("drawer edits and disable restore stay browser-local only", async ({ page }
   ]);
 
   await page.getByTestId("m7-tenant-disable").click();
+  await expect(page.getByTestId("m7-tenant-drawer")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.locator('[aria-modal="true"]')).toHaveCount(1);
   const modal = page.getByTestId("m7-confirm-modal");
   await expect(modal).toContainText("停用租户");
   await expect(modal.getByRole("button", { name: "确认停用" })).toBeDisabled();
@@ -127,6 +148,8 @@ test("drawer edits and disable restore stay browser-local only", async ({ page }
   await expect(page.getByTestId("m7-tenant-disabled-note")).toContainText(
     "local UI test reason"
   );
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.locator('[aria-modal="true"]')).toHaveCount(1);
   await expectLocalToast(page, [
     "disabled in browser state",
     "no production tenant change",

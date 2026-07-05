@@ -74,11 +74,18 @@ export function GroupTenantPage() {
   };
   const askDisable = (tenant: TenantCard) => {
     setDisableReason("");
+    setDrawerTenantId(null);
     setConfirmTenant(tenant);
+  };
+  const cancelDisable = () => {
+    const tenantId = confirmTenant?.id;
+    setConfirmTenant(null);
+    if (tenantId) setDrawerTenantId(tenantId);
   };
   const confirmDisable = () => {
     if (!confirmTenant) return;
     const reason = disableReason.trim();
+    const tenantId = confirmTenant.id;
     patchTenant(confirmTenant.id, (tenant) => ({
       ...tenant,
       disabled: true,
@@ -89,6 +96,7 @@ export function GroupTenantPage() {
     }));
     showToast(tenantDisableToast(confirmTenant, reason));
     setConfirmTenant(null);
+    setDrawerTenantId(tenantId);
   };
   const restoreTenant = (tenant: TenantCard) => {
     patchTenant(tenant.id, (item) => ({
@@ -145,7 +153,7 @@ export function GroupTenantPage() {
         confirmLabel="确认停用"
         danger
         description="Reason required. This preview changes browser-local mock state only; no production tenant change and no audit write happens."
-        onCancel={() => setConfirmTenant(null)}
+        onCancel={cancelDisable}
         onConfirm={confirmDisable}
         open={!!confirmTenant}
         reason={{

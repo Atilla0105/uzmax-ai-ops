@@ -48,6 +48,11 @@ This branch implements a visible UI-first `group.tenants` / `租户管理` candi
 - Language, timezone, capability, disable and restore actions mutate browser-local UI state only. Toast copy explicitly says no production tenant change and no audit write; capability copy also says no connector or feature-flag change.
 - No DB/API/runtime/authz/connector/feature-flag/audit/export/release wiring is implemented.
 
+## Review Fix
+
+- P1 nested-modal fix: the tenant drawer is unmounted before the shared disable `ConfirmModal` opens, then restored after cancel or confirm. During reason confirmation there is only one active `role="dialog" aria-modal="true"` context.
+- P2 keyboard coverage: focused Playwright now asserts initial focus lands on the drawer close button, Tab/Shift+Tab wrap inside the drawer, Escape closes the drawer, and focus returns to the originating tenant card.
+
 ## Validation
 
 Passed locally on this branch:
@@ -68,9 +73,10 @@ Validation notes:
 - Because `playwright.config.ts` webServer uses `npm`/`npx`, preview was started manually with direct Node and Playwright reused `http://127.0.0.1:4173`.
 - `.prettierignore` ignores `*.md` and `docs/**`; the Prettier command validates matched source/test files and skips docs by repo rule.
 - `guard:pr-shape` output before commit: `changedFiles=10`, categories source `5`, docs `4`, test `1`.
+- Tenant source line counts after review fix: `GroupTenantPage.tsx` 206, `GroupTenantViews.tsx` 245, `groupTenantFallback.ts` 146.
 - Vite emitted the existing large chunk warning and exited 0.
-- Focused tenant management Playwright: `4 passed`.
-- Stacked visible UI regression: `53 passed`.
+- Focused tenant management Playwright: `5 passed`.
+- Stacked visible UI regression: `54 passed`.
 
 ## Browser Evidence
 

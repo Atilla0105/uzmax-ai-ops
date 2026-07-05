@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Lock, Search } from "lucide-react";
-import { IconSlot, StatusBadge } from "../../primitives";
+import { IconSlot } from "../../primitives";
 import {
   filterTenantLogRows,
   readTenantLogViewState,
@@ -9,7 +9,6 @@ import {
   tenantLogMeta,
   tenantLogRuntimeLabels,
   tenantLogStyles,
-  tenantLogSubtitle,
   tenantLogTabs,
   type TenantLogRow,
   type TenantLogTab
@@ -45,6 +44,7 @@ export function LogsPage({ selectedTenantId }: { selectedTenantId: string }) {
   return (
     <section
       className="uz-tlog-page"
+      data-runtime-boundary={tenantLogRuntimeLabels.join(" | ")}
       data-runtime-source={tenantLogMeta.source}
       data-runtime-state={viewState}
       data-tenant-id={selectedTenantId}
@@ -55,7 +55,6 @@ export function LogsPage({ selectedTenantId }: { selectedTenantId: string }) {
         activeTab={activeTab}
         onSearch={setSearch}
         onTabChange={setActiveTab}
-        resultCount={rows.length}
         search={search}
       />
       <div className="uz-tlog-note" data-testid="m7-logs-runtime-note">
@@ -99,23 +98,17 @@ function TenantLogHeader({
   activeTab,
   onSearch,
   onTabChange,
-  resultCount,
   search
 }: {
   activeTab: TenantLogTab;
   onSearch: (value: string) => void;
   onTabChange: (tab: TenantLogTab) => void;
-  resultCount: number;
   search: string;
 }) {
   return (
     <header className="uz-tlog-head">
       <div className="uz-tlog-head-row">
         <h2 className="uz-tlog-title">{tenantLogMeta.title}</h2>
-        <span className="uz-tlog-subtitle" data-testid="m7-logs-subtitle">
-          {tenantLogSubtitle(activeTab, resultCount)}
-        </span>
-        <StatusBadge tone="warn">{tenantLogMeta.descriptor}</StatusBadge>
         <label className="uz-tlog-search">
           <span>搜索本页记录</span>
           <IconSlot icon={Search} size="sm" />
@@ -123,7 +116,7 @@ function TenantLogHeader({
             aria-label="搜索租户日志本页 mock 记录"
             data-testid="m7-logs-search"
             onChange={(event) => onSearch(event.currentTarget.value)}
-            placeholder="搜索本页记录..."
+            placeholder="搜索本页记录…"
             type="search"
             value={search}
           />
@@ -159,7 +152,11 @@ function TenantLogTable({
   search: string;
 }) {
   return (
-    <section aria-label="租户日志表格" className="uz-tlog-panel">
+    <section
+      aria-label="租户日志表格"
+      className="uz-tlog-panel"
+      data-runtime-boundary={tenantLogRuntimeLabels.join(" | ")}
+    >
       <div className="uz-tlog-table-wrap">
         <table className="uz-tlog-table">
           <thead>
@@ -213,9 +210,6 @@ function TenantLogTable({
             <strong>
               {search.trim() ? `没有匹配「${search.trim()}」的记录` : "没有匹配的记录"}
             </strong>
-            <span>
-              调整日志类型或搜索词；此处只筛选浏览器内 synthetic tenant log rows。
-            </span>
           </div>
         </div>
       ) : null}
@@ -233,13 +227,12 @@ function renderCell(
   if (activeTab !== "op" || index !== 5 || !row.detailTarget) return cell;
   return (
     <button
-      aria-label={`本地预览日志详情 ${row.cells[2]} ${row.cells[4]}`}
+      aria-label={`本地预览日志详情 ${row.cells[2]} ${row.cells[4]} ${cell}`}
       className="uz-tlog-detail"
       onClick={() => onOpenDetail(row)}
       type="button"
     >
       {cell}
-      <span aria-hidden>{"->"}</span>
     </button>
   );
 }

@@ -39,9 +39,11 @@ test("renders tenant logs with tenant shell and local-only boundary", async ({
   await expect(page.getByTestId("m7-logs-page")).toHaveAttribute("data-tenant-id");
   await expectLayerNav(page, tenantSections, groupSections, tenantLabels, groupLabels);
   await expect(page.getByRole("heading", { name: "日志" })).toBeVisible();
-  await expect(page.getByTestId("m7-logs-subtitle")).toContainText(
-    "6 条 mock · 操作日志预览"
+  await expect(page.getByTestId("m7-logs-search")).toHaveAttribute(
+    "placeholder",
+    "搜索本页记录…"
   );
+  await expect(page.getByTestId("m7-logs-runtime-note")).toBeHidden();
   for (const label of [
     "degraded",
     "mock",
@@ -63,6 +65,7 @@ test("renders tenant logs with tenant shell and local-only boundary", async ({
   await expect(page.getByTestId("m7-logs-active-tab")).toHaveText("操作日志");
   await expect(page.locator(".uz-tlog-row")).toHaveCount(6);
   await expect(page.locator(".uz-tlog-row").first()).toContainText("模型路由");
+  await expect(page.locator(".uz-tlog-row").first()).toContainText("查看版本 →");
   await page.screenshot({
     fullPage: true,
     path: `${artifactDir}/react-logs-desktop.png`
@@ -79,9 +82,6 @@ test("tabs and search filter rows with deterministic empty state", async ({ page
   await logPage.getByRole("button", { exact: true, name: "登录日志" }).click();
   await expect(page.getByTestId("m7-logs-active-tab")).toHaveText("登录日志");
   await expect(page.locator(".uz-tlog-row")).toHaveCount(4);
-  await expect(page.getByTestId("m7-logs-subtitle")).toContainText(
-    "4 条 mock · 登录日志预览"
-  );
 
   await page.getByTestId("m7-logs-search").fill("密码错误");
   await expect(page.locator(".uz-tlog-row")).toHaveCount(1);
@@ -91,7 +91,6 @@ test("tabs and search filter rows with deterministic empty state", async ({ page
   await expect(page.getByTestId("m7-logs-empty")).toContainText(
     "没有匹配「no matching local row」的记录"
   );
-  await expect(page.getByTestId("m7-logs-subtitle")).toContainText("0 条 mock");
   await page.screenshot({
     fullPage: true,
     path: `${artifactDir}/react-logs-search-empty.png`

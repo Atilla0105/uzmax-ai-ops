@@ -58,8 +58,8 @@ export const ticketTabs = [
 ] as const;
 
 export const ticketTeamMembers = ["韩雪", "李航", "王敏", "王芳"] as const;
-// prettier-ignore
-export const ticketCloseOptions = ["resolved 已解决", "转人工渠道", "无响应", "无效", "重复"] as const;
+export const ticketCloseOptions: readonly string[] =
+  "resolved 已解决|转人工渠道|无响应|无效|重复".split("|");
 
 export const ticketCloseStatus: Record<string, string> = {
   "resolved 已解决": "已解决",

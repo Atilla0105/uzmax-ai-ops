@@ -14,6 +14,7 @@ export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
       className="uz-team-page"
       data-runtime-source={teamMeta.source}
       data-runtime-state={s.viewState}
+      data-selected-tenant-id={selectedTenantId}
       data-testid="m7-team-page"
     >
       <style>{teamStyles}</style>
@@ -22,9 +23,6 @@ export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
         onPrimaryAction={
           s.tab === "roles" ? s.onRoleDraftCreate : s.onInviteOpenMembers
         }
-        search={s.search}
-        selectedTenantId={selectedTenantId}
-        setSearch={s.onSetSearch}
         tab={s.tab}
       />
       {s.toast ? (
@@ -45,6 +43,8 @@ export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
               members={s.filteredMembers}
               onSelect={s.onSetMember}
               roleById={s.roleById}
+              search={s.search}
+              setSearch={s.onSetSearch}
             />
           ) : (
             <TeamRolesTab

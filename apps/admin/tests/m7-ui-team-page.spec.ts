@@ -86,7 +86,7 @@ test("search empty state stays deterministic", async ({ page }) => {
 
 test("roles tab role editor save and delete local-only", async ({ page }) => {
   await openTeam(page);
-  await page.getByRole("button", { name: "角色管理" }).click();
+  await page.getByTestId("m7-team-tab-roles").click();
   await expect(page.getByRole("button", { name: "新建角色" })).toBeVisible();
   await page.getByRole("button", { name: "新建角色" }).click();
   await expect(page.getByTestId("m7-team-role-editor")).toBeVisible();
@@ -102,7 +102,7 @@ test("roles tab role editor save and delete local-only", async ({ page }) => {
   await row.getByRole("button", { name: "删除" }).click();
   const modal = page.getByTestId("m7-confirm-modal");
   await expect(modal).toContainText("删除角色");
-  await modal.getByRole("button", { name: "删除角色" }).click();
+  await modal.getByRole("button", { name: "删除" }).click();
   await expect(row).toHaveCount(0);
   await expect(page.getByTestId("m7-team-toast")).toContainText(
     "deleted role 本地角色-测试"

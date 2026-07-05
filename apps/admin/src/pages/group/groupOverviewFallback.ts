@@ -38,18 +38,18 @@ export interface GroupOverviewRow {
 }
 
 export const evalMeta = {
-  blocked: ["mock 阻断", "danger"],
-  pass: ["mock 通过", "ok"],
-  running: ["mock 运行中", "info"],
+  blocked: ["阻断", "danger"],
+  pass: ["通过", "ok"],
+  running: ["运行中", "info"],
   unavailable: ["—", "neutral"]
 } as const satisfies Record<
   GroupOverviewRow["evalState"],
   readonly [string, StatusTone]
 >;
 export const orderMeta = {
-  degraded: ["mock 降级", "warn"],
-  fault: ["mock 故障", "danger"],
-  normal: ["mock 正常", "ok"],
+  degraded: ["降级", "warn"],
+  fault: ["故障", "danger"],
+  normal: ["正常", "ok"],
   unavailable: ["—", "neutral"]
 } as const satisfies Record<
   GroupOverviewRow["orderState"],
@@ -59,7 +59,9 @@ export const healthDot = (health: GroupOverviewRow["health"]) =>
   health === "tripped" ? "breaker" : health;
 
 export const groupOverviewFallbackMeta = {
-  label: "4 个租户 · mock/degraded",
+  boundary:
+    "degraded · mock · read-only · aggregate runtime unavailable · not production metrics · centralized mock/degraded fallback only",
+  label: "4 个租户",
   reason:
     "centralized mock/degraded fallback only; aggregate runtime unavailable, not production metrics.",
   source: "centralized-mock-degraded"
@@ -75,7 +77,7 @@ export const groupHealthCards: GroupHealthCard[] = [
 ];
 
 export const groupOverviewRows: GroupOverviewRow[] = [
-  row("tenant-a", "玉珠跨境美妆", "美妆 · 中亚 · mock/degraded", "healthy", {
+  row("tenant-a", "玉珠跨境美妆", "美妆 · 中亚", "healthy", {
     cost: "¥118",
     costSort: 118,
     evalState: "blocked",
@@ -83,7 +85,7 @@ export const groupOverviewRows: GroupOverviewRow[] = [
     handoffSort: 14,
     human: "7",
     humanSort: 7,
-    last: "mock 红线 · 9分钟前",
+    last: "红线 · 9分钟前",
     orderState: "degraded",
     redline: true,
     sessions: "1,204",
@@ -91,7 +93,7 @@ export const groupOverviewRows: GroupOverviewRow[] = [
     sla: "92%",
     slaSort: 92
   }),
-  row("tenant-b", "丝路数码", "3C · 俄语区 · mock/degraded", "degraded", {
+  row("tenant-b", "丝路数码", "3C · 俄语区", "degraded", {
     cost: "¥204",
     costSort: 204,
     evalState: "pass",
@@ -99,7 +101,7 @@ export const groupOverviewRows: GroupOverviewRow[] = [
     handoffSort: 19,
     human: "3",
     humanSort: 3,
-    last: "mock 成本 · 1小时前",
+    last: "成本超预算 · 1小时前",
     orderState: "normal",
     redline: false,
     sessions: "862",
@@ -107,7 +109,7 @@ export const groupOverviewRows: GroupOverviewRow[] = [
     sla: "88%",
     slaSort: 88
   }),
-  row("tenant-c", "天净家居", "家居 · 哈萨克 · mock/degraded", "attention", {
+  row("tenant-c", "天净家居", "家居 · 哈萨克", "attention", {
     cost: "¥96",
     costSort: 96,
     evalState: "running",
@@ -115,7 +117,7 @@ export const groupOverviewRows: GroupOverviewRow[] = [
     handoffSort: 28,
     human: "11",
     humanSort: 11,
-    last: "mock connector · 22分钟前",
+    last: "connector 故障 · 22分钟前",
     orderState: "fault",
     redline: false,
     sessions: "430",
@@ -123,7 +125,7 @@ export const groupOverviewRows: GroupOverviewRow[] = [
     sla: "79%",
     slaSort: 79
   }),
-  row("tenant-d", "白桦母婴", "母婴 · 俄语区 · mock/degraded", "tripped", {
+  row("tenant-d", "白桦母婴", "母婴 · 俄语区", "tripped", {
     cost: "¥0",
     costSort: 0,
     evalState: "pass",
@@ -131,7 +133,7 @@ export const groupOverviewRows: GroupOverviewRow[] = [
     handoffSort: 0,
     human: "0",
     humanSort: 0,
-    last: "mock 熔断 · 3小时前",
+    last: "AI 熔断 · 3小时前",
     orderState: "normal",
     redline: false,
     sessions: "0",

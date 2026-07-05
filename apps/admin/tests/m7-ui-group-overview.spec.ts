@@ -10,6 +10,16 @@ const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const tableHeaders =
   "租户|会话量|待人工|SLA风险|转人工率|AI成本/日|评测状态|订单状态|最后异常".split("|");
+const forbiddenVisibleTerms = [
+  "mock/degraded",
+  "mock",
+  "read-only",
+  "runtime unavailable",
+  "not production metrics",
+  "centralized mock/degraded fallback only",
+  "aggregate runtime unavailable",
+  "synthetic"
+];
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/conversation-ticket/conversations", async (route) => {
@@ -17,7 +27,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("renders group overview with group-only shell and degraded mock data", async ({
+test("renders group overview with group-only shell and hidden runtime boundary", async ({
   page
 }) => {
   await page.goto("/design");
@@ -39,15 +49,29 @@ test("renders group overview with group-only shell and degraded mock data", asyn
   await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
     "4 个租户"
   );
-  await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
-    "mock/degraded"
+  await expect(page.getByTestId("m7-group-overview-result-label")).not.toContainText(
+    "mock"
   );
+  await expect(page.getByTestId("m7-group-overview-page")).toHaveAttribute(
+    "data-runtime-state",
+    "degraded"
+  );
+  await expect(page.getByTestId("m7-group-overview-page")).toHaveAttribute(
+    "data-runtime-source",
+    "centralized-mock-degraded"
+  );
+  const runtimeBoundary =
+    (await page
+      .getByTestId("m7-group-overview-page")
+      .getAttribute("data-runtime-boundary")) ?? "";
+  expect(runtimeBoundary).toContain("mock");
+  expect(runtimeBoundary).toContain("read-only");
+  expect(runtimeBoundary).toContain("not production metrics");
+  await expect(page.getByTestId("m7-group-overview-runtime-note")).toBeHidden();
   await expect(page.getByTestId("m7-group-overview-runtime-note")).toContainText(
     "aggregate runtime unavailable"
   );
-  await expect(page.getByTestId("m7-group-overview-runtime-note")).toContainText(
-    "not production metrics"
-  );
+  await expectVisibleBodyClean(page);
   await expect(page.getByTestId("m7-group-overview-search")).toHaveAttribute(
     "placeholder",
     "搜索租户 / 业务线"
@@ -78,6 +102,20 @@ test("renders group overview with group-only shell and degraded mock data", asyn
   await expect(page.locator("[data-testid^='m7-group-overview-row-']")).toHaveCount(4);
   for (const tenantName of ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"]) {
     await expect(page.getByTestId("m7-group-overview-table")).toContainText(tenantName);
+  }
+  for (const sourceLikeText of [
+    "美妆 · 中亚",
+    "阻断",
+    "通过",
+    "运行中",
+    "降级",
+    "故障",
+    "正常",
+    "红线 · 9分钟前"
+  ]) {
+    await expect(page.getByTestId("m7-group-overview-table")).toContainText(
+      sourceLikeText
+    );
   }
 
   await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty("offsetWidth", 232);
@@ -121,9 +159,7 @@ test("supports search filters clear and sort without claiming runtime truth", as
   await expectTenantOrder(page, ["天净家居", "玉珠跨境美妆", "丝路数码", "白桦母婴"]);
   await page.getByTestId("m7-group-sort-human").click();
   await expectTenantOrder(page, ["白桦母婴", "丝路数码", "玉珠跨境美妆", "天净家居"]);
-  await expect(page.getByTestId("m7-group-overview-runtime-note")).toContainText(
-    "mock/degraded"
-  );
+  await expectVisibleBodyClean(page);
 });
 
 test("tenant entry button click enters tenant conversations and tenant-only navigation", async ({
@@ -176,8 +212,16 @@ test("sidebar collapse and 320px mobile fallback avoid body overflow", async ({
   await page.goto("/design");
   await expect(page.getByTestId("m7-group-overview-page")).toBeVisible();
   await expect(page.getByTestId("m7-group-overview-table")).toBeVisible();
+  await expectVisibleBodyClean(page);
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+async function expectVisibleBodyClean(page: Page) {
+  const text = await page.evaluate(() => document.body.innerText.toLowerCase());
+  for (const term of forbiddenVisibleTerms) {
+    expect(text, `visible body should not include ${term}`).not.toContain(term);
+  }
+}
 
 async function expectLayerNav(
   page: Page,

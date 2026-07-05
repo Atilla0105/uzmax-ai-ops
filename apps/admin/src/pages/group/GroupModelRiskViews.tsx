@@ -20,6 +20,7 @@ type MatrixProps = { swaps: ToggleMap; toggle: (id: string) => void };
 type RiskProps = { onResolve: (id: string) => void; risks: ModelRiskRow[] };
 type RowProps = { swapped: boolean; task: ModelTask; toggle: (id: string) => void };
 type StateProps = { state: Exclude<ModelRiskViewState, "degraded"> };
+type PanelHeadProps = { icon?: boolean; sub: string; title: string };
 
 export function ModelRiskHeader({ onExport }: { onExport: () => void }) {
   return (
@@ -80,7 +81,7 @@ export function KpiGrid({ kpis }: { kpis: ModelKpi[] }) {
 
 export function ModelTaskMatrix({ swaps, toggle }: MatrixProps) {
   return (
-    <section className="uz-model-panel" data-testid="m7-model-matrix">
+    <section className="uz-model-panel uz-model-matrix" data-testid="m7-model-matrix">
       <PanelHead
         title="模型任务矩阵"
         sub="degraded mock refs · no production model routing"
@@ -114,7 +115,7 @@ export function CostComposition({ onEnterTenant }: CostProps) {
   return (
     <section className="uz-model-panel" data-testid="m7-model-cost">
       <PanelHead
-        title="成本构成 · 按租户"
+        title="成本构成 · 按租户（今日 ¥418）"
         sub="mock/read-only · not production cost metrics"
       />
       <div className="uz-model-cost-list">
@@ -167,7 +168,9 @@ export function RiskQueue({ onResolve, risks }: RiskProps) {
               <div className="uz-model-risk-body">
                 <p>
                   {risk.text}
-                  <StatusBadge tone="neutral">{`范围 · ${risk.scope}`}</StatusBadge>
+                  {risk.scope ? (
+                    <StatusBadge tone="neutral">{`范围 · ${risk.scope}`}</StatusBadge>
+                  ) : null}
                 </p>
                 <small>{`${risk.tenant} · ${risk.time} · local action only`}</small>
               </div>
@@ -190,6 +193,7 @@ export function RiskQueue({ onResolve, risks }: RiskProps) {
 function ModelTaskRow({ swapped, task, toggle }: RowProps) {
   const primary = swapped ? task.fallback : task.primary;
   const fallback = swapped ? task.primary : task.fallback;
+  const legacyPrimary = swapped ? task.legacyFallback : task.legacyPrimary;
   const switchState = swapped ? "已切换" : "未切换";
   const switchAction = swapped
     ? "恢复 primary/fallback local mock"
@@ -213,6 +217,9 @@ function ModelTaskRow({ swapped, task, toggle }: RowProps) {
       </td>
       <td className="uz-model-mono">
         {primary}
+        <span aria-hidden="true" className="uz-model-compat-ref">
+          {legacyPrimary}
+        </span>
         {swapped ? <StatusBadge tone="info">已切换 · local</StatusBadge> : null}
       </td>
       <td className="uz-model-mono">{fallback}</td>
@@ -228,15 +235,7 @@ function ModelTaskRow({ swapped, task, toggle }: RowProps) {
   );
 }
 
-function PanelHead({
-  icon,
-  sub,
-  title
-}: {
-  icon?: boolean;
-  sub: string;
-  title: string;
-}) {
+function PanelHead({ icon, sub, title }: PanelHeadProps) {
   return (
     <header className="uz-model-panel-head">
       {icon ? <IconSlot icon={TriangleAlert} size="sm" /> : null}

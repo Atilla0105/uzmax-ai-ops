@@ -46,11 +46,15 @@ export function GroupModelRiskPage({ onEnterTenant }: GroupModelRiskPageProps) {
   };
   const toggleTask = (id: string) => {
     setSwaps((items) => ({ ...items, [id]: !items[id] }));
-    showToast("primary/fallback switched in browser-local mock state only.");
+    showToast(
+      "primary/fallback switched in browser-local mock state only; no production model routing."
+    );
   };
   const resolveRisk = (id: string) => {
     setResolved((items) => ({ ...items, [id]: true }));
-    showToast(`${id} resolved locally; no production provider health changed.`);
+    showToast(
+      `${id} resolved locally; no production provider health or audit closure changed.`
+    );
   };
 
   return (
@@ -77,12 +81,10 @@ export function GroupModelRiskPage({ onEnterTenant }: GroupModelRiskPageProps) {
       {viewState === "degraded" ? (
         <main className="uz-model-scroll">
           <KpiGrid kpis={modelStats(allProvidersResolved)} />
-          <div className="uz-model-grid">
-            <ModelTaskMatrix swaps={swaps} toggle={toggleTask} />
-            <div className="uz-model-split">
-              <CostComposition onEnterTenant={onEnterTenant} />
-              <RiskQueue onResolve={resolveRisk} risks={visibleRisks} />
-            </div>
+          <ModelTaskMatrix swaps={swaps} toggle={toggleTask} />
+          <div className="uz-model-split">
+            <CostComposition onEnterTenant={onEnterTenant} />
+            <RiskQueue onResolve={resolveRisk} risks={visibleRisks} />
           </div>
         </main>
       ) : (

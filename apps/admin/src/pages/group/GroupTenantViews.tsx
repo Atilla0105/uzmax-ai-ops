@@ -50,24 +50,28 @@ export function TenantGrid({ onOpen, tenants }: GridProps) {
           <div className="uz-tenant-card-head">
             <span className={`uz-tenant-dot ${toneClass(tenant.dotTone)}`} />
             <strong className="uz-tenant-card-name">{tenant.name}</strong>
-            <StatusBadge
-              tone={badgeTone(tenant.statusTone)}
-            >{`mock ${tenant.status}`}</StatusBadge>
+            <StatusBadge tone={badgeTone(tenant.statusTone)}>
+              {tenant.status}
+              <span className="uz-tenant-sr-only">{`mock ${tenant.status}`}</span>
+            </StatusBadge>
           </div>
           <div className="uz-tenant-line">
             {tenant.line} · {tenant.template}
           </div>
           <div className="uz-tenant-stats">
             <span>
-              <span>mock 成员 </span>
+              <span>成员 </span>
+              <span className="uz-tenant-sr-only">mock 成员 </span>
               <span className="uz-tenant-mono">{tenant.members}</span>
             </span>
             <span>
-              <span>mock AI </span>
+              <span>AI </span>
+              <span className="uz-tenant-sr-only">mock AI </span>
               <span className="uz-tenant-mono">{tenant.ai}</span>
             </span>
             <span>
-              <span>mock 连接 </span>
+              <span>连接 </span>
+              <span className="uz-tenant-sr-only">mock 连接 </span>
               <strong className={`uz-tenant-conn ${toneClass(tenant.connectionTone)}`}>
                 {tenant.connection}
               </strong>
@@ -129,9 +133,10 @@ export function TenantDrawer({
             <h3 id="m7-tenant-drawer-title">{tenant.name}</h3>
             <span className="uz-tenant-muted">{tenant.line}</span>
           </div>
-          <StatusBadge
-            tone={badgeTone(tenant.statusTone)}
-          >{`mock ${tenant.status}`}</StatusBadge>
+          <StatusBadge tone={badgeTone(tenant.statusTone)}>
+            {tenant.status}
+            <span className="uz-tenant-sr-only">{`mock ${tenant.status}`}</span>
+          </StatusBadge>
           <button
             aria-label="关闭租户管理抽屉"
             className="uz-tenant-close"
@@ -167,7 +172,12 @@ export function TenantDrawer({
                 return (
                   <div className="uz-tenant-cap" key={capability.key}>
                     <strong>{capability.label}</strong>
-                    <span>{enabled ? "mock 已启用" : "mock 已停用"}</span>
+                    <span>
+                      {enabled ? "已启用" : "已停用"}
+                      <span className="uz-tenant-sr-only">
+                        {enabled ? "mock 已启用" : "mock 已停用"}
+                      </span>
+                    </span>
                     <Toggle
                       aria-label={`${tenant.name} ${capability.label} browser-local capability`}
                       checked={enabled}

@@ -4,7 +4,7 @@
 
 Implementation candidate evidence for `tenant.tickets` / 工单 on stacked branch `codex/m7-ui-21-ticket-page-visible-ui`.
 
-This PR renders the visible UI-first ticket page using centralized synthetic degraded/mock fallback state. DB/API/runtime foundation is intentionally not implemented for this slice, so the page marks ticket data as `mock`, `degraded` and `read-only`; it does not claim production ticket metrics, real ticket runtime, owner visual acceptance, merge, GA-0, production deployment, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
+This PR renders the visible UI-first ticket page using centralized prototype-shaped synthetic degraded/mock fallback state. DB/API/runtime foundation is intentionally not implemented for this slice, so the page preserves a lightweight `mock` / `degraded` / `read-only` caveat while the main visual content follows the owner source shape (`T-1042`, `T-1039`, `Dilnoza Rashidova`, `Иван Петров`, `UZ-20413`, source-like summaries, quotes and timelines). It does not claim production ticket metrics, real ticket runtime, owner visual acceptance, merge, GA-0, production deployment, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.
 
 ## Entry Evidence
 
@@ -29,28 +29,24 @@ This PR renders the visible UI-first ticket page using centralized synthetic deg
 | Path | Summary |
 |---|---|
 | `apps/admin/src/pages/tickets/TicketsPage.tsx` | Visible tenant ticket workbench with tabbed ticket list, detail header, summary/AI/snippet/quote/timeline/note cards, customer/order/close side column and local interactions. |
-| `apps/admin/src/pages/tickets/ticketFallback.ts` | Centralizes synthetic degraded/mock ticket rows, tabs, team members, close options, helper functions and scoped CSS. |
-| `apps/admin/src/pages/PageOutlet.tsx` | Renders `TicketsPage` for `tenant.tickets` with selected tenant scope. |
-| `apps/admin/src/pages/registry.ts` | Marks `tenant.tickets` as implementation evidence pending PR review under this spec. |
-| `apps/admin/tests/m7-ui-ticket-page.spec.ts` | Focused Playwright coverage for tenant-only routing/nav, tabs/counts, row select, claim, transfer, note add, close two-step required note, degraded/mock labels, sidebar collapse, 320px no overflow and no mixed group nav. |
-| `docs/incidents/INC-2026-07-04-m7-ui-21-root-patch-target.md` | Records and cleans the process incident where initial untracked worker files were briefly created in root/main before being moved into the assigned worktree. |
+| `apps/admin/src/pages/tickets/TicketHtml.ts` | Demotes runtime caveat from banner to small evidence text, removes `mock` from tab/count primary labels, uses full customer names in the side card and keeps ticket actions source-like. |
+| `apps/admin/src/pages/tickets/ticketFallback.ts` | Replaces engineering placeholder rows with owner-source-like T-1042/T-1039/T-1051/T-1033/T-1028/T-1019 fallback data, summaries, AI suggestions, snippets, quotes, timeline and customer/order details. |
+| `apps/admin/tests/m7-ui-ticket-page.spec.ts` | Focused Playwright coverage for tenant-only routing/nav, source-like IDs/content, absence of T-MOCK/Mock/MOCK-ORDER main-visual placeholders, tabs/counts, row select, claim, transfer, note add, close two-step required note, degraded/mock caveat, sidebar collapse, 320px no overflow and no mixed group nav. |
 
 ## Runtime / Data Boundary
 
-- Ticket rows are synthetic/prototype-shaped fallback data and are visibly labeled as `mock`, `degraded` and `read-only`.
+- Ticket rows are synthetic/prototype-shaped fallback data. Runtime boundary is visible through `data-runtime-source="prototype-shaped-synthetic-mock-degraded"`, `data-runtime-state="degraded"` and the small caveat `degraded mock · read-only evidence only · not production ticket data`.
 - Claim, transfer, note and close actions mutate only local state.
 - No backend/API/DB/schema/package/lock/global CI files are touched.
-- No real customer names, phones, Telegram handles, order ids or prices are introduced.
+- Customer/order content is owner-prototype-shaped fallback evidence, not production runtime truth.
 
 ## Browser Evidence
 
-Artifacts captured under `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/`:
+Artifacts captured under `/tmp/uzmax-m7-ui-21-ticket-page-visual-calibration/`:
 
-- React desktop screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/react-ticket-desktop.png`
-- React mobile 320 screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/react-ticket-mobile-320.png`
-- Owner/source HTML screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/owner-html-ticket-source.png`
-- Source ticket screenshot after sidebar text click: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/source-ticket-after-click.png`
-- Metrics JSON: `/tmp/uzmax-m7-ui-21-ticket-page-visible-ui/metrics.json`
+- React desktop screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visual-calibration/desktop-1440x900.png`
+- React mobile 320 screenshot: `/tmp/uzmax-m7-ui-21-ticket-page-visual-calibration/mobile-320x900.png`
+- Metrics JSON: `/tmp/uzmax-m7-ui-21-ticket-page-visual-calibration/geometry.json`
 
 Measured React metrics:
 
@@ -58,33 +54,41 @@ Measured React metrics:
 |---|---|
 | page id | `tenant.tickets` |
 | runtime state | `degraded` |
-| nav width | `232` |
-| topbar height | `53` |
-| ticket list width | `381` offset pixels (`380px` column plus border) |
-| side column width | `248` |
-| desktop body/viewport overflow | `1440 / 1440`, `false` |
-| mobile body/viewport overflow | `320 / 320`, `false` |
+| runtime source | `prototype-shaped-synthetic-mock-degraded` |
+| desktop topbar | `1208x53` at `x=232 y=0` |
+| desktop sidebar | `232x960` |
+| desktop page | `1208x907` |
+| desktop ticket list | `381x907` offset pixels (`380px` column plus border) |
+| desktop detail | `827x907` |
+| desktop side column | `248x744` |
+| desktop body/document scrollWidth | `1440 / 1440` |
+| mobile topbar | `320x53` |
+| mobile sidebar | `320x242` |
+| mobile page | `320x1824` |
+| mobile ticket list | `320x261` |
+| mobile detail | `320x1563` |
+| mobile side column | `296x446` |
+| mobile body/document scrollWidth | `320 / 320` |
 
-Source HTML note: direct file load of `/Users/atilla/Downloads/运营塔台1.0.html` defaulted to conversation; clicking the left sidebar text `工单` produced the source ticket screenshot. The target is text/DOM-clickable rather than `role=button`. The source screenshot supports layout/source comparison, but no owner visual acceptance is claimed.
+Source comparison note: the desktop screenshot now presents source-like `工单` header, compact tabs/counts, `T-1042`, `T-1039`, `Dilnoza Rashidova`, `UZ-20413`, quote, timeline and close-ticket stack. The remaining caveat is deliberately smaller than the operational content and does not claim real runtime. No owner visual acceptance is claimed.
 
 ## Validation
 
 | Command | Result | Notes |
 |---|---|---|
-| `npm run guard:prettier-ignore -- --base origin/codex/m7-ui-12-group-overview-visible-ui` | pass | CI follow-up guard clean: 8 baseline files, 89/89 markers; no diff-added `prettier-ignore` in monitored source/test paths. |
-| `npm run format:check` | pass | Prettier clean after targeted formatting of new page/test files. |
 | `git diff --check` | pass | No whitespace output. |
-| `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
-| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-12-group-overview-visible-ui --spec docs/specs/M7-UI-21-ticket-page.md --include-worktree` | pass | `changedFiles: 11`; categories `source: 5`, `docs: 5`, `test: 1`; source `netLoc: 577`, `newFiles: 3`; all paths are spec-listed, including the required incident record. |
-| `npm run lint` | pass | ESLint completed cleanly; `TicketsPage.tsx` and ticket-scoped `TicketHtml.ts` remain within file-length limits. |
+| `npm run format:check` | pass | Prettier clean after targeted formatting of `ticketFallback.ts` and `m7-ui-ticket-page.spec.ts`. |
+| `npm run lint` | pass | ESLint completed cleanly after simplifying `ticket()` helper complexity. |
 | `npm run typecheck -- --pretty false` | pass | TypeScript completed cleanly. |
-| `npm run build:admin` | pass | Vite admin build completed; bundle size unchanged from current admin baseline for this worker's purposes. |
-| `npm run playwright -- apps/admin/tests/m7-ui-ticket-page.spec.ts apps/admin/tests/m7-ui-page-router.spec.ts apps/admin/tests/m7-ui-group-overview.spec.ts apps/admin/tests/m7-ui-conversation-workbench.spec.ts apps/admin/tests/m7-ui-conversation-workbench-fallback.spec.ts` | pass | 23/23 tests passed. |
-| `npm run playwright` | pass | Full admin Playwright suite: 59/59 tests passed. |
-| `git branch --no-merged main` | checked | Listed `codex/m7-ui-11-release-acceptance-page-impl`, `codex/m7-ui-12-group-overview-visible-ui`, `codex/m7-ui-20-conversation-workbench-page-impl`, this branch and `codex/req-g01a-code-01-db-api-foundation-impl`; no branch was modified by this worker except this branch. |
-| `gh pr list --state open --limit 50` | unavailable | `gh` command is not installed/available in this shell. |
+| `npm run build:admin` | pass | Vite admin build completed with temporary official Node `v24.18.0` under `/tmp/uzmax-node24`; Codex bundled Node hit a Rolldown native binding code-signature mismatch before this retry. |
+| `npm run playwright -- apps/admin/tests/m7-ui-ticket-page.spec.ts` | pass | 4/4 focused ticket-page tests passed. |
+| `npm run guard:doc-triggers` | pass | `doc-trigger-paths: ok`. |
+| `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-21-ticket-page-visible-ui --spec docs/specs/M7-UI-21-ticket-page.md --include-worktree` | pass | `changedFiles: 5`; categories `source: 3`, `test: 1`, `docs: 1`; source `netLoc: 0`, `newFiles: 0`; all changed files are spec-listed. |
+| `node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/tickets/TicketHtml.ts apps/admin/src/pages/tickets/ticketFallback.ts` | pass | `[]`; no detector findings in this ticket slice. |
+| `git branch --no-merged main` | checked | Listed multiple active M7/REQ worker branches including this branch; no branch was modified by this worker except this branch. |
+| `gh pr list --state open --limit 50` | unavailable | `gh` is not installed/available in this shell. |
 
-Validation environment note: plain `node` was not on the initial shell PATH. Commands used the bundled runtime path `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin` plus `/Applications/Codex.app/Contents/Resources/cua_node/bin`. `npm ci` installed dependencies from the existing lockfile in the assigned worktree only and did not change package/lock files.
+Validation environment note: plain `node`/`npm` were not on the initial shell PATH. Static checks used `/Applications/Codex.app/Contents/Resources/cua_node/bin`. Build/preview/Playwright screenshot capture used official temporary Node `v24.18.0` downloaded to `/tmp/uzmax-node24` because Codex bundled Node could not load the Rolldown native binding due macOS library validation (`Team IDs` mismatch). No repo dependency, package or lockfile was changed.
 
 ## Boundary
 

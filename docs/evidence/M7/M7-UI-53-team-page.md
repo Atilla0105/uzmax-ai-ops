@@ -26,7 +26,7 @@
 已执行并由 coordinator 复核：
 
 - `git diff --check origin/codex/m7-ui-57-group-logs-visible-ui...HEAD`：通过。
-- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-57-group-logs-visible-ui --spec docs/specs/M7-UI-53-team-page.md --include-worktree`：通过，source netLoc 530，source files 6。
+- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-57-group-logs-visible-ui --spec docs/specs/M7-UI-53-team-page.md --include-worktree`：通过，source netLoc 528，source files 6。
 - Targeted Prettier / ESLint / Vite admin build：通过。
 - Admin-target TypeScript：通过。
 - Root `tsc -p tsconfig.json`：当前 worktree runtime 缺少 repo 后端依赖（Nest/BullMQ/Prisma/Supabase 等），不能作为本页通过证据；admin-target TS 已通过。

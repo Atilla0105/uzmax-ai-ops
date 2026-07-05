@@ -137,7 +137,7 @@ function makeActions(
         tabs: [
           ...new Set(ticket.tabs.filter((item) => item !== "unclaimed").concat("mine"))
         ],
-        timeline: append(ticket, `${me} 认领 mock 工单`)
+        timeline: append(ticket, `${me} 认领工单`)
       })),
     close: () => {
       if (!closeDraft?.note.trim()) return;

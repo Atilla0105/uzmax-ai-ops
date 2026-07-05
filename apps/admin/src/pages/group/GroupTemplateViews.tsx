@@ -13,14 +13,12 @@ import {
   type TemplateViewState
 } from "./groupTemplateFallback";
 
+type CopyHandler = (card: TemplateCard, trigger: HTMLButtonElement) => void;
 type HeaderProps = {
   activeTab: TemplateTabId;
   onChangeTab: (id: TemplateTabId) => void;
 };
-type GridProps = {
-  cards: TemplateCard[];
-  onCopy: (card: TemplateCard, trigger: HTMLButtonElement) => void;
-};
+type GridProps = { cards: TemplateCard[]; onCopy: CopyHandler };
 type ModalProps = {
   card: TemplateCard;
   onClose: () => void;
@@ -29,7 +27,15 @@ type ModalProps = {
   selected: Record<string, boolean>;
   selectedCount: number;
 };
+type CardItemProps = { card: TemplateCard; onCopy: CopyHandler };
+type TenantTargetProps = {
+  onToggle: (id: string) => void;
+  selected: boolean;
+  tenant: TemplateTenantTarget;
+};
 type StateProps = { state: Exclude<TemplateViewState, "degraded"> };
+const focusableSelector =
+  "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
 
 export function TemplateHeader({ activeTab, onChangeTab }: HeaderProps) {
   return (
@@ -169,13 +175,7 @@ export function CopyModal({
   );
 }
 
-function TemplateCardItem({
-  card,
-  onCopy
-}: {
-  card: TemplateCard;
-  onCopy: (card: TemplateCard, trigger: HTMLButtonElement) => void;
-}) {
+function TemplateCardItem({ card, onCopy }: CardItemProps) {
   return (
     <article className="uz-template-card" data-testid={`m7-template-card-${card.id}`}>
       <div className="uz-template-card-head">
@@ -206,15 +206,7 @@ function TemplateCardItem({
   );
 }
 
-function TenantTargetRow({
-  onToggle,
-  selected,
-  tenant
-}: {
-  onToggle: (id: string) => void;
-  selected: boolean;
-  tenant: TemplateTenantTarget;
-}) {
+function TenantTargetRow({ onToggle, selected, tenant }: TenantTargetProps) {
   return (
     <button
       aria-checked={selected}
@@ -239,11 +231,7 @@ function TenantTargetRow({
 
 function trapDialogTab(event: KeyboardEvent<HTMLElement>, dialog: HTMLElement | null) {
   const focusable = dialog
-    ? Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])"
-        )
-      )
+    ? Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
     : [];
   const first = focusable[0];
   const last = focusable[focusable.length - 1];

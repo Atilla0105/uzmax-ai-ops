@@ -4,7 +4,7 @@
 
 Implement the visible UI-first `group.overview` / 集团总览 page in `apps/admin`.
 
-This implementation slice supersedes the earlier docs-only planning posture for this same spec. It renders the real page route with a truthful centralized mock/degraded fallback because DB/API/runtime foundation is temporarily downgraded. It does not implement backend/API/DB/runtime, does not import prototype fixtures, does not claim real operational numbers, does not claim owner visual acceptance, close runtime gaps, approve GA-0/production, or approve 1.0 release.
+This implementation slice supersedes the earlier docs-only planning posture for this same spec. It renders the real page route with a truthful centralized mock/degraded fallback because DB/API/runtime foundation is downgraded for this visual shell. It may provide a controlled UI-only degraded tenant-entry affordance so the owner can see the group layer -> tenant layer boundary. That affordance does not claim runtime authorization, tenant-cache invalidation, production access closure, real operational numbers, owner visual acceptance, runtime gap closure, GA-0/production approval or 1.0 release approval.
 
 ## 项目 owner 确认点与 AI agent 执行/复核责任
 
@@ -12,7 +12,7 @@ Owner/coordinator:
 
 - Confirm this PR is a UI-first implementation candidate stacked on PR #182 head/base, not runtime closure.
 - Confirm `M7-UI-12-group-overview-page` replaces the `M7-UI-04A-group-overview` placeholder for the `group.overview` visible page route.
-- Decide later whether missing group aggregate runtime/API contracts proceed through the downgraded DB/API lane; AI agents must not invent runtime truth.
+- Decide later whether missing group aggregate runtime/API contracts proceed through the downgraded DB/API lane; AI agents must not invent runtime truth or treat the visual tenant-entry affordance as production authorization closure.
 - Keep final scope, production/staging, real customer/order data, customer LLM, LLM key, cost/compliance, GA-0, production and 1.0 release decisions as owner-only.
 
 AI agent:
@@ -61,7 +61,7 @@ Implementation PR budget:
 - test files changed: <= 1 focused Playwright spec
 - docs changed: <= 4 evidence/ledger/spec updates
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
-- external API/SDK/provider/connector/adapter basis: none; render truthful degraded/read-only mock state only.
+- external API/SDK/provider/connector/adapter basis: none; render truthful degraded/mock visual state only. Controlled tenant-entry may demonstrate group -> tenant UI boundary, but is not runtime authorization/cache-invalidation evidence.
 - exceptions: none expected. If runtime/API gaps force expansion, stop for a separate spec instead of declaring an exception inside this page worker.
 
 ## 文档触发检查
@@ -135,7 +135,7 @@ v1.1/doc references:
 | Eval state | pass, blocked/fail, running, unavailable/stale | Do not imply eval gate pass if runtime lacks evidence. |
 | Order connector state | normal, degraded, fault/down, unavailable/stale | Do not let LLM infer order status; use connector/runtime state. |
 | Last abnormal event | safe aggregate event label, category, age/time, severity | Must not reveal customer plaintext, raw payload or cross-tenant details. |
-| Tenant navigation target | authorized tenant layer route, expected default `tenant.conversations` | Row click must enter tenant layer only after authorization and clear tenant-scoped caches/permissions when real runtime exists. Back/exit path is handled by shell. |
+| Tenant navigation target | authorized tenant layer route, expected default `tenant.conversations` | In this UI-first slice, a controlled degraded/mock tenant-entry affordance may route sanitized fallback rows into the tenant layer to show the boundary. Future real runtime must authorize the tenant and clear/reload tenant-scoped caches, permissions and feature flags before production use. Back/exit path is handled by shell. |
 
 ### Filters And Actions
 
@@ -145,7 +145,7 @@ v1.1/doc references:
 | Health card filter | Cards filter tenant rows by aggregate state: total, abnormal, AI tripped, model fault, order connector fault, redline today. |
 | Clear filter | Clears active health filter and search query without changing runtime data. |
 | Sort columns | Sort numeric columns for sessions, human-needed, SLA risk, handoff rate and AI cost/day; stable dimensions and no layout shift. |
-| Click row to enter tenant layer | Enter only authorized tenant context. If runtime authorization/cache invalidation is missing, render disabled/degraded affordance instead of fake navigation success. |
+| Click row to enter tenant layer | UI-first slice may expose a degraded/mock tenant-entry affordance for sanitized fallback rows so the group -> tenant layer boundary is visible. It must remain clearly non-production and must not claim authorization/cache invalidation closure. Future production/runtime entry must enforce backend authorization and tenant-scoped cache/permission invalidation. |
 | Back/exit path | Handled by AppShell/layered navigation; this page must not invent a second shell. |
 
 ### Prohibited Behavior
@@ -153,7 +153,7 @@ v1.1/doc references:
 - No customer plaintext, conversation content, phone, Telegram username, raw order payload, raw prompt/completion or customer-specific evidence at group layer.
 - No unpacked fixture data as runtime truth; fixtures may only inform source mapping or sanitized tests.
 - No LLM judgment for cost, SLA, order state, connector health or model fault.
-- No cross-tenant data leak or unauthorized tenant row/click target.
+- No cross-tenant data leak, customer plaintext or production unauthorized tenant row/click target. UI-only degraded tenant-entry is allowed only for sanitized fallback rows and must not be represented as production access.
 - No old shell, old `--uzmax-*` token bridge or early visual wording as the target for new UI.
 - No release/acceptance displacement: this page does not approve M7 closeout, GA-0, production, owner acceptance or 1.0 release.
 
@@ -164,6 +164,7 @@ Current implementation status:
 - `apps/admin/src/pages/registry.ts` records `group.overview` as `implemented_in_worker_pending_pr` under `M7-UI-12-group-overview-page`.
 - `apps/admin/src/pages/PageOutlet.tsx` renders `GroupOverviewPage` for `group.overview`.
 - No group aggregate ApiClient/hook exists in `apps/admin` for the REQ-G01 aggregate table/health strip, so this page renders an honest centralized mock/degraded contract with runtime evidence unavailable.
+- DB/API foundation is downgraded for this visual shell. The page may use controlled UI-only degraded tenant-entry to show the layer transition, but this does not close runtime authorization, cache invalidation, RLS, production access or real aggregate-data contracts.
 
 Future runtime implementation must wire an approved real group aggregate API/client/hook that returns authorized aggregate-only data and state metadata before populated values may be treated as operational truth.
 
@@ -172,20 +173,20 @@ The implementation must not import `/Users/atilla/源码/unpacked 6/fixtures/gro
 Data boundary:
 
 - Group layer data is authorized aggregate only.
-- Tenant entry may enter tenant layer only for an authorized tenant.
-- When real runtime exists, tenant transition must clear tenant-scoped caches, reload permissions/feature flags and avoid preserving stale tenant state from the previous tenant.
+- UI-first degraded tenant-entry may enter tenant layer only as a visual boundary demonstration using sanitized fallback rows.
+- When real runtime exists, tenant entry must be authorized by backend/runtime, must clear tenant-scoped caches, reload permissions/feature flags and avoid preserving stale tenant state from the previous tenant.
 - Backend/API remains the authority for authorization; hidden or disabled frontend controls are not authorization.
 
 ## State Coverage
 
 | State | Required behavior |
 |---|---|
-| `loading` | Health strip and table skeletons with stable dimensions; no spinner-only blank page. |
-| `empty` | No authorized tenants exist or no aggregate data is available; explain the allowed next step without decorative illustration. |
+| `loading` | Future runtime state. Health strip and table skeletons with stable dimensions; no spinner-only blank page. Not claimed in this UI-first DB/API blocker-exception slice. |
+| `empty` | Future runtime state for no authorized tenants or no aggregate data. UI-first slice covers source-like initial/filtered empty table only. |
 | `filtered_empty` | Active search/health filter produces no rows; show clear-filter action. |
-| `error` | Aggregate fetch failed; show retry and safe trace/reference if available. |
-| `permission_denied` | User lacks group overview permission; explain role/prerequisite and render no tenant data. |
-| `degraded` | Aggregate stale, partial, connector/model/eval source unavailable or runtime contract missing; show read-only truthful data where available and disable unbacked actions. |
+| `error` | Future runtime state. Aggregate fetch failed; show retry and safe trace/reference if available. Not claimed in this UI-first DB/API blocker-exception slice. |
+| `permission_denied` | Future runtime state. User lacks group overview permission; explain role/prerequisite and render no tenant data. Not claimed in this UI-first DB/API blocker-exception slice. |
+| `degraded` | Current UI-first covered state. Aggregate/runtime contract is unavailable; show truthful mock/degraded copy, avoid production metrics claims and allow only controlled visual affordances such as tenant-entry boundary demonstration. |
 | `mobile_fallback` | Readable stacked health cards and row summaries at 320px; table may become row summaries. Mobile polish is deferred, but no overflow/overlap is allowed. |
 
 ## Visual Acceptance
@@ -205,18 +206,18 @@ Implementation must record:
 - `npm run guard:doc-triggers`
 - `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-20-conversation-workbench-page-impl --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree`
 - format/typecheck/lint/admin build as required by the implementation scope
-- focused Playwright for `group.overview`: loading, empty, filtered empty, error, permission denied, degraded, search, health-card filter/clear, sort, authorized tenant-entry button click and keyboard activation
+- focused Playwright for `group.overview`: degraded, source-like initial/filtered empty table, search, health-card filter/clear, sort, controlled UI-only tenant-entry button click and keyboard activation, shell separation, sidebar collapse and 320px no-overflow fallback. Loading/error/permission runtime states are deferred/not claimed under the UI-first DB/API blocker exception.
 - desktop and 320px mobile screenshots/no-overflow evidence
 - desktop pixel/detail comparison against owner HTML and unpacked source
 - Impeccable/equivalent design audit with accepted/rejected recommendations and reasons
 - spec compliance review before code quality review
 
-Runtime states beyond degraded/read-only mock are intentionally not implemented in this UI-first slice because DB/API foundation is downgraded.
+Runtime states beyond degraded/mock visual shell, source-like filtered empty, mobile/collapse and shell/tenant-entry boundary are intentionally not implemented in this UI-first slice because DB/API foundation is downgraded.
 
 ## Pass Conditions
 
 - Only allowed implementation/evidence files change.
-- `group.overview` renders a visible page with title, degraded/mock label, search, filter clear, six health cards, nine-column tenant table, sort and accessible tenant-entry action.
+- `group.overview` renders a visible page with title, truthful fallback/runtime note, search, filter clear, six health cards, nine-column tenant table frame, sort and accessible controlled UI-only tenant-entry boundary action.
 - Registry and ledger point `group.overview` to `M7-UI-12-group-overview-page` as an implementation candidate pending PR review, not merged or owner accepted.
 - Centralized mock/degraded data is visibly marked and does not present prototype metrics as runtime truth.
 - Focused Playwright covers group layer, tenant entry, shell nav separation, sidebar collapse and 320px no-overflow fallback.

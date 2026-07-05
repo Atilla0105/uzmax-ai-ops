@@ -53,9 +53,7 @@ export function AgentsPage({ selectedTenantId }: { selectedTenantId: string }) {
   }
 
   function openPersona(agent: AiMember) {
-    const current =
-      agent.versions.find((item) => item.version === agent.version) ??
-      agent.versions[0]!;
+    const current = agent.versions[0]!;
     setPersona({ agentId: agent.id, dirty: false, draft: current.text, gate: "pass" });
   }
 

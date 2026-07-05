@@ -24,6 +24,14 @@ test("renders tenant.aiMembers with runtime labels filters and desktop metrics",
     "data-page-id",
     "tenant.aiMembers"
   );
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-b"
+  );
+  await expect(page.getByTestId("m7-agent-page")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-b"
+  );
   for (const label of [
     "degraded",
     "mock",
@@ -117,6 +125,14 @@ test("resets local state on tenant switch and supports mobile 320 fallback", asy
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-active-page-id",
     "tenant.aiMembers"
+  );
+  await expect(page.getByTestId("page-outlet")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
+  );
+  await expect(page.getByTestId("m7-agent-page")).toHaveAttribute(
+    "data-tenant-id",
+    "tenant-c"
   );
   await expect(
     page.getByTestId("m7-agent-cap-SYN-AI-MEMBER-PRIMARY-vision")

@@ -50,11 +50,16 @@ Passed locally on this branch:
 
 Build note: Vite emitted the existing large chunk warning; the build exited 0.
 
+Coordinator regression:
+
+- Stacked visible UI regression with group/conversation/ticket/knowledge/eval/AI members: `36 passed`.
+- Mobile 320 uses a readable fallback with body no-overflow; the human member table remains horizontally scrollable inside its container and is not a final mobile redesign.
+
 Source shape:
 
-- `apps/admin/src/pages/agents/AgentsPage.tsx`: 241 lines.
+- `apps/admin/src/pages/agents/AgentsPage.tsx`: 239 lines.
 - `apps/admin/src/pages/agents/AgentViews.tsx`: 214 lines.
-- `apps/admin/src/pages/agents/agentsFallback.ts`: 133 lines.
+- `apps/admin/src/pages/agents/agentsFallback.ts`: 132 lines.
 
 ## Browser Evidence
 

@@ -17,7 +17,7 @@ export type AgentViewState = "degraded" | "empty" | "error" | "loading" | "permi
 export type CapabilityKey = (typeof capabilityDefs)[number][0];
 export type PersonaGate = "idle" | "pass" | "running";
 
-type VersionSeed = [string, string, "fail" | "pass", string];
+type VersionSeed = [string, string, string];
 
 export const initialAgents = [
   member(
@@ -31,9 +31,9 @@ export const initialAgents = [
     "v8",
     ["tutorial", "vision", "quote", "order_read", "business_draft"],
     [
-      ["v8", "06-20", "pass", "增强乌语拉丁报价口径"],
-      ["v7", "05-30", "pass", "补充孕期禁忌引导"],
-      ["v6", "05-02", "fail", "评测未通过 · 未发布"]
+      ["v8", "06-20", "增强乌语拉丁报价口径"],
+      ["v7", "05-30", "补充孕期禁忌引导"],
+      ["v6", "05-02", "评测未通过 · 未发布"]
     ]
   ),
   member(
@@ -47,8 +47,8 @@ export const initialAgents = [
     "v3",
     ["quote", "order_read"],
     [
-      ["v3", "06-10", "pass", "报价精度优化"],
-      ["v2", "05-15", "pass", "初版"]
+      ["v3", "06-10", "报价精度优化"],
+      ["v2", "05-15", "初版"]
     ]
   ),
   member(
@@ -62,8 +62,8 @@ export const initialAgents = [
     "v2",
     ["tutorial", "order_read"],
     [
-      ["v2", "04-28", "pass", "夜间兜底话术"],
-      ["v1", "03-20", "pass", "初版"]
+      ["v2", "04-28", "夜间兜底话术"],
+      ["v1", "03-20", "初版"]
     ]
   )
 ];
@@ -118,9 +118,8 @@ function member(
     status,
     today,
     version: current,
-    versions: versions.map(([version, date, evalState, note]) => ({
+    versions: versions.map(([version, date, note]) => ({
       date,
-      eval: evalState,
       note,
       text: `Synthetic persona ${version}: ${note}. degraded mock read-only local preview only.`,
       version

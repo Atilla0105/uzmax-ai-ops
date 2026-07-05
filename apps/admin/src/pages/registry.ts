@@ -263,7 +263,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-40-eval-center-page"
   },
   {
-    evidenceStatus: "implementation_evidence_pending_pr_review",
+    evidenceStatus:
+      "implementation_evidence_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "AI 成员",
     id: "tenant.aiMembers",
     label: "AI 成员",

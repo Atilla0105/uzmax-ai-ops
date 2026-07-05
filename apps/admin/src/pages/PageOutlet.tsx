@@ -131,7 +131,11 @@ export function PageOutlet({
 
   if (page.id === "tenant.aiMembers")
     return (
-      <section data-page-id={page.id} data-testid="page-outlet">
+      <section
+        data-page-id={page.id}
+        data-tenant-id={selectedTenantId}
+        data-testid="page-outlet"
+      >
         <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
       </section>
     );

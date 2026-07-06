@@ -50,6 +50,7 @@ Finalizer run in worktree
 | `npx prettier --write apps/admin/src/pages/registry.ts` | PASS | Fixes CI-reported registry formatting under lockfile Prettier `3.8.4` |
 | `npm run format:check` | PASS | Full repo format check passes after the registry formatting fix |
 | `npm run jscpd` | PASS | No duplicates found after rewriting the team-page route stub to avoid the tenant-management test duplicate block |
+| `npm run knip` | PASS | Cleared unused exported type findings by keeping only externally imported team fallback types exported |
 | `npm run guard:prettier-ignore` | PASS | `prettier-ignore-boundary: ok (8 baseline file(s), 89/89 marker(s))` |
 | `npm run typecheck` | PASS | Initial local `teamMarkup.ts` tuple inference issue fixed in this slice |
 | `npm run lint` | PASS | Initial local `TeamPage` complexity issue fixed by extracting confirm modal props |

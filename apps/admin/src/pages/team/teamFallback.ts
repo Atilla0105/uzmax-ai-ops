@@ -1,4 +1,4 @@
-export type TeamMemberType = "ai" | "human";
+type TeamMemberType = "ai" | "human";
 export type TeamTab = "members" | "roles";
 export type TeamViewState = "degraded" | "empty" | "error" | "loading" | "permission";
 export type InviteDraft = Record<"email" | "group" | "name" | "roleId", string> & {
@@ -43,7 +43,6 @@ export const initialMembers = memberSeed.map((row) => {
     type: cell(cells, 5)
   };
 });
-export type TeamRole = (typeof initialRoles)[number];
 export type TeamMember = (typeof initialMembers)[number];
 
 export const teamRuntimeLabels = [

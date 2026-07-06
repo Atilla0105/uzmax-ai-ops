@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-56-logs-page-visible-ui";
 const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://127.0.0.1:4173";
@@ -11,6 +11,10 @@ const tenantLabels =
   );
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
+const runtimeLabels =
+  "degraded|mock|read-only|browser-local only|synthetic tenant log rows|no production audit/log export|no file written|no audit/log runtime call|no real tenant/action navigation".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -97,16 +101,20 @@ test("tabs and search filter rows with deterministic empty state", async ({ page
   });
 });
 
-test("operation detail affordances stay browser-local only", async ({ page }) => {
+test("operation detail affordances keep clean feedback with hidden runtime boundary", async ({
+  page
+}) => {
   await openLogs(page);
-  await page.getByRole("button", { name: /本地预览日志详情 配置 route v17/ }).click();
+  const detail = page.getByRole("button", { name: /查看日志详情 配置 route v17/ });
+  await expectRuntimeBoundary(detail);
+  await detail.click();
   const toast = page.getByTestId("m7-logs-toast");
   await expect(toast).toHaveAttribute("role", "status");
   await expect(toast).toHaveAttribute("aria-live", "polite");
-  await expect(toast).toContainText("browser-local only");
-  await expect(toast).toContainText("route v17 detail preview");
-  await expect(toast).toContainText("no real tenant/action navigation");
-  await expect(toast).toContainText("no audit/log runtime call");
+  await expect(toast).toContainText("详情预览已打开");
+  await expect(toast).toContainText("route v17");
+  await expect(toast).toContainText("轨迹面板接入后可继续查看完整记录");
+  await expectRuntimeBoundary(toast);
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-active-page-id",
     "tenant.logs"
@@ -120,9 +128,7 @@ test("forced URL states stay deterministic", async ({ page }) => {
       state === "degraded"
         ? page.getByTestId("m7-logs-runtime-note")
         : page.getByTestId(`m7-logs-state-${state}`);
-    await expect(target).toContainText("browser-local only");
-    await expect(target).toContainText("no production audit/log export");
-    await expect(target).toContainText("no audit/log runtime call");
+    await expectRuntimeBoundary(target);
   }
 });
 
@@ -175,6 +181,18 @@ async function expectLayerNav(
     await expect(nav.locator(".uz-nav-group p").filter({ hasText: label })).toHaveCount(
       0
     );
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function collectMetrics(page: Page) {

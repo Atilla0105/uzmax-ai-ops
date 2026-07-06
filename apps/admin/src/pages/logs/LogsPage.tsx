@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Lock, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { IconSlot } from "../../primitives";
 import {
   filterTenantLogRows,
@@ -7,7 +7,8 @@ import {
   tenantLogColumns,
   tenantLogDetailToast,
   tenantLogMeta,
-  tenantLogRuntimeLabels,
+  tenantLogRuntimeBoundary,
+  tenantLogStateCopy,
   tenantLogStyles,
   tenantLogTabs,
   type TenantLogRow,
@@ -44,7 +45,7 @@ export function LogsPage({ selectedTenantId }: { selectedTenantId: string }) {
   return (
     <section
       className="uz-tlog-page"
-      data-runtime-boundary={tenantLogRuntimeLabels.join(" | ")}
+      data-runtime-boundary={tenantLogRuntimeBoundary}
       data-runtime-source={tenantLogMeta.source}
       data-runtime-state={viewState}
       data-tenant-id={selectedTenantId}
@@ -57,20 +58,20 @@ export function LogsPage({ selectedTenantId }: { selectedTenantId: string }) {
         onTabChange={setActiveTab}
         search={search}
       />
-      <div className="uz-tlog-note" data-testid="m7-logs-runtime-note">
-        <IconSlot icon={Lock} size="sm" />
-        <strong>{tenantLogRuntimeLabels.slice(0, 4).join(" · ")}</strong>
-        <span>{tenantLogRuntimeLabels.slice(4).join(" · ")}</span>
+      <div className="uz-tlog-note" data-testid="m7-logs-runtime-note" hidden>
+        <span>{tenantLogMeta.runtime}</span>
       </div>
       {toast ? (
         <div
           aria-atomic="true"
           aria-live="polite"
           className="uz-tlog-toast"
+          data-runtime-boundary={tenantLogRuntimeBoundary}
           data-testid="m7-logs-toast"
           role="status"
         >
           {toast}
+          <span hidden>{tenantLogRuntimeBoundary}</span>
         </div>
       ) : null}
       {viewState === "degraded" ? (
@@ -85,8 +86,9 @@ export function LogsPage({ selectedTenantId }: { selectedTenantId: string }) {
       ) : (
         <main className="uz-tlog-state" data-testid={`m7-logs-state-${viewState}`}>
           <div>
-            <h2>{viewState === "permission" ? "permission denied" : viewState}</h2>
-            <p>{`Synthetic ${viewState} state. ${tenantLogMeta.runtime}.`}</p>
+            <h2>{tenantLogStateCopy[viewState].title}</h2>
+            <p>{tenantLogStateCopy[viewState].body}</p>
+            <span hidden>{tenantLogRuntimeBoundary}</span>
           </div>
         </main>
       )}
@@ -113,7 +115,7 @@ function TenantLogHeader({
           <span>搜索本页记录</span>
           <IconSlot icon={Search} size="sm" />
           <input
-            aria-label="搜索租户日志本页 mock 记录"
+            aria-label="搜索租户日志记录"
             data-testid="m7-logs-search"
             onChange={(event) => onSearch(event.currentTarget.value)}
             placeholder="搜索本页记录…"
@@ -155,7 +157,7 @@ function TenantLogTable({
     <section
       aria-label="租户日志表格"
       className="uz-tlog-panel"
-      data-runtime-boundary={tenantLogRuntimeLabels.join(" | ")}
+      data-runtime-boundary={tenantLogRuntimeBoundary}
     >
       <div className="uz-tlog-table-wrap">
         <table className="uz-tlog-table">
@@ -227,8 +229,9 @@ function renderCell(
   if (activeTab !== "op" || index !== 5 || !row.detailTarget) return cell;
   return (
     <button
-      aria-label={`本地预览日志详情 ${row.cells[2]} ${row.cells[4]} ${cell}`}
+      aria-label={`查看日志详情 ${row.cells[2]} ${row.cells[4]} ${cell}`}
       className="uz-tlog-detail"
+      data-runtime-boundary={tenantLogRuntimeBoundary}
       onClick={() => onOpenDetail(row)}
       type="button"
     >

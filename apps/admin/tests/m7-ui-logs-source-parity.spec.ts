@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-78-logs-source-parity-refresh";
 const ownerHtml = "/Users/atilla/Downloads/运营塔台1.0.html";
@@ -130,12 +130,15 @@ test("captures owner conflict and React tenant.logs source parity refresh", asyn
   await saveShot(page, "react-logs-search-empty.png", true);
 
   await page.getByTestId("m7-logs-search").fill("");
-  await page.getByRole("button", { name: /本地预览日志详情 配置 route v17/ }).click();
-  await expect(page.getByTestId("m7-logs-toast")).toContainText("browser-local only");
+  await page.getByRole("button", { name: /查看日志详情 配置 route v17/ }).click();
+  await expect(page.getByTestId("m7-logs-toast")).toContainText("详情预览已打开");
   await expect(page.getByTestId("m7-logs-toast")).toContainText(
-    "no audit/log runtime call"
+    "轨迹面板接入后可继续查看完整记录"
   );
+  await expectRuntimeBoundary(page.getByTestId("m7-logs-toast"));
   const detailToastMetrics = await collectLogsMetrics(page);
+  expect(detailToastMetrics.runtimeLabelsPresent).toBe(true);
+  expect(detailToastMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await saveShot(page, "react-logs-local-detail-toast.png", true);
 
   await openLogs(page);
@@ -226,6 +229,18 @@ async function expectLayerNav(page: Page) {
       0
     );
   }
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function collectOwnerLogsSample(page: Page) {

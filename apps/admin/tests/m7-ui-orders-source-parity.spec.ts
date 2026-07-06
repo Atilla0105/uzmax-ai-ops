@@ -26,6 +26,7 @@ const forbiddenVisibleTerms =
   "mock/degraded|mock|read-only|runtime unavailable|not production|synthetic|local-only|browser-local only|no real read|No real|DB|API|no write|order runtime unavailable".split(
     "|"
   );
+type RawOrdersMetrics = Awaited<ReturnType<typeof collectRawOrdersMetrics>>;
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -223,7 +224,11 @@ async function collectOwnerSourceSample(page: Page) {
 }
 
 async function collectOrdersMetrics(page: Page) {
-  const raw = await page.evaluate(() => {
+  return buildOrdersMetrics(await collectRawOrdersMetrics(page));
+}
+
+async function collectRawOrdersMetrics(page: Page) {
+  return page.evaluate(() => {
     const attr = (selector: string, name: string) =>
       document.querySelector(selector)?.getAttribute(name) ?? "";
     const roundRect = (selector: string) => {
@@ -295,7 +300,6 @@ async function collectOrdersMetrics(page: Page) {
       viewportWidth: window.innerWidth
     };
   });
-  return buildOrdersMetrics(raw);
 }
 
 function buildOrdersMetrics(raw: RawOrdersMetrics) {

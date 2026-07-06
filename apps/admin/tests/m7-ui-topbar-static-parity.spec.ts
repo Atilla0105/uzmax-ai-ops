@@ -103,7 +103,15 @@ async function openOwnerTopbarPreview(page: Page) {
 
 async function collectTopbarMetrics(page: Page, state: string) {
   return page.evaluate((traceState) => {
-    const rectFor = (element: Element | null) => {
+    type Rect = {
+      height: number;
+      width: number;
+      x: number;
+      y: number;
+      right: number;
+      bottom: number;
+    } | null;
+    const rectFor = (element: Element | null): Rect => {
       if (!element) return null;
       const rect = element.getBoundingClientRect();
       return {
@@ -122,7 +130,7 @@ async function collectTopbarMetrics(page: Page, state: string) {
 
     return collectReactTopbarMetricsForPage(traceState, rectFor);
 
-    function collectOwnerTopbarMetricsForPage() {
+    function collectOwnerTopbarMetricsForPage(rectForFn: (element: Element | null) => Rect) {
       const topbar = document.querySelector("header");
       if (!topbar) {
         return {
@@ -135,7 +143,7 @@ async function collectTopbarMetrics(page: Page, state: string) {
       }
       const text = topbar.textContent?.trim() ?? "";
       return {
-        topbar: rectFor(topbar),
+        topbar: rectForFn(topbar),
         body: { height: document.body.scrollHeight, width: document.body.scrollWidth },
         hasSearchHint: text.includes("搜索会话、客户、订单、工单、知识"),
         hasProductionMarker: text.includes("PRODUCTION"),
@@ -145,7 +153,10 @@ async function collectTopbarMetrics(page: Page, state: string) {
       };
     }
 
-    function collectReactTopbarMetricsForPage(traceState: string) {
+    function collectReactTopbarMetricsForPage(
+      traceState: string,
+      rectForFn: (element: Element | null) => Rect
+    ) {
       const topbar = document.querySelector(".uz-topbar");
       const search = document.querySelector(".uz-global-search");
       const envMarker = document.querySelector('[data-testid="environment-marker"]');
@@ -161,15 +172,15 @@ async function collectTopbarMetrics(page: Page, state: string) {
         state: traceState,
         shellLevel: shell?.getAttribute("data-shell-level") ?? null,
         activePageId: shell?.getAttribute("data-active-page-id") ?? null,
-        topbar: rectFor(topbar),
-        breadcrumb: rectFor(breadcrumb),
-        search: rectFor(search),
+        topbar: rectForFn(topbar),
+        breadcrumb: rectForFn(breadcrumb),
+        search: rectForFn(search),
         layerBadge: routeBadge ? routeBadge.textContent?.trim() : null,
-        tenantSelect: rectFor(tenantSelect),
-        envMarker: rectFor(envMarker),
-        heartbeat: rectFor(heartbeat),
-        user: rectFor(user),
-        nav: rectFor(nav),
+        tenantSelect: rectForFn(tenantSelect),
+        envMarker: rectForFn(envMarker),
+        heartbeat: rectForFn(heartbeat),
+        user: rectForFn(user),
+        nav: rectForFn(nav),
         body: {
           scrollHeight: document.body.scrollHeight,
           scrollWidth: document.body.scrollWidth

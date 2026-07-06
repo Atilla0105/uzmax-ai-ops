@@ -22,13 +22,18 @@ const runtimeLabels =
   "degraded|mock|read-only|browser-local only|synthetic tenant metrics|no production tenant change|no tenant config persistence|no connector or feature flag change|no audit write".split(
     "|"
   );
+const forbiddenVisibleTerms = [
+  ...runtimeLabels,
+  "Synthetic",
+  "created in browser preview"
+];
 const oldCardPollution =
   "mock 运行中|mock 降级|mock 需人工|mock 已停用|mock 成员|mock AI|mock 连接|mock 已启用".split(
     "|"
   );
 
 // prettier-ignore
-type RawTenantMetrics = { activePageId?: string | null; bodyScrollWidth: number; bodyText: string; createButtonWidth: number; documentScrollWidth: number; hasTenantId: boolean; headerHeight: number; headerWidth: number; managementActionWidth: number; modalHeight: number; modalWidth: number; navButtonLabels: string[]; navWidth: number; panelHeight: number; panelWidth: number; shellLevel?: string | null; sidebarCategories: string[]; sourceNoteHeight: number; tableHeight: number; tableScrollWidth: number; topbarHeight: number; viewportWidth: number; visibleText: string };
+type RawTenantMetrics = { activePageId?: string | null; bodyScrollWidth: number; bodyText: string; boundaryText: string; createButtonWidth: number; documentScrollWidth: number; hasTenantId: boolean; headerHeight: number; headerWidth: number; managementActionWidth: number; modalHeight: number; modalWidth: number; navButtonLabels: string[]; navWidth: number; panelHeight: number; panelWidth: number; shellLevel?: string | null; sidebarCategories: string[]; sourceNoteHeight: number; tableHeight: number; tableScrollWidth: number; topbarHeight: number; viewportWidth: number; visibleText: string };
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -98,15 +103,18 @@ test("captures owner HTML table truth and React source-parity refresh", async ({
   expect(desktopMetrics.sidebarCategories).toEqual(groupSections);
   expect(desktopMetrics.tenantButtonCount).toBe(0);
   expect(desktopMetrics.tenantCategoryCount).toBe(0);
-  expect(desktopMetrics.runtimeLabelsVisible).toBe(true);
+  expect(desktopMetrics.runtimeLabelsPresent).toBe(true);
+  expect(desktopMetrics.runtimeLabelsVisibleInBody).toBe(false);
   expect(desktopMetrics.sourceLikeDefaultVisible).toBe(true);
   expect(desktopMetrics.visiblePrimaryValuesClean).toBe(true);
   await saveShot(page, "react-tenant-management-desktop-table.png", true);
 
   await page.getByTestId("m7-tenant-manage-placeholder").click();
-  await expectLocalToast(page, ["owner HTML table row data is not rendered"]);
+  await expectLocalToast(page, ["管理动作需等待租户明细接入"]);
   const manageMetrics = await collectTenantMetrics(page);
   expect(manageMetrics.sourceLikeManageNoopVisible).toBe(true);
+  expect(manageMetrics.runtimeLabelsPresent).toBe(true);
+  expect(manageMetrics.runtimeLabelsVisibleInBody).toBe(false);
 
   await page.getByTestId("m7-tenant-new-button").click();
   await expect(page.getByTestId("m7-tenant-new-modal")).toContainText("创建新租户");
@@ -122,20 +130,21 @@ test("captures owner HTML table truth and React source-parity refresh", async ({
   await page.getByTestId("m7-tenant-new-create").click();
   await expect(page.getByText("5 个租户")).toBeVisible();
   await expectLocalToast(page, [
-    "胡杨跨境百货 created in browser preview",
-    "no production tenant change",
-    "no tenant config persistence",
-    "no connector or feature flag change",
-    "no audit write"
+    "租户创建已加入预览队列",
+    "胡杨跨境百货",
+    "租户明细接入后可继续配置渠道与模板"
   ]);
   const createMetrics = await collectTenantMetrics(page);
   expect(createMetrics.sourceLikeLocalCreateVisible).toBe(true);
+  expect(createMetrics.runtimeLabelsPresent).toBe(true);
+  expect(createMetrics.runtimeLabelsVisibleInBody).toBe(false);
 
   await page.getByRole("button", { name: "Collapse navigation" }).click();
   const collapsedMetrics = await collectTenantMetrics(page);
   expect(collapsedMetrics.navWidth).toBe(68);
   expect(collapsedMetrics.tenantButtonCount).toBe(0);
   expect(collapsedMetrics.tenantCategoryCount).toBe(0);
+  expect(collapsedMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await saveShot(page, "react-tenant-management-collapsed-sidebar.png", true);
 
   await page.setViewportSize({ width: 320, height: 900 });
@@ -151,6 +160,7 @@ test("captures owner HTML table truth and React source-parity refresh", async ({
   const mobileModalMetrics = await collectTenantMetrics(page);
   expect(mobileModalMetrics.modalWidth).toBeLessThanOrEqual(296);
   expect(mobileModalMetrics.bodyScrollWidth).toBeLessThanOrEqual(320);
+  expect(mobileModalMetrics.runtimeLabelsVisibleInBody).toBe(false);
   await saveShot(page, "react-tenant-management-mobile-320.png", true);
 
   writeJson("metrics.json", {
@@ -279,6 +289,19 @@ async function collectTenantMetrics(page: Page) {
       Array.from(document.querySelectorAll(selector)).map((node) =>
         (node.textContent ?? "").trim()
       );
+    const boundaryText = Array.from(
+      document.querySelectorAll("[data-runtime-boundary]")
+    )
+      .map((node) => {
+        const element = node as HTMLElement;
+        return [
+          element.getAttribute("data-runtime-boundary") ?? "",
+          element.getAttribute("title") ?? "",
+          element.getAttribute("aria-description") ?? "",
+          element.textContent ?? ""
+        ].join(" ");
+      })
+      .join(" ");
     const header = box(".uz-tenant-head");
     const panel = box(".uz-tenant-table-panel");
     const table = one(".uz-tenant-table") as HTMLElement | null;
@@ -289,6 +312,7 @@ async function collectTenantMetrics(page: Page) {
       activePageId: attr('[data-testid="admin-shell"]', "data-active-page-id"),
       bodyScrollWidth: document.body.scrollWidth,
       bodyText: document.body.innerText,
+      boundaryText,
       createButtonWidth: box('[data-testid="m7-tenant-new-button"]').width,
       documentScrollWidth: document.documentElement.scrollWidth,
       hasTenantId: !!one('[data-testid="page-outlet"]')?.hasAttribute("data-tenant-id"),
@@ -318,6 +342,7 @@ function buildTenantMetrics(raw: RawTenantMetrics) {
   const bodyText = raw.bodyText;
   const visibleText = raw.visibleText;
   const navButtonLabels = raw.navButtonLabels;
+  const boundaryText = raw.boundaryText;
   // prettier-ignore
   const sourceLike = { blankManagementAction: raw.managementActionWidth > 0 && visibleText.includes("管理"), newButton: raw.createButtonWidth > 0 && visibleText.includes("新建租户"), newModal: raw.modalWidth > 0 && includesAll(visibleText, ["创建新租户", "租户名称", "业务线", "默认语言", "默认时区", "渠道能力", "初始模板"]), sourceNote: raw.sourceNoteHeight > 0 && visibleText.includes("停用租户须填写原因"), subtitle: visibleText.includes("个租户"), tablePanel: raw.panelWidth > 0 && raw.panelHeight > 0 && raw.tableHeight > 0, title: visibleText.includes("租户管理") };
   return {
@@ -325,7 +350,10 @@ function buildTenantMetrics(raw: RawTenantMetrics) {
     bodyText: undefined,
     navButtonLabels: undefined,
     pageVisible: raw.headerWidth > 0 && raw.headerHeight > 0,
-    runtimeLabelsVisible: includesAll(bodyText, runtimeLabels),
+    runtimeLabelsPresent: includesAll(boundaryText, runtimeLabels),
+    runtimeLabelsVisibleInBody: runtimeLabels.some((label) =>
+      visibleText.toLowerCase().includes(label.toLowerCase())
+    ),
     sourceLike,
     sourceLikeDefaultVisible: Object.values({
       blankManagementAction: sourceLike.blankManagementAction,
@@ -336,22 +364,21 @@ function buildTenantMetrics(raw: RawTenantMetrics) {
       title: sourceLike.title
     }).every(Boolean),
     sourceLikeLocalCreateVisible: includesAll(bodyText, [
-      "created in browser preview",
-      "no production tenant change",
-      "no audit write"
+      "租户创建已加入预览队列",
+      "租户明细接入后可继续配置渠道与模板"
     ]),
-    sourceLikeManageNoopVisible: bodyText.includes(
-      "owner HTML table row data is not rendered"
-    ),
+    sourceLikeManageNoopVisible: bodyText.includes("管理动作需等待租户明细接入"),
     sourceLikeNewModalVisible: sourceLike.newModal,
     tenantButtonCount: tenantLabels.filter((label) => navButtonLabels.includes(label))
       .length,
     tenantCategoryCount: tenantSections.filter((label) =>
       raw.sidebarCategories.includes(label)
     ).length,
-    visiblePrimaryValuesClean: !oldCardPollution.some((label) =>
-      visibleText.includes(label)
-    ),
+    visiblePrimaryValuesClean:
+      !oldCardPollution.some((label) => visibleText.includes(label)) &&
+      forbiddenVisibleTerms.every(
+        (label) => !visibleText.toLowerCase().includes(label.toLowerCase())
+      ),
     visibleText: undefined
   };
 }

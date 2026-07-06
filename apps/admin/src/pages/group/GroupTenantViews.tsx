@@ -20,9 +20,11 @@ const focusableSelector =
   "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
 
 export function TenantHtmlTable({
-  onManageUnavailable
+  onManageUnavailable,
+  runtimeBoundary
 }: {
   onManageUnavailable: () => void;
+  runtimeBoundary: string;
 }) {
   return (
     <section
@@ -35,9 +37,12 @@ export function TenantHtmlTable({
           <tr>
             <td className="uz-tenant-management-cell">
               <button
+                aria-description={runtimeBoundary}
                 className="uz-tenant-link-action"
+                data-runtime-boundary={runtimeBoundary}
                 data-testid="m7-tenant-manage-placeholder"
                 onClick={onManageUnavailable}
+                title={runtimeBoundary}
                 type="button"
               >
                 管理

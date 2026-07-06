@@ -10,7 +10,9 @@ import {
   tenantCreateToast,
   tenantManageUnavailableToast,
   tenantMeta,
+  tenantRuntimeBoundary,
   tenantRuntimeLabels,
+  tenantStateCopy,
   tenantStyles,
   type TenantCapabilityKey
 } from "./groupTenantFallback";
@@ -65,10 +67,13 @@ export function GroupTenantPage() {
 
   return (
     <section
+      aria-description={tenantRuntimeBoundary}
       className="uz-tenant-page"
+      data-runtime-boundary={tenantRuntimeBoundary}
       data-runtime-source={tenantMeta.source}
       data-runtime-state={viewState}
       data-testid="m7-tenant-page"
+      title={tenantRuntimeBoundary}
     >
       <style>{tenantStyles}</style>
       <TenantHeader count={tenantCount} onNewTenant={openNewTenant} />
@@ -76,11 +81,15 @@ export function GroupTenantPage() {
       {toast ? (
         <div
           aria-atomic="true"
+          aria-description={tenantRuntimeBoundary}
           aria-live="polite"
           className="uz-tenant-toast"
+          data-runtime-boundary={tenantRuntimeBoundary}
           data-testid="m7-tenant-toast"
           role="status"
+          title={tenantRuntimeBoundary}
         >
+          <span hidden>{tenantRuntimeLabels.join(" · ")}</span>
           <span>{toast}</span>
         </div>
       ) : null}
@@ -88,13 +97,18 @@ export function GroupTenantPage() {
         <main className="uz-tenant-scroll">
           <TenantHtmlTable
             onManageUnavailable={() => showToast(tenantManageUnavailableToast())}
+            runtimeBoundary={tenantRuntimeBoundary}
           />
-          <div className="uz-tenant-source-note" data-testid="m7-tenant-source-note">
+          <div
+            aria-description={tenantRuntimeBoundary}
+            className="uz-tenant-source-note"
+            data-runtime-boundary={tenantRuntimeBoundary}
+            data-testid="m7-tenant-source-note"
+            title={tenantRuntimeBoundary}
+          >
             <IconSlot icon={Lock} size="sm" />
-            <span>
-              停用租户须填写原因 · 停用后保留只读审计与数据导出入口 · browser-local only
-              · no production tenant change · no audit write
-            </span>
+            <span>停用租户须填写原因 · 停用后保留只读审计与数据导出入口</span>
+            <span hidden>{tenantRuntimeLabels.join(" · ")}</span>
           </div>
         </main>
       ) : (
@@ -141,7 +155,14 @@ function TenantHeader({
 
 function TenantRuntimeNote() {
   return (
-    <div className="uz-tenant-note" data-testid="m7-tenant-runtime-note">
+    <div
+      aria-description={tenantRuntimeBoundary}
+      className="uz-tenant-note"
+      data-runtime-boundary={tenantRuntimeBoundary}
+      data-testid="m7-tenant-runtime-note"
+      hidden
+      title={tenantRuntimeBoundary}
+    >
       <IconSlot icon={Lock} size="sm" />
       <strong>{tenantRuntimeLabels.slice(0, 3).join(" · ")}</strong>
       <span>{tenantRuntimeLabels.slice(3).join(" · ")}</span>
@@ -154,12 +175,19 @@ function TenantStatePanel({
 }: {
   state: Exclude<ReturnType<typeof readTenantViewState>, "degraded">;
 }) {
-  const title = state === "permission" ? "permission denied" : state;
+  const copy = tenantStateCopy[state];
   return (
-    <main className="uz-tenant-state" data-testid={`m7-tenant-state-${state}`}>
+    <main
+      aria-description={tenantRuntimeBoundary}
+      className="uz-tenant-state"
+      data-runtime-boundary={tenantRuntimeBoundary}
+      data-testid={`m7-tenant-state-${state}`}
+      title={tenantRuntimeBoundary}
+    >
       <div>
-        <h2>{title}</h2>
-        <p>{`Synthetic ${title} state. ${tenantMeta.runtime}.`}</p>
+        <h2>{copy.title}</h2>
+        <p>{copy.body}</p>
+        <span hidden>{tenantRuntimeLabels.join(" · ")}</span>
       </div>
     </main>
   );

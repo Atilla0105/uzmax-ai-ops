@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-52-tenant-management-visible-ui";
 const groupLabels =
@@ -10,6 +10,15 @@ const tenantLabels =
   );
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
+const runtimeLabels =
+  "degraded|mock|read-only|browser-local only|synthetic tenant metrics|no production tenant change|no tenant config persistence|no connector or feature flag change|no audit write".split(
+    "|"
+  );
+const forbiddenVisibleTerms = [
+  ...runtimeLabels,
+  "Synthetic",
+  "created in browser preview"
+];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -46,18 +55,15 @@ test("renders group tenant management as owner HTML table/new-tenant shape", asy
   for (const name of ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"])
     await expect(tenantPage.getByText(name)).toHaveCount(0);
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
-  for (const label of [
-    "degraded",
-    "mock",
-    "read-only",
-    "browser-local only",
-    "synthetic tenant metrics",
-    "no production tenant change",
-    "no tenant config persistence",
-    "no connector or feature flag change",
-    "no audit write"
-  ])
-    await expect(page.getByTestId("m7-tenant-runtime-note")).toContainText(label);
+  await expect(page.getByText("集团级租户管理")).toBeVisible();
+  await expect(page.getByTestId("m7-tenant-runtime-note")).toHaveAttribute(
+    "hidden",
+    ""
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-tenant-page"));
+  await expectRuntimeBoundary(page.getByTestId("m7-tenant-runtime-note"));
+  await expectRuntimeBoundary(page.getByTestId("m7-tenant-source-note"));
+  await expectVisibleBodyClean(page);
 
   const metrics = await collectMetrics(page);
   writeFileSync(
@@ -73,7 +79,9 @@ test("renders group tenant management as owner HTML table/new-tenant shape", asy
 test("new tenant modal stays browser-local only", async ({ page }) => {
   await openTenants(page);
   await page.getByTestId("m7-tenant-manage-placeholder").click();
-  await expectLocalToast(page, ["owner HTML table row data is not rendered"]);
+  await expectLocalToast(page, ["管理动作需等待租户明细接入"]);
+  await expectRuntimeBoundary(page.getByTestId("m7-tenant-toast"));
+  await expectVisibleBodyClean(page);
 
   await page.getByTestId("m7-tenant-new-button").click();
   const modal = page.getByTestId("m7-tenant-new-modal");
@@ -102,12 +110,12 @@ test("new tenant modal stays browser-local only", async ({ page }) => {
   await expect(page.getByTestId("m7-tenant-new-modal")).toHaveCount(0);
   await expect(page.getByText("5 个租户")).toBeVisible();
   await expectLocalToast(page, [
-    "created in browser preview",
-    "no production tenant change",
-    "no tenant config persistence",
-    "no connector or feature flag change",
-    "no audit write"
+    "租户创建已加入预览队列",
+    "胡杨跨境百货",
+    "租户明细接入后可继续配置渠道与模板"
   ]);
+  await expectRuntimeBoundary(page.getByTestId("m7-tenant-toast"));
+  await expectVisibleBodyClean(page);
 });
 
 test("new tenant modal traps focus and closes without persistence", async ({
@@ -130,9 +138,13 @@ test("forced URL states stay deterministic", async ({ page }) => {
       state === "degraded"
         ? page.getByTestId("m7-tenant-runtime-note")
         : page.getByTestId(`m7-tenant-state-${state}`);
-    await expect(target).toContainText("browser-local only");
-    await expect(target).toContainText("no production tenant change");
-    await expect(target).toContainText("no audit write");
+    await expectRuntimeBoundary(target);
+    if (state === "loading") await expect(target).toContainText("正在载入租户");
+    if (state === "empty") await expect(target).toContainText("暂无租户记录");
+    if (state === "error") await expect(target).toContainText("租户管理暂不可用");
+    if (state === "permission")
+      await expect(target).toContainText("需要集团管理员权限");
+    await expectVisibleBodyClean(page);
   }
 });
 
@@ -177,6 +189,25 @@ async function expectLocalToast(page: Page, labels: readonly string[]) {
   await expect(toast).toHaveAttribute("role", "status");
   await expect(toast).toHaveAttribute("aria-live", "polite");
   for (const label of labels) await expect(toast).toContainText(label);
+}
+
+async function expectVisibleBodyClean(page: Page) {
+  const visibleBody = await page.evaluate(() => document.body.innerText);
+  for (const term of forbiddenVisibleTerms) {
+    expect(visibleBody.toLowerCase()).not.toContain(term.toLowerCase());
+  }
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function expectLayerNav(

@@ -208,7 +208,9 @@ jobs:
       - if: steps.path-scope.outputs.run_core == 'true'
         run: npm run depcruise
       - if: steps.path-scope.outputs.run_core == 'true'
-        run: npm run jscpd
+        env:
+          JSCPD_REGRESSION_BASE: ${{ steps.guard-base.outputs.base }}
+        run: node scripts/guards/jscpd-regression.mjs --base "$JSCPD_REGRESSION_BASE"
       - if: steps.path-scope.outputs.run_core == 'true'
         run: npm run knip
       - if: steps.path-scope.outputs.run_core == 'true'

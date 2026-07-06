@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -15,12 +15,27 @@ test.beforeEach(async ({ page }) => {
 
 test("captures owner and React topbar static parity screenshots", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await openOwnerTopbarPreview(page);
-  const ownerMetrics = await collectTopbarMetrics(page, "owner");
-  writeFileSync(
-    `${artifactDir}/owner-html-desktop-metrics.json`,
-    `${JSON.stringify(ownerMetrics, null, 2)}\n`
-  );
+  if (existsSync(ownerHtmlPath)) {
+    await openOwnerTopbarPreview(page);
+    const ownerMetrics = await collectTopbarMetrics(page, "owner");
+    writeFileSync(
+      `${artifactDir}/owner-html-desktop-metrics.json`,
+      `${JSON.stringify(ownerMetrics, null, 2)}\n`
+    );
+  } else {
+    writeFileSync(
+      `${artifactDir}/owner-html-desktop-metrics.json`,
+      `${JSON.stringify(
+        {
+          unavailable: true,
+          ownerHtmlPath,
+          reason: "Owner HTML is not available in this environment"
+        },
+        null,
+        2
+      )}\n`
+    );
+  }
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/design");

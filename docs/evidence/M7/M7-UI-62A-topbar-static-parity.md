@@ -40,8 +40,8 @@
 
 Artifacts under `/tmp/uzmax-m7-ui-62a-topbar-static-parity-v2/`:
 
-- `owner-html-desktop.png`
-- `owner-html-desktop-metrics.json`
+- `owner-html-desktop.png`（仅本地执行时生成）
+- `owner-html-desktop-metrics.json`（本地时为原始 owner 指标；CI/无本地源文件时为 unavailable marker）
 - `react-topbar-group-desktop.png`
 - `react-topbar-group-desktop-metrics.json`
 - `react-topbar-tenant-desktop.png`

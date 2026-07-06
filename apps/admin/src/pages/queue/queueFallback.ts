@@ -6,8 +6,8 @@ export type ConfirmationQueueItem = Awaited<
 >[number];
 export type QueueMode = "degraded" | "runtime";
 export type QueueMetric = { label: string; tone?: string; value: string };
-export type QueueField = { label: string; mono?: boolean; value: string };
-export type QueueDisplay = {
+type QueueField = { label: string; mono?: boolean; value: string };
+type QueueDisplay = {
   candidate?: QueueField;
   conflictNote?: string;
   current?: QueueField;

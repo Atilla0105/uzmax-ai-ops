@@ -1,4 +1,4 @@
-export type TeamMemberType = "ai" | "human";
+type TeamMemberType = "ai" | "human";
 export type TeamTab = "members" | "roles";
 export type TeamViewState = "degraded" | "empty" | "error" | "loading" | "permission";
 type MemberTextKey =
@@ -146,7 +146,7 @@ export const PERM_GROUPS: PermissionGroup[] = permSeeds.map(([id, label, items])
 const allPermissionKeys = PERM_GROUPS.flatMap((group) =>
   group.items.map((item) => item.k)
 );
-export const allPermissions = (selected: readonly string[] = []) =>
+const allPermissions = (selected: readonly string[] = []) =>
   Object.fromEntries(
     allPermissionKeys.map((key) => [key, selected.includes(key)])
   ) as Record<string, boolean>;

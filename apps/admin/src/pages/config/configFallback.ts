@@ -11,7 +11,7 @@ export type ConfigSection =
   | "channel"
   | "connector";
 export type ConfigVersion = { at: string; by: string; note?: string; ver: number };
-export type ConfigChannel = {
+type ConfigChannel = {
   desc: string;
   enabled: boolean;
   id: string;
@@ -58,29 +58,28 @@ export const configMeta = {
   source: "unpacked config source + sanitized local fallback",
   subtitle: configRuntimeLabels.join(" · ")
 } as const;
-export const configStateCopy: Record<ConfigViewState, { body: string; title: string }> =
-  {
-    degraded: {
-      body: "配置项正在按当前租户策略展示，保存、回滚和切换动作会先进入变更预览。",
-      title: "配置已载入"
-    },
-    empty: {
-      body: "当前租户还没有可展示的配置项。可以先从业务配置或模板来源开始补齐。",
-      title: "暂无配置项"
-    },
-    error: {
-      body: "配置暂时无法加载，请稍后重试或联系管理员确认权限与服务状态。",
-      title: "配置暂时无法加载"
-    },
-    loading: {
-      body: "正在加载业务配置、SLA、渠道和订单主路径设置…",
-      title: "正在加载配置"
-    },
-    permission: {
-      body: "当前账号没有查看配置页的权限，请联系管理员调整角色。",
-      title: "无权查看配置"
-    }
-  };
+const configStateCopy: Record<ConfigViewState, { body: string; title: string }> = {
+  degraded: {
+    body: "配置项正在按当前租户策略展示，保存、回滚和切换动作会先进入变更预览。",
+    title: "配置已载入"
+  },
+  empty: {
+    body: "当前租户还没有可展示的配置项。可以先从业务配置或模板来源开始补齐。",
+    title: "暂无配置项"
+  },
+  error: {
+    body: "配置暂时无法加载，请稍后重试或联系管理员确认权限与服务状态。",
+    title: "配置暂时无法加载"
+  },
+  loading: {
+    body: "正在加载业务配置、SLA、渠道和订单主路径设置…",
+    title: "正在加载配置"
+  },
+  permission: {
+    body: "当前账号没有查看配置页的权限，请联系管理员调整角色。",
+    title: "无权查看配置"
+  }
+};
 export const selectOptions = {
   handoff: ["Telegram 人工组", "WhatsApp 值班组", "邮件工单组"],
   lang: ["乌兹别克语（拉丁）", "乌兹别克语（西里尔）", "俄语", "中文", "英语"],

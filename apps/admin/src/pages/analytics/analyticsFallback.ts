@@ -31,7 +31,7 @@ export const analyticsRanges = [
   { factor: 1, id: "7d", label: "近 7 日" },
   { factor: 4.2, id: "30d", label: "近 30 日" }
 ] as const;
-export const analyticsDimDefs: Record<
+const analyticsDimDefs: Record<
   AnalyticsDimension,
   { label: string; values: string[] }
 > = {

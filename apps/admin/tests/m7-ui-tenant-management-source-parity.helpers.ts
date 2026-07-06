@@ -15,7 +15,7 @@ const tenantLabels =
     "|"
   );
 export const groupSections = ["总览", "平台", "治理"];
-export const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
+const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 export const tenantNames = ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"];
 const ownerColumns =
   "租户|成员|AI 成员|渠道连接|订单 connector|默认语言|状态|操作".split("|");

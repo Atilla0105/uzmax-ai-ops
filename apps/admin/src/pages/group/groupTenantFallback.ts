@@ -72,17 +72,6 @@ export const tenantCapabilities: TenantCapability[] = [
   { key: "orderApi", label: "订单 API" }
 ];
 
-export const ownerHtmlTenantColumns = [
-  "租户",
-  "成员",
-  "AI 成员",
-  "渠道连接",
-  "订单 connector",
-  "默认语言",
-  "状态",
-  "操作"
-];
-
 export const tenantLanguages = [
   "乌兹别克语（拉丁）",
   "乌兹别克语（西里尔）",

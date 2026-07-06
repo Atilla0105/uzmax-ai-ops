@@ -7,6 +7,7 @@ import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
 import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
+import { GroupTemplatePage } from "./group/GroupTemplatePage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
 import { QueuePage } from "./queue/QueuePage";
@@ -46,6 +47,9 @@ const implementedPageRenderers: Partial<Record<AdminPageId, ImplementedPageRende
     }),
     "group.modelRisk": ({ onEnterTenant }) => ({
       content: <GroupModelRiskPage onEnterTenant={onEnterTenant} />
+    }),
+    "group.templates": () => ({
+      content: <GroupTemplatePage />
     }),
     "tenant.aiMembers": ({ selectedTenantId }) => ({
       content: <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />

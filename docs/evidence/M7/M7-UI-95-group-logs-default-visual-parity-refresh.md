@@ -104,8 +104,8 @@ Completed validation:
 - PASS: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node scripts/guards/pr-shape.mjs --base codex/m7-ui-94-template-center-default-visual-parity-refresh --spec docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md --include-worktree`
   - `changedFiles: 10`
   - `categories: { source: 3, test: 3, docs: 4 }`
-  - `source: { changedFiles: 3, netLoc: 0, newFiles: 0 }`
-  - Source net LOC remains within the spec budget `<= 180`.
+  - `source: { changedFiles: 3, netLoc: 60, newFiles: 0 }`
+  - Source net LOC `60` remains within the spec budget `<= 180`.
 - PASS: touched Prettier:
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/prettier/bin/prettier.cjs --check apps/admin/src/pages/group/GroupLogsPage.tsx apps/admin/src/pages/group/GroupLogsViews.tsx apps/admin/src/pages/group/groupLogsFallback.ts apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md docs/evidence/M7/M7-UI-95-group-logs-default-visual-parity-refresh.md docs/evidence/M7/README.md docs/admin-ui-page-migration-ledger.md`
 - PASS: touched ESLint:

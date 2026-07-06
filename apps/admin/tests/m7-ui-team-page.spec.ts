@@ -31,16 +31,19 @@ const tenantLabels = [
   "分析",
   "日志"
 ] as const;
+const teamPageEmptyApiRoutes = [
+  "**/conversation-ticket/conversations",
+  "**/confirmation-queue/items?status=pending"
+] as const;
 
 mkdirSync(artifactDir, { recursive: true });
 
 test.beforeEach(async ({ page }) => {
-  await page.route("**/conversation-ticket/conversations", (route) =>
-    route.fulfill({ json: { items: [] } })
-  );
-  await page.route("**/confirmation-queue/items?status=pending", (route) =>
-    route.fulfill({ json: { items: [] } })
-  );
+  for (const apiRoute of teamPageEmptyApiRoutes) {
+    await page.route(apiRoute, async (route) => {
+      await route.fulfill({ json: { items: [] } });
+    });
+  }
 });
 
 test("samples owner source and renders tenant-only team page", async ({ page }) => {

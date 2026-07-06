@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
 import { AgentsPage } from "./agents/AgentsPage";
+import { AnalyticsPage } from "./analytics/AnalyticsPage";
 import { ConfigPage } from "./config/ConfigPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
@@ -67,6 +68,11 @@ const implementedPageRenderers: Partial<Record<AdminPageId, ImplementedPageRende
     }),
     "tenant.aiMembers": ({ selectedTenantId }) => ({
       content: <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+    }),
+    "tenant.analytics": ({ selectedTenantId }) => ({
+      content: (
+        <AnalyticsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      )
     }),
     "tenant.conversations": ({ selectedTenantId }) => ({
       className: "uz-conversation-outlet",

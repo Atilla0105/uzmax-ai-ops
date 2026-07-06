@@ -12,10 +12,13 @@ This cleanup now covers:
 - the follow-up CI `npm run lint` `max-lines` blocker in the same config/group/knowledge/team page and source-parity stack;
 - the 2026-07-06 clean-room jscpd investigation for head `065c4e9d8a0bf63dcd38c33469d7cd6f366f67c4`.
 - the 2026-07-06 clean-room `knip` unused export/type cleanup for head `2542d7728e4675654d4a7e1b6b001ab22f831c19`.
+- the already-merged #240 / M7-UI-96C jscpd regression guard stack-integration dependency now present in PR #239 head `31a25cafb7a583bed0634b577c3819b1f7d06581`.
 
 The cleanup removes those M7 `prettier-ignore` markers, lets repo Prettier format the affected structures, and splits oversized files into adjacent semantic-preserving helpers so lint can pass without disabling `max-lines`. It does not add visible UI, does not change AppShell/sidebar/topbar/router/shared patterns/tokens/page runtime semantics/data/visible copy, and does not claim UI migration completion, owner visual acceptance, runtime closure, GA-0, production readiness or 1.0 release approval.
 
 The `knip` cleanup removes unnecessary `export` keywords from local-only values/types and deletes one truly unused local tenant-column constant after `rg` confirmed no references. It does not add synthetic references, delete tests, weaken `knip`, change package/config/lock/CI, or change UI/runtime behavior.
+
+The 96C stack-integration dependency keeps `jscpd.config.json` and `package.json` unchanged, preserves absolute `npm run jscpd`, and adds a CI-only jscpd regression guard so PR #239 can gate duplicate-code regressions without absorbing base-wide clone debt. It is metadata-scoped here because #240 has already been squash-merged into the #239 branch; this spec now declares those real stack diff paths for `guard:pr-shape`. This does not make #239 a UI/runtime/GA/owner-acceptance slice.
 
 Clean-room jscpd result: `npm run jscpd` is not yet passable inside this spec's approved touch set because the PR base itself fails the same full-repo jscpd scan. The clean-room worker reproduced:
 
@@ -37,6 +40,7 @@ AI agent:
 
 - Work only in the assigned worker worktree. The 2026-07-06 jscpd clean-room worker used `/Users/atilla/.codex/worktrees/m7-ui-96a-jscpd-cleanroom` on branch `codex/m7-ui-96a-jscpd-cleanroom`, starting from `origin/codex/m7-ui-96a-stack-typecheck-cleanup`.
 - The 2026-07-06 knip clean-room worker must use `/Users/atilla/.codex/worktrees/m7-ui-96a-knip-cleanroom` on branch `codex/m7-ui-96a-knip-cleanroom`, starting from `origin/codex/m7-ui-96a-stack-typecheck-cleanup`.
+- The 2026-07-06 shape/spec metadata sync worker must use `/Users/atilla/.codex/worktrees/m7-ui-96a-shape-sync` on branch `codex/m7-ui-96a-shape-sync`, starting from `origin/codex/m7-ui-96a-stack-typecheck-cleanup`.
 - Keep `/Users/atilla/Applications/UZMAX智能运营` root/main read-only.
 - Start by recording `pwd`, `git status --short --branch` and `git branch --show-current`.
 - Reproduce `guard:prettier-ignore` against `origin/codex/m7-ui-95-group-logs-default-visual-parity-refresh`.
@@ -93,21 +97,28 @@ cleanup
   - `apps/admin/tests/m7-ui-template-center-source-parity.spec.ts`
   - `apps/admin/tests/m7-ui-tenant-management-source-parity.helpers.ts`
   - `apps/admin/tests/m7-ui-tenant-management-source-parity.spec.ts`
+  - `.github/workflows/ci.yml`
+  - `scripts/guards/jscpd-regression.mjs`
+  - `scripts/tests/jscpd-regression.test.mjs`
   - `docs/specs/M7-UI-96A-stack-typecheck-cleanup.md`
+  - `docs/specs/M7-UI-96C-jscpd-regression-guard.md`
   - `docs/evidence/M7/M7-UI-96A-stack-typecheck-cleanup.md`
+  - `docs/evidence/M7/M7-UI-96C-jscpd-regression-guard.md`
   - `docs/evidence/M7/README.md`
 - 未列出的模块默认不可改。
 
 ## Change Budget And Path Classification
 
-- source changed files: <= 25, limited to formatter cleanup, adjacent helper extraction in the M7 config/group/knowledge/team page stack, and mechanical `knip` local-only export cleanup exposed by the current PR state
+- changed files: current stack diff is 44 files relative to `origin/codex/m7-ui-95-group-logs-default-visual-parity-refresh`
+- source changed files: <= 26, limited to formatter cleanup, adjacent helper extraction in the M7 config/group/knowledge/team page stack, mechanical `knip` local-only export cleanup exposed by the current PR state, and the already-merged 96C `scripts/guards/jscpd-regression.mjs`
 - source net LOC: formatter/helper-extraction churn after removing `prettier-ignore` and splitting oversized files; no semantic/runtime/data/visible-copy change
-- new source files: <= 8, adjacent component/state/helper files only, no new route or parallel implementation
-- test files changed/added: <= 12 focused Playwright specs/helpers, formatter/type/max-lines cleanup only
-- docs changed/added: <= 3
-- package/lock/generated/config/backend/API/DB/worker/cron/CI/global config/AppShell/sidebar/topbar/router/shared patterns/tokens: 0
+- new source files: <= 9, adjacent component/state/helper files plus the already-merged 96C guard script only, no new route or parallel UI implementation
+- test files changed/added: <= 12 focused Playwright specs/helpers and the already-merged 96C focused guard test
+- docs changed/added: <= 5
+- config changed files: <= 1, limited to the already-merged 96C CI workflow integration
+- package/lock/generated/backend/API/DB/worker/cron/global config/AppShell/sidebar/topbar/router/shared patterns/tokens: 0
 - external API/SDK/provider/connector/adapter basis: none; local stack CI cleanup only
-- exception handling: if committed source net LOC or new/changed source file counts exceed default `guard:pr-shape` source budgets, PR #239 must use `large_change_exception` in PR Hygiene metadata. This is a formatter/max-lines extraction exception only and still requires owner review; it does not expand semantic scope or allow guard relaxation.
+- exception handling: PR #239 must use `large_change_exception` in PR Hygiene metadata because the current stack diff exceeds default source budget after formatter/max-lines extraction and includes the already-merged 96C guard integration. This still requires owner review; it does not expand semantic UI/runtime scope or allow guard relaxation.
 
 ```yaml
 source:
@@ -136,6 +147,7 @@ source:
   - apps/admin/src/pages/team/TeamViews.tsx
   - apps/admin/src/pages/team/teamFallback.ts
   - apps/admin/src/pages/team/useTeamPageState.ts
+  - scripts/guards/jscpd-regression.mjs
 test:
   - apps/admin/tests/m7-ui-config-source-parity.helpers.ts
   - apps/admin/tests/m7-ui-config-source-parity.spec.ts
@@ -148,13 +160,17 @@ test:
   - apps/admin/tests/m7-ui-template-center-source-parity.spec.ts
   - apps/admin/tests/m7-ui-tenant-management-source-parity.helpers.ts
   - apps/admin/tests/m7-ui-tenant-management-source-parity.spec.ts
+  - scripts/tests/jscpd-regression.test.mjs
 docs:
   - docs/specs/M7-UI-96A-stack-typecheck-cleanup.md
+  - docs/specs/M7-UI-96C-jscpd-regression-guard.md
   - docs/evidence/M7/M7-UI-96A-stack-typecheck-cleanup.md
+  - docs/evidence/M7/M7-UI-96C-jscpd-regression-guard.md
   - docs/evidence/M7/README.md
 generated: []
 lock: []
-config: []
+config:
+  - .github/workflows/ci.yml
 ```
 
 ## Required Reads
@@ -229,7 +245,8 @@ config: []
 
 - No visible UI changes.
 - No AppShell/sidebar/topbar/router/shared patterns/tokens changes.
-- No package/lock/config/CI/backend/API/DB changes.
+- No package/lock/backend/API/DB changes.
+- No additional config/CI/guard changes beyond the already-merged 96C jscpd regression guard stack-integration dependency declared above.
 - No prettier-ignore guard baseline or guard logic change.
 - No `knip` config, package script, ignore, threshold or entrypoint change.
 - No test deletion, skip/only/xfail/xit, assertion weakening, mock broadening or snapshot inflation.

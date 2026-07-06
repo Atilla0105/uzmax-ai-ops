@@ -18,10 +18,16 @@ const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const analyticsSections = ["解决率", "转人工原因分布", "Top 问题", "分析表"];
 const kpiLabels =
-  "解决率|转人工率|SLA 达标|AI 成本/日|草稿采纳|订单查询|知识健康|队列7日通过|蒸馏频率|真实流量基线".split("|");
-const dimensionLabels = "成员|AI 成员|渠道|意图|时间粒度|订单状态|转人工原因".split("|");
+  "解决率|转人工率|SLA 达标|AI 成本/日|草稿采纳|订单查询|知识健康|队列7日通过|蒸馏频率|真实流量基线".split(
+    "|"
+  );
+const dimensionLabels = "成员|AI 成员|渠道|意图|时间粒度|订单状态|转人工原因".split(
+  "|"
+);
 const runtimeLabels =
-  "degraded|mock|browser-local only|no production analytics metrics|no export file write|no analytics runtime|no audit write".split("|");
+  "degraded|mock|browser-local only|no production analytics metrics|no export file write|no analytics runtime|no audit write".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -94,10 +100,7 @@ test("captures owner source and React tenant analytics source parity refresh", a
     desktopMetrics.analyticsHeaderWidth,
     desktopMetrics.analyticsRootWidth
   );
-  expectWidthNear(
-    desktopMetrics.analyticsBodyWidth,
-    desktopMetrics.analyticsRootWidth
-  );
+  expectWidthNear(desktopMetrics.analyticsBodyWidth, desktopMetrics.analyticsRootWidth);
   expect(desktopMetrics.kpiGridWidth).toBeGreaterThanOrEqual(1150);
   expect(desktopMetrics.kpiFirstRowCount).toBeGreaterThanOrEqual(7);
   expect(desktopMetrics.topbarHeight).toBeGreaterThanOrEqual(52);
@@ -236,9 +239,9 @@ async function expectKpiLabelsPure(page: Page) {
     /no production analytics metrics/
   );
   expect(
-    await page.locator(".uz-analytics-kpi span").evaluateAll((nodes) =>
-      nodes.map((node) => node.textContent?.trim() ?? "")
-    )
+    await page
+      .locator(".uz-analytics-kpi span")
+      .evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim() ?? ""))
   ).toEqual(kpiLabels);
   const visibleKpiText = await page.getByTestId("m7-analytics-kpis").innerText();
   expect(visibleKpiText).not.toContain("mock/degraded");
@@ -247,9 +250,7 @@ async function expectKpiLabelsPure(page: Page) {
 
 async function expectDefaultRuntimeLabelsHidden(page: Page) {
   const visibleText = await page.getByTestId("m7-analytics-page").innerText();
-  expect(visibleText).not.toContain(
-    "mock/degraded · no production analytics metrics"
-  );
+  expect(visibleText).not.toContain("mock/degraded · no production analytics metrics");
   expect(visibleText).not.toContain("no production analytics metrics");
 }
 
@@ -310,8 +311,7 @@ async function collectAnalyticsMetrics(page: Page) {
       analyticsBodyWidth: widthOf(".uz-analytics-body"),
       analyticsHeaderWidth: widthOf(".uz-analytics-head"),
       analyticsRootWidth: widthOf(".uz-analytics-page"),
-      kpiFirstRowCount: cards.filter((top) => Math.abs(top - firstTop) <= 1)
-        .length,
+      kpiFirstRowCount: cards.filter((top) => Math.abs(top - firstTop) <= 1).length,
       kpiGridWidth: widthOf(".uz-analytics-kpis"),
       viewportWidth: window.innerWidth
     };

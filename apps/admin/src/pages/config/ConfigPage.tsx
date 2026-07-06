@@ -124,6 +124,7 @@ export function ConfigPage({ selectedTenantId }: { selectedTenantId: string }) {
     >
       <style>{configStyles}</style>
       <div
+        className="uz-config-layout"
         dangerouslySetInnerHTML={{ __html: rendered }}
         onClick={onClick}
         onInput={onInput}

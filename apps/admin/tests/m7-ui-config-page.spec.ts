@@ -78,11 +78,14 @@ test("samples owner source and renders tenant config page", async ({ page }) => 
   }
   await expect(page.getByText("默认语言")).toBeVisible();
   await expect(page.getByText("P0 · 红线 / 投诉")).toHaveCount(0);
+  const desktop = await metrics(page);
+  expect(Math.abs(desktop.sideTop - desktop.headTop)).toBeLessThanOrEqual(2);
+  expect(desktop.noteTop - desktop.headBottom).toBeLessThanOrEqual(2);
   await page.screenshot({
     fullPage: true,
     path: `${artifactDir}/react-config-desktop.png`
   });
-  writeJson("react-config-desktop-metrics.json", await metrics(page));
+  writeJson("react-config-desktop-metrics.json", desktop);
 });
 
 test("config is hidden from group nav until tenant selection", async ({ page }) => {
@@ -161,6 +164,11 @@ test("forced states collapsed sidebar and 320px fallback stay bounded", async ({
   expect(mobile.bodyScrollWidth).toBeLessThanOrEqual(320);
   expect(mobile.documentScrollWidth).toBeLessThanOrEqual(320);
   expect(mobile.pageWidth).toBeLessThanOrEqual(320);
+  expect(mobile.headTop - mobile.sideBottom).toBeLessThanOrEqual(2);
+  expect(mobile.noteTop - mobile.headBottom).toBeLessThanOrEqual(2);
+  expect(mobile.noteBottom - mobile.noteTop).toBeLessThanOrEqual(180);
+  expect(mobile.panelTop - mobile.noteBottom).toBeLessThanOrEqual(48);
+  expect(mobile.panelTop).toBeLessThanOrEqual(760);
   writeJson("react-config-mobile-320-metrics.json", mobile);
   await page.screenshot({
     fullPage: true,
@@ -194,8 +202,36 @@ async function metrics(page: Page) {
     bodyScrollWidth: document.body.scrollWidth,
     documentScrollWidth: document.documentElement.scrollWidth
   }));
+  const layout = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const node = document.querySelector(selector);
+      if (!(node instanceof HTMLElement))
+        return { bottom: -1, height: 0, top: -1, width: 0 };
+      const bounds = node.getBoundingClientRect();
+      return {
+        bottom: Math.round(bounds.bottom),
+        height: Math.round(bounds.height),
+        top: Math.round(bounds.top),
+        width: Math.round(bounds.width)
+      };
+    };
+    const head = rect(".uz-config-head");
+    const note = rect(".uz-config-note");
+    const panel = rect(".uz-config-panel");
+    const side = rect(".uz-config-side");
+    return {
+      headBottom: head.bottom,
+      headTop: head.top,
+      noteBottom: note.bottom,
+      noteTop: note.top,
+      panelTop: panel.top,
+      sideBottom: side.bottom,
+      sideTop: side.top
+    };
+  });
   return {
     ...widths,
+    ...layout,
     activePageId: await page
       .getByTestId("admin-shell")
       .getAttribute("data-active-page-id"),

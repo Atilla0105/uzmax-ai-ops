@@ -90,14 +90,21 @@ Metrics summary:
 | `bodyScrollWidth` | `1280` | `1280` | `320` |
 | `documentScrollWidth` | `1280` | `1280` | `320` |
 
+Visual layout correction:
+
+- Desktop inner wrapper correction: `ConfigPage` now assigns `uz-config-layout` to the `dangerouslySetInnerHTML` wrapper so `uz-config-side` and `uz-config-main` participate in the page flex layout.
+- Mobile runtime note correction: the 320px media query uses grid flow for `.uz-config-note`, so the long boundary span can use full width instead of being squeezed into a tall narrow column.
+- Desktop geometry: `sideTop=53`, `headTop=53`, `headBottom=120`, `noteTop=120`, `panelTop=245`.
+- Mobile 320 geometry: `sideBottom=380`, `headTop=380`, `headBottom=573`, `noteTop=573`, `noteBottom=691`, `noteHeight=118`, `panelTop=703`, `bodyScrollWidth=320`, `documentScrollWidth=320`.
+
 ## Source Budget
 
 | File | Lines |
 |---|---:|
-| `apps/admin/src/pages/config/ConfigPage.tsx` | `232` |
+| `apps/admin/src/pages/config/ConfigPage.tsx` | `233` |
 | `apps/admin/src/pages/config/configFallback.ts` | `132` |
 | `apps/admin/src/pages/config/configMarkup.ts` | `147` |
-| `apps/admin/src/pages/config/**` total | `511` |
+| `apps/admin/src/pages/config/**` total | `512` |
 
 ## Validation
 
@@ -116,6 +123,11 @@ Local validation used Codex-bundled Node 24.14.0 / npm 11.9.0 with `PATH=/Users/
 | `npx playwright test apps/admin/tests/m7-ui-config-page.spec.ts` | pass | `4 passed`; generated `/tmp/uzmax-m7-ui-54-config-page-cleanstack/`. |
 | `npm run playwright` | pass | `128 passed`; Vite emitted the existing large-chunk warning and Node printed the existing `NO_COLOR`/`FORCE_COLOR` warning. |
 | `git diff --check` | pass | No whitespace errors. |
+
+Visual correction rerun:
+
+- `npx playwright test apps/admin/tests/m7-ui-config-page.spec.ts`: pass, `4 passed`; regenerated desktop and mobile 320 screenshots/metrics.
+- Added focused geometry assertions for desktop top alignment and mobile runtime note height / `panelTop` thresholds.
 
 ## Remaining Deltas
 

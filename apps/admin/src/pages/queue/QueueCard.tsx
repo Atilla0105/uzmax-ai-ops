@@ -1,15 +1,16 @@
 import { createElement as h } from "react";
 import { GitCompare } from "lucide-react";
 import { IconSlot, StatusBadge } from "../../primitives";
-import {
-  ActionButton,
-  cardActions,
-  type ConfirmationQueueItem,
-  type QueueHandlers
-} from "./QueueSupport";
+import { ActionButton, cardActions, type QueueHandlers } from "./QueueSupport";
+import { type DisplayQueueItem, type QueueMode } from "./queueFallback";
 
-type Item = ConfirmationQueueItem;
-type Props = QueueHandlers & { focused: boolean; item: Item; submitting: boolean };
+type Item = DisplayQueueItem;
+type Props = QueueHandlers & {
+  focused: boolean;
+  item: Item;
+  readOnly: boolean;
+  submitting: boolean;
+};
 
 export const controlledRefPattern = /^(controlled|manifest|storage):\/\/[^\s]+$/i;
 
@@ -65,32 +66,78 @@ export function reasonRef(action: "approve" | "block" | "discard" | "edit") {
   return `controlled://m7-ui-10/confirmation/${action}`;
 }
 
-export function queueStats(items: Item[]) {
+export function queueStats(items: Item[], mode: QueueMode) {
   const pending = items.filter((item) => item.status === "pending").length;
   const conflicts = items.filter((item) => item.kind === "conflict_candidate").length;
+  if (mode === "degraded") {
+    return [
+      { label: "今日候选", tone: "warn", value: "mock 6 / 5" },
+      { label: "7日通过率", tone: "warn", value: "mock 32%" },
+      { label: "蒸馏频率", value: "mock 每日 5" },
+      { label: "冲突待处理", tone: "danger", value: `mock ${conflicts}` },
+      { label: "最近降频", tone: "neutral", value: "mock/degraded" }
+    ];
+  }
   return [
-    { label: "待确认候选", value: String(pending) },
-    { label: "冲突待处理", tone: "danger", value: String(conflicts) },
-    { label: "蒸馏健康", tone: "warn", value: "健康 API 未接入" }
+    { label: "今日候选", value: `runtime ${pending}` },
+    { label: "7日通过率", tone: "warn", value: "runtime unavailable" },
+    { label: "蒸馏频率", tone: "warn", value: "health API missing" },
+    { label: "冲突待处理", tone: "danger", value: `runtime ${conflicts}` },
+    { label: "最近降频", tone: "neutral", value: "not claimed" }
   ];
 }
 
-export function QueueCard({ focused, item, submitting, ...handlers }: Props) {
-  const isConflict = item.kind === "conflict_candidate";
-  const pending = item.status === "pending";
-  const classes = [
+function queueCardClass(focused: boolean, status: Item["status"], isConflict: boolean) {
+  return [
     "uz-queue-card",
     focused && "is-focused",
-    statusCopy[item.status].className,
+    statusCopy[status].className,
     isConflict && "is-conflict"
   ]
     .filter(Boolean)
     .join(" ");
-  const fields = [
-    ["sourceRef", item.sourceRef],
-    ["createdAt", item.createdAt],
-    ["candidate refs", collectRefs(item.candidatePayload).join(" · ") || "无可展示引用"]
-  ];
+}
+
+function renderScore(score: string | undefined) {
+  return score ? h("span", { className: "uz-queue-score" }, `置信 ${score}`) : null;
+}
+
+function renderModeBadge(mode: Item["displayMode"]) {
+  return mode === "degraded"
+    ? h(StatusBadge, { tone: "warn" }, "mock/degraded read-only")
+    : null;
+}
+
+function renderActionFooter({
+  focused,
+  handlers,
+  isConflict,
+  pending,
+  readOnly,
+  submitting
+}: {
+  focused: boolean;
+  handlers: QueueHandlers;
+  isConflict: boolean;
+  pending: boolean;
+  readOnly: boolean;
+  submitting: boolean;
+}) {
+  if (!pending || !focused) return null;
+  return h(
+    "footer",
+    { className: "uz-queue-actions" },
+    cardActions(isConflict, readOnly, submitting, handlers).map((action) =>
+      h(ActionButton, { ...action, key: action.label })
+    )
+  );
+}
+
+export function QueueCard({ focused, item, readOnly, submitting, ...handlers }: Props) {
+  const isConflict = item.kind === "conflict_candidate";
+  const pending = item.status === "pending";
+  const display = item.display;
+  const classes = queueCardClass(focused, item.status, isConflict);
   return h(
     "article",
     {
@@ -109,7 +156,9 @@ export function QueueCard({ focused, item, submitting, ...handlers }: Props) {
         { dot: true, tone: isConflict ? "danger" : "info" },
         kindCopy[item.kind]
       ),
-      h("h3", null, item.id),
+      h("h3", null, display.title),
+      renderScore(display.score),
+      renderModeBadge(item.displayMode),
       h(
         StatusBadge,
         { tone: statusCopy[item.status].tone },
@@ -119,33 +168,48 @@ export function QueueCard({ focused, item, submitting, ...handlers }: Props) {
     h(
       "dl",
       { className: "uz-queue-kv" },
-      fields.map(([label, value]) =>
-        h("div", { key: label }, h("dt", null, label), h("dd", null, value))
+      display.fields.map((field) =>
+        h(
+          "div",
+          { key: field.label },
+          h("dt", null, field.label),
+          h("dd", { className: field.mono ? "is-mono" : undefined }, field.value)
+        )
       )
     ),
     isConflict ? h(ConflictDiff, { item }) : null,
-    pending && focused
-      ? h(
-          "footer",
-          { className: "uz-queue-actions" },
-          cardActions(isConflict, submitting, handlers).map((action) =>
-            h(ActionButton, { ...action, key: action.label })
-          )
-        )
-      : null
+    renderActionFooter({
+      focused,
+      handlers,
+      isConflict,
+      pending,
+      readOnly,
+      submitting
+    })
   );
 }
 
 function ConflictDiff({ item }: { item: Item }) {
   const record = (item.diffPayload ?? {}) as Record<string, unknown>;
-  const left = firstRef(record.left ?? record.current ?? record.before);
-  const right = firstRef(record.right ?? record.candidate ?? record.after);
+  const left = item.display.current ?? {
+    label: "当前值引用",
+    value: firstRef(record.left ?? record.current ?? record.before)
+  };
+  const right = item.display.candidate ?? {
+    label: "候选值引用",
+    value: firstRef(record.right ?? record.candidate ?? record.after)
+  };
   return h(
     "section",
     { className: "uz-queue-diff", "data-testid": `m7-queue-diff-${item.id}` },
-    h("div", null, h("span", null, "当前值引用"), h("strong", null, left)),
+    h("div", null, h("span", null, left.label), h("strong", null, left.value)),
     h(IconSlot, { icon: GitCompare, label: "diff" }),
-    h("div", null, h("span", null, "候选值引用"), h("strong", null, right)),
-    h("p", null, "冲突候选需显式查看并排 diff；键盘 A/D 不会直接处理。")
+    h("div", null, h("span", null, right.label), h("strong", null, right.value)),
+    h(
+      "p",
+      null,
+      item.display.conflictNote ??
+        "冲突候选需显式查看并排 diff；键盘 A/D 不会直接处理。"
+    )
   );
 }

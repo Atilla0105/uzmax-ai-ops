@@ -1,5 +1,9 @@
 export type TenantLogViewState =
-  "degraded" | "empty" | "error" | "loading" | "permission";
+  | "degraded"
+  | "empty"
+  | "error"
+  | "loading"
+  | "permission";
 export type TenantLogTab = "login" | "online" | "op";
 
 interface LogTabDef {

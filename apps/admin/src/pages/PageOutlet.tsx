@@ -5,6 +5,7 @@ import { AgentsPage } from "./agents/AgentsPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
+import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
@@ -42,6 +43,9 @@ const implementedPageRenderers: Partial<Record<AdminPageId, ImplementedPageRende
           onOpenLegacyEvidence={() => onPageChange(legacyEvidencePageId)}
         />
       )
+    }),
+    "group.modelRisk": ({ onEnterTenant }) => ({
+      content: <GroupModelRiskPage onEnterTenant={onEnterTenant} />
     }),
     "tenant.aiMembers": ({ selectedTenantId }) => ({
       content: <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />

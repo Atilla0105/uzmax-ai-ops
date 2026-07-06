@@ -1,9 +1,7 @@
 type AdminPageLayer = "group" | "tenant" | "legacy";
 type AdminPageNavSection = "group" | "tenant";
 type AdminPageStatus =
-  | "legacy_evidence"
-  | "not_started"
-  | "implemented_in_worker_pending_pr";
+  "legacy_evidence" | "not_started" | "implemented_in_worker_pending_pr";
 interface AdminPageRegistryEntry {
   evidenceStatus: string;
   iaPage: string;
@@ -289,7 +287,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-41-ai-members-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "团队",
     id: "tenant.team",
     label: "团队",
@@ -297,11 +296,16 @@ const adminPageRegistry = [
     navId: "team",
     navSection: "tenant",
     order: 16,
-    requiredStates: stateMatrix,
+    requiredStates: [
+      ...stateMatrix,
+      "invite local-only",
+      "disable/restore reason",
+      "permission denied"
+    ],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/team/TeamPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/team/TeamPage.tsx",
-    targetSpecId: "M7-UI-04P-tenant-team"
+    targetSpecId: "M7-UI-53-team-page"
   },
   {
     evidenceStatus: "not_started",

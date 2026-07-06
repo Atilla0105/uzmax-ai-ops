@@ -9,6 +9,7 @@ import { GroupConnectionPage } from "./group/GroupConnectionPage";
 import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { GroupTemplatePage } from "./group/GroupTemplatePage";
+import { GroupTenantPage } from "./group/GroupTenantPage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
 import { QueuePage } from "./queue/QueuePage";
@@ -54,6 +55,9 @@ const implementedPageRenderers: Partial<Record<AdminPageId, ImplementedPageRende
     }),
     "group.connections": () => ({
       content: <GroupConnectionPage />
+    }),
+    "group.tenants": () => ({
+      content: <GroupTenantPage />
     }),
     "tenant.aiMembers": ({ selectedTenantId }) => ({
       content: <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />

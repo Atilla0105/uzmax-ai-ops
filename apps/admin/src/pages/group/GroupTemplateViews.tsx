@@ -1,16 +1,15 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { Check, Lock, Upload, X } from "lucide-react";
+import { Check, Upload, X } from "lucide-react";
 import { IconSlot, StatusBadge } from "../../primitives";
 import {
   templateCopyLine,
   templateMeta,
-  templateRuntimeLabels,
+  templateRuntimeBoundary,
   templateTabs,
   templateTenantTargets,
   type TemplateCard,
   type TemplateTabId,
-  type TemplateTenantTarget,
-  type TemplateViewState
+  type TemplateTenantTarget
 } from "./groupTemplateFallback";
 
 type CopyHandler = (card: TemplateCard, trigger: HTMLButtonElement) => void;
@@ -33,7 +32,6 @@ type TenantTargetProps = {
   selected: boolean;
   tenant: TemplateTenantTarget;
 };
-type StateProps = { state: Exclude<TemplateViewState, "degraded"> };
 const focusableSelector =
   "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
 
@@ -61,28 +59,6 @@ export function TemplateHeader({ activeTab, onChangeTab }: HeaderProps) {
         ))}
       </div>
     </header>
-  );
-}
-
-export function TemplateRuntimeNote() {
-  return (
-    <div className="uz-template-note" data-testid="m7-template-runtime-note">
-      <IconSlot icon={Lock} size="sm" />
-      <strong>{templateRuntimeLabels.slice(0, 3).join(" · ")}</strong>
-      <span>{templateRuntimeLabels.slice(3).join(" · ")}</span>
-    </div>
-  );
-}
-
-export function TemplateStatePanel({ state }: StateProps) {
-  const title = state === "permission" ? "permission denied" : state;
-  return (
-    <main className="uz-template-state" data-testid={`m7-template-state-${state}`}>
-      <div>
-        <h2>{title}</h2>
-        <p>{`Synthetic ${title} state. ${templateMeta.runtime}.`}</p>
-      </div>
-    </main>
   );
 }
 
@@ -121,20 +97,23 @@ export function CopyModal({
   return (
     <div className="uz-template-scrim" data-testid="m7-template-modal-scrim">
       <section
+        aria-description={templateRuntimeBoundary}
         aria-labelledby="m7-template-copy-title"
         aria-modal="true"
         className="uz-template-dialog"
+        data-runtime-boundary={templateRuntimeBoundary}
         data-testid="m7-template-copy-modal"
         onKeyDown={handleKeyDown}
         ref={dialogRef}
         role="dialog"
+        title={templateRuntimeBoundary}
       >
         <div className="uz-template-dialog-head">
           <div className="uz-template-dialog-title">
             <h3 id="m7-template-copy-title">
               {`复制「${card.name} ${card.version}」`}
             </h3>
-            <p>选择目标租户 · 复制后生成独立版本，可各自演进 · browser-local only</p>
+            <p>选择目标租户 · 复制后生成独立版本，可各自演进</p>
           </div>
           <button
             aria-label="关闭复制弹窗"
@@ -177,13 +156,22 @@ export function CopyModal({
 
 function TemplateCardItem({ card, onCopy }: CardItemProps) {
   return (
-    <article className="uz-template-card" data-testid={`m7-template-card-${card.id}`}>
+    <article
+      aria-description={templateRuntimeBoundary}
+      className="uz-template-card"
+      data-runtime-boundary={templateRuntimeBoundary}
+      data-testid={`m7-template-card-${card.id}`}
+      title={templateRuntimeBoundary}
+    >
       <div className="uz-template-card-head">
         <div className="uz-template-card-title">
           <strong>{card.name}</strong>
           <span>{card.biz}</span>
         </div>
-        <StatusBadge tone={card.evalTone}>{card.evalLabel}</StatusBadge>
+        <StatusBadge tone={card.evalTone}>
+          {card.evalLabel}
+          <span hidden>{`mock ${card.evalLabel}`}</span>
+        </StatusBadge>
       </div>
       <div className="uz-template-card-meta">
         <span>
@@ -192,11 +180,19 @@ function TemplateCardItem({ card, onCopy }: CardItemProps) {
         </span>
         <span>{card.meta}</span>
       </div>
-      <div className="uz-template-copy-line">{templateCopyLine(card)}</div>
+      <div className="uz-template-copy-line">
+        {templateCopyLine(card)}
+        <span hidden>
+          {card.copiedAt ? "mock/local history" : "synthetic read-only"}
+        </span>
+      </div>
       <button
+        aria-description={templateRuntimeBoundary}
         className="uz-template-action"
+        data-runtime-boundary={templateRuntimeBoundary}
         data-testid={`m7-template-copy-${card.id}`}
         onClick={(event) => onCopy(card, event.currentTarget)}
+        title={templateRuntimeBoundary}
         type="button"
       >
         <IconSlot icon={Upload} size="sm" />

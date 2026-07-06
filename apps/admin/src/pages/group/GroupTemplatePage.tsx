@@ -1,20 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  CopyModal,
-  TemplateGrid,
-  TemplateHeader,
-  TemplateRuntimeNote,
-  TemplateStatePanel
-} from "./GroupTemplateViews";
+import { CopyModal, TemplateGrid, TemplateHeader } from "./GroupTemplateViews";
 import {
   readTemplateViewState,
   templateCardsByTab,
   templateMeta,
+  templateRuntimeBoundary,
+  templateStateCopy,
   templateStyles,
   templateTabs,
   templateToast,
   type TemplateCard,
-  type TemplateTabId
+  type TemplateTabId,
+  type TemplateViewState
 } from "./groupTemplateFallback";
 
 export function GroupTemplatePage() {
@@ -69,21 +66,27 @@ export function GroupTemplatePage() {
 
   return (
     <section
+      aria-description={templateRuntimeBoundary}
       className="uz-template-page"
+      data-runtime-boundary={templateRuntimeBoundary}
       data-runtime-source={templateMeta.source}
       data-runtime-state={viewState}
       data-testid="m7-template-page"
+      title={templateRuntimeBoundary}
     >
       <style>{templateStyles}</style>
       <TemplateHeader activeTab={activeTab} onChangeTab={setActiveTab} />
       <TemplateRuntimeNote />
       {toast ? (
         <div
+          aria-description={templateRuntimeBoundary}
           aria-atomic="true"
           aria-live="polite"
           className="uz-template-toast"
+          data-runtime-boundary={templateRuntimeBoundary}
           data-testid="m7-template-toast"
           role="status"
+          title={templateRuntimeBoundary}
         >
           {toast}
         </div>
@@ -106,5 +109,40 @@ export function GroupTemplatePage() {
         />
       ) : null}
     </section>
+  );
+}
+
+function TemplateRuntimeNote() {
+  return (
+    <div
+      aria-description={templateRuntimeBoundary}
+      className="uz-template-note"
+      data-runtime-boundary={templateRuntimeBoundary}
+      data-testid="m7-template-runtime-note"
+      hidden
+      title={templateRuntimeBoundary}
+    />
+  );
+}
+
+function TemplateStatePanel({
+  state
+}: {
+  state: Exclude<TemplateViewState, "degraded">;
+}) {
+  const copy = templateStateCopy[state];
+  return (
+    <main
+      aria-description={templateRuntimeBoundary}
+      className="uz-template-state"
+      data-runtime-boundary={templateRuntimeBoundary}
+      data-testid={`m7-template-state-${state}`}
+      title={templateRuntimeBoundary}
+    >
+      <div>
+        <h2>{copy.title}</h2>
+        <p>{copy.body}</p>
+      </div>
+    </main>
   );
 }

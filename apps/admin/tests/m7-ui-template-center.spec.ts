@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-50-template-center-visible-ui";
 const groupLabels =
@@ -11,6 +11,17 @@ const tenantLabels =
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const tabIds = ["knowledge", "agent", "config", "eval", "quick_reply"] as const;
+const runtimeLabels =
+  "degraded|mock|read-only|browser-local only|no production template copy|no audit write|no config write".split(
+    "|"
+  );
+const forbiddenVisibleTerms = [
+  ...runtimeLabels,
+  "synthetic",
+  "Synthetic",
+  "mock/local history",
+  "synthetic read-only"
+];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -39,16 +50,14 @@ test("renders group template center with boundaries and desktop evidence", async
   await expect(page.getByRole("heading", { name: "模板中心" })).toBeVisible();
   await expect(page.getByText("复制到租户将生成独立版本")).toBeVisible();
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
-  for (const label of [
-    "degraded",
-    "mock",
-    "read-only",
-    "browser-local only",
-    "no production template copy",
-    "no audit write",
-    "no config write"
-  ])
-    await expect(page.getByTestId("m7-template-runtime-note")).toContainText(label);
+  await expect(page.getByText("集团级模板运营")).toBeVisible();
+  await expect(page.getByTestId("m7-template-runtime-note")).toHaveAttribute(
+    "hidden",
+    ""
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-template-runtime-note"));
+  await expectRuntimeBoundary(page.getByTestId("m7-template-page"));
+  await expectVisibleBodyClean(page);
   for (const id of tabIds)
     await expect(page.getByTestId(`m7-template-tab-${id}`)).toBeVisible();
   await expect(page.getByTestId("m7-template-tab-knowledge")).toHaveAttribute(
@@ -108,10 +117,12 @@ test("copy modal requires selected target and confirms local-only toast", async 
   const toast = page.getByTestId("m7-template-toast");
   await expect(toast).toHaveAttribute("role", "status");
   await expect(toast).toHaveAttribute("aria-live", "polite");
-  await expect(toast).toContainText("browser-local only");
-  await expect(toast).toContainText("no production template copy");
-  await expect(toast).toContainText("no audit write");
-  await expect(toast).toContainText("no config write");
+  await expect(toast).toContainText(
+    "已复制「美妆售后知识包 v4.2」到 1 个租户 · 知识包"
+  );
+  await expect(toast).toContainText("租户将生成独立版本");
+  await expectRuntimeBoundary(toast);
+  await expectVisibleBodyClean(page);
   await expect(modal).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
@@ -159,9 +170,8 @@ test("tabs and forced URL states stay deterministic", async ({ page }) => {
       state === "degraded"
         ? page.getByTestId("m7-template-runtime-note")
         : page.getByTestId(`m7-template-state-${state}`);
-    await expect(target).toContainText("no production template copy");
-    await expect(target).toContainText("no audit write");
-    await expect(target).toContainText("no config write");
+    await expectRuntimeBoundary(target);
+    await expectVisibleBodyClean(page);
   }
 });
 
@@ -192,6 +202,25 @@ async function openTemplate(page: Page, query = "") {
     "data-active-page-id",
     "group.templates"
   );
+}
+
+async function expectVisibleBodyClean(page: Page) {
+  const visibleBody = await page.evaluate(() => document.body.innerText);
+  for (const term of forbiddenVisibleTerms) {
+    expect(visibleBody.toLowerCase()).not.toContain(term.toLowerCase());
+  }
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function expectLayerNav(

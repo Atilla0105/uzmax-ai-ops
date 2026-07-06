@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-71-template-center-source-parity-refresh";
 const ownerHtml = "/Users/atilla/Downloads/运营塔台1.0.html";
@@ -71,8 +71,12 @@ test("captures group.templates source parity evidence on latest visible stack", 
   await expect(page.getByTestId("page-outlet")).not.toHaveAttribute("data-tenant-id");
   await expect(page.getByRole("heading", { name: "模板中心" })).toBeVisible();
   await expect(page.getByText("复制到租户将生成独立版本")).toBeVisible();
-  for (const label of runtimeLabels)
-    await expect(page.getByTestId("m7-template-runtime-note")).toContainText(label);
+  await expect(page.getByText("集团级模板运营")).toBeVisible();
+  await expect(page.getByTestId("m7-template-runtime-note")).toHaveAttribute(
+    "hidden",
+    ""
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-template-runtime-note"));
   for (const id of tabIds)
     await expect(page.getByTestId(`m7-template-tab-${id}`)).toBeVisible();
   await expect(page.getByTestId("m7-template-tab-knowledge")).toHaveAttribute(
@@ -80,7 +84,7 @@ test("captures group.templates source parity evidence on latest visible stack", 
     "true"
   );
   await expect(page.locator(".uz-template-card")).toHaveCount(3);
-  await expect(page.locator(".uz-template-card").first()).toContainText("mock 通过");
+  await expect(page.locator(".uz-template-card").first()).toContainText("通过");
   await expect(page.locator(".uz-template-card").first()).toContainText("版本");
   await expect(page.locator(".uz-template-card").first()).toContainText("最近复制");
   await expect(page.getByTestId("m7-template-copy-SYN-TMPL-tk1")).toContainText(
@@ -97,7 +101,6 @@ test("captures group.templates source parity evidence on latest visible stack", 
   expect(desktopMetrics.groupButtonCount).toBe(groupLabels.length);
   expect(desktopMetrics.tenantButtonCount).toBe(0);
   expect(desktopMetrics.tenantCategoryCount).toBe(0);
-  expect(desktopMetrics.runtimeLabelsVisible).toBe(true);
   expect(desktopMetrics.sourceLikeDefaultVisible).toBe(true);
   expect(desktopMetrics.bodyScrollWidth).toBeLessThanOrEqual(1440);
   expect(desktopMetrics.documentScrollWidth).toBeLessThanOrEqual(1440);
@@ -110,7 +113,7 @@ test("captures group.templates source parity evidence on latest visible stack", 
   await expect(modal).toContainText("复制「美妆售后知识包 v4.2」");
   await expect(modal).toContainText("选择目标租户");
   await expect(modal).toContainText("复制后生成独立版本，可各自演进");
-  await expect(modal).toContainText("browser-local only");
+  await expectRuntimeBoundary(modal);
   await expect(
     page.locator("[data-testid^='m7-template-tenant-SYN-COPY-']")
   ).toHaveCount(4);
@@ -135,10 +138,8 @@ test("captures group.templates source parity evidence on latest visible stack", 
   await expect(toast).toContainText(
     "已复制「美妆售后知识包 v4.2」到 1 个租户 · 知识包"
   );
-  await expect(toast).toContainText("browser-local only");
-  await expect(toast).toContainText("no production template copy");
-  await expect(toast).toContainText("no audit write");
-  await expect(toast).toContainText("no config write");
+  await expect(toast).toContainText("租户将生成独立版本");
+  await expectRuntimeBoundary(toast);
   const toastMetrics = await collectTemplateMetrics(page);
   expect(toastMetrics.sourceLikeToastVisible).toBe(true);
 
@@ -194,6 +195,18 @@ async function openTemplate(page: Page) {
     "group.templates"
   );
   await expect(page.getByTestId("m7-template-page")).toBeVisible();
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function clickFirstVisibleText(page: Page, text: string) {
@@ -298,7 +311,6 @@ function buildTemplateMetrics(raw: RawTemplateMetrics) {
     navButtonLabels: undefined,
     navText: undefined,
     pageVisible: hasBox(raw.pageWidth, raw.pageHeight),
-    runtimeLabelsVisible: includesAll(bodyText, runtimeLabels),
     sourceLikeDefaultVisible:
       includesAll(bodyText, [
         "模板中心",
@@ -309,7 +321,7 @@ function buildTemplateMetrics(raw: RawTemplateMetrics) {
         "评测集",
         "话术包",
         "美妆售后知识包",
-        "mock 通过",
+        "通过",
         "版本",
         "最近复制",
         "复制到租户"
@@ -325,10 +337,7 @@ function buildTemplateMetrics(raw: RawTemplateMetrics) {
       ]) && tenantTargets.every((label) => bodyText.includes(label)),
     sourceLikeToastVisible: includesAll(bodyText, [
       "已复制「美妆售后知识包 v4.2」到 1 个租户 · 知识包",
-      "browser-local only",
-      "no production template copy",
-      "no audit write",
-      "no config write"
+      "租户将生成独立版本"
     ]),
     tenantButtonCount: tenantLabels.filter((label) => navButtonLabels.includes(label))
       .length,
@@ -377,19 +386,7 @@ function writeSourceMappingSummary() {
         "最近复制",
         "尚未复制到任何租户"
       ])
-    },
-    boundaryAdaptation: {
-      copyToast:
-        "React starts with the owner-shaped Chinese copy toast and appends browser-local/no-production boundary labels.",
-      modal:
-        "React keeps accessible close, focus trap and checkbox semantics while preserving the centered approximately 420px modal shape."
-    },
-    filesRead: Object.values(sourceFiles),
-    fixtureTerms: ["TMPL_TABS", "TMPL_EVAL", "TMPL_LIB", "GROUP_TENANTS"].filter(
-      (term) => fixtures.includes(term)
-    ),
-    tabs: tabLabels.filter((label) => `${page}\n${fixtures}`.includes(label)),
-    tenantTargets: tenantTargets.filter((label) => fixtures.includes(label))
+    }
   };
   writeFileSync(
     `${artifactDir}/unpacked-template-center-source-mapping.json`,

@@ -103,7 +103,8 @@ Completed validation:
 - PASS: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node scripts/guards/pr-shape.mjs --base codex/m7-ui-93-connection-center-default-visual-parity-refresh --spec docs/specs/M7-UI-94-template-center-default-visual-parity-refresh.md --include-worktree`
   - `changedFiles: 10`
   - `categories: { source: 3, test: 3, docs: 4 }`
-  - `source: { changedFiles: 3, netLoc: 0, newFiles: 0 }`
+  - `source: { changedFiles: 3, netLoc: 58, newFiles: 0 }`
+  - Source net LOC remains within the spec budget `<= 180`.
 - PASS: touched Prettier:
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/prettier/bin/prettier.cjs --check apps/admin/src/pages/group/GroupTemplatePage.tsx apps/admin/src/pages/group/GroupTemplateViews.tsx apps/admin/src/pages/group/groupTemplateFallback.ts apps/admin/tests/m7-ui-template-center.spec.ts apps/admin/tests/m7-ui-template-center-source-parity.spec.ts apps/admin/tests/m7-ui-template-center-default-visual-parity.spec.ts docs/specs/M7-UI-94-template-center-default-visual-parity-refresh.md docs/evidence/M7/M7-UI-94-template-center-default-visual-parity-refresh.md docs/evidence/M7/README.md docs/admin-ui-page-migration-ledger.md`
 - PASS: touched ESLint:

@@ -117,6 +117,12 @@ async function collectTopbarMetrics(page: Page, state: string) {
     };
 
     if (traceState === "owner") {
+      return collectOwnerTopbarMetricsForPage(rectFor);
+    }
+
+    return collectReactTopbarMetricsForPage(traceState, rectFor);
+
+    function collectOwnerTopbarMetricsForPage() {
       const topbar = document.querySelector("header");
       if (!topbar) {
         return {
@@ -139,34 +145,36 @@ async function collectTopbarMetrics(page: Page, state: string) {
       };
     }
 
-    const topbar = document.querySelector(".uz-topbar");
-    const search = document.querySelector(".uz-global-search");
-    const envMarker = document.querySelector('[data-testid="environment-marker"]');
-    const breadcrumb = document.querySelector(".uz-breadcrumb");
-    const user = document.querySelector(".uz-user-button");
-    const heartbeat = document.querySelector(".uz-heartbeat-label");
-    const nav = document.querySelector('[data-testid="app-shell-nav"]');
-    const routeBadge = document.querySelector('[data-testid="active-layer-badge"]');
-    const tenantSelect = document.querySelector(".uz-tenant-select");
-    const shell = document.querySelector('[data-testid="admin-shell"]');
+    function collectReactTopbarMetricsForPage(traceState: string) {
+      const topbar = document.querySelector(".uz-topbar");
+      const search = document.querySelector(".uz-global-search");
+      const envMarker = document.querySelector('[data-testid="environment-marker"]');
+      const breadcrumb = document.querySelector(".uz-breadcrumb");
+      const user = document.querySelector(".uz-user-button");
+      const heartbeat = document.querySelector(".uz-heartbeat-label");
+      const nav = document.querySelector('[data-testid="app-shell-nav"]');
+      const routeBadge = document.querySelector('[data-testid="active-layer-badge"]');
+      const tenantSelect = document.querySelector(".uz-tenant-select");
+      const shell = document.querySelector('[data-testid="admin-shell"]');
 
-    return {
-      state: traceState,
-      shellLevel: shell?.getAttribute("data-shell-level") ?? null,
-      activePageId: shell?.getAttribute("data-active-page-id") ?? null,
-      topbar: rectFor(topbar),
-      breadcrumb: rectFor(breadcrumb),
-      search: rectFor(search),
-      layerBadge: routeBadge ? routeBadge.textContent?.trim() : null,
-      tenantSelect: rectFor(tenantSelect),
-      envMarker: rectFor(envMarker),
-      heartbeat: rectFor(heartbeat),
-      user: rectFor(user),
-      nav: rectFor(nav),
-      body: {
-        scrollHeight: document.body.scrollHeight,
-        scrollWidth: document.body.scrollWidth
-      }
-    };
+      return {
+        state: traceState,
+        shellLevel: shell?.getAttribute("data-shell-level") ?? null,
+        activePageId: shell?.getAttribute("data-active-page-id") ?? null,
+        topbar: rectFor(topbar),
+        breadcrumb: rectFor(breadcrumb),
+        search: rectFor(search),
+        layerBadge: routeBadge ? routeBadge.textContent?.trim() : null,
+        tenantSelect: rectFor(tenantSelect),
+        envMarker: rectFor(envMarker),
+        heartbeat: rectFor(heartbeat),
+        user: rectFor(user),
+        nav: rectFor(nav),
+        body: {
+          scrollHeight: document.body.scrollHeight,
+          scrollWidth: document.body.scrollWidth
+        }
+      };
+    }
   }, state);
 }

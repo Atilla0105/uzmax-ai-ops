@@ -12,8 +12,8 @@ This slice adds a focused source-parity Playwright pass for the existing knowled
 |---|---|
 | worker path | `/Users/atilla/.codex/worktrees/m7-ui-67-knowledge-resources-source-parity-refresh-cleanstack` |
 | worker branch | `codex/m7-ui-67-knowledge-resources-source-parity-refresh-cleanstack` |
-| worker status at entry | `## codex/m7-ui-67-knowledge-resources-source-parity-refresh-cleanstack...origin/codex/m7-ui-31-orders-visible-ui` |
-| entry HEAD | `0993e3215e018b60aa2125e8b7202288dd498fcb` |
+| worker status at takeover | `## codex/m7-ui-67-knowledge-resources-source-parity-refresh-cleanstack...origin/codex/m7-ui-67-knowledge-resources-source-parity-refresh-cleanstack` |
+| takeover HEAD before closeout | `6281518af758329b33f323b0bd4c76a42687f9aa` |
 | base | `origin/codex/m7-ui-31-orders-visible-ui` / current clean visible UI trunk after #253 |
 | root/main checkout | Root checkout was read-only for this worker. |
 

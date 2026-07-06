@@ -45,9 +45,10 @@ Finalizer run in worktree
 
 | Command | Result | Notes |
 |---|---|---|
-| `npm run guard:pr-shape -- --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-53-team-page.md --include-worktree` | PASS | changedFiles 8; categories source 5 / test 1 / docs 2; source netLoc 0; source newFiles 0 |
-| `npm run format:check` | FAIL: existing baseline outside this spec | After formatting allowed files, full repo still reports 18 pre-existing files outside the allowed touch set: `apps/admin/src/M4CustomerAssetRuntimeState.tsx`, `apps/admin/src/orderImportApiClient.ts`, `apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts`, `apps/admin/src/pages/evals/evalFallback.ts`, `apps/admin/src/pages/group/groupConnectionFallback.ts`, `apps/admin/src/pages/group/groupLogsFallback.ts`, `apps/admin/src/pages/group/groupModelRiskFallback.ts`, `apps/admin/src/pages/group/groupOverviewFallback.ts`, `apps/admin/src/pages/group/groupTemplateFallback.ts`, `apps/admin/src/pages/knowledge/knowledgeFallback.ts`, `apps/api/src/ai-member-runtime.contracts.ts`, `apps/api/src/confirmation-queue.types.ts`, `apps/api/src/conversation-ticket.types.ts`, `apps/api/src/order-import.repository.ts`, `apps/api/src/order-import.types.ts`, `packages/capabilities/kb/src/index.ts`, `packages/capabilities/order-read/src/index.ts`, `packages/channels/src/index.ts` |
-| `node node_modules/prettier/bin/prettier.cjs --check apps/admin/src/pages/PageOutlet.tsx apps/admin/src/pages/registry.ts apps/admin/src/pages/team/TeamPage.tsx apps/admin/src/pages/team/teamFallback.ts apps/admin/src/pages/team/teamMarkup.ts apps/admin/tests/m7-ui-team-page.spec.ts docs/specs/M7-UI-53-team-page.md docs/evidence/M7/M7-UI-53-team-page.md` | PASS | All matched files use Prettier code style |
+| `npm run guard:pr-shape -- --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-53-team-page.md --include-worktree` | PASS | changedFiles 8; categories source 5 / test 1 / docs 2; source netLoc 479; source newFiles 3 |
+| `npm ci` | PASS | Rebuilt local dependencies to match CI lockfile state; Prettier is `3.8.4` |
+| `npx prettier --write apps/admin/src/pages/registry.ts` | PASS | Fixes CI-reported registry formatting under lockfile Prettier `3.8.4` |
+| `npm run format:check` | PASS | Full repo format check passes after the registry formatting fix |
 | `npm run guard:prettier-ignore` | PASS | `prettier-ignore-boundary: ok (8 baseline file(s), 89/89 marker(s))` |
 | `npm run typecheck` | PASS | Initial local `teamMarkup.ts` tuple inference issue fixed in this slice |
 | `npm run lint` | PASS | Initial local `TeamPage` complexity issue fixed by extracting confirm modal props |

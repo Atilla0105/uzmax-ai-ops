@@ -4,7 +4,7 @@ export type TemplateViewState =
   | "error"
   | "loading"
   | "permission";
-export type TemplateTone = "danger" | "info" | "neutral" | "ok" | "warn";
+type TemplateTone = "danger" | "info" | "neutral" | "ok" | "warn";
 export type TemplateTabId = "agent" | "config" | "eval" | "knowledge" | "quick_reply";
 
 export interface TemplateCard {
@@ -26,7 +26,7 @@ export interface TemplateTenantTarget {
   tone: TemplateTone;
 }
 
-export const templateRuntimeLabels =
+const templateRuntimeLabels =
   "degraded|mock|read-only|browser-local only|no production template copy|no audit write|no config write".split(
     "|"
   );

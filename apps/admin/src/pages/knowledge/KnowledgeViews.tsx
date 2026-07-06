@@ -8,46 +8,14 @@ import {
   toneClass,
   type KnowledgeAsset,
   type KnowledgeFact,
-  type KnowledgeSnippet,
-  type KnowledgeViewState
+  type KnowledgeSnippet
 } from "./knowledgeFallback";
-
-const stateBoundary =
-  "mock degraded read-only knowledge runtime unavailable no production knowledge data";
 
 export interface DataRow {
   cells: ReactNode[];
   id: string;
   label?: string;
   testId?: string;
-}
-
-export function StatePanel({
-  state
-}: {
-  state: Exclude<KnowledgeViewState, "degraded">;
-}) {
-  // prettier-ignore
-  const copy = {
-    empty: ["暂无知识条目", "当前没有可展示的知识内容，请从资料导入或确认队列开始整理。"],
-    error: ["知识服务暂不可用", "请稍后重试，或先查看确认队列中的待处理候选。"],
-    gate: ["评测门禁未通过", "请先处理红线条目、负反馈样本或待确认候选，再进入发布流程。"],
-    loading: ["加载知识与资源", "正在整理旅程、事实、话术、素材和模板来源。"],
-    permission: ["权限不足", "当前账号不能查看该租户的知识与资源，请联系管理员确认权限。"]
-  }[state];
-  return (
-    <main
-      className="uz-knowledge-state"
-      data-runtime-boundary={stateBoundary}
-      data-testid={`m7-knowledge-state-${state}`}
-      title={stateBoundary}
-    >
-      <div>
-        <h2>{copy[0]}</h2>
-        <p>{copy[1]}</p>
-      </div>
-    </main>
-  );
 }
 
 export function DataTable({

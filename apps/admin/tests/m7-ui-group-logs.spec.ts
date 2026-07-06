@@ -134,13 +134,16 @@ test("export and detail actions keep clean feedback with hidden boundaries", asy
 });
 
 test("forced URL states stay deterministic", async ({ page }) => {
-  const stateCopy: Record<string, string> = {
+  const forcedStates = ["loading", "empty", "error", "permission", "degraded"] as const;
+  type ForcedState = (typeof forcedStates)[number];
+  type CopyState = Exclude<ForcedState, "degraded">;
+  const stateCopy: Record<CopyState, string> = {
     empty: "暂无集团日志",
     error: "集团日志暂不可用",
     loading: "正在载入集团日志",
     permission: "需要集团日志权限"
   };
-  for (const state of ["loading", "empty", "error", "permission", "degraded"]) {
+  for (const state of forcedStates) {
     await openGroupLogs(page, `?state=${state}`);
     const target =
       state === "degraded"

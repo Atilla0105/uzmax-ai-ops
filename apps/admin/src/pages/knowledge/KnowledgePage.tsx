@@ -5,6 +5,9 @@ import {
   KnowledgeAssetDetail,
   KnowledgeRuntimeNote,
   KnowledgeToolbar,
+  StatePanel
+} from "./KnowledgeControls";
+import {
   assets as initialAssets,
   facts as initialFacts,
   filterByQuery,
@@ -25,7 +28,6 @@ import {
   FactsView,
   JourneyView,
   SnippetsView,
-  StatePanel,
   type DataRow
 } from "./KnowledgeViews";
 

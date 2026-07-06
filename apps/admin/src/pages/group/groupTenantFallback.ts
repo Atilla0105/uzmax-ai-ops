@@ -72,19 +72,13 @@ export const tenantCapabilities: TenantCapability[] = [
   { key: "orderApi", label: "订单 API" }
 ];
 
-export const ownerHtmlTenantColumns = [
-  "租户",
-  "成员",
-  "AI 成员",
-  "渠道连接",
-  "订单 connector",
-  "默认语言",
-  "状态",
-  "操作"
+export const tenantLanguages = [
+  "乌兹别克语（拉丁）",
+  "乌兹别克语（西里尔）",
+  "俄语",
+  "中文",
+  "英语"
 ];
-
-// prettier-ignore
-export const tenantLanguages = ["乌兹别克语（拉丁）", "乌兹别克语（西里尔）", "俄语", "中文", "英语"];
 
 export const tenantTimezones = ["UTC+5 塔什干", "UTC+3 莫斯科", "UTC+8 北京"];
 

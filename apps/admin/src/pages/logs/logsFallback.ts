@@ -27,7 +27,7 @@ export const tenantLogTabs: readonly LogTabDef[] = [
   { id: "op", label: "操作日志" }
 ] as const;
 
-export const tenantLogRuntimeLabels =
+const tenantLogRuntimeLabels =
   "degraded|mock|read-only|browser-local only|synthetic tenant log rows|no production audit/log export|no file written|no audit/log runtime call|no real tenant/action navigation".split(
     "|"
   );
@@ -72,7 +72,7 @@ export const tenantLogColumns: Record<TenantLogTab, string[]> = {
   op: ["时间", "操作人", "模块", "动作", "对象", "详情"]
 };
 
-export const tenantLogRows: Record<TenantLogTab, TenantLogRow[]> = {
+const tenantLogRows: Record<TenantLogTab, TenantLogRow[]> = {
   login: [
     row("login-1", ["今天 08:12", "韩雪", "213.230.101.44", "Chrome · macOS", "成功"]),
     row("login-2", ["今天 09:00", "李航", "213.230.88.10", "Chrome · Windows", "成功"]),

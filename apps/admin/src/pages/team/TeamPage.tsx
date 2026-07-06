@@ -1,16 +1,9 @@
-import {
-  InviteModal,
-  MemberDrawer,
-  RoleDeleteConfirm,
-  RoleEditorModal
-} from "./TeamDialogs";
-import { TeamHeader, TeamMembersTab, TeamRolesTab, TeamStatePanel } from "./TeamViews";
-import {
-  TEAM_RUNTIME_BOUNDARY,
-  teamMeta,
-  teamStyles,
-  useTeamPageState
-} from "./teamFallback";
+import { InviteModal, RoleEditorModal } from "./TeamDialogs";
+import { MemberDrawer, RoleDeleteConfirm } from "./TeamMemberDrawer";
+import { TeamRolesTab, TeamStatePanel } from "./TeamRoleViews";
+import { TeamHeader, TeamMembersTab } from "./TeamViews";
+import { TEAM_RUNTIME_BOUNDARY, teamMeta, teamStyles } from "./teamFallback";
+import { useTeamPageState } from "./useTeamPageState";
 
 export function TeamPage({ selectedTenantId }: { selectedTenantId: string }) {
   const s = useTeamPageState();

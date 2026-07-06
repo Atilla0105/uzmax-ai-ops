@@ -117,7 +117,7 @@ export function EvalDetail({
   );
 }
 
-export function BlindToggle({
+function BlindToggle({
   set,
   setBlind
 }: {
@@ -139,7 +139,7 @@ export function BlindToggle({
   );
 }
 
-export function CaseCard({
+function CaseCard({
   caseItem,
   onOverride
 }: {
@@ -170,7 +170,7 @@ export function CaseCard({
   );
 }
 
-export function ScoreBadge({
+function ScoreBadge({
   result,
   score
 }: {

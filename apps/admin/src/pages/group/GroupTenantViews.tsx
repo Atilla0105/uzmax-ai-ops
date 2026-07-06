@@ -9,51 +9,33 @@ import {
 } from "./groupTenantFallback";
 
 type NewTenantTextField = Exclude<keyof NewTenantForm, "capabilities">;
-// prettier-ignore
-type NewTenantModalProps = { form: NewTenantForm; onCancel: () => void; onCreate: () => void; onFieldChange: (field: NewTenantTextField, value: string) => void; onToggleCapability: (key: TenantCapabilityKey) => void; ready: boolean };
-// prettier-ignore
-type TextFieldProps = { label: string; onChange: (value: string) => void; placeholder: string; refEl?: RefObject<HTMLInputElement | null>; testId: string; value: string };
-// prettier-ignore
-type SelectFieldProps = { help?: string; label: string; onChange: (value: string) => void; options: string[]; testId: string; value: string };
+type NewTenantModalProps = {
+  form: NewTenantForm;
+  onCancel: () => void;
+  onCreate: () => void;
+  onFieldChange: (field: NewTenantTextField, value: string) => void;
+  onToggleCapability: (key: TenantCapabilityKey) => void;
+  ready: boolean;
+};
+type TextFieldProps = {
+  label: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  refEl?: RefObject<HTMLInputElement | null>;
+  testId: string;
+  value: string;
+};
+type SelectFieldProps = {
+  help?: string;
+  label: string;
+  onChange: (value: string) => void;
+  options: string[];
+  testId: string;
+  value: string;
+};
 
 const focusableSelector =
   "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
-
-export function TenantHtmlTable({
-  onManageUnavailable,
-  runtimeBoundary
-}: {
-  onManageUnavailable: () => void;
-  runtimeBoundary: string;
-}) {
-  return (
-    <section
-      aria-label="租户列表"
-      className="uz-tenant-table-panel"
-      data-testid="m7-tenant-table-panel"
-    >
-      <table className="uz-tenant-table">
-        <tbody>
-          <tr>
-            <td className="uz-tenant-management-cell">
-              <button
-                aria-description={runtimeBoundary}
-                className="uz-tenant-link-action"
-                data-runtime-boundary={runtimeBoundary}
-                data-testid="m7-tenant-manage-placeholder"
-                onClick={onManageUnavailable}
-                title={runtimeBoundary}
-                type="button"
-              >
-                管理
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-  );
-}
 
 export function TenantNewModal({
   form,

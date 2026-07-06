@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-55-analytics-page-visible-ui";
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
@@ -27,6 +27,21 @@ const groupLabels = [
   "租户管理",
   "集团日志"
 ];
+const runtimeLabels = [
+  "degraded",
+  "mock",
+  "browser-local only",
+  "no production analytics metrics",
+  "no export file write",
+  "no analytics runtime",
+  "no audit write"
+];
+const forbiddenVisibleTerms = [
+  ...runtimeLabels,
+  "local-only",
+  "local only",
+  "Synthetic"
+];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -52,17 +67,11 @@ test("renders tenant analytics page with source-like structure", async ({ page }
   await expect(page.getByTestId("page-outlet")).toHaveAttribute("data-tenant-id");
   await expectLayerNav(page, tenantSections, groupSections, tenantLabels, groupLabels);
   await expect(page.getByTestId("m7-analytics-page")).toContainText("分析");
-  for (const label of [
-    "degraded",
-    "mock",
-    "browser-local only",
-    "no production analytics metrics",
-    "no export file write",
-    "no analytics runtime",
-    "no audit write"
-  ]) {
-    await expect(page.getByTestId("m7-analytics-runtime-note")).toContainText(label);
-  }
+  await expect(page.getByTestId("m7-analytics-runtime-note")).toHaveAttribute(
+    "hidden",
+    ""
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-analytics-runtime-note"));
   await expect(page.getByTestId("m7-analytics-kpis")).toContainText("解决率");
   await expect(page.getByTestId("m7-analytics-handoff")).toContainText(
     "转人工原因分布"
@@ -96,19 +105,18 @@ test("range switch and dimensions update browser-local table", async ({ page }) 
   await expect(page.getByTestId("m7-analytics-active-dims")).toContainText("渠道");
   await expect(
     page.getByTestId("m7-analytics-dim-menu").getByRole("button", { name: "意图" })
-  ).toBeDisabled();
+  ).toHaveAttribute("aria-disabled", "true");
   await expect(page.getByTestId("m7-analytics-table")).toContainText("Telegram Bot");
   await page.getByRole("button", { name: /移除member/ }).click();
   await expect(page.getByTestId("m7-analytics-active-dims")).not.toContainText("成员");
 });
 
-test("export stays local-only", async ({ page }) => {
+test("export keeps production write boundary hidden", async ({ page }) => {
   await openAnalytics(page);
   await page.getByTestId("m7-analytics-export").click();
-  await expect(page.getByTestId("m7-analytics-toast")).toContainText(
-    "no export file write"
-  );
-  await expect(page.getByTestId("m7-analytics-toast")).toContainText("no audit write");
+  await expect(page.getByTestId("m7-analytics-toast")).toContainText("导出预览已生成");
+  await expectRuntimeBoundary(page.getByTestId("m7-analytics-toast"));
+  await expectVisibleBodyClean(page);
 });
 
 test("forced URL states are deterministic", async ({ page }) => {
@@ -118,9 +126,8 @@ test("forced URL states are deterministic", async ({ page }) => {
       state === "degraded"
         ? page.getByTestId("m7-analytics-runtime-note")
         : page.getByTestId(`m7-analytics-state-${state}`);
-    await expect(target).toContainText("browser-local only");
-    await expect(target).toContainText("no production analytics metrics");
-    await expect(target).toContainText("no analytics runtime");
+    await expectRuntimeBoundary(target);
+    await expectVisibleBodyClean(page);
   }
 });
 
@@ -187,4 +194,23 @@ async function collectMetrics(page: Page) {
       .getByTestId("m7-analytics-table")
       .evaluate((node) => node.clientWidth)
   };
+}
+
+async function expectVisibleBodyClean(page: Page) {
+  const visibleBody = await page.evaluate(() => document.body.innerText);
+  for (const term of forbiddenVisibleTerms) {
+    expect(visibleBody.toLowerCase()).not.toContain(term.toLowerCase());
+  }
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }

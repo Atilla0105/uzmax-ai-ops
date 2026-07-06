@@ -1,5 +1,6 @@
 import { Download, Plus } from "lucide-react";
 import {
+  analyticsRuntimeBoundary,
   analyticsRanges,
   analyticsRuntimeLabels,
   analyticsStyles,
@@ -11,9 +12,12 @@ export function AnalyticsPage({ selectedTenantId }: { selectedTenantId: string }
   return (
     <section
       className="uz-analytics-page"
+      aria-description={analyticsRuntimeBoundary}
+      data-runtime-boundary={analyticsRuntimeBoundary}
       data-runtime-state={state.viewState}
       data-selected-tenant-id={selectedTenantId}
       data-testid="m7-analytics-page"
+      title={analyticsRuntimeBoundary}
     >
       <style>{analyticsStyles}</style>
       <header className="uz-analytics-head">
@@ -53,11 +57,17 @@ export function AnalyticsPage({ selectedTenantId }: { selectedTenantId: string }
       </header>
       {state.toast ? (
         <div
+          aria-description={analyticsRuntimeBoundary}
+          aria-atomic="true"
           aria-live="polite"
           className="uz-analytics-toast"
+          data-runtime-boundary={analyticsRuntimeBoundary}
           data-testid="m7-analytics-toast"
+          role="status"
+          title={analyticsRuntimeBoundary}
         >
           {state.toast}
+          <span hidden>{analyticsRuntimeBoundary}</span>
         </div>
       ) : null}
       {state.isDegraded ? (
@@ -73,14 +83,16 @@ export function AnalyticsPage({ selectedTenantId }: { selectedTenantId: string }
         </main>
       ) : (
         <main
+          aria-description={analyticsRuntimeBoundary}
           className="uz-analytics-state"
+          data-runtime-boundary={analyticsRuntimeBoundary}
           data-testid={`m7-analytics-state-${state.viewState}`}
+          title={analyticsRuntimeBoundary}
         >
           <div>
-            <h2>
-              {state.viewState === "permission" ? "permission denied" : state.viewState}
-            </h2>
-            <p>{state.stateCopy}</p>
+            <h2>{state.stateCopy.title}</h2>
+            <p>{state.stateCopy.body}</p>
+            <span hidden>{analyticsRuntimeBoundary}</span>
           </div>
         </main>
       )}
@@ -92,7 +104,13 @@ type AnalyticsState = ReturnType<typeof useAnalyticsPageState>;
 
 function RuntimeNote() {
   return (
-    <div className="uz-analytics-note" data-testid="m7-analytics-runtime-note">
+    <div
+      className="uz-analytics-note"
+      data-runtime-boundary={analyticsRuntimeBoundary}
+      data-testid="m7-analytics-runtime-note"
+      hidden
+      title={analyticsRuntimeBoundary}
+    >
       <strong>{analyticsRuntimeLabels.slice(0, 3).join(" · ")}</strong>
       <span>{analyticsRuntimeLabels.slice(3).join(" · ")}</span>
     </div>
@@ -108,8 +126,8 @@ function DimMenu({ state }: { state: AnalyticsState }) {
         const disabled = !active && state.dims.length >= 2;
         return (
           <button
+            aria-disabled={disabled}
             aria-pressed={active}
-            disabled={disabled}
             key={option.id}
             onClick={() => state.toggleDim(option.id)}
             type="button"
@@ -127,7 +145,7 @@ function KpiGrid({ state }: { state: AnalyticsState }) {
   return (
     <section
       className="uz-analytics-kpis"
-      data-runtime-boundary={analyticsRuntimeLabels.join(" | ")}
+      data-runtime-boundary={analyticsRuntimeBoundary}
       data-testid="m7-analytics-kpis"
     >
       {state.kpis.map(([label, value, delta, tone]) => (

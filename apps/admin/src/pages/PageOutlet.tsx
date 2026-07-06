@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "../primitives";
 import { PageState } from "../patterns";
+import { AgentsPage } from "./agents/AgentsPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
@@ -19,6 +20,60 @@ export interface PageOutletProps {
   selectedTenantId: string;
 }
 
+interface ImplementedPageContext {
+  onEnterTenant: (tenantId: string) => void;
+  onPageChange: (pageId: AdminPageId) => void;
+  selectedTenantId: string;
+}
+
+interface ImplementedPage {
+  className?: string;
+  content: ReactNode;
+}
+
+type ImplementedPageRenderer = (context: ImplementedPageContext) => ImplementedPage;
+
+const implementedPageRenderers: Partial<Record<AdminPageId, ImplementedPageRenderer>> =
+  {
+    "group.overview": ({ onEnterTenant, onPageChange }) => ({
+      content: (
+        <GroupOverviewPage
+          onEnterTenant={onEnterTenant}
+          onOpenLegacyEvidence={() => onPageChange(legacyEvidencePageId)}
+        />
+      )
+    }),
+    "tenant.aiMembers": ({ selectedTenantId }) => ({
+      content: <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+    }),
+    "tenant.conversations": ({ selectedTenantId }) => ({
+      className: "uz-conversation-outlet",
+      content: <ConversationsPage selectedTenantId={selectedTenantId} />
+    }),
+    "tenant.customers": ({ selectedTenantId }) => ({
+      content: (
+        <CustomersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      )
+    }),
+    "tenant.eval": ({ selectedTenantId }) => ({
+      content: <EvalPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+    }),
+    "tenant.knowledge": ({ selectedTenantId }) => ({
+      content: (
+        <KnowledgePage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      )
+    }),
+    "tenant.orders": ({ selectedTenantId }) => ({
+      content: <OrdersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+    }),
+    "tenant.queue": () => ({ content: <QueuePage /> }),
+    "tenant.tickets": ({ selectedTenantId }) => ({
+      content: (
+        <TicketsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      )
+    })
+  };
+
 export function PageOutlet({
   activePageId,
   legacyEvidence,
@@ -36,94 +91,20 @@ export function PageOutlet({
     );
   }
 
-  if (page.id === "tenant.queue") {
-    return (
-      <section data-page-id={page.id} data-testid="page-outlet">
-        <QueuePage />
-      </section>
-    );
-  }
-
-  if (page.id === "group.overview") {
-    return (
-      <section data-page-id={page.id} data-testid="page-outlet">
-        <GroupOverviewPage
-          onEnterTenant={onEnterTenant}
-          onOpenLegacyEvidence={() => onPageChange(legacyEvidencePageId)}
-        />
-      </section>
-    );
-  }
-
-  if (page.id === "tenant.conversations") {
+  const renderedPage = implementedPageRenderers[activePageId]?.({
+    onEnterTenant,
+    onPageChange,
+    selectedTenantId
+  });
+  if (renderedPage) {
     return (
       <section
-        className="uz-conversation-outlet"
+        className={renderedPage.className}
         data-page-id={page.id}
-        data-tenant-id={selectedTenantId}
+        data-tenant-id={page.layer === "tenant" ? selectedTenantId : undefined}
         data-testid="page-outlet"
       >
-        <ConversationsPage selectedTenantId={selectedTenantId} />
-      </section>
-    );
-  }
-
-  if (page.id === "tenant.tickets") {
-    return (
-      <section
-        data-page-id={page.id}
-        data-tenant-id={selectedTenantId}
-        data-testid="page-outlet"
-      >
-        <TicketsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
-      </section>
-    );
-  }
-
-  if (page.id === "tenant.customers") {
-    return (
-      <section
-        data-page-id={page.id}
-        data-tenant-id={selectedTenantId}
-        data-testid="page-outlet"
-      >
-        <CustomersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
-      </section>
-    );
-  }
-
-  if (page.id === "tenant.orders") {
-    return (
-      <section
-        data-page-id={page.id}
-        data-tenant-id={selectedTenantId}
-        data-testid="page-outlet"
-      >
-        <OrdersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
-      </section>
-    );
-  }
-
-  if (page.id === "tenant.knowledge") {
-    return (
-      <section
-        data-page-id={page.id}
-        data-tenant-id={selectedTenantId}
-        data-testid="page-outlet"
-      >
-        <KnowledgePage key={selectedTenantId} selectedTenantId={selectedTenantId} />
-      </section>
-    );
-  }
-
-  if (page.id === "tenant.eval") {
-    return (
-      <section
-        data-page-id={page.id}
-        data-tenant-id={selectedTenantId}
-        data-testid="page-outlet"
-      >
-        <EvalPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+        {renderedPage.content}
       </section>
     );
   }

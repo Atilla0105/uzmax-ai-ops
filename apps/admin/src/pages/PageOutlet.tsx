@@ -3,6 +3,7 @@ import { Button } from "../primitives";
 import { PageState } from "../patterns";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
+import { EvalPage } from "./evals/EvalPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { KnowledgePage } from "./knowledge/KnowledgePage";
 import { OrdersPage } from "./orders/OrdersPage";
@@ -111,6 +112,18 @@ export function PageOutlet({
         data-testid="page-outlet"
       >
         <KnowledgePage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+      </section>
+    );
+  }
+
+  if (page.id === "tenant.eval") {
+    return (
+      <section
+        data-page-id={page.id}
+        data-tenant-id={selectedTenantId}
+        data-testid="page-outlet"
+      >
+        <EvalPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
       </section>
     );
   }

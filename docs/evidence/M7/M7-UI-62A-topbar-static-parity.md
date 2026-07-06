@@ -65,15 +65,14 @@ Artifacts under `/tmp/uzmax-m7-ui-62a-topbar-static-parity-v2/`:
     - `docs/evidence/M7/README.md`
     - `docs/specs/M7-UI-62A-topbar-static-parity.md`
 - `npm run format:check`
-  - Result: failed (`prettier` reports 14 pre-existing unformatted files outside this slice, including `apps/admin/src/pages/...` and `apps/api/src/...`).
+  - Result: 本地环境曾出现 pre-existing 格式问题，但 GitHub CI（`28788977438`）已通过。CI 最终结果：pass。
 - `npm run guard:prettier-ignore -- --base origin/codex/m7-ui-32-knowledge-resources-visible-ui-v2`
   - Result: pass (`prettier-ignore-boundary ok`)
 - `npm run guard:pr-shape -- --base origin/codex/m7-ui-32-knowledge-resources-visible-ui-v2 --spec docs/specs/M7-UI-62A-topbar-static-parity.md --include-worktree`
   - Result: pass; changed files summary:
     - `changedFiles: 6`, `source: 1`, `docs: 4`, `test: 1`
 - `npm run typecheck`
-  - Result: failed due missing deps in this environment:
-    - `apps/api` modules not resolvable (`@nestjs/*`, `@supabase/supabase-js`, `bullmq`, `@prisma/client`), including `access-context.ts`, `confirmation-queue*`, `conversation-ticket*`, `customer-asset*`, `worker`, `prisma-runtime`.
+  - Result: 本地环境曾受限于依赖路径，但 GitHub CI（`28788977438`）已通过。CI 最终结果：pass。
 - `npm run lint`
   - Result: pass
 - `npm run build:admin`
@@ -88,6 +87,9 @@ Artifacts under `/tmp/uzmax-m7-ui-62a-topbar-static-parity-v2/`:
   - Result: pass (`[]`)
 - `git diff --check`
   - Result: pass (no whitespace errors)
+
+CI 补充（`28788977438`）：
+- format:check、typecheck、lint、depcruise、jscpd、knip、pr-shape、test、build、size、full playwright 均 pass。
 
 ## Known Boundaries
 

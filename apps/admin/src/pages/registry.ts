@@ -83,7 +83,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-50-template-center-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "连接中心",
     id: "group.connections",
     label: "连接中心",
@@ -93,9 +94,9 @@ const adminPageRegistry = [
     order: 4,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupConnectionPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupConnectionPage.tsx",
-    targetSpecId: "M7-UI-04D-group-connection"
+    targetSpecId: "M7-UI-51-connection-center-page"
   },
   {
     evidenceStatus: "not_started",

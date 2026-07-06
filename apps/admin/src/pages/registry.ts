@@ -310,7 +310,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-53-team-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "配置",
     id: "tenant.config",
     label: "配置",
@@ -320,9 +321,9 @@ const adminPageRegistry = [
     order: 17,
     requiredStates: [...stateMatrix, "rollback confirmation"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/config/ConfigPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/config/ConfigPage.tsx",
-    targetSpecId: "M7-UI-04Q-tenant-config"
+    targetSpecId: "M7-UI-54-config-page"
   },
   {
     evidenceStatus: "not_started",

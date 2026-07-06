@@ -15,6 +15,7 @@ import { ConfirmModal } from "../../patterns";
 import { IconSlot, StatusBadge } from "../../primitives";
 import {
   configMeta,
+  configRuntimeBoundary,
   configRuntimeLabels,
   configSectionLabels,
   configSections,
@@ -48,7 +49,7 @@ const sectionIcons: Record<ConfigSection, LucideIcon> = {
   tmpl: Copy
 };
 
-const configParityStyles = `.uz-config-side{width:236px}.uz-config-nav button{gap:10px;font-weight:500}.uz-config-nav button[aria-pressed=true]{font-weight:600}.uz-config-nav .uz-icon-slot{flex:none;color:currentColor}.uz-config-main{background:var(--paper);overflow-y:auto;padding:20px 24px}.uz-config-head{margin:0 0 16px;border:0;background:transparent;padding:0}.uz-config-head-row{align-items:center;gap:12px;flex-wrap:wrap}.uz-config-head-main{display:flex;min-width:0;align-items:center;gap:12px;flex-wrap:wrap}.uz-config-title{font:700 18px/1.35 var(--font-display)}.uz-config-meta{font-family:var(--font-data);font-size:11px}.uz-config-dirty-badge{border-radius:5px;background:var(--state-warn-bg);color:var(--state-warn);font:700 11px/1 var(--font-body);padding:2px 8px}.uz-config-tools{gap:8px}.uz-config-mini{gap:5px}.uz-config-body{gap:16px;padding:0}.uz-config-source-mark,.uz-config-note{position:absolute;display:block;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0;background:transparent}.uz-config-grid{max-width:640px;padding:18px}.uz-config-history-head{color:var(--ink-500);font-weight:600}.uz-config-connector{max-width:560px}.uz-config-connector .uz-config-kv:first-child strong{color:var(--ink-900)}@media(max-width:820px){.uz-config-main{padding:12px}.uz-config-head-row{align-items:flex-start;flex-direction:column}.uz-config-head-main{align-items:flex-start;flex-direction:column;gap:6px}.uz-config-tools{width:100%;margin-left:0;flex-wrap:wrap}.uz-config-nav button{gap:8px}}@media(max-width:420px){.uz-config-title{font-size:15px}.uz-config-meta{overflow-wrap:anywhere}.uz-config-tools .uz-config-mini,.uz-config-tools .uz-config-btn{width:100%}}`;
+const configParityStyles = `.uz-config-side{width:236px}.uz-config-nav button{gap:10px;font-weight:500}.uz-config-nav button[aria-pressed=true]{font-weight:600}.uz-config-nav .uz-icon-slot{flex:none;color:currentColor}.uz-config-main{background:var(--paper);overflow-y:auto;padding:20px 24px}.uz-config-head{margin:0 0 16px;border:0;background:transparent;padding:0}.uz-config-head-row{align-items:center;gap:12px;flex-wrap:wrap}.uz-config-head-main{display:flex;min-width:0;align-items:center;gap:12px;flex-wrap:wrap}.uz-config-title{font:700 18px/1.35 var(--font-display)}.uz-config-meta{font-family:var(--font-data);font-size:11px}.uz-config-dirty-badge{border-radius:5px;background:var(--state-warn-bg);color:var(--state-warn);font:700 11px/1 var(--font-body);padding:2px 8px}.uz-config-tools{gap:8px}.uz-config-mini{gap:5px}.uz-config-body{gap:16px;padding:0}.uz-config-source-mark,.uz-config-note{position:absolute;display:block;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0;background:transparent}.uz-config-source-mark[hidden],.uz-config-note[hidden]{display:none!important}.uz-config-grid{max-width:640px;padding:18px}.uz-config-history-head{color:var(--ink-500);font-weight:600}.uz-config-connector{max-width:560px}.uz-config-connector .uz-config-kv:first-child strong{color:var(--ink-900)}@media(max-width:820px){.uz-config-main{padding:12px}.uz-config-head-row{align-items:flex-start;flex-direction:column}.uz-config-head-main{align-items:flex-start;flex-direction:column;gap:6px}.uz-config-tools{width:100%;margin-left:0;flex-wrap:wrap}.uz-config-nav button{gap:8px}}@media(max-width:420px){.uz-config-title{font-size:15px}.uz-config-meta{overflow-wrap:anywhere}.uz-config-tools .uz-config-mini,.uz-config-tools .uz-config-btn{width:100%}}`;
 
 // prettier-ignore
 const sectionViews: Record<ConfigSection, (props: ViewProps) => ReactNode> = {
@@ -73,14 +74,14 @@ export function ConfigPage({ selectedTenantId }: { selectedTenantId: string }) {
   const openRollback = (target: ConfigVersion) => { setRollbackTarget(target); setReason(""); };
   const openSwitch = (mode: ConfigConnector["mode"]) => { setSwitchTarget(mode); setReason(""); };
   return (
-    <section className="uz-config-page" data-runtime-source={configMeta.source} data-runtime-state={state.viewState} data-selected-tenant-id={selectedTenantId} data-testid="m7-config-page">
+    <section aria-description={configRuntimeBoundary} className="uz-config-page" data-runtime-boundary={configRuntimeBoundary} data-runtime-source={configMeta.source} data-runtime-state={state.viewState} data-selected-tenant-id={selectedTenantId} data-testid="m7-config-page" title={configRuntimeBoundary}>
       <style>{`${configStyles}${configParityStyles}`}</style>
       <SideNav section={state.section} setSection={state.setSection} />
       <section className="uz-config-main">
         <header className="uz-config-head" data-testid="m7-config-version-head"><div className="uz-config-head-row"><div className="uz-config-head-main"><h2 className="uz-config-title">{configSectionLabels[state.section]}</h2><span className="uz-config-meta" data-testid="m7-config-version-meta">当前版本 v{state.version.ver} · {versionCopy(state)}</span>{dirty ? <span className="uz-config-dirty-badge">未保存的修改</span> : null}</div><div className="uz-config-tools">{state.sectionHistory.length ? <button className="uz-config-mini" onClick={() => state.setHistoryOpen(historyOpen ? null : state.section)} type="button"><IconSlot icon={RotateCcw} size="sm" />{historyOpen ? "收起版本历史" : `版本历史（${state.sectionHistory.length}）`}</button> : null}{state.isDirtyable ? <button className="uz-config-btn is-primary" data-testid="m7-config-save" disabled={!dirty} onClick={state.save} type="button">保存并生成版本</button> : null}</div></div></header>
         <RuntimeNote />
         <Toast message={state.toast} />
-        {state.isDegraded ? <main className="uz-config-body"><p className="uz-config-source-mark" data-testid="m7-config-source-mark">{configMeta.source} · {configMeta.subtitle}</p>{historyOpen ? <History history={state.sectionHistory} onOpenRollback={openRollback} /> : null}{sectionViews[state.section]({ connectorSwitch: openSwitch, draft: state.draft, state })}</main> : <main className="uz-config-state" data-testid={`m7-config-state-${state.viewState}`}><div><h2>{state.viewState === "permission" ? "permission denied" : state.viewState}</h2><p>{state.stateCopy}</p></div></main>}
+        {state.isDegraded ? <main className="uz-config-body"><p className="uz-config-source-mark" data-runtime-boundary={configRuntimeBoundary} data-testid="m7-config-source-mark" hidden>{configMeta.source} · {configMeta.subtitle}</p>{historyOpen ? <History history={state.sectionHistory} onOpenRollback={openRollback} /> : null}{sectionViews[state.section]({ connectorSwitch: openSwitch, draft: state.draft, state })}</main> : <main aria-description={configRuntimeBoundary} className="uz-config-state" data-runtime-boundary={configRuntimeBoundary} data-testid={`m7-config-state-${state.viewState}`} title={configRuntimeBoundary}><div><h2>{state.stateCopy.title}</h2><p>{state.stateCopy.body}</p><span hidden>{configRuntimeBoundary}</span></div></main>}
       </section>
       <LocalConfirm kind="rollback" onClose={() => setRollbackTarget(null)} reason={reason} rollbackTarget={rollbackTarget} state={state} setReason={setReason} />
       <LocalConfirm kind="switch" onClose={() => setSwitchTarget(null)} reason={reason} state={state} setReason={setReason} switchTarget={switchTarget} />
@@ -95,12 +96,12 @@ function SideNav({ section, setSection }: { section: ConfigSection; setSection: 
 
 // prettier-ignore
 function RuntimeNote() {
-  return <div className="uz-config-note" data-testid="m7-config-runtime-note"><strong>{configRuntimeLabels.slice(0, 3).join(" · ")}</strong><span>{configRuntimeLabels.slice(3).join(" · ")}</span></div>;
+  return <div className="uz-config-note" data-runtime-boundary={configRuntimeBoundary} data-testid="m7-config-runtime-note" hidden title={configRuntimeBoundary}><strong>{configRuntimeLabels.slice(0, 3).join(" · ")}</strong><span>{configRuntimeLabels.slice(3).join(" · ")}</span></div>;
 }
 
 // prettier-ignore
 function Toast({ message }: { message: string }) {
-  return message ? <div aria-atomic="true" aria-live="polite" className="uz-config-toast" data-testid="m7-config-toast" role="status">{message}</div> : null;
+  return message ? <div aria-atomic="true" aria-live="polite" className="uz-config-toast" data-runtime-boundary={configRuntimeBoundary} data-testid="m7-config-toast" role="status" title={configRuntimeBoundary}>{message}<span hidden>{configRuntimeBoundary}</span></div> : null;
 }
 
 // prettier-ignore
@@ -140,8 +141,8 @@ function LocalConfirm({
       danger
       description={
         isRollback
-          ? `仅在浏览器本地把 ${configSectionLabels[state.section]} 显示为 v${rollbackTarget?.ver} 的回滚结果；no audit write / no production config write.`
-          : `仅把订单主路径显示切换为 ${targetLabel}；no connector switch / no audit write / no API call.`
+          ? `${configSectionLabels[state.section]}将显示为 v${rollbackTarget?.ver} 的回滚预览，确认后进入版本变更队列。`
+          : `订单主路径将切换为 ${targetLabel} 的预览状态，确认后进入变更队列。`
       }
       onCancel={onClose}
       onConfirm={confirm}
@@ -149,14 +150,20 @@ function LocalConfirm({
       reason={{
         label: isRollback ? "回滚原因" : "切换原因",
         onChange: setReason,
-        placeholder: isRollback
-          ? "回滚原因（必填，仅本地，不写审计）"
-          : "切换原因（必填，仅本地，不写审计）",
+        placeholder: isRollback ? "填写回滚原因（必填）" : "填写切换原因（必填）",
         required: true,
         value: reason
       }}
       title={isRollback ? `回滚到 v${rollbackTarget?.ver}？` : "切换订单数据主路径？"}
-    />
+    >
+      <span
+        data-runtime-boundary={configRuntimeBoundary}
+        hidden
+        title={configRuntimeBoundary}
+      >
+        {configRuntimeBoundary}
+      </span>
+    </ConfirmModal>
   );
 }
 

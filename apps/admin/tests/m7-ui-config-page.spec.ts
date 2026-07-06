@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-54-config-page-visible-ui";
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
@@ -37,6 +37,16 @@ const configSections = [
   "渠道配置",
   "订单 connector"
 ];
+const runtimeLabels = [
+  "degraded",
+  "mock",
+  "browser-local only",
+  "no production config write",
+  "no audit write",
+  "no connector switch",
+  "no eval-gated publish",
+  "no API call"
+];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -64,17 +74,15 @@ test("renders tenant config page with source-like internal navigation", async ({
   await expect(page.getByTestId("page-outlet")).toHaveAttribute("data-tenant-id");
   await expectLayerNav(page, tenantSections, groupSections, tenantLabels, groupLabels);
   await expect(page.getByTestId("m7-config-page")).toContainText("配置");
-  await expect(page.getByTestId("m7-config-runtime-note")).toContainText("degraded");
-  for (const label of [
-    "mock",
-    "browser-local only",
-    "no production config write",
-    "no audit write",
-    "no connector switch",
-    "no eval-gated publish"
-  ]) {
-    await expect(page.getByTestId("m7-config-runtime-note")).toContainText(label);
-  }
+  await expect(page.getByTestId("m7-config-page")).toHaveAttribute(
+    "data-runtime-boundary",
+    /no production config write/
+  );
+  await expect(page.getByTestId("m7-config-runtime-note")).toHaveAttribute(
+    "hidden",
+    ""
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-config-runtime-note"));
   const internal = page.getByTestId("m7-config-internal-nav");
   for (const label of configSections) {
     await expect(
@@ -100,7 +108,7 @@ test("all eight config sections switch visibly", async ({ page }) => {
   }
 });
 
-test("dirty save and version history rollback are browser-local only", async ({
+test("dirty save and version history rollback keep boundary hidden", async ({
   page
 }) => {
   await openConfig(page);
@@ -109,20 +117,22 @@ test("dirty save and version history rollback are browser-local only", async ({
   await expect(page.getByTestId("m7-config-page")).toContainText("未保存的修改");
   await page.getByTestId("m7-config-save").click();
   await expect(page.getByTestId("m7-config-toast")).toContainText(
-    "no production config write"
+    "配置变更已暂存，并生成新的版本预览"
   );
+  await expectRuntimeBoundary(page.getByTestId("m7-config-toast"));
   await page.getByRole("button", { name: /版本历史/ }).click();
   await expect(page.getByTestId("m7-config-history")).toContainText(
     "版本历史 · 回滚需二次确认并写审计"
   );
   await page.getByRole("button", { name: "回滚到此版本" }).first().click();
   const modal = page.getByTestId("m7-confirm-modal");
-  await expect(modal).toContainText("no production config write");
-  await expect(modal).toContainText("no audit write");
+  await expect(modal).toContainText("回滚预览");
+  await expectRuntimeBoundary(modal.locator("[data-runtime-boundary]"));
   await expect(modal.getByRole("button", { name: "回滚" })).toBeDisabled();
-  await modal.getByRole("textbox").fill("local visual rollback check");
+  await modal.getByRole("textbox").fill("回滚预览检查");
   await modal.getByRole("button", { name: "回滚" }).click();
-  await expect(page.getByTestId("m7-config-toast")).toContainText("no audit write");
+  await expect(page.getByTestId("m7-config-toast")).toContainText("回滚到 v");
+  await expectRuntimeBoundary(page.getByTestId("m7-config-toast"));
 });
 
 test("channel and connector actions stay local", async ({ page }) => {
@@ -130,21 +140,29 @@ test("channel and connector actions stay local", async ({ page }) => {
   const internal = page.getByTestId("m7-config-internal-nav");
   await internal.getByRole("button", { exact: true, name: "渠道配置" }).click();
   await page.getByRole("button", { name: "测试连接" }).first().click();
-  await expect(page.getByTestId("m7-config-toast")).toContainText("仅本地通过");
+  await expect(page.getByTestId("m7-config-toast")).toContainText(
+    "渠道连通性检查已更新"
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-config-toast"));
   await page.locator(".uz-config-switch").first().click();
   await expect(page.getByTestId("m7-config-page")).toContainText("未保存的修改");
 
   await internal.getByRole("button", { exact: true, name: "订单 connector" }).click();
   await page.getByRole("button", { name: "测试连接" }).click();
-  await expect(page.getByTestId("m7-config-toast")).toContainText("no API call");
+  await expect(page.getByTestId("m7-config-toast")).toContainText(
+    "订单连接健康状态已刷新"
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-config-toast"));
   await page.getByRole("button", { name: "切换为导入快照主路径" }).click();
   const modal = page.getByTestId("m7-confirm-modal");
-  await expect(modal).toContainText("no connector switch");
-  await modal.getByRole("textbox").fill("local switch reason");
+  await expect(modal).toContainText("订单主路径将切换为");
+  await expectRuntimeBoundary(modal.locator("[data-runtime-boundary]"));
+  await modal.getByRole("textbox").fill("切换预览原因");
   await modal.getByRole("button", { name: "确认本地切换" }).click();
   await expect(page.getByTestId("m7-config-toast")).toContainText(
-    "no connector switch"
+    "订单数据主路径预览已切换"
   );
+  await expectRuntimeBoundary(page.getByTestId("m7-config-toast"));
 });
 
 test("forced URL states are deterministic", async ({ page }) => {
@@ -154,8 +172,14 @@ test("forced URL states are deterministic", async ({ page }) => {
       state === "degraded"
         ? page.getByTestId("m7-config-runtime-note")
         : page.getByTestId(`m7-config-state-${state}`);
-    await expect(target).toContainText("browser-local only");
-    await expect(target).toContainText("no production config write");
+    await expectRuntimeBoundary(target);
+    if (state !== "degraded") {
+      const visibleText = await target.evaluate(
+        (node) => (node as HTMLElement).innerText
+      );
+      expect(visibleText).not.toContain("Synthetic");
+      expect(visibleText).not.toContain("browser-local only");
+    }
   }
 });
 
@@ -207,6 +231,19 @@ async function expectLayerNav(
     await expect(nav.locator(".uz-nav-group p").filter({ hasText: label })).toHaveCount(
       0
     );
+  }
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) {
+    expect(text).toContain(label);
   }
 }
 

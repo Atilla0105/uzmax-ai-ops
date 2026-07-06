@@ -73,17 +73,31 @@ test("covers loading empty error permission and customer-context unavailable sta
   await expect(page.getByTestId("m7-conversation-loading")).toBeVisible();
   release?.();
   await expect(page.getByTestId("m7-conversation-empty")).toContainText(
-    "不会回退到 prototype fixture"
+    "当前筛选下没有会话"
+  );
+  await expect(page.getByTestId("m7-conversation-empty")).toHaveAttribute(
+    "data-runtime-boundary",
+    /prototype fixture fallback/
   );
 
   await routeList(page, 500, { error: "conversation-runtime-error" });
   await openConversations(page);
-  await expect(page.getByTestId("m7-conversation-error")).toContainText("status 500");
+  await expect(page.getByTestId("m7-conversation-error")).toContainText(
+    "对话数据暂时无法读取"
+  );
+  await expect(page.getByTestId("m7-conversation-error")).toHaveAttribute(
+    "data-runtime-boundary",
+    /status 500/
+  );
 
   await routeList(page, 403, { error: "conversation-permission-denied" });
   await openConversations(page);
   await expect(page.getByTestId("m7-conversation-permission")).toContainText(
-    "conversation:read"
+    "当前角色暂无查看或接管权限"
+  );
+  await expect(page.getByTestId("m7-conversation-permission")).toHaveAttribute(
+    "data-runtime-boundary",
+    /conversation:read/
   );
 
   const row = conversation("conv-empty");

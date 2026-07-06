@@ -15,6 +15,32 @@ const railTabs: Array<{ id: RailTab; label: string }> = [
   { id: "orders", label: "订单" },
   { id: "quotes", label: "报价" }
 ];
+const stateViews = {
+  empty: {
+    "aria-description": "no prototype fixture fallback; empty runtime result",
+    "data-runtime-boundary": "empty runtime result; no prototype fixture fallback",
+    "data-testid": "m7-conversation-empty",
+    kind: "empty",
+    message: "当前筛选下没有会话，可调整筛选或稍后刷新。",
+    title: "暂无会话"
+  },
+  loading: {
+    "aria-description": "conversation-ticket loading boundary",
+    "data-runtime-boundary": "conversation-ticket loading",
+    "data-testid": "m7-conversation-loading",
+    kind: "loading",
+    message: "正在读取对话工作台。",
+    title: "对话工作台加载中"
+  },
+  permission: {
+    "aria-description": "conversation:read or ticket:write permission boundary",
+    "data-runtime-boundary": "conversation:read or ticket:write permission boundary",
+    "data-testid": "m7-conversation-permission",
+    kind: "permission",
+    message: "当前角色暂无查看或接管权限，请联系管理员在团队角色中开通。",
+    title: "无对话工作台权限"
+  }
+} as const;
 
 export function ContextRail({
   active,
@@ -95,33 +121,8 @@ export function renderConversationState(
   reload: () => void
 ) {
   if (status === "ready") return null;
-  if (status === "loading")
-    return (
-      <PageState
-        data-testid="m7-conversation-loading"
-        kind="loading"
-        message="正在读取 conversation-ticket 运行时。"
-        title="对话工作台加载中"
-      />
-    );
-  if (status === "empty")
-    return (
-      <PageState
-        data-testid="m7-conversation-empty"
-        kind="empty"
-        message="没有会话，不会回退到 prototype fixture。"
-        title="暂无会话"
-      />
-    );
-  if (status === "permission")
-    return (
-      <PageState
-        data-testid="m7-conversation-permission"
-        kind="permission"
-        message="缺少 conversation:read 或 ticket:write。"
-        title="无对话工作台权限"
-      />
-    );
+  if (status in stateViews)
+    return <PageState {...stateViews[status as keyof typeof stateViews]} />;
   return (
     <PageState
       action={
@@ -130,9 +131,11 @@ export function renderConversationState(
         </Button>
       }
       data-testid="m7-conversation-error"
+      aria-description={message}
+      data-runtime-boundary={message}
       kind="error"
-      message={message}
-      title="对话运行时不可用"
+      message="对话数据暂时无法读取，请稍后重试。"
+      title="对话工作台暂不可用"
     />
   );
 }
@@ -140,10 +143,10 @@ export function renderConversationState(
 function railData(active?: ConversationRow) {
   return {
     customFields: fallbackList(active?.customFields, [
-      { label: "运行时", value: "客户资产聚合未接入" }
+      { label: "客户资产聚合", value: "待接入" }
     ]),
     dualTracks: fallbackList(active?.dualTracks, [
-      { stage: "双轨引导待接入", time: "—", via: "customer-context API" }
+      { stage: "双轨引导待接入", time: "—", via: "客户上下文" }
     ]),
     header: railHeader(active),
     notes: fallbackList(active?.notes, [
@@ -163,7 +166,7 @@ function railHeader(active?: ConversationRow) {
     return {
       initial: "?",
       name: "客户上下文不可用",
-      ref: "customer context runtime missing",
+      ref: "上下文待接入",
       stage: "—"
     };
   return {
@@ -177,8 +180,8 @@ function railHeader(active?: ConversationRow) {
 function contextRows(active?: ConversationRow) {
   if (!active)
     return [
-      ["客户ID", "unavailable"],
-      ["语言", "unavailable"],
+      ["客户ID", "待接入"],
+      ["语言", "待接入"],
       ["旅程阶段", "客户上下文待接入"],
       ["未决工单", "—"],
       ["订单快照", "—"],
@@ -186,7 +189,7 @@ function contextRows(active?: ConversationRow) {
     ];
   return [
     ["客户ID", firstText(active.customerRef, active.participantExternalRef)],
-    ["语言", active.language ?? "unavailable"],
+    ["语言", active.language ?? "待识别"],
     ["旅程阶段", active.journeyStage ?? "客户上下文待接入"],
     ["未决工单", active.ticketRef ?? "—"],
     ["订单快照", active.orderRef ?? "—"],
@@ -194,7 +197,7 @@ function contextRows(active?: ConversationRow) {
   ];
 }
 
-function firstText(primary?: string, fallback = "unavailable") {
+function firstText(primary?: string, fallback = "待接入") {
   return primary || fallback;
 }
 

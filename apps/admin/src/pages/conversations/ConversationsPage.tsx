@@ -47,6 +47,9 @@ export function ConversationsPage({ selectedTenantId }: { selectedTenantId: stri
   return (
     <section
       className="uz-page-conversations"
+      data-runtime-boundary={`source=${runtime.runtimeSource}; state=${
+        runtime.status === "ready" ? "degraded" : runtime.status
+      }; ${runtime.degradedReason}`}
       data-runtime-source={runtime.runtimeSource}
       data-runtime-state={runtime.status === "ready" ? "degraded" : runtime.status}
       data-tenant-id={selectedTenantId}

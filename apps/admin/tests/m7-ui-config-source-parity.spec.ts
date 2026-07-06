@@ -4,13 +4,25 @@ import { expect, type Locator, test, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-76-config-source-parity-refresh";
 const ownerHtml = "/Users/atilla/Downloads/运营塔台1.0.html";
-const sourceFiles = { fixtures: "/Users/atilla/源码/unpacked 6/fixtures/config.ts", hook: "/Users/atilla/源码/unpacked 6/hooks/useConfig.ts", page: "/Users/atilla/源码/unpacked 6/pages/config/ConfigPage.tsx" };
+const sourceFiles = {
+  fixtures: "/Users/atilla/源码/unpacked 6/fixtures/config.ts",
+  hook: "/Users/atilla/源码/unpacked 6/hooks/useConfig.ts",
+  page: "/Users/atilla/源码/unpacked 6/pages/config/ConfigPage.tsx"
+};
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const groupSections = ["总览", "平台", "治理"];
-const tenantLabels = "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split("|");
-const groupLabels = "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
-const configSections = "业务配置|SLA|模板|模型路由|成本护栏|熔断阈值|渠道配置|订单 connector".split("|");
-const runtimeLabels = "degraded|mock|browser-local only|no production config write|no audit write|no connector switch|no eval-gated publish".split("|");
+const tenantLabels =
+  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
+    "|"
+  );
+const groupLabels =
+  "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
+const configSections =
+  "业务配置|SLA|模板|模型路由|成本护栏|熔断阈值|渠道配置|订单 connector".split("|");
+const runtimeLabels =
+  "degraded|mock|browser-local only|no production config write|no audit write|no connector switch|no eval-gated publish".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -23,7 +35,9 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("captures owner source and React tenant config source parity refresh", async ({ page }) => {
+test("captures owner source and React tenant config source parity refresh", async ({
+  page
+}) => {
   const mapping = writeSourceMappingSummary();
   expect(mapping.unpacked.navLabels).toEqual(configSections);
   expect(mapping.unpacked.pageHasIconNav).toBe(true);
@@ -35,10 +49,21 @@ test("captures owner source and React tenant config source parity refresh", asyn
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await openConfig(page);
-  await expect(page.getByTestId("admin-shell")).toHaveAttribute("data-shell-level", "tenant");
-  await expect(page.getByTestId("admin-shell")).toHaveAttribute("data-active-page-id", "tenant.config");
-  await expect(page.getByTestId("m7-config-page")).toHaveAttribute("data-selected-tenant-id", "tenant-b");
-  await expect(page.getByTestId("m7-config-page")).not.toContainText("tenant-b · tenant layer");
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-shell-level",
+    "tenant"
+  );
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.config"
+  );
+  await expect(page.getByTestId("m7-config-page")).toHaveAttribute(
+    "data-selected-tenant-id",
+    "tenant-b"
+  );
+  await expect(page.getByTestId("m7-config-page")).not.toContainText(
+    "tenant-b · tenant layer"
+  );
   await expect(page.getByTestId("m7-config-version-head")).toContainText("业务配置");
   await expect(page.getByTestId("m7-config-version-meta")).toContainText("当前版本 v3");
   await expect(page.getByTestId("m7-config-runtime-note")).toContainText("degraded");
@@ -56,14 +81,21 @@ test("captures owner source and React tenant config source parity refresh", asyn
   expect(desktopMetrics.internalNavWidth).toBe(236);
   expect(desktopMetrics.internalNavCount).toBe(8);
   expect(desktopMetrics.internalNavIconCount).toBe(8);
-  expect(desktopMetrics.configMainPadding).toEqual({ bottom: 20, left: 24, right: 24, top: 20 });
+  expect(desktopMetrics.configMainPadding).toEqual({
+    bottom: 20,
+    left: 24,
+    right: 24,
+    top: 20
+  });
   expect(desktopMetrics.bizGridMaxWidth).toBe(640);
   expect(desktopMetrics.runtimeLabelsPresent).toBe(true);
   expect(desktopMetrics.runtimeNoteVisible).toBe(false);
   await saveShot(page, "react-config-desktop-biz.png", true);
 
   await page.locator(".uz-config-field select").first().selectOption("俄语");
-  await expect(page.getByTestId("m7-config-version-head")).toContainText("未保存的修改");
+  await expect(page.getByTestId("m7-config-version-head")).toContainText(
+    "未保存的修改"
+  );
   const dirtyMetrics = await collectConfigMetrics(page);
   expect(dirtyMetrics.dirtyBadgeVisible).toBe(true);
   await saveShot(page, "react-config-dirty-state.png", true);
@@ -71,8 +103,12 @@ test("captures owner source and React tenant config source parity refresh", asyn
   await expectLocalToast(page, ["no production config write", "no audit write"]);
 
   await page.getByRole("button", { name: /版本历史/ }).click();
-  await expect(page.getByTestId("m7-config-history")).toContainText("版本历史 · 回滚需二次确认并写审计");
-  await expect(page.getByTestId("m7-config-history")).not.toContainText("browser-local only");
+  await expect(page.getByTestId("m7-config-history")).toContainText(
+    "版本历史 · 回滚需二次确认并写审计"
+  );
+  await expect(page.getByTestId("m7-config-history")).not.toContainText(
+    "browser-local only"
+  );
   const historyMetrics = await collectConfigMetrics(page);
   expect(historyMetrics.historyVisible).toBe(true);
   await saveShot(page, "react-config-version-history.png", true);
@@ -91,7 +127,9 @@ test("captures owner source and React tenant config source parity refresh", asyn
   await page.getByRole("button", { name: "测试连接" }).first().click();
   await expectLocalToast(page, ["仅本地通过", "no connector switch", "no audit write"]);
   await page.locator(".uz-config-switch").first().click();
-  await expect(page.getByTestId("m7-config-version-head")).toContainText("未保存的修改");
+  await expect(page.getByTestId("m7-config-version-head")).toContainText(
+    "未保存的修改"
+  );
 
   await internal.getByRole("button", { exact: true, name: "订单 connector" }).click();
   await expect(page.getByTestId("m7-config-page")).toContainText("订单 API（主路径）");
@@ -159,21 +197,31 @@ async function clickFirstVisibleText(page: Page, text: string) {
 async function openConfig(page: Page, query = "") {
   await page.goto(`/design${query}`);
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
-  await page.getByTestId("app-shell-nav").getByRole("button", { exact: true, name: "配置" }).click();
-  await expect(page.getByTestId("admin-shell")).toHaveAttribute("data-active-page-id", "tenant.config");
+  await page
+    .getByTestId("app-shell-nav")
+    .getByRole("button", { exact: true, name: "配置" })
+    .click();
+  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
+    "data-active-page-id",
+    "tenant.config"
+  );
 }
 
 async function expectConfigInternalNav(page: Page) {
   const internal = page.getByTestId("m7-config-internal-nav");
   await expect(internal.getByRole("heading", { name: "配置" })).toBeVisible();
   for (const label of configSections) {
-    await expect(internal.getByRole("button", { exact: true, name: label })).toBeVisible();
+    await expect(
+      internal.getByRole("button", { exact: true, name: label })
+    ).toBeVisible();
   }
 }
 
 async function expectLayerNav(page: Page) {
   const nav = page.getByTestId("app-shell-nav");
-  await expect.poll(() => nav.locator(".uz-nav-group p").allTextContents()).toEqual(tenantSections);
+  await expect
+    .poll(() => nav.locator(".uz-nav-group p").allTextContents())
+    .toEqual(tenantSections);
   for (const label of tenantLabels) {
     await expect(nav.getByRole("button", { exact: true, name: label })).toBeVisible();
   }
@@ -181,7 +229,9 @@ async function expectLayerNav(page: Page) {
     await expect(nav.getByRole("button", { exact: true, name: label })).toHaveCount(0);
   }
   for (const label of groupSections) {
-    await expect(nav.locator(".uz-nav-group p").filter({ hasText: label })).toHaveCount(0);
+    await expect(nav.locator(".uz-nav-group p").filter({ hasText: label })).toHaveCount(
+      0
+    );
   }
 }
 
@@ -259,7 +309,9 @@ async function collectConfigMetrics(page: Page) {
     .getByRole("button")
     .allTextContents();
   const visibleText = await page.locator("body").innerText();
-  const fullText = await page.locator("body").evaluate((node) => node.textContent ?? "");
+  const fullText = await page
+    .locator("body")
+    .evaluate((node) => node.textContent ?? "");
   const configMainPadding = await page.locator(".uz-config-main").evaluate((node) => {
     const style = getComputedStyle(node);
     return {

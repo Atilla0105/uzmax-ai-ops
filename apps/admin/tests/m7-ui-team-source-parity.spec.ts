@@ -13,17 +13,15 @@ const tenantLabels =
     "|"
   );
 const groupLabels =
-  "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split(
-    "|"
-  );
+  "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const groupSections = ["总览", "平台", "治理"];
-const memberColumns =
-  "成员|角色|成员类型|分组|在线状态|接待中|今日累计|最近登录".split("|");
+const memberColumns = "成员|角色|成员类型|分组|在线状态|接待中|今日累计|最近登录".split(
+  "|"
+);
 const roleColumns = "角色|类型|说明|成员数|创建时间|操作".split("|");
 const inviteFields = "昵称|邮箱|成员类型|角色|分组".split("|");
-const drawerFields =
-  "角色|分组|接待上限|语言偏好|通知偏好|Telegram 绑定".split("|");
+const drawerFields = "角色|分组|接待上限|语言偏好|通知偏好|Telegram 绑定".split("|");
 const runtimeLabels =
   "degraded|mock|read-only|browser-local only|no production authz write|no team mutation|no invite email send|no Telegram binding change|no audit write".split(
     "|"
@@ -237,9 +235,11 @@ async function collectOwnerTeamSample(page: Page) {
         ok: true,
         sample: text.slice(0, 1400),
         searchPlaceholder:
-          inputs.find((input) =>
-            (input.getAttribute("placeholder") ?? "").includes("搜索姓名")
-          )?.getAttribute("placeholder") ?? ""
+          inputs
+            .find((input) =>
+              (input.getAttribute("placeholder") ?? "").includes("搜索姓名")
+            )
+            ?.getAttribute("placeholder") ?? ""
       };
     },
     { cols: memberColumns, roles: roleColumns }
@@ -287,8 +287,9 @@ async function collectTeamMetrics(page: Page) {
         drawerWidth: box(".uz-team-drawer").width,
         groupNavLabelsAbsent: listExcludesAll(navButtons, groups),
         inviteModalOpen: !!one('[data-testid="m7-team-invite-modal"]'),
-        inviteModalWidth: box('[data-testid="m7-team-invite-modal"] .uz-team-modal-card')
-          .width,
+        inviteModalWidth: box(
+          '[data-testid="m7-team-invite-modal"] .uz-team-modal-card'
+        ).width,
         memberColumns: texts(".uz-team-table th"),
         memberDrawerOpen: !!one('[data-testid="m7-team-member-drawer"]'),
         navWidth: box('[data-testid="app-shell-nav"]').width,
@@ -300,7 +301,9 @@ async function collectTeamMetrics(page: Page) {
         roleColumns: texts(".uz-team-table th"),
         runtimeLabelsPresent: textIncludesAll(fullText, runtime),
         runtimeNoteVisible: isVisibleBox(noteBox),
-        shellLevel: one('[data-testid="admin-shell"]')?.getAttribute("data-shell-level"),
+        shellLevel: one('[data-testid="admin-shell"]')?.getAttribute(
+          "data-shell-level"
+        ),
         sidebarCategories: navGroups,
         sourceLikeMembersVisible: textIncludesAll(bodyText, ["团队", ...members]),
         sourceLikeRolesVisible: textIncludesAll(bodyText, ["角色管理", ...roles]),

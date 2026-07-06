@@ -9,9 +9,18 @@ This cleanup now covers:
 - the existing #239 focused Playwright TypeScript fixes in `m7-ui-group-logs.spec.ts` and `m7-ui-orders-source-parity.spec.ts`;
 - the previous full-repo Prettier blocker in `apps/admin/src/pages/knowledge/knowledgeFallback.ts`;
 - the CI `guard:prettier-ignore` blocker caused by baseline-external M7 page/source-parity files that introduced `// prettier-ignore` markers;
-- the follow-up CI `npm run lint` `max-lines` blocker in the same config/group/knowledge/team page and source-parity stack.
+- the follow-up CI `npm run lint` `max-lines` blocker in the same config/group/knowledge/team page and source-parity stack;
+- the 2026-07-06 clean-room jscpd investigation for head `065c4e9d8a0bf63dcd38c33469d7cd6f366f67c4`.
 
 The cleanup removes those M7 `prettier-ignore` markers, lets repo Prettier format the affected structures, and splits oversized files into adjacent semantic-preserving helpers so lint can pass without disabling `max-lines`. It does not add visible UI, does not change AppShell/sidebar/topbar/router/shared patterns/tokens/page runtime semantics/data/visible copy, and does not claim UI migration completion, owner visual acceptance, runtime closure, GA-0, production readiness or 1.0 release approval.
+
+Clean-room jscpd result: `npm run jscpd` is not yet passable inside this spec's approved touch set because the PR base itself fails the same full-repo jscpd scan. The clean-room worker reproduced:
+
+- PR head `065c4e9d8a0bf63dcd38c33469d7cd6f366f67c4`: `141` clones, duplicated lines `2538 (2.79%)`, duplicated tokens `17547 (3.31%)`.
+- PR base `origin/codex/m7-ui-95-group-logs-default-visual-parity-refresh` / `9dc45e89dfa0a6ee724d03cffd6d498c690ef8a6`: `142` clones, duplicated lines `2595 (2.92%)`, duplicated tokens `17808 (3.37%)`.
+- Many remaining clone blocks do not involve PR #239 changed files, for example `apps/admin/tests/m7-ui-ai-members-default-visual-parity.spec.ts` vs `apps/admin/tests/m7-ui-ai-members.spec.ts`, analytics/logs visual parity tests, and ticket default/source parity tests.
+
+Therefore the current jscpd blocker is `blocked_base_wide_jscpd_clone_debt`: clearing `npm run jscpd` to threshold `0` requires a separate owner-approved global jscpd cleanup/baseline decision or a broader shared test-helper spec. This #96A spec must not expand into unrelated historic page/test rewrites.
 
 ## Owner Confirmation Points And AI Agent Responsibility
 
@@ -23,17 +32,18 @@ Owner/coordinator:
 
 AI agent:
 
-- Work only in `/Users/atilla/.codex/worktrees/m7-ui-96a-stack-typecheck-cleanup` on branch `codex/m7-ui-96a-stack-typecheck-cleanup`.
+- Work only in the assigned worker worktree. The 2026-07-06 jscpd clean-room worker used `/Users/atilla/.codex/worktrees/m7-ui-96a-jscpd-cleanroom` on branch `codex/m7-ui-96a-jscpd-cleanroom`, starting from `origin/codex/m7-ui-96a-stack-typecheck-cleanup`.
 - Keep `/Users/atilla/Applications/UZMAX智能运营` root/main read-only.
 - Start by recording `pwd`, `git status --short --branch` and `git branch --show-current`.
 - Reproduce `guard:prettier-ignore` against `origin/codex/m7-ui-95-group-logs-default-visual-parity-refresh`.
 - Remove only the baseline-external M7 `prettier-ignore` markers in this spec, then run Prettier formatting.
 - Resolve `max-lines` only by semantic-preserving adjacent extraction or helper consolidation within the approved M7 page/test stack.
+- For jscpd, inspect clone blocks involving PR #239 changed files and record base-wide blockers. Do not modify jscpd config, guard scripts, CI, lockfiles or unrelated historic page/test files just to drive the full-repo threshold to zero.
 - Do not edit `scripts/guards/prettier-ignore-boundary.mjs`, do not change the prettier-ignore baseline, do not weaken or skip tests, and do not broaden mocks.
 
 ## Timebox
 
-0.5 workday. If the CI unblock requires guard relaxation, package/lock/config/backend/API/DB/worker/cron/shared shell changes, test weakening, runtime behavior changes, visible-copy changes or non-M7 baseline files, stop and report `BLOCKED`.
+0.5 workday. If the CI unblock requires guard relaxation, package/lock/config/backend/API/DB/worker/cron/shared shell changes, test weakening, runtime behavior changes, visible-copy changes, non-M7 baseline files or unrelated historic page/test jscpd rewrites, stop and report `BLOCKED`.
 
 ## Spec 类型
 
@@ -159,6 +169,8 @@ config: []
 
 - Reproduction before fix:
   - `node scripts/guards/prettier-ignore-boundary.mjs --base origin/codex/m7-ui-95-group-logs-default-visual-parity-refresh`
+  - `node node_modules/jscpd/run-jscpd.js apps packages scripts --config jscpd.config.json --workers 1 --no-tips`
+  - If head jscpd fails, run the same command against the PR base in a read-only temporary worktree to distinguish PR-local duplication from base-wide clone debt.
 - Formatting:
   - `node node_modules/prettier/bin/prettier.cjs --check .` or project CI-equivalent format check
 - Guard:
@@ -187,7 +199,8 @@ config: []
 
 - If `guard:prettier-ignore` still reports baseline-external M7 files after cleanup, inspect only the listed files and remove remaining markers.
 - If `max-lines` still reports within the approved stack, extract only adjacent helpers; do not use `eslint-disable`, lower lint rules, or reintroduce `prettier-ignore`.
-- If full-repo format/typecheck exposes blockers outside approved paths, record the exact blocker and stop instead of editing outside scope.
+- If full-repo format/typecheck/jscpd exposes blockers outside approved paths, record the exact blocker and stop instead of editing outside scope.
+- If `npm run jscpd` remains blocked because the PR base already fails the same full-repo jscpd command with clone blocks outside this spec's touch set, report `blocked_base_wide_jscpd_clone_debt` and do not broaden this #96A cleanup into unrelated historic tests/pages without owner-approved spec expansion.
 - If `pnpm --filter @uzmax/admin typecheck` is unavailable because the admin package has no `typecheck` script, record that and run the repo root typecheck equivalent.
 - If focused Playwright cannot run because the local Playwright webServer cannot start bare `npm`, use manual `vite preview apps/admin --host 127.0.0.1 --port 4173` with `PLAYWRIGHT_TEST_BASE_URL`, then record that environment path.
 - If dependency symlinks or generated artifacts are needed for validation, remove them before final commit/status.

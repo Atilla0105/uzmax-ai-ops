@@ -42,6 +42,7 @@ feature
   - `apps/admin/tests/m7-ui-group-logs.spec.ts`
   - `apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts`
   - `apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts`
+  - `apps/admin/tests/m7-ui-group-logs.helpers.ts`
   - `docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md`
   - `docs/evidence/M7/M7-UI-95-group-logs-default-visual-parity-refresh.md`
   - `docs/evidence/M7/README.md`
@@ -53,7 +54,7 @@ feature
 - source changed files: <= 3
 - source net LOC: <= 180
 - new source files: 0
-- test files changed/added: <= 3
+- test files changed/added: <= 4
 - docs changed/added: <= 4
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config/shared shell/topbar/router/PageOutlet/registry/API: 0
 - external API/SDK/provider/connector/adapter basis: none; local browser evidence only.
@@ -68,6 +69,7 @@ test:
   - apps/admin/tests/m7-ui-group-logs.spec.ts
   - apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts
   - apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts
+  - apps/admin/tests/m7-ui-group-logs.helpers.ts
 docs:
   - docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md
   - docs/evidence/M7/M7-UI-95-group-logs-default-visual-parity-refresh.md

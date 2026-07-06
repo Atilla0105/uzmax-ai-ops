@@ -20,6 +20,7 @@ This branch refreshes default-visible copy for `group.logs` / `集团日志` on 
   - `apps/admin/tests/m7-ui-group-logs.spec.ts`
   - `apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts`
   - `apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts`
+  - `apps/admin/tests/m7-ui-group-logs.helpers.ts`
 
 ## Startup Evidence
 
@@ -60,6 +61,21 @@ This branch refreshes default-visible copy for `group.logs` / `集团日志` on 
 - Kept source-shaped `集团日志`, subtitle `操作日志 · 跨租户 · 7 条`, owner chip order, search placeholder `搜索租户 / 操作人 / 对象 / 内容…`, export action `导出`, seven-column table and mobile cards.
 - Added focused default visual parity Playwright coverage for clean default body, export/detail feedback, forced states, group/tenant nav separation, collapsed nav and mobile 320.
 - Updated existing group-logs tests and source-parity metrics so they assert hidden/data/title/ARIA boundary evidence instead of requiring visible engineering labels.
+- Extracted page-local group logs Playwright helpers for runtime labels, network stubs, `group.logs` navigation, group/tenant nav checks, visible-body cleanliness, toast checks and boundary metrics. This preserves the visible UI assertions while removing repeated test helper blocks that tripped `jscpd-regression`.
+
+## jscpd Regression Fix
+
+- Local reproduction matched CI before the fix:
+  - base: clones `135`, duplicatedLines `2461`, duplicatedTokens `16981`, percentageTokens `3.23%`
+  - head before fix: clones `141`, duplicatedLines `2538`, duplicatedTokens `17547`, percentageTokens `3.30%`
+- Duplicate root cause found from jscpd JSON reports:
+  - `apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts` duplicated the top-level constants/network setup and runtime-boundary helpers from `apps/admin/tests/m7-ui-group-logs.spec.ts`.
+  - `apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts` duplicated group logs `openGroupLogs`, toast and runtime-boundary helper blocks from the same focused group logs tests.
+  - The repeated helpers also created new clone pairs with adjacent default/source-parity specs in the merged stack.
+- Fix:
+  - Added `apps/admin/tests/m7-ui-group-logs.helpers.ts`.
+  - Updated the three focused group logs specs to import shared page-local test helpers.
+  - No product UI source, guard, jscpd config, CI threshold, test skip/only/xfail/xit or package/lock change was used to pass the gate.
 
 ## Data And Runtime Boundary
 
@@ -88,7 +104,7 @@ Expected focused artifacts from Playwright:
 
 ## Validation
 
-Validation status: `PASS`.
+Validation status: `PASS_JSPCD_AND_FOCUSED_UI_WITH_PR_SHAPE_STACK_CONCERN`.
 
 Environment notes:
 
@@ -100,30 +116,33 @@ Environment notes:
 
 Completed validation:
 
-- PASS: `git diff --check codex/m7-ui-94-template-center-default-visual-parity-refresh...HEAD`
-- PASS: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node scripts/guards/pr-shape.mjs --base codex/m7-ui-94-template-center-default-visual-parity-refresh --spec docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md --include-worktree`
-  - `changedFiles: 10`
-  - `categories: { source: 3, test: 3, docs: 4 }`
-  - `source: { changedFiles: 3, netLoc: 60, newFiles: 0 }`
-  - Source net LOC `60` remains within the spec budget `<= 180`.
-- PASS: touched Prettier:
-  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/prettier/bin/prettier.cjs --check apps/admin/src/pages/group/GroupLogsPage.tsx apps/admin/src/pages/group/GroupLogsViews.tsx apps/admin/src/pages/group/groupLogsFallback.ts apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md docs/evidence/M7/M7-UI-95-group-logs-default-visual-parity-refresh.md docs/evidence/M7/README.md docs/admin-ui-page-migration-ledger.md`
+- PASS: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node scripts/guards/jscpd-regression.mjs --base origin/codex/m7-ui-94-template-center-default-visual-parity-refresh`
+  - head after fix: clones `131`, duplicatedLines `2348`, duplicatedTokens `16339`, percentageTokens `3.08%`
+  - Result: `jscpd-regression: ok, head did not worsen duplicate metrics`
+- PASS: `git diff --check origin/codex/m7-ui-94-template-center-default-visual-parity-refresh...HEAD`
+- PASS: touched Prettier write:
+  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/prettier/bin/prettier.cjs --write apps/admin/tests/m7-ui-group-logs.helpers.ts apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md`
 - PASS: touched ESLint:
-  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/eslint/bin/eslint.js apps/admin/src/pages/group/GroupLogsPage.tsx apps/admin/src/pages/group/GroupLogsViews.tsx apps/admin/src/pages/group/groupLogsFallback.ts apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts`
+  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/eslint/bin/eslint.js apps/admin/tests/m7-ui-group-logs.helpers.ts apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts`
+- PASS: full typecheck:
+  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`
 - PASS: Admin build with existing Vite warning:
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir`
   - Existing warning: bundle chunk larger than 500 kB after minification.
-- Initial Playwright attempt hit the known local webServer issue:
-  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/@playwright/test/cli.js test apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts`
-  - Result: `/bin/sh: npm: command not found`; config webServer could not start.
 - PASS: focused Playwright with manual preview:
   - Server: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/vite/bin/vite.js preview apps/admin --host 127.0.0.1 --port 4173`
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH PLAYWRIGHT_TEST_BASE_URL=http://127.0.0.1:4173 node node_modules/@playwright/test/cli.js test apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts`
   - Result: `7 passed`
+- CONCERN: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-94-template-center-default-visual-parity-refresh --spec docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md --include-worktree`
+  - PR body metadata was updated with `Spec ID: M7-UI-95`, `Spec file: docs/specs/M7-UI-95-group-logs-default-visual-parity-refresh.md`, `Exception: none`.
+  - The command now fails on full branch diff because #239/#240 stack files are outside the single M7-UI-95 spec allowlist: `.github/workflows/ci.yml`, config/knowledge/team/tenant/connection helper files, M7-UI-96A/96C docs, `playwright.config.ts`, `scripts/guards/jscpd-regression.mjs`, `scripts/tests/jscpd-regression.test.mjs`.
+  - It also reports full-branch source budget violations: `source files 30 > 12`, `net source LOC 1948 > 600`, `new source files 9 > 5`.
+  - The new M7-UI-95 helper is listed in the M7-UI-95 spec and did not appear as an out-of-scope file.
+  - Exact closure needed: use a post-#239/#240 stack base for the M7-UI-95 pr-shape check, split/rebase the PR so each spec is checked against its own base, or create owner-approved aggregate hygiene/exception coverage for the multi-spec branch diff. This worker did not self-approve a `large_change_exception`.
 
 Cleanup status:
 
-- COMPLETE after validation: temporary `node_modules` symlink, `apps/admin/dist`, `test-results` and `playwright-report` removed before final commit.
+- COMPLETE after validation: temporary `node_modules` symlink, `apps/admin/dist`, `test-results`, `playwright-report` and temporary jscpd report worktree were removed before final commit.
 
 ## Remaining Deltas
 

@@ -2,6 +2,18 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { expect, type Locator, test, type Page } from "@playwright/test";
 
+import {
+  collectGroupLogBoundaryState,
+  expectGroupLogToast,
+  groupLogGroupSections,
+  groupLogOwnerChipLabels,
+  groupLogTableColumns,
+  groupLogTenantLabels,
+  groupLogTenantSections,
+  openGroupLogs,
+  stubGroupLogNetwork
+} from "./m7-ui-group-logs.helpers";
+
 const artifactDir = "/tmp/uzmax-m7-ui-74-group-logs-source-parity-refresh";
 const ownerHtml = "/Users/atilla/Downloads/运营塔台1.0.html";
 const sourceFiles = {
@@ -9,30 +21,10 @@ const sourceFiles = {
   navigation: "/Users/atilla/源码/unpacked 6/shell/navigation.ts",
   page: "/Users/atilla/源码/unpacked 6/pages/group/GroupLogsPage.tsx"
 };
-const tenantLabels =
-  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
-    "|"
-  );
-const groupSections = ["总览", "平台", "治理"];
-const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
-const ownerChipLabels = "全部模块|AI 成员|连接中心|配置|租户管理|对话|工单".split("|");
-const tableColumns = "操作时间|租户|操作人|操作模块|操作功能|操作对象|操作内容".split(
-  "|"
-);
-const runtimeLabels =
-  "degraded|mock|read-only|browser-local only|synthetic audit rows|no production audit export|no file written|no audit runtime call|no real tenant/action navigation".split(
-    "|"
-  );
-
 mkdirSync(artifactDir, { recursive: true });
 
 test.beforeEach(async ({ page }) => {
-  await page.route("**/conversation-ticket/conversations", async (route) => {
-    await route.fulfill({ json: { items: [] } });
-  });
-  await page.route("**/confirmation-queue/items?status=pending", async (route) => {
-    await route.fulfill({ json: { items: [] } });
-  });
+  await stubGroupLogNetwork(page);
 });
 
 test("captures owner HTML conflict and React source-parity page", async ({ page }) => {
@@ -53,7 +45,7 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
   expect(ownerDefault.contains.title).toBe(true);
   expect(ownerDefault.contains.subtitle).toBe(true);
   expect(ownerDefault.searchPlaceholder).toBe("搜索租户 / 操作人 / 对象 / 内容…");
-  expect(ownerDefault.chipLabels).toEqual(ownerChipLabels);
+  expect(ownerDefault.chipLabels).toEqual(groupLogOwnerChipLabels);
   expect(ownerDefault.contains.templateCenterChip).toBe(false);
   expect(ownerDefault.contains.tableColumns).toBe(false);
   expect(ownerDefault.contains.tableRows).toBe(false);
@@ -71,8 +63,7 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
   const ownerEmpty = await collectOwnerGroupLogsSample(page);
   writeJson("owner-html-group-logs-empty-sample.json", ownerEmpty);
 
-  await page.goto("/design");
-  await openGroupLogs(page);
+  await openGroupLogs(page, "", { expectPageVisible: true });
   await expect(page.getByRole("heading", { name: "集团日志" })).toBeVisible();
   await expect(page.getByTestId("m7-group-logs-subtitle")).toHaveText(
     "操作日志 · 跨租户 · 7 条"
@@ -82,7 +73,7 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
     "搜索租户 / 操作人 / 对象 / 内容…"
   );
   expect(await page.locator(".uz-glog-chip").allTextContents()).toEqual(
-    ownerChipLabels
+    groupLogOwnerChipLabels
   );
   await expect(
     page.getByTestId("m7-group-logs-page").getByRole("button", {
@@ -101,7 +92,7 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
   expect(desktopMetrics.sourceLikeDefaultVisible).toBe(true);
   expect(desktopMetrics.runtimeLabelsPresent).toBe(true);
   expect(desktopMetrics.runtimeLabelsVisible).toBe(false);
-  expect(desktopMetrics.sidebarCategories).toEqual(groupSections);
+  expect(desktopMetrics.sidebarCategories).toEqual(groupLogGroupSections);
   expect(desktopMetrics.tenantButtonCount).toBe(0);
   expect(desktopMetrics.tenantCategoryCount).toBe(0);
   await saveShot(page, "react-group-logs-desktop-default.png", true);
@@ -119,9 +110,9 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
 
   await page.getByTestId("m7-group-logs-search").fill("");
   await page.getByTestId("m7-group-logs-export").click();
-  await expectLocalToast(page, ["已准备导出范围", "7 条记录", "本页可继续筛选核对"]);
+  await expectGroupLogToast(page, ["已准备导出范围", "7 条记录", "本页可继续筛选核对"]);
   await page.getByRole("button", { name: /查看日志详情 AI 成员 agent-02/ }).click();
-  await expectLocalToast(page, ["详情预览已打开", "AI 成员 / agent-02"]);
+  await expectGroupLogToast(page, ["详情预览已打开", "AI 成员 / agent-02"]);
   const actionMetrics = await collectGroupLogMetrics(page);
   expect(actionMetrics.sourceLikeLocalToastVisible).toBe(true);
   expect(actionMetrics.runtimeLabelsPresent).toBe(true);
@@ -134,8 +125,7 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
   await saveShot(page, "react-group-logs-collapsed-sidebar.png", true);
 
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto("/design");
-  await openGroupLogs(page);
+  await openGroupLogs(page, "", { expectPageVisible: true });
   await expect(page.locator(".uz-glog-card").first()).toBeVisible();
   const mobileMetrics = await collectGroupLogMetrics(page);
   expect(mobileMetrics.bodyScrollWidth).toBeLessThanOrEqual(320);
@@ -155,19 +145,6 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
   });
 });
 
-async function openGroupLogs(page: Page, query = "") {
-  await page.goto(`/design${query}`);
-  await page
-    .getByTestId("app-shell-nav")
-    .getByRole("button", { exact: true, name: "集团日志" })
-    .click();
-  await expect(page.getByTestId("admin-shell")).toHaveAttribute(
-    "data-active-page-id",
-    "group.logs"
-  );
-  await expect(page.getByTestId("m7-group-logs-page")).toBeVisible();
-}
-
 async function clickFirstVisibleText(page: Page, text: string) {
   const target = page.getByText(text, { exact: true }).first();
   try {
@@ -178,30 +155,10 @@ async function clickFirstVisibleText(page: Page, text: string) {
 }
 
 async function expectTableShape(page: Page) {
-  await expect(page.locator(".uz-glog-table th")).toHaveText(tableColumns);
+  await expect(page.locator(".uz-glog-table th")).toHaveText(groupLogTableColumns);
   await expect(page.locator(".uz-glog-row")).toHaveCount(7);
   await expect(page.locator(".uz-glog-row").first()).toContainText("恢复白桦母婴 AI");
   await expect(page.locator(".uz-glog-row", { hasText: "复制模板" })).toHaveCount(1);
-}
-
-async function expectLocalToast(page: Page, labels: readonly string[]) {
-  const toast = page.getByTestId("m7-group-logs-toast");
-  await expect(toast).toHaveAttribute("role", "status");
-  await expect(toast).toHaveAttribute("aria-live", "polite");
-  for (const label of labels) await expect(toast).toContainText(label);
-  await expectRuntimeBoundary(toast);
-}
-
-async function expectRuntimeBoundary(locator: Locator) {
-  const text = await locator.evaluate((node) =>
-    [
-      node.getAttribute("data-runtime-boundary") ?? "",
-      node.getAttribute("title") ?? "",
-      node.getAttribute("aria-description") ?? "",
-      node.textContent ?? ""
-    ].join(" ")
-  );
-  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function saveShot(page: Page, name: string, fullPage = false) {
@@ -244,7 +201,7 @@ async function collectOwnerGroupLogsSample(page: Page) {
       ),
       titleInHeader: inHeader("集团日志")
     };
-  }, ownerChipLabels);
+  }, groupLogOwnerChipLabels);
   return {
     bodyTextLength: sample.bodyTextLength,
     chipLabels: sample.chipLabels,
@@ -256,7 +213,10 @@ async function collectOwnerGroupLogsSample(page: Page) {
         sample.tableCellTexts.every((value) => value === ""),
       emptyText: sample.sample.includes("没有匹配「"),
       subtitle: sample.sample.includes("操作日志 · 跨租户 · 7 条"),
-      tableColumns: includesAll(sample.tableHeaderTexts.join("|"), tableColumns),
+      tableColumns: includesAll(
+        sample.tableHeaderTexts.join("|"),
+        groupLogTableColumns
+      ),
       tableRows: sample.tableCellTexts.some((value) =>
         value.includes("恢复白桦母婴 AI")
       ),
@@ -271,6 +231,7 @@ async function collectOwnerGroupLogsSample(page: Page) {
 }
 
 async function collectGroupLogMetrics(page: Page) {
+  const boundary = await collectGroupLogBoundaryState(page);
   const navButtons = await page
     .locator('[data-testid="app-shell-nav"] button')
     .allTextContents();
@@ -278,27 +239,13 @@ async function collectGroupLogMetrics(page: Page) {
     .locator('[data-testid="app-shell-nav"] .uz-nav-group p')
     .allTextContents();
   const visibleText = await page.locator("body").innerText();
-  const fullText = await page.locator("body").textContent();
-  const boundaryText = await page.evaluate(() =>
-    Array.from(document.querySelectorAll("[data-runtime-boundary]"))
-      .map((node) => {
-        const element = node as HTMLElement;
-        return [
-          element.getAttribute("data-runtime-boundary") ?? "",
-          element.getAttribute("title") ?? "",
-          element.getAttribute("aria-description") ?? "",
-          element.textContent ?? ""
-        ].join(" ");
-      })
-      .join(" ")
-  );
   const tableColumnTexts = await page.locator(".uz-glog-table th").allTextContents();
   const rowTexts = await page.locator(".uz-glog-row").allTextContents();
   const toastText = await optionalText(page.getByTestId("m7-group-logs-toast"));
   const subtitle = await page.getByTestId("m7-group-logs-subtitle").textContent();
   const visibleChipLabels = await page.locator(".uz-glog-chip").allTextContents();
   const sourceLike = {
-    chips: visibleChipLabels.join("|") === ownerChipLabels.join("|"),
+    chips: visibleChipLabels.join("|") === groupLogOwnerChipLabels.join("|"),
     detailAction: await page
       .locator(".uz-glog-detail")
       .count()
@@ -313,7 +260,7 @@ async function collectGroupLogMetrics(page: Page) {
     subtitle:
       subtitle === "操作日志 · 跨租户 · 7 条" ||
       subtitle === "操作日志 · 跨租户 · 显示 0 / 7 条",
-    tableColumns: tableColumnTexts.join("|") === tableColumns.join("|"),
+    tableColumns: tableColumnTexts.join("|") === groupLogTableColumns.join("|"),
     title: visibleText.includes("集团日志")
   };
   return {
@@ -334,10 +281,8 @@ async function collectGroupLogMetrics(page: Page) {
     panelWidth: await width(page.locator(".uz-glog-panel")),
     rowHeight: rowTexts.length ? await height(page.locator(".uz-glog-row").first()) : 0,
     rowTexts,
-    runtimeLabelsPresent: runtimeLabels.every((label) =>
-      `${boundaryText} ${fullText ?? ""}`.includes(label)
-    ),
-    runtimeLabelsVisible: includesAll(visibleText, runtimeLabels),
+    runtimeLabelsPresent: boundary.runtimeLabelsPresent,
+    runtimeLabelsVisible: boundary.runtimeLabelsVisibleInBody,
     searchWidth: await width(page.locator(".uz-glog-search")),
     shellLevel: await page.getByTestId("admin-shell").getAttribute("data-shell-level"),
     sidebarCategories,
@@ -352,9 +297,10 @@ async function collectGroupLogMetrics(page: Page) {
     tableScrollWidth: await page
       .locator(".uz-glog-table")
       .evaluate((node) => (node as HTMLElement).scrollWidth),
-    tenantButtonCount: tenantLabels.filter((label) => navButtons.includes(label))
-      .length,
-    tenantCategoryCount: tenantSections.filter((label) =>
+    tenantButtonCount: groupLogTenantLabels.filter((label) =>
+      navButtons.includes(label)
+    ).length,
+    tenantCategoryCount: groupLogTenantSections.filter((label) =>
       sidebarCategories.includes(label)
     ).length,
     topbarHeight: await height(page.locator(".uz-topbar")),

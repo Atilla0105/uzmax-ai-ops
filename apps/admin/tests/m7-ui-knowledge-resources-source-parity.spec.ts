@@ -18,14 +18,38 @@ const factsColumns = "条目|分类|命中|负反馈|版本|评测".split("|");
 const assetColumns = "名称|类型|格式 / 大小|storageRef|缓存|阶段|引用".split("|");
 const templateColumns = "模板名|本地版本|来源版本|复制时间|状态|来源".split("|");
 
-// prettier-ignore
 interface RawKnowledgeMetrics {
-  activePageId?: string | null; bodyText: string; navText: string; runtimeBoundaryText: string; shellLevel?: string | null;
-  tableColumns: string[]; tabs: string[]; tenantCategories: string[];
-  assetDetailHeight: number; assetDetailWidth: number; bodyScrollWidth: number; documentScrollWidth: number; factDetailHeight: number; factDetailWidth: number;
-  journeyDetailHeight: number; journeyDetailWidth: number; journeyPipelineHeight: number; journeyPipelineWidth: number; navWidth: number; pageHeight: number; pageWidth: number;
-  searchWidth: number; sideDetailHeight: number; sideDetailWidth: number; tabCount: number; tableHeight: number; tableWidth: number; templateSourceHeight: number;
-  templateSourceWidth: number; topbarHeight: number; viewportWidth: number;
+  activePageId?: string | null;
+  bodyText: string;
+  navText: string;
+  runtimeBoundaryText: string;
+  shellLevel?: string | null;
+  tableColumns: string[];
+  tabs: string[];
+  tenantCategories: string[];
+  assetDetailHeight: number;
+  assetDetailWidth: number;
+  bodyScrollWidth: number;
+  documentScrollWidth: number;
+  factDetailHeight: number;
+  factDetailWidth: number;
+  journeyDetailHeight: number;
+  journeyDetailWidth: number;
+  journeyPipelineHeight: number;
+  journeyPipelineWidth: number;
+  navWidth: number;
+  pageHeight: number;
+  pageWidth: number;
+  searchWidth: number;
+  sideDetailHeight: number;
+  sideDetailWidth: number;
+  tabCount: number;
+  tableHeight: number;
+  tableWidth: number;
+  templateSourceHeight: number;
+  templateSourceWidth: number;
+  topbarHeight: number;
+  viewportWidth: number;
 }
 
 mkdirSync(artifactDir, { recursive: true });

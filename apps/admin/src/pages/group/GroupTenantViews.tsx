@@ -9,12 +9,30 @@ import {
 } from "./groupTenantFallback";
 
 type NewTenantTextField = Exclude<keyof NewTenantForm, "capabilities">;
-// prettier-ignore
-type NewTenantModalProps = { form: NewTenantForm; onCancel: () => void; onCreate: () => void; onFieldChange: (field: NewTenantTextField, value: string) => void; onToggleCapability: (key: TenantCapabilityKey) => void; ready: boolean };
-// prettier-ignore
-type TextFieldProps = { label: string; onChange: (value: string) => void; placeholder: string; refEl?: RefObject<HTMLInputElement | null>; testId: string; value: string };
-// prettier-ignore
-type SelectFieldProps = { help?: string; label: string; onChange: (value: string) => void; options: string[]; testId: string; value: string };
+type NewTenantModalProps = {
+  form: NewTenantForm;
+  onCancel: () => void;
+  onCreate: () => void;
+  onFieldChange: (field: NewTenantTextField, value: string) => void;
+  onToggleCapability: (key: TenantCapabilityKey) => void;
+  ready: boolean;
+};
+type TextFieldProps = {
+  label: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  refEl?: RefObject<HTMLInputElement | null>;
+  testId: string;
+  value: string;
+};
+type SelectFieldProps = {
+  help?: string;
+  label: string;
+  onChange: (value: string) => void;
+  options: string[];
+  testId: string;
+  value: string;
+};
 
 const focusableSelector =
   "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";

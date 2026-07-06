@@ -4,18 +4,25 @@ import { expect, type Locator, test, type Page } from "@playwright/test";
 
 const artifactDir = "/tmp/uzmax-m7-ui-76-config-source-parity-refresh";
 const ownerHtml = "/Users/atilla/Downloads/运营塔台1.0.html";
-// prettier-ignore
-const sourceFiles = { fixtures: "/Users/atilla/源码/unpacked 6/fixtures/config.ts", hook: "/Users/atilla/源码/unpacked 6/hooks/useConfig.ts", page: "/Users/atilla/源码/unpacked 6/pages/config/ConfigPage.tsx" };
+const sourceFiles = {
+  fixtures: "/Users/atilla/源码/unpacked 6/fixtures/config.ts",
+  hook: "/Users/atilla/源码/unpacked 6/hooks/useConfig.ts",
+  page: "/Users/atilla/源码/unpacked 6/pages/config/ConfigPage.tsx"
+};
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const groupSections = ["总览", "平台", "治理"];
-// prettier-ignore
-const tenantLabels = "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split("|");
-// prettier-ignore
-const groupLabels = "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
-// prettier-ignore
-const configSections = "业务配置|SLA|模板|模型路由|成本护栏|熔断阈值|渠道配置|订单 connector".split("|");
-// prettier-ignore
-const runtimeLabels = "degraded|mock|browser-local only|no production config write|no audit write|no connector switch|no eval-gated publish|no API call".split("|");
+const tenantLabels =
+  "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
+    "|"
+  );
+const groupLabels =
+  "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
+const configSections =
+  "业务配置|SLA|模板|模型路由|成本护栏|熔断阈值|渠道配置|订单 connector".split("|");
+const runtimeLabels =
+  "degraded|mock|browser-local only|no production config write|no audit write|no connector switch|no eval-gated publish|no API call".split(
+    "|"
+  );
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -248,8 +255,16 @@ async function expectLocalizedConfirm(modal: Locator, reasonLabel: string) {
   await expect(modal.getByText("Reason", { exact: true })).toHaveCount(0);
 }
 
-// prettier-ignore
-async function expectRuntimeBoundary(locator: Locator) { const text = await locator.evaluate((node) => [node.getAttribute("data-runtime-boundary") ?? "", node.getAttribute("title") ?? "", node.textContent ?? ""].join(" ")); for (const label of runtimeLabels) expect(text).toContain(label); }
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
+}
 
 async function collectOwnerConfigSample(page: Page) {
   return page.evaluate((sections) => {
@@ -373,14 +388,21 @@ function writeJson(name: string, value: unknown) {
   writeFileSync(`${artifactDir}/${name}`, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-// prettier-ignore
-async function isVisible(locator: Locator) { if ((await locator.count()) === 0) return false; const box = await locator.boundingBox(); return Boolean(box && box.width > 1 && box.height > 1); }
+async function isVisible(locator: Locator) {
+  if ((await locator.count()) === 0) return false;
+  const box = await locator.boundingBox();
+  return Boolean(box && box.width > 1 && box.height > 1);
+}
 
-// prettier-ignore
-async function width(locator: Locator) { const box = await locator.boundingBox(); return Math.round(box?.width ?? 0); }
+async function width(locator: Locator) {
+  const box = await locator.boundingBox();
+  return Math.round(box?.width ?? 0);
+}
 
-// prettier-ignore
-async function height(locator: Locator) { const box = await locator.boundingBox(); return Math.round(box?.height ?? 0); }
+async function height(locator: Locator) {
+  const box = await locator.boundingBox();
+  return Math.round(box?.height ?? 0);
+}
 
 function writeSourceMappingSummary() {
   const sources: Record<keyof typeof sourceFiles, string> = {

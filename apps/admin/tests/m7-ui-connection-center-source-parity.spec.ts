@@ -32,8 +32,32 @@ const forbiddenVisibleTerms = [
 ];
 const tenantChips = ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"];
 
-// prettier-ignore
-type RawConnectionMetrics = { activePageId?: string | null; actionButtonCount: number; actionButtonWidth: number; bodyText: string; bodyScrollWidth: number; boundaryText: string; cardCount: number; controlsWidth: number; documentScrollWidth: number; firstCardHeight: number; firstCardWidth: number; firstIconHeight: number; firstIconWidth: number; headerHeight: number; headerWidth: number; healthBadges: string[]; listWidth: number; navButtonLabels: string[]; navWidth: number; shellLevel?: string | null; sidebarCategories: string[]; toggleCount: number; topbarHeight: number; viewportWidth: number };
+type RawConnectionMetrics = {
+  activePageId?: string | null;
+  actionButtonCount: number;
+  actionButtonWidth: number;
+  bodyText: string;
+  bodyScrollWidth: number;
+  boundaryText: string;
+  cardCount: number;
+  controlsWidth: number;
+  documentScrollWidth: number;
+  firstCardHeight: number;
+  firstCardWidth: number;
+  firstIconHeight: number;
+  firstIconWidth: number;
+  headerHeight: number;
+  headerWidth: number;
+  healthBadges: string[];
+  listWidth: number;
+  navButtonLabels: string[];
+  navWidth: number;
+  shellLevel?: string | null;
+  sidebarCategories: string[];
+  toggleCount: number;
+  topbarHeight: number;
+  viewportWidth: number;
+};
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -329,8 +353,38 @@ async function collectConnectionMetrics(page: Page) {
 function buildConnectionMetrics(raw: RawConnectionMetrics) {
   const bodyText = raw.bodyText;
   const navButtonLabels = raw.navButtonLabels;
-  // prettier-ignore
-  const sourceLike = { adrBadge: includesAll(bodyText, ["ADR-B01 · 部分可行", "ADR-B02 · 无可用 API"]), description: includesAll(bodyText, ["Bot webhook 接入 · 自动/草稿双模", "Business 账号 · 人工外部回复同步", "实时订单查询 · 主路径已降级为导入兜底", "CSV / Excel 批量导入 · 快照查询"]), healthBadge: includesAll(raw.healthBadges.join("|"), ["正常", "部分可行", "不可用"]), iconBlock: hasExactBox(raw.firstIconWidth, raw.firstIconHeight, 40, 40), recentError: includesAll(bodyText, ["最近错误：无", "最近错误：账号 B 绑定失败 · 2小时前", "最近错误：AllProvidersDown · 22分钟前"]), rowCount: raw.cardCount === 4, spikeClassification: includesAll(bodyText, ["接入定级：标准接入", "接入定级：ADR-B01：部分可行", "接入定级：ADR-B02：无可用 API"]), subtitle: bodyText.includes("集团级连接类型 · 启停/测试"), tenantChips: tenantChips.every((label) => bodyText.includes(label)), tenantCount: includesAll(bodyText, ["4 个租户", "2 个租户", "1 个租户"]), testAction: raw.actionButtonCount === 4, title: bodyText.includes("连接中心"), toggle: raw.toggleCount === 4 };
+  const sourceLike = {
+    adrBadge: includesAll(bodyText, ["ADR-B01 · 部分可行", "ADR-B02 · 无可用 API"]),
+    description: includesAll(bodyText, [
+      "Bot webhook 接入 · 自动/草稿双模",
+      "Business 账号 · 人工外部回复同步",
+      "实时订单查询 · 主路径已降级为导入兜底",
+      "CSV / Excel 批量导入 · 快照查询"
+    ]),
+    healthBadge: includesAll(raw.healthBadges.join("|"), [
+      "正常",
+      "部分可行",
+      "不可用"
+    ]),
+    iconBlock: hasExactBox(raw.firstIconWidth, raw.firstIconHeight, 40, 40),
+    recentError: includesAll(bodyText, [
+      "最近错误：无",
+      "最近错误：账号 B 绑定失败 · 2小时前",
+      "最近错误：AllProvidersDown · 22分钟前"
+    ]),
+    rowCount: raw.cardCount === 4,
+    spikeClassification: includesAll(bodyText, [
+      "接入定级：标准接入",
+      "接入定级：ADR-B01：部分可行",
+      "接入定级：ADR-B02：无可用 API"
+    ]),
+    subtitle: bodyText.includes("集团级连接类型 · 启停/测试"),
+    tenantChips: tenantChips.every((label) => bodyText.includes(label)),
+    tenantCount: includesAll(bodyText, ["4 个租户", "2 个租户", "1 个租户"]),
+    testAction: raw.actionButtonCount === 4,
+    title: bodyText.includes("连接中心"),
+    toggle: raw.toggleCount === 4
+  };
   return {
     ...raw,
     bodyText: undefined,
@@ -390,8 +444,50 @@ function writeSourceMappingSummary() {
   const page = sources.page;
   const fixtures = sources.fixtures;
   const sourceText = `${page}\n${fixtures}`;
-  // prettier-ignore
-  const mapping = { anatomy: { adrBadge: includesAll(page, ["c.adr", "c.adrVerdict"]), cards: includesAll(page, ["CONN_DEFS.map", "maxWidth: 820"]), description: page.includes("c.desc"), groupRoute: includesAll(sources.navigation, ["GROUP_NAV", "g_conn", "连接中心"]) && sources.shell.includes("GROUP_NAV"), healthBadge: includesAll(page, ["CONN_HEALTH", "c.health"]), iconBlock: includesAll(page, ["width: 40", "height: 40", "ICONS[c.icon]"]), localToast: includesAll(page, ["复测完成", "setToast"]), recentError: page.includes("最近错误"), spikeClassification: page.includes("接入定级"), subtitle: page.includes("集团级连接类型 · 启停/测试写审计"), tenantChips: page.includes("tenantList.map"), tenantCount: page.includes("c.tenants"), testAction: page.includes("测试连接"), title: page.includes("连接中心"), toggle: page.includes("<Toggle") }, boundaryAdaptation: { labels: "Rows and local action feedback are source-shaped; runtime/write/test/audit boundaries are retained in hidden DOM/data/title/ARIA evidence.", subtitle: "Source 写审计 is adapted to operational 启停/测试 wording.", toggle: "React uses role=switch and page-local state." }, connectorNames: connectorNames.filter((label) => sourceText.includes(label)), filesRead: Object.values(sourceFiles), fixtureTerms: ["CONN_HEALTH", "ConnDef", "CONN_DEFS"].filter((term) => fixtures.includes(term)), sourceValues: { health: "正常|部分可行|不可用".split("|").filter((label) => sourceText.includes(label)), spike: "标准接入|ADR-B01：部分可行|ADR-B02：无可用 API".split("|").filter((label) => sourceText.includes(label)), tenants: "4 个租户|2 个租户|1 个租户".split("|").filter((label) => sourceText.includes(label)) }, tenantChips: tenantChips.filter((label) => fixtures.includes(label)) };
+  const mapping = {
+    anatomy: {
+      adrBadge: includesAll(page, ["c.adr", "c.adrVerdict"]),
+      cards: includesAll(page, ["CONN_DEFS.map", "maxWidth: 820"]),
+      description: page.includes("c.desc"),
+      groupRoute:
+        includesAll(sources.navigation, ["GROUP_NAV", "g_conn", "连接中心"]) &&
+        sources.shell.includes("GROUP_NAV"),
+      healthBadge: includesAll(page, ["CONN_HEALTH", "c.health"]),
+      iconBlock: includesAll(page, ["width: 40", "height: 40", "ICONS[c.icon]"]),
+      localToast: includesAll(page, ["复测完成", "setToast"]),
+      recentError: page.includes("最近错误"),
+      spikeClassification: page.includes("接入定级"),
+      subtitle: page.includes("集团级连接类型 · 启停/测试写审计"),
+      tenantChips: page.includes("tenantList.map"),
+      tenantCount: page.includes("c.tenants"),
+      testAction: page.includes("测试连接"),
+      title: page.includes("连接中心"),
+      toggle: page.includes("<Toggle")
+    },
+    boundaryAdaptation: {
+      labels:
+        "Rows and local action feedback are source-shaped; runtime/write/test/audit boundaries are retained in hidden DOM/data/title/ARIA evidence.",
+      subtitle: "Source 写审计 is adapted to operational 启停/测试 wording.",
+      toggle: "React uses role=switch and page-local state."
+    },
+    connectorNames: connectorNames.filter((label) => sourceText.includes(label)),
+    filesRead: Object.values(sourceFiles),
+    fixtureTerms: ["CONN_HEALTH", "ConnDef", "CONN_DEFS"].filter((term) =>
+      fixtures.includes(term)
+    ),
+    sourceValues: {
+      health: "正常|部分可行|不可用"
+        .split("|")
+        .filter((label) => sourceText.includes(label)),
+      spike: "标准接入|ADR-B01：部分可行|ADR-B02：无可用 API"
+        .split("|")
+        .filter((label) => sourceText.includes(label)),
+      tenants: "4 个租户|2 个租户|1 个租户"
+        .split("|")
+        .filter((label) => sourceText.includes(label))
+    },
+    tenantChips: tenantChips.filter((label) => fixtures.includes(label))
+  };
   writeJson("unpacked-connection-center-source-mapping.json", mapping);
   return mapping;
 }

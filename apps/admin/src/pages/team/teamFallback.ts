@@ -45,23 +45,100 @@ export const TEAM_MEMBER_TYPES = [
   { label: "AI", value: "ai" as const }
 ] as const;
 export const TEAM_NOTIFICATION_PREFS = ["全部", "仅@提及", "免打扰"] as const;
-// prettier-ignore
-export const TEAM_MEMBER_COLUMNS = ["成员", "角色", "成员类型", "分组", "在线状态", "接待中", "今日累计", "最近登录"] as const;
-// prettier-ignore
-export const TEAM_ROLE_COLUMNS = ["角色", "类型", "说明", "成员数", "创建时间", "操作"] as const;
-// prettier-ignore
-export const TEAM_PERSISTENCE_WARNING = ["degraded", "mock", "read-only", "browser-local only", "no production authz write", "no team mutation", "no invite email send", "no Telegram binding change", "no audit write"] as const;
+export const TEAM_MEMBER_COLUMNS = [
+  "成员",
+  "角色",
+  "成员类型",
+  "分组",
+  "在线状态",
+  "接待中",
+  "今日累计",
+  "最近登录"
+] as const;
+export const TEAM_ROLE_COLUMNS = [
+  "角色",
+  "类型",
+  "说明",
+  "成员数",
+  "创建时间",
+  "操作"
+] as const;
+export const TEAM_PERSISTENCE_WARNING = [
+  "degraded",
+  "mock",
+  "read-only",
+  "browser-local only",
+  "no production authz write",
+  "no team mutation",
+  "no invite email send",
+  "no Telegram binding change",
+  "no audit write"
+] as const;
 export const TEAM_RUNTIME_BOUNDARY = TEAM_PERSISTENCE_WARNING.join(" · ");
 
-// prettier-ignore
 const permSeeds = [
-  ["conv", "对话", [["conv_view", "查看会话"], ["conv_reply", "人工回复"], ["conv_close", "结单 / 转接"]]],
-  ["cust", "客户", [["cust_view", "查看客户档案"], ["cust_edit", "编辑客户信息 / 标签"], ["cust_export", "导出客户数据"]]],
-  ["order", "订单", [["order_view", "查看订单"], ["order_import", "导入订单快照"], ["order_rollback", "回滚导入"]]],
-  ["kb", "知识库", [["kb_view", "查看话术 / 知识"], ["kb_edit", "编辑话术 / 知识"], ["kb_asset", "管理素材库"]]],
-  ["ai", "AI 配置", [["ai_persona", "编辑 AI 人设"], ["ai_model", "调整模型路由"], ["ai_eval", "发起评测"]]],
-  ["sys", "系统配置", [["sys_config", "业务 / SLA / 渠道配置"], ["sys_team", "成员与角色管理"], ["sys_tenant", "租户设置"]]],
-  ["log", "日志", [["log_view", "查看操作 / 审计日志"], ["log_export", "导出日志"]]]
+  [
+    "conv",
+    "对话",
+    [
+      ["conv_view", "查看会话"],
+      ["conv_reply", "人工回复"],
+      ["conv_close", "结单 / 转接"]
+    ]
+  ],
+  [
+    "cust",
+    "客户",
+    [
+      ["cust_view", "查看客户档案"],
+      ["cust_edit", "编辑客户信息 / 标签"],
+      ["cust_export", "导出客户数据"]
+    ]
+  ],
+  [
+    "order",
+    "订单",
+    [
+      ["order_view", "查看订单"],
+      ["order_import", "导入订单快照"],
+      ["order_rollback", "回滚导入"]
+    ]
+  ],
+  [
+    "kb",
+    "知识库",
+    [
+      ["kb_view", "查看话术 / 知识"],
+      ["kb_edit", "编辑话术 / 知识"],
+      ["kb_asset", "管理素材库"]
+    ]
+  ],
+  [
+    "ai",
+    "AI 配置",
+    [
+      ["ai_persona", "编辑 AI 人设"],
+      ["ai_model", "调整模型路由"],
+      ["ai_eval", "发起评测"]
+    ]
+  ],
+  [
+    "sys",
+    "系统配置",
+    [
+      ["sys_config", "业务 / SLA / 渠道配置"],
+      ["sys_team", "成员与角色管理"],
+      ["sys_tenant", "租户设置"]
+    ]
+  ],
+  [
+    "log",
+    "日志",
+    [
+      ["log_view", "查看操作 / 审计日志"],
+      ["log_export", "导出日志"]
+    ]
+  ]
 ] as const;
 export const PERM_GROUPS: PermissionGroup[] = permSeeds.map(([id, label, items]) => ({
   id,
@@ -82,12 +159,67 @@ export const TEAM_DEFAULT_ROLE_EDITOR: Omit<RoleEditorDraft, "id" | "mode"> = {
 };
 
 const memberDefaults = { disabled: false, langPref: "系统跟随", notifyPref: "全部" };
-// prettier-ignore
 export const teamMembers: TeamMember[] = [
-  ["m1", "韩", "韩雪", "hanxue@yz.com", "op_lead", "human", "运营组", "在线", "3", "47", "今天 08:12", true, 8],
-  ["m2", "李", "李航", "lihang@yz.com", "cs", "human", "客服一组", "在线", "5", "82", "今天 09:00", true, 6],
-  ["m3", "王", "王敏", "wangmin@yz.com", "kb_maint", "human", "内容组", "离开", "0", "12", "今天 10:30", false, 4],
-  ["m4", "玉", "玉珠客服 · 主理", "agent-main", "ai_role", "ai", "AI组", "在线", "18", "412", "—", false, 50]
+  [
+    "m1",
+    "韩",
+    "韩雪",
+    "hanxue@yz.com",
+    "op_lead",
+    "human",
+    "运营组",
+    "在线",
+    "3",
+    "47",
+    "今天 08:12",
+    true,
+    8
+  ],
+  [
+    "m2",
+    "李",
+    "李航",
+    "lihang@yz.com",
+    "cs",
+    "human",
+    "客服一组",
+    "在线",
+    "5",
+    "82",
+    "今天 09:00",
+    true,
+    6
+  ],
+  [
+    "m3",
+    "王",
+    "王敏",
+    "wangmin@yz.com",
+    "kb_maint",
+    "human",
+    "内容组",
+    "离开",
+    "0",
+    "12",
+    "今天 10:30",
+    false,
+    4
+  ],
+  [
+    "m4",
+    "玉",
+    "玉珠客服 · 主理",
+    "agent-main",
+    "ai_role",
+    "ai",
+    "AI组",
+    "在线",
+    "18",
+    "412",
+    "—",
+    false,
+    50
+  ]
 ].map(
   ([
     id,
@@ -107,7 +239,7 @@ export const teamMembers: TeamMember[] = [
     ...memberDefaults,
     account,
     active,
-  cap,
+    cap,
     group,
     id,
     initial,
@@ -258,13 +390,14 @@ const roleCounts = (members: TeamMember[], roles: TeamRole[]) =>
     Object.fromEntries(roles.map((item) => [item.id, 0])) as Record<string, number>
   );
 
-// prettier-ignore
 export function useTeamPageState() {
   const viewState = readTeamViewState();
   const [members, setMembers] = useState(teamMembers);
   const [roles, setRoles] = useState(teamRoles);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  const [inviteDraft, setInviteDraft] = useState(makeInviteInitialDraft(teamRoles[0]?.id ?? ""));
+  const [inviteDraft, setInviteDraft] = useState(
+    makeInviteInitialDraft(teamRoles[0]?.id ?? "")
+  );
   const [tab, setTab] = useState<TeamTab>("members");
   const [search, setSearch] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -272,18 +405,63 @@ export function useTeamPageState() {
   const [roleToDelete, setRoleToDelete] = useState("");
   const [toast, setToast] = useState("");
   const toastTimer = useRef<number | null>(null);
-  const member = useMemo(() => members.find((entry) => entry.id === selectedMemberId) ?? null, [members, selectedMemberId]);
+  const member = useMemo(
+    () => members.find((entry) => entry.id === selectedMemberId) ?? null,
+    [members, selectedMemberId]
+  );
   const roleById = (roleId: string) => roles.find((entry) => entry.id === roleId);
-  const filteredMembers = useMemo(() => { const q = search.trim().toLowerCase(); return q ? members.filter((entry) => `${entry.name} ${entry.account} ${entry.group}`.toLowerCase().includes(q)) : members; }, [members, search]);
+  const filteredMembers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q
+      ? members.filter((entry) =>
+          `${entry.name} ${entry.account} ${entry.group}`.toLowerCase().includes(q)
+        )
+      : members;
+  }, [members, search]);
   const membersByRole = useMemo(() => roleCounts(members, roles), [members, roles]);
-  useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
-  const showToast = (message: string) => { if (toastTimer.current) window.clearTimeout(toastTimer.current); setToast(localTeamToast(message)); toastTimer.current = window.setTimeout(() => setToast(""), 2400); };
-  const patchMember = (id: string, update: (entry: TeamMember) => TeamMember) => setMembers((current) => current.map((entry) => (entry.id === id ? update(entry) : entry)));
+  useEffect(
+    () => () => {
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    },
+    []
+  );
+  const showToast = (message: string) => {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    setToast(localTeamToast(message));
+    toastTimer.current = window.setTimeout(() => setToast(""), 2400);
+  };
+  const patchMember = (id: string, update: (entry: TeamMember) => TeamMember) =>
+    setMembers((current) =>
+      current.map((entry) => (entry.id === id ? update(entry) : entry))
+    );
   const saveRole = () => {
     if (!roleDraft?.name.trim()) return;
-    const savedRole = { builtin: false, created: "今天", desc: roleDraft.desc, id: `r-${Date.now()}`, name: roleDraft.name, perms: { ...roleDraft.perms }, type: "自定义" };
-    setRoles((current) => roleDraft.id ? current.map((entry) => (entry.id === roleDraft.id ? { ...entry, desc: roleDraft.desc, name: roleDraft.name, perms: roleDraft.perms } : entry)) : [...current, savedRole]);
-    showToast(`${roleDraft.mode === "edit" ? "角色已更新" : "角色已创建"}：${roleDraft.name}`);
+    const savedRole = {
+      builtin: false,
+      created: "今天",
+      desc: roleDraft.desc,
+      id: `r-${Date.now()}`,
+      name: roleDraft.name,
+      perms: { ...roleDraft.perms },
+      type: "自定义"
+    };
+    setRoles((current) =>
+      roleDraft.id
+        ? current.map((entry) =>
+            entry.id === roleDraft.id
+              ? {
+                  ...entry,
+                  desc: roleDraft.desc,
+                  name: roleDraft.name,
+                  perms: roleDraft.perms
+                }
+              : entry
+          )
+        : [...current, savedRole]
+    );
+    showToast(
+      `${roleDraft.mode === "edit" ? "角色已更新" : "角色已创建"}：${roleDraft.name}`
+    );
     setRoleDraft(null);
   };
   const onInviteSubmit = () => {
@@ -294,17 +472,67 @@ export function useTeamPageState() {
     setInviteOpen(false);
     showToast(`邀请已暂存：${name}`);
   };
-  return { filteredMembers, inviteDraft, inviteOpen, isDegraded: viewState === "degraded", member, membersByRole, roleById, roleDraft, roleToDelete, roles, search, stateCopy: teamStateCopy[viewState].body, tab, toast, viewState,
-    onDeleteRole: (item: TeamRole) => !item.builtin && (membersByRole[item.id] ?? 0) === 0 && setRoleToDelete(item.name),
-    onDismissDeleteRole: () => setRoleToDelete(""), onInviteClose: () => setInviteOpen(false),
-    onInviteOpenMembers: () => { setInviteDraft(makeInviteInitialDraft(roles[1]?.id ?? roles[0]?.id ?? "")); setInviteOpen(true); },
-    onInviteSubmit, onInviteUpdate: setInviteDraft, onMemberClose: () => setSelectedMemberId(null),
-    onNotify: (id: string, pref: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, notifyPref: pref })); showToast(`通知偏好已更新：${target?.name ?? "成员"}`); },
-    onRoleDeleteConfirm: () => { setRoles((current) => current.filter((entry) => entry.name !== roleToDelete)); showToast(`角色已删除：${roleToDelete}`); setRoleToDelete(""); },
-    onRoleDraftClose: () => setRoleDraft(null), onRoleDraftCreate: () => setRoleDraft(draftFromRole("new")), onRoleDraftEdit: (item: TeamRole) => setRoleDraft(draftFromRole("edit", item)),
-    onRoleDraftSave: saveRole, onRoleDraftUpdate: setRoleDraft, onSelectTab: setTab, onSetMember: setSelectedMemberId, onSetSearch: setSearch,
-    onSetState: (id: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, disabled: !entry.disabled })); showToast(target?.disabled ? `账号已恢复：${target.name}` : `账号已停用：${target?.name ?? id}`); },
-    onTelegram: (id: string) => { const target = members.find((entry) => entry.id === id); patchMember(id, (entry) => ({ ...entry, telegram: !entry.telegram })); showToast(`Telegram 绑定预览已更新：${target?.name ?? id}`); }
+  return {
+    filteredMembers,
+    inviteDraft,
+    inviteOpen,
+    isDegraded: viewState === "degraded",
+    member,
+    membersByRole,
+    roleById,
+    roleDraft,
+    roleToDelete,
+    roles,
+    search,
+    stateCopy: teamStateCopy[viewState].body,
+    tab,
+    toast,
+    viewState,
+    onDeleteRole: (item: TeamRole) =>
+      !item.builtin &&
+      (membersByRole[item.id] ?? 0) === 0 &&
+      setRoleToDelete(item.name),
+    onDismissDeleteRole: () => setRoleToDelete(""),
+    onInviteClose: () => setInviteOpen(false),
+    onInviteOpenMembers: () => {
+      setInviteDraft(makeInviteInitialDraft(roles[1]?.id ?? roles[0]?.id ?? ""));
+      setInviteOpen(true);
+    },
+    onInviteSubmit,
+    onInviteUpdate: setInviteDraft,
+    onMemberClose: () => setSelectedMemberId(null),
+    onNotify: (id: string, pref: string) => {
+      const target = members.find((entry) => entry.id === id);
+      patchMember(id, (entry) => ({ ...entry, notifyPref: pref }));
+      showToast(`通知偏好已更新：${target?.name ?? "成员"}`);
+    },
+    onRoleDeleteConfirm: () => {
+      setRoles((current) => current.filter((entry) => entry.name !== roleToDelete));
+      showToast(`角色已删除：${roleToDelete}`);
+      setRoleToDelete("");
+    },
+    onRoleDraftClose: () => setRoleDraft(null),
+    onRoleDraftCreate: () => setRoleDraft(draftFromRole("new")),
+    onRoleDraftEdit: (item: TeamRole) => setRoleDraft(draftFromRole("edit", item)),
+    onRoleDraftSave: saveRole,
+    onRoleDraftUpdate: setRoleDraft,
+    onSelectTab: setTab,
+    onSetMember: setSelectedMemberId,
+    onSetSearch: setSearch,
+    onSetState: (id: string) => {
+      const target = members.find((entry) => entry.id === id);
+      patchMember(id, (entry) => ({ ...entry, disabled: !entry.disabled }));
+      showToast(
+        target?.disabled
+          ? `账号已恢复：${target.name}`
+          : `账号已停用：${target?.name ?? id}`
+      );
+    },
+    onTelegram: (id: string) => {
+      const target = members.find((entry) => entry.id === id);
+      patchMember(id, (entry) => ({ ...entry, telegram: !entry.telegram }));
+      showToast(`Telegram 绑定预览已更新：${target?.name ?? id}`);
+    }
   };
 }
 

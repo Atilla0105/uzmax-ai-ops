@@ -89,41 +89,203 @@ const runtimeLabels = [
   "no automatic publish"
 ];
 
-// prettier-ignore
 export const stages: JourneyStage[] = [
-  { assets: ["SYN-KB-ASSET-001", "SYN-KB-ASSET-002"], feedback: "low", id: "SYN-KB-STAGE-001", name: "触达", rate: 94 },
-  { assets: ["SYN-KB-ASSET-002", "SYN-KB-ASSET-003"], feedback: "medium", id: "SYN-KB-STAGE-002", name: "报价", rate: 71 },
-  { assets: ["SYN-KB-ASSET-004"], feedback: "high", id: "SYN-KB-STAGE-003", name: "下单", rate: 85 },
-  { assets: ["SYN-KB-ASSET-001", "SYN-KB-ASSET-005"], feedback: "medium", id: "SYN-KB-STAGE-004", name: "售后", rate: 78 }
+  {
+    assets: ["SYN-KB-ASSET-001", "SYN-KB-ASSET-002"],
+    feedback: "low",
+    id: "SYN-KB-STAGE-001",
+    name: "触达",
+    rate: 94
+  },
+  {
+    assets: ["SYN-KB-ASSET-002", "SYN-KB-ASSET-003"],
+    feedback: "medium",
+    id: "SYN-KB-STAGE-002",
+    name: "报价",
+    rate: 71
+  },
+  {
+    assets: ["SYN-KB-ASSET-004"],
+    feedback: "high",
+    id: "SYN-KB-STAGE-003",
+    name: "下单",
+    rate: 85
+  },
+  {
+    assets: ["SYN-KB-ASSET-001", "SYN-KB-ASSET-005"],
+    feedback: "medium",
+    id: "SYN-KB-STAGE-004",
+    name: "售后",
+    rate: 78
+  }
 ];
 
-// prettier-ignore
 export const facts: KnowledgeFact[] = [
-  { category: "报价", content: "套装报价必须与价目表最新版本一致；评测未通过时进入确认队列处理，AI 不得自行推算折扣。", evaluation: "blocked", feedback: 31, hits: 196, id: "SYN-KB-FACT-001", redline: false, sourceRef: "controlled://mock/knowledge/facts/001", title: "套装报价口径 · 乌语拉丁", version: "v2" },
-  { category: "售后", content: "退款诉求一律转人工确认，AI 不得自动承诺退款金额与到账时效。", evaluation: "passed", feedback: 6, hits: 432, id: "SYN-KB-FACT-002", redline: true, sourceRef: "controlled://mock/knowledge/facts/002", title: "退款流程说明", version: "v3" },
-  { category: "产品", content: "孕期/哺乳期相关问题必须引导咨询医师，AI 禁止给出医疗建议或安全承诺。", evaluation: "queued", feedback: 0, hits: 88, id: "SYN-KB-FACT-003", redline: true, sourceRef: "controlled://mock/knowledge/facts/003", title: "玻尿酸面霜孕期可用性", version: "v1" }
+  {
+    category: "报价",
+    content:
+      "套装报价必须与价目表最新版本一致；评测未通过时进入确认队列处理，AI 不得自行推算折扣。",
+    evaluation: "blocked",
+    feedback: 31,
+    hits: 196,
+    id: "SYN-KB-FACT-001",
+    redline: false,
+    sourceRef: "controlled://mock/knowledge/facts/001",
+    title: "套装报价口径 · 乌语拉丁",
+    version: "v2"
+  },
+  {
+    category: "售后",
+    content: "退款诉求一律转人工确认，AI 不得自动承诺退款金额与到账时效。",
+    evaluation: "passed",
+    feedback: 6,
+    hits: 432,
+    id: "SYN-KB-FACT-002",
+    redline: true,
+    sourceRef: "controlled://mock/knowledge/facts/002",
+    title: "退款流程说明",
+    version: "v3"
+  },
+  {
+    category: "产品",
+    content: "孕期/哺乳期相关问题必须引导咨询医师，AI 禁止给出医疗建议或安全承诺。",
+    evaluation: "queued",
+    feedback: 0,
+    hits: 88,
+    id: "SYN-KB-FACT-003",
+    redline: true,
+    sourceRef: "controlled://mock/knowledge/facts/003",
+    title: "玻尿酸面霜孕期可用性",
+    version: "v1"
+  }
 ];
 
-// prettier-ignore
 export const snippets: KnowledgeSnippet[] = [
-  { category: "售后", content: "Hurmatli mijoz, kechikkani uchun uzr so‘raymiz. Buyurtmangiz hozir saralash markazida, 1-2 kun ichida yetkaziladi.", edited: "06-20", id: "SYN-KB-PUBLIC-001", scope: "public", title: "物流延迟标准安抚" },
-  { category: "报价", content: "提醒：订单 30 分钟未支付将释放库存，需要我帮您保留吗？", edited: "06-18", id: "SYN-KB-PRIVATE-001", scope: "private", title: "我的快捷 · 催付款" }
+  {
+    category: "售后",
+    content:
+      "Hurmatli mijoz, kechikkani uchun uzr so‘raymiz. Buyurtmangiz hozir saralash markazida, 1-2 kun ichida yetkaziladi.",
+    edited: "06-20",
+    id: "SYN-KB-PUBLIC-001",
+    scope: "public",
+    title: "物流延迟标准安抚"
+  },
+  {
+    category: "报价",
+    content: "提醒：订单 30 分钟未支付将释放库存，需要我帮您保留吗？",
+    edited: "06-18",
+    id: "SYN-KB-PRIVATE-001",
+    scope: "private",
+    title: "我的快捷 · 催付款"
+  }
 ];
 
-// prettier-ignore
 export const assets: KnowledgeAsset[] = [
-  { cached: true, content: "【视频脚本 / 使用步骤】\n1. 洁面后取黄豆大小用量于指腹\n2. 由内向外、由下至上打圈涂抹于面部\n3. 敏感肌首次使用建议先做耳后测试\n\n【AI 引用要点】客户问使用方法时优先引用步骤 1-2；敏感肌问题引用第 3 步。", description: "玻尿酸面霜涂抹手法", displayRef: "素材对象 9af3", format: "MP4", id: "SYN-KB-ASSET-001", referenced: true, ref: "controlled://mock/assets/onboarding-a", size: "18.4 MB", stage: "售后", title: "面霜使用教程", type: "视频" },
-  { cached: true, content: "【图片说明】三件套装电商主图，含套装构成和优惠提示。\n\n【AI 引用要点】客户问套装包含什么时，搭配报价话术发送。", description: "三件套电商主图", displayRef: "素材对象 2b71", format: "JPG", id: "SYN-KB-ASSET-002", referenced: true, ref: "controlled://mock/assets/onboarding-b", size: "820 KB", stage: "报价", title: "套装主图", type: "图片" },
-  { cached: false, content: "【文档内容】\n三件套装：268 000 so‘m（含运费）。\n维C精华单瓶：138 000 so‘m。\n\n【AI 引用要点】报价时必须核对本表最新价格，禁止自行推算折扣。", description: "2026 Q2 价目表", displayRef: "素材对象 c402", format: "PDF", id: "SYN-KB-ASSET-003", referenced: true, ref: "controlled://mock/assets/price-c", size: "240 KB", stage: "报价", title: "价目表 v12", type: "文档" },
-  { cached: true, content: "【图片说明】中亚五国平均时效示意图：乌兹别克斯坦 5-7 天，哈萨克斯坦 6-8 天，其余地区 7-10 天。\n\n【状态】建议补充到下单阶段用于物流预期管理。", description: "中亚物流时效示意", displayRef: "素材对象 77de", format: "PNG", id: "SYN-KB-ASSET-004", referenced: false, ref: "controlled://mock/assets/order-d", size: "612 KB", stage: "下单", title: "物流时效图", type: "图片" },
-  { cached: true, content: "【文档内容】\n塔什干退货点：Chilonzor 区服务点，营业时间 10:00-19:00。\n需携带：订单号 + 未拆封商品。\n\n【AI 引用要点】客户要求退货地址时引用地址段落，不得自行编造地址。", description: "塔什干退货点", displayRef: "素材对象 e9b2", format: "PDF", id: "SYN-KB-ASSET-005", referenced: true, ref: "controlled://mock/assets/after-sale-e", size: "88 KB", stage: "售后", title: "退货地址卡", type: "文档" }
+  {
+    cached: true,
+    content:
+      "【视频脚本 / 使用步骤】\n1. 洁面后取黄豆大小用量于指腹\n2. 由内向外、由下至上打圈涂抹于面部\n3. 敏感肌首次使用建议先做耳后测试\n\n【AI 引用要点】客户问使用方法时优先引用步骤 1-2；敏感肌问题引用第 3 步。",
+    description: "玻尿酸面霜涂抹手法",
+    displayRef: "素材对象 9af3",
+    format: "MP4",
+    id: "SYN-KB-ASSET-001",
+    referenced: true,
+    ref: "controlled://mock/assets/onboarding-a",
+    size: "18.4 MB",
+    stage: "售后",
+    title: "面霜使用教程",
+    type: "视频"
+  },
+  {
+    cached: true,
+    content:
+      "【图片说明】三件套装电商主图，含套装构成和优惠提示。\n\n【AI 引用要点】客户问套装包含什么时，搭配报价话术发送。",
+    description: "三件套电商主图",
+    displayRef: "素材对象 2b71",
+    format: "JPG",
+    id: "SYN-KB-ASSET-002",
+    referenced: true,
+    ref: "controlled://mock/assets/onboarding-b",
+    size: "820 KB",
+    stage: "报价",
+    title: "套装主图",
+    type: "图片"
+  },
+  {
+    cached: false,
+    content:
+      "【文档内容】\n三件套装：268 000 so‘m（含运费）。\n维C精华单瓶：138 000 so‘m。\n\n【AI 引用要点】报价时必须核对本表最新价格，禁止自行推算折扣。",
+    description: "2026 Q2 价目表",
+    displayRef: "素材对象 c402",
+    format: "PDF",
+    id: "SYN-KB-ASSET-003",
+    referenced: true,
+    ref: "controlled://mock/assets/price-c",
+    size: "240 KB",
+    stage: "报价",
+    title: "价目表 v12",
+    type: "文档"
+  },
+  {
+    cached: true,
+    content:
+      "【图片说明】中亚五国平均时效示意图：乌兹别克斯坦 5-7 天，哈萨克斯坦 6-8 天，其余地区 7-10 天。\n\n【状态】建议补充到下单阶段用于物流预期管理。",
+    description: "中亚物流时效示意",
+    displayRef: "素材对象 77de",
+    format: "PNG",
+    id: "SYN-KB-ASSET-004",
+    referenced: false,
+    ref: "controlled://mock/assets/order-d",
+    size: "612 KB",
+    stage: "下单",
+    title: "物流时效图",
+    type: "图片"
+  },
+  {
+    cached: true,
+    content:
+      "【文档内容】\n塔什干退货点：Chilonzor 区服务点，营业时间 10:00-19:00。\n需携带：订单号 + 未拆封商品。\n\n【AI 引用要点】客户要求退货地址时引用地址段落，不得自行编造地址。",
+    description: "塔什干退货点",
+    displayRef: "素材对象 e9b2",
+    format: "PDF",
+    id: "SYN-KB-ASSET-005",
+    referenced: true,
+    ref: "controlled://mock/assets/after-sale-e",
+    size: "88 KB",
+    stage: "售后",
+    title: "退货地址卡",
+    type: "文档"
+  }
 ];
 
-// prettier-ignore
 export const templateSources: TemplateSource[] = [
-  { copied: "06-26", id: "SYN-KB-TMPL-001", localVersion: "v4.2", sourceRef: "controlled://mock/templates/faq", sourceVersion: "v4.2", status: "synced", title: "美妆售后知识包" },
-  { copied: "05-30", id: "SYN-KB-TMPL-002", localVersion: "v2.3", sourceRef: "controlled://mock/templates/defaults", sourceVersion: "v2.4", status: "has-update", title: "中亚默认配置" },
-  { copied: "06-10", id: "SYN-KB-TMPL-003", localVersion: "v5.0", sourceRef: "controlled://mock/templates/redline", sourceVersion: "v5.0", status: "synced", title: "红线攻击评测集" }
+  {
+    copied: "06-26",
+    id: "SYN-KB-TMPL-001",
+    localVersion: "v4.2",
+    sourceRef: "controlled://mock/templates/faq",
+    sourceVersion: "v4.2",
+    status: "synced",
+    title: "美妆售后知识包"
+  },
+  {
+    copied: "05-30",
+    id: "SYN-KB-TMPL-002",
+    localVersion: "v2.3",
+    sourceRef: "controlled://mock/templates/defaults",
+    sourceVersion: "v2.4",
+    status: "has-update",
+    title: "中亚默认配置"
+  },
+  {
+    copied: "06-10",
+    id: "SYN-KB-TMPL-003",
+    localVersion: "v5.0",
+    sourceRef: "controlled://mock/templates/redline",
+    sourceVersion: "v5.0",
+    status: "synced",
+    title: "红线攻击评测集"
+  }
 ];
 
 export function readKnowledgeViewState(): KnowledgeViewState {

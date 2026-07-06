@@ -32,8 +32,32 @@ const oldCardPollution =
     "|"
   );
 
-// prettier-ignore
-type RawTenantMetrics = { activePageId?: string | null; bodyScrollWidth: number; bodyText: string; boundaryText: string; createButtonWidth: number; documentScrollWidth: number; hasTenantId: boolean; headerHeight: number; headerWidth: number; managementActionWidth: number; modalHeight: number; modalWidth: number; navButtonLabels: string[]; navWidth: number; panelHeight: number; panelWidth: number; shellLevel?: string | null; sidebarCategories: string[]; sourceNoteHeight: number; tableHeight: number; tableScrollWidth: number; topbarHeight: number; viewportWidth: number; visibleText: string };
+type RawTenantMetrics = {
+  activePageId?: string | null;
+  bodyScrollWidth: number;
+  bodyText: string;
+  boundaryText: string;
+  createButtonWidth: number;
+  documentScrollWidth: number;
+  hasTenantId: boolean;
+  headerHeight: number;
+  headerWidth: number;
+  managementActionWidth: number;
+  modalHeight: number;
+  modalWidth: number;
+  navButtonLabels: string[];
+  navWidth: number;
+  panelHeight: number;
+  panelWidth: number;
+  shellLevel?: string | null;
+  sidebarCategories: string[];
+  sourceNoteHeight: number;
+  tableHeight: number;
+  tableScrollWidth: number;
+  topbarHeight: number;
+  viewportWidth: number;
+  visibleText: string;
+};
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -343,8 +367,26 @@ function buildTenantMetrics(raw: RawTenantMetrics) {
   const visibleText = raw.visibleText;
   const navButtonLabels = raw.navButtonLabels;
   const boundaryText = raw.boundaryText;
-  // prettier-ignore
-  const sourceLike = { blankManagementAction: raw.managementActionWidth > 0 && visibleText.includes("管理"), newButton: raw.createButtonWidth > 0 && visibleText.includes("新建租户"), newModal: raw.modalWidth > 0 && includesAll(visibleText, ["创建新租户", "租户名称", "业务线", "默认语言", "默认时区", "渠道能力", "初始模板"]), sourceNote: raw.sourceNoteHeight > 0 && visibleText.includes("停用租户须填写原因"), subtitle: visibleText.includes("个租户"), tablePanel: raw.panelWidth > 0 && raw.panelHeight > 0 && raw.tableHeight > 0, title: visibleText.includes("租户管理") };
+  const sourceLike = {
+    blankManagementAction:
+      raw.managementActionWidth > 0 && visibleText.includes("管理"),
+    newButton: raw.createButtonWidth > 0 && visibleText.includes("新建租户"),
+    newModal:
+      raw.modalWidth > 0 &&
+      includesAll(visibleText, [
+        "创建新租户",
+        "租户名称",
+        "业务线",
+        "默认语言",
+        "默认时区",
+        "渠道能力",
+        "初始模板"
+      ]),
+    sourceNote: raw.sourceNoteHeight > 0 && visibleText.includes("停用租户须填写原因"),
+    subtitle: visibleText.includes("个租户"),
+    tablePanel: raw.panelWidth > 0 && raw.panelHeight > 0 && raw.tableHeight > 0,
+    title: visibleText.includes("租户管理")
+  };
   return {
     ...raw,
     bodyText: undefined,
@@ -405,8 +447,34 @@ function writeSourceMappingSummary() {
     "CAP_LABELS",
     "ConfirmModal"
   ]);
-  // prettier-ignore
-  const mapping = { conflict: { ownerHtmlRenderedCardGrid: false, ownerHtmlRenderedTenantRows: false, unpackedCardGridConflictsWithOwnerHtml: unpackedCardGrid }, decision: { reactFollows: "owner-html-visible-table-state", unpacked6Role: "secondary conflicting structured source for this page; not the visible baseline" }, filesRead: [ownerHtml, ...Object.values(sourceFiles)], ownerHtmlBundle: { disableModalTemplatePresent: owner.includes("tenantDisableOpen"), managementDrawerTemplatePresent: owner.includes("tenantManageOpen"), newTenantModalTemplatePresent: owner.includes("tenantNewOpen"), tableColumns: ownerColumns.filter((label) => owner.includes(label)), tableTemplatePresent: ownerTableTemplate }, unpacked6: { cardGridSourcePresent: unpackedCardGrid, drawerSourcePresent: includesAll(page, ["managed", "默认语言", "默认时区"]), fixtureTerms: ["GROUP_TENANTS", "TENANT_STATUS_COLORS", "GroupTenant"].filter((term) => fixtures.includes(term)), tenantNames: tenantNames.filter((label) => `${page}\n${fixtures}`.includes(label)) } };
+  const mapping = {
+    conflict: {
+      ownerHtmlRenderedCardGrid: false,
+      ownerHtmlRenderedTenantRows: false,
+      unpackedCardGridConflictsWithOwnerHtml: unpackedCardGrid
+    },
+    decision: {
+      reactFollows: "owner-html-visible-table-state",
+      unpacked6Role:
+        "secondary conflicting structured source for this page; not the visible baseline"
+    },
+    filesRead: [ownerHtml, ...Object.values(sourceFiles)],
+    ownerHtmlBundle: {
+      disableModalTemplatePresent: owner.includes("tenantDisableOpen"),
+      managementDrawerTemplatePresent: owner.includes("tenantManageOpen"),
+      newTenantModalTemplatePresent: owner.includes("tenantNewOpen"),
+      tableColumns: ownerColumns.filter((label) => owner.includes(label)),
+      tableTemplatePresent: ownerTableTemplate
+    },
+    unpacked6: {
+      cardGridSourcePresent: unpackedCardGrid,
+      drawerSourcePresent: includesAll(page, ["managed", "默认语言", "默认时区"]),
+      fixtureTerms: ["GROUP_TENANTS", "TENANT_STATUS_COLORS", "GroupTenant"].filter(
+        (term) => fixtures.includes(term)
+      ),
+      tenantNames: tenantNames.filter((label) => `${page}\n${fixtures}`.includes(label))
+    }
+  };
   writeJson("unpacked-tenant-management-source-mapping.json", mapping);
   return mapping;
 }

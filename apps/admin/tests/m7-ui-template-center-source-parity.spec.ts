@@ -30,8 +30,30 @@ const runtimeLabels = [
   "no config write"
 ];
 const tenantTargets = ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"];
-// prettier-ignore
-type RawTemplateMetrics = { activePageId?: string | null; bodyText: string; bodyScrollWidth: number; cardGridHeight: number; cardGridWidth: number; documentScrollWidth: number; firstCardWidth: number; headerHeight: number; headerWidth: number; modalHeight: number; modalWidth: number; navButtonLabels: string[]; navText: string; navWidth: number; pageHeight: number; pageWidth: number; shellLevel?: string | null; sidebarCategories: string[]; tabListHeight: number; tabListWidth: number; topbarHeight: number; viewportWidth: number };
+type RawTemplateMetrics = {
+  activePageId?: string | null;
+  bodyText: string;
+  bodyScrollWidth: number;
+  cardGridHeight: number;
+  cardGridWidth: number;
+  documentScrollWidth: number;
+  firstCardWidth: number;
+  headerHeight: number;
+  headerWidth: number;
+  modalHeight: number;
+  modalWidth: number;
+  navButtonLabels: string[];
+  navText: string;
+  navWidth: number;
+  pageHeight: number;
+  pageWidth: number;
+  shellLevel?: string | null;
+  sidebarCategories: string[];
+  tabListHeight: number;
+  tabListWidth: number;
+  topbarHeight: number;
+  viewportWidth: number;
+};
 
 mkdirSync(artifactDir, { recursive: true });
 

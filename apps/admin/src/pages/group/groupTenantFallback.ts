@@ -83,8 +83,13 @@ export const ownerHtmlTenantColumns = [
   "操作"
 ];
 
-// prettier-ignore
-export const tenantLanguages = ["乌兹别克语（拉丁）", "乌兹别克语（西里尔）", "俄语", "中文", "英语"];
+export const tenantLanguages = [
+  "乌兹别克语（拉丁）",
+  "乌兹别克语（西里尔）",
+  "俄语",
+  "中文",
+  "英语"
+];
 
 export const tenantTimezones = ["UTC+5 塔什干", "UTC+3 莫斯科", "UTC+8 北京"];
 

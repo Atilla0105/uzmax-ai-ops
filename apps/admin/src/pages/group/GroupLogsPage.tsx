@@ -10,6 +10,7 @@ import {
   groupLogDetailToast,
   groupLogExportToast,
   groupLogMeta,
+  groupLogRuntimeBoundary,
   groupLogRows,
   groupLogStyles,
   readGroupLogViewState,
@@ -53,9 +54,11 @@ export function GroupLogsPage() {
   return (
     <section
       className="uz-glog-page"
+      data-runtime-boundary={groupLogRuntimeBoundary}
       data-runtime-source={groupLogMeta.source}
       data-runtime-state={viewState}
       data-testid="m7-group-logs-page"
+      title={groupLogRuntimeBoundary}
     >
       <style>{groupLogStyles}</style>
       <GroupLogHeader
@@ -70,12 +73,16 @@ export function GroupLogsPage() {
       {toast ? (
         <div
           aria-atomic="true"
+          aria-description={groupLogRuntimeBoundary}
           aria-live="polite"
           className="uz-glog-toast"
+          data-runtime-boundary={groupLogRuntimeBoundary}
           data-testid="m7-group-logs-toast"
           role="status"
+          title={groupLogRuntimeBoundary}
         >
           {toast}
+          <span hidden>{groupLogRuntimeBoundary}</span>
         </div>
       ) : null}
       {viewState === "degraded" ? (

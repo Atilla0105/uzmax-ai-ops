@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const artifactDir = "/tmp/uzmax-m7-ui-74-group-logs-source-parity-refresh";
+const artifactDir = "/tmp/uzmax-m7-ui-95-group-logs-default-visual-parity-refresh";
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const tenantLabels =
@@ -10,6 +10,11 @@ const tenantLabels =
   );
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
+const runtimeLabels =
+  "degraded|mock|read-only|browser-local only|synthetic audit rows|no production audit export|no file written|no audit runtime call|no real tenant/action navigation".split(
+    "|"
+  );
+const forbiddenVisibleTerms = [...runtimeLabels, "Synthetic", "synthetic"];
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -22,7 +27,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("renders group logs with group shell and local-only audit boundary", async ({
+test("renders group logs with group shell and hidden audit boundary", async ({
   page
 }) => {
   await openGroupLogs(page);
@@ -40,18 +45,9 @@ test("renders group logs with group shell and local-only audit boundary", async 
     "操作日志 · 跨租户 · 7 条"
   );
   await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
-  for (const label of [
-    "degraded",
-    "mock",
-    "read-only",
-    "browser-local only",
-    "synthetic audit rows",
-    "no production audit export",
-    "no file written",
-    "no audit runtime call",
-    "no real tenant/action navigation"
-  ])
-    await expect(page.getByTestId("m7-group-logs-runtime-note")).toContainText(label);
+  await expectRuntimeBoundary(page.getByTestId("m7-group-logs-page"));
+  await expectRuntimeBoundary(page.getByTestId("m7-group-logs-runtime-note"));
+  await expectVisibleBodyClean(page);
 
   const logPage = page.getByTestId("m7-group-logs-page");
   for (const label of [
@@ -68,6 +64,7 @@ test("renders group logs with group shell and local-only audit boundary", async 
     ).toBeVisible();
   await expect(page.locator(".uz-glog-row")).toHaveCount(7);
   await expect(page.locator(".uz-glog-row").first()).toContainText("恢复白桦母婴 AI");
+  await expectVisibleBodyClean(page);
   await page.screenshot({
     fullPage: true,
     path: `${artifactDir}/react-group-logs-desktop.png`
@@ -104,6 +101,10 @@ test("module chips and search filter rows with empty state", async ({ page }) =>
   await expect(page.getByTestId("m7-group-logs-empty")).toContainText(
     "没有匹配「no matching local row」的记录"
   );
+  await expect(page.getByTestId("m7-group-logs-empty")).toContainText(
+    "调整模块或搜索词后继续核对集团操作记录。"
+  );
+  await expectVisibleBodyClean(page);
   await expect(page.getByTestId("m7-group-logs-subtitle")).toContainText(
     "操作日志 · 跨租户 · 显示 0 / 7 条"
   );
@@ -113,35 +114,41 @@ test("module chips and search filter rows with empty state", async ({ page }) =>
   });
 });
 
-test("export and detail actions stay browser-local only", async ({ page }) => {
+test("export and detail actions keep clean feedback with hidden boundaries", async ({
+  page
+}) => {
   await openGroupLogs(page);
+  await expect(page.getByTestId("m7-group-logs-export")).toHaveAttribute(
+    "aria-label",
+    "导出集团日志"
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-group-logs-export"));
   await page.getByTestId("m7-group-logs-export").click();
-  await expectLocalToast(page, [
-    "browser-local only",
-    "7 synthetic audit rows",
-    "no production audit export",
-    "no file written",
-    "no audit runtime call"
-  ]);
+  await expectLocalToast(page, ["已准备导出范围", "7 条记录", "本页可继续筛选核对"]);
 
-  await page.getByRole("button", { name: /本地预览日志详情 AI 成员 agent-02/ }).click();
-  await expectLocalToast(page, [
-    "AI 成员 / agent-02 detail preview",
-    "no real tenant/action navigation",
-    "no audit runtime call"
-  ]);
+  const detail = page.getByRole("button", { name: /查看日志详情 AI 成员 agent-02/ });
+  await expectRuntimeBoundary(detail);
+  await detail.click();
+  await expectLocalToast(page, ["详情预览已打开", "AI 成员 / agent-02"]);
+  await expectVisibleBodyClean(page);
 });
 
 test("forced URL states stay deterministic", async ({ page }) => {
+  const stateCopy: Record<string, string> = {
+    empty: "暂无集团日志",
+    error: "集团日志暂不可用",
+    loading: "正在载入集团日志",
+    permission: "需要集团日志权限"
+  };
   for (const state of ["loading", "empty", "error", "permission", "degraded"]) {
     await openGroupLogs(page, `?state=${state}`);
     const target =
       state === "degraded"
         ? page.getByTestId("m7-group-logs-runtime-note")
         : page.getByTestId(`m7-group-logs-state-${state}`);
-    await expect(target).toContainText("browser-local only");
-    await expect(target).toContainText("no production audit export");
-    await expect(target).toContainText("no audit runtime call");
+    await expectRuntimeBoundary(target);
+    if (state !== "degraded") await expect(target).toContainText(stateCopy[state]);
+    await expectVisibleBodyClean(page);
   }
 });
 
@@ -155,6 +162,7 @@ test("collapsed sidebar and mobile 320 fallback stay bounded", async ({ page }) 
   await openGroupLogs(page);
   await expect(page.getByTestId("m7-group-logs-page")).toBeVisible();
   await expect(page.locator(".uz-glog-card").first()).toBeVisible();
+  await expectVisibleBodyClean(page);
   expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
   await page.screenshot({
     fullPage: true,
@@ -179,6 +187,26 @@ async function expectLocalToast(page: Page, labels: readonly string[]) {
   await expect(toast).toHaveAttribute("role", "status");
   await expect(toast).toHaveAttribute("aria-live", "polite");
   for (const label of labels) await expect(toast).toContainText(label);
+  await expectRuntimeBoundary(toast);
+}
+
+async function expectVisibleBodyClean(page: Page) {
+  const visibleBody = await page.evaluate(() => document.body.innerText);
+  for (const term of forbiddenVisibleTerms) {
+    expect(visibleBody.toLowerCase()).not.toContain(term.toLowerCase());
+  }
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function expectPressedChipReadable(chip: Locator) {
@@ -261,6 +289,20 @@ async function expectLayerNav(
 }
 
 async function collectMetrics(page: Page) {
+  const visibleText = await page.evaluate(() => document.body.innerText);
+  const boundaryText = await page.evaluate(() =>
+    Array.from(document.querySelectorAll("[data-runtime-boundary]"))
+      .map((node) => {
+        const element = node as HTMLElement;
+        return [
+          element.getAttribute("data-runtime-boundary") ?? "",
+          element.getAttribute("title") ?? "",
+          element.getAttribute("aria-description") ?? "",
+          element.textContent ?? ""
+        ].join(" ");
+      })
+      .join(" ")
+  );
   return {
     activeModule: await page.getByTestId("m7-group-logs-active-module").textContent(),
     activePageId: await page
@@ -278,6 +320,13 @@ async function collectMetrics(page: Page) {
       .evaluate((node) => Math.round((node as HTMLElement).offsetWidth)),
     topbarHeight: await page
       .locator(".uz-topbar")
-      .evaluate((node) => (node as HTMLElement).offsetHeight)
+      .evaluate((node) => (node as HTMLElement).offsetHeight),
+    runtimeLabelsPresent: runtimeLabels.every((label) => boundaryText.includes(label)),
+    runtimeLabelsVisibleInBody: runtimeLabels.some((label) =>
+      visibleText.toLowerCase().includes(label.toLowerCase())
+    ),
+    visibleBodyClean: forbiddenVisibleTerms.every(
+      (term) => !visibleText.toLowerCase().includes(term.toLowerCase())
+    )
   };
 }

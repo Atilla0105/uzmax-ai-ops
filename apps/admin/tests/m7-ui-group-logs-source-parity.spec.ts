@@ -16,8 +16,6 @@ const tenantLabels =
 const groupSections = ["总览", "平台", "治理"];
 const tenantSections = ["运营", "数据", "智能", "管理", "洞察"];
 const ownerChipLabels = "全部模块|AI 成员|连接中心|配置|租户管理|对话|工单".split("|");
-const unpackedChipLabels =
-  "全部模块|AI 成员|连接中心|配置|对话|模板中心|工单|租户管理".split("|");
 const tableColumns = "操作时间|租户|操作人|操作模块|操作功能|操作对象|操作内容".split(
   "|"
 );
@@ -101,7 +99,8 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
   expect(desktopMetrics.topbarHeight).toBeGreaterThanOrEqual(52);
   expect(desktopMetrics.topbarHeight).toBeLessThanOrEqual(53);
   expect(desktopMetrics.sourceLikeDefaultVisible).toBe(true);
-  expect(desktopMetrics.runtimeLabelsVisible).toBe(true);
+  expect(desktopMetrics.runtimeLabelsPresent).toBe(true);
+  expect(desktopMetrics.runtimeLabelsVisible).toBe(false);
   expect(desktopMetrics.sidebarCategories).toEqual(groupSections);
   expect(desktopMetrics.tenantButtonCount).toBe(0);
   expect(desktopMetrics.tenantCategoryCount).toBe(0);
@@ -120,21 +119,13 @@ test("captures owner HTML conflict and React source-parity page", async ({ page 
 
   await page.getByTestId("m7-group-logs-search").fill("");
   await page.getByTestId("m7-group-logs-export").click();
-  await expectLocalToast(page, [
-    "browser-local only",
-    "7 synthetic audit rows",
-    "no production audit export",
-    "no file written",
-    "no audit runtime call"
-  ]);
-  await page.getByRole("button", { name: /本地预览日志详情 AI 成员 agent-02/ }).click();
-  await expectLocalToast(page, [
-    "AI 成员 / agent-02 detail preview",
-    "no real tenant/action navigation",
-    "no audit runtime call"
-  ]);
+  await expectLocalToast(page, ["已准备导出范围", "7 条记录", "本页可继续筛选核对"]);
+  await page.getByRole("button", { name: /查看日志详情 AI 成员 agent-02/ }).click();
+  await expectLocalToast(page, ["详情预览已打开", "AI 成员 / agent-02"]);
   const actionMetrics = await collectGroupLogMetrics(page);
   expect(actionMetrics.sourceLikeLocalToastVisible).toBe(true);
+  expect(actionMetrics.runtimeLabelsPresent).toBe(true);
+  expect(actionMetrics.runtimeLabelsVisible).toBe(false);
   await saveShot(page, "react-group-logs-local-action.png", true);
 
   await page.getByRole("button", { name: "Collapse navigation" }).click();
@@ -198,6 +189,19 @@ async function expectLocalToast(page: Page, labels: readonly string[]) {
   await expect(toast).toHaveAttribute("role", "status");
   await expect(toast).toHaveAttribute("aria-live", "polite");
   for (const label of labels) await expect(toast).toContainText(label);
+  await expectRuntimeBoundary(toast);
+}
+
+async function expectRuntimeBoundary(locator: Locator) {
+  const text = await locator.evaluate((node) =>
+    [
+      node.getAttribute("data-runtime-boundary") ?? "",
+      node.getAttribute("title") ?? "",
+      node.getAttribute("aria-description") ?? "",
+      node.textContent ?? ""
+    ].join(" ")
+  );
+  for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
 async function saveShot(page: Page, name: string, fullPage = false) {
@@ -274,6 +278,20 @@ async function collectGroupLogMetrics(page: Page) {
     .locator('[data-testid="app-shell-nav"] .uz-nav-group p')
     .allTextContents();
   const visibleText = await page.locator("body").innerText();
+  const fullText = await page.locator("body").textContent();
+  const boundaryText = await page.evaluate(() =>
+    Array.from(document.querySelectorAll("[data-runtime-boundary]"))
+      .map((node) => {
+        const element = node as HTMLElement;
+        return [
+          element.getAttribute("data-runtime-boundary") ?? "",
+          element.getAttribute("title") ?? "",
+          element.getAttribute("aria-description") ?? "",
+          element.textContent ?? ""
+        ].join(" ");
+      })
+      .join(" ")
+  );
   const tableColumnTexts = await page.locator(".uz-glog-table th").allTextContents();
   const rowTexts = await page.locator(".uz-glog-row").allTextContents();
   const toastText = await optionalText(page.getByTestId("m7-group-logs-toast"));
@@ -286,7 +304,7 @@ async function collectGroupLogMetrics(page: Page) {
       .count()
       .then((count) => count >= 5),
     export: (await width(page.getByTestId("m7-group-logs-export"))) > 0,
-    localToast: toastText.includes("browser-local only"),
+    localToast: toastText.includes("详情预览已打开"),
     panel: (await width(page.locator(".uz-glog-panel"))) > 0,
     rows: rowTexts.length === 7 && rowTexts.some((row) => row.includes("复制模板")),
     search:
@@ -316,6 +334,9 @@ async function collectGroupLogMetrics(page: Page) {
     panelWidth: await width(page.locator(".uz-glog-panel")),
     rowHeight: rowTexts.length ? await height(page.locator(".uz-glog-row").first()) : 0,
     rowTexts,
+    runtimeLabelsPresent: runtimeLabels.every((label) =>
+      `${boundaryText} ${fullText ?? ""}`.includes(label)
+    ),
     runtimeLabelsVisible: includesAll(visibleText, runtimeLabels),
     searchWidth: await width(page.locator(".uz-glog-search")),
     shellLevel: await page.getByTestId("admin-shell").getAttribute("data-shell-level"),
@@ -356,33 +377,28 @@ async function height(locator: Locator) {
 }
 
 function writeSourceMappingSummary() {
-  const sources: Record<keyof typeof sourceFiles, string> = {
-    fixtures: readFileSync(sourceFiles.fixtures, "utf8"),
-    navigation: readFileSync(sourceFiles.navigation, "utf8"),
-    page: readFileSync(sourceFiles.page, "utf8")
-  };
+  const sourcesText = Object.values(sourceFiles)
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
   const owner = readFileSync(ownerHtml, "utf8");
-  const joined = `${sources.page}\n${sources.fixtures}\n${sources.navigation}`;
   const templateStart = owner.indexOf("<!-- ===== 集团日志 ===== -->");
   const tableStart = owner.indexOf("<table", templateStart);
-  const malformedLoop =
-    templateStart > -1 &&
-    owner.indexOf("gLogRows", templateStart) > -1 &&
-    owner.indexOf("gLogRows", templateStart) < tableStart;
   const mapping = {
     conflict: {
-      ownerBundleAndUnpackedRowsPresent: includesAll(joined, [
+      ownerBundleAndUnpackedRowsPresent: includesAll(sourcesText, [
         "GLOG_BASE",
         "恢复白桦母婴 AI",
         "订单 API 降级为导入兜底",
         "复制模板"
       ]),
-      ownerBundleTableTemplateMalformed: malformedLoop,
+      ownerBundleTableTemplateMalformed:
+        templateStart > -1 &&
+        owner.indexOf("gLogRows", templateStart) > -1 &&
+        owner.indexOf("gLogRows", templateStart) < tableStart,
       ownerChipTemplateExcludesTemplateCenter: owner.includes(
         "const gLogChipDefs=['全部模块','AI 成员','连接中心','配置','租户管理','对话','工单'];"
       ),
-      ownerRenderedTableConflictStatus: "rendered_table_blank_due_malformed_sc_for",
-      unpackedChipsIncludeTemplateCenter: sources.fixtures.includes("模板中心")
+      ownerRenderedTableConflictStatus: "rendered_table_blank_due_malformed_sc_for"
     },
     decision: {
       ownerHtmlRole:
@@ -392,30 +408,7 @@ function writeSourceMappingSummary() {
       unpacked6Role:
         "secondary structured table/row source because owner rendered table cells are blank"
     },
-    filesRead: [ownerHtml, ...Object.values(sourceFiles)],
-    ownerHtmlBundle: {
-      chips: ownerChipLabels.filter((label) => owner.includes(label)),
-      emptyTextTemplatePresent: owner.includes("没有匹配「{{ gLogSearchVal }}」的记录"),
-      searchPlaceholderPresent: owner.includes("搜索租户 / 操作人 / 对象 / 内容…"),
-      tableColumns: tableColumns.filter((label) => owner.includes(label)),
-      tableTemplatePresent: includesAll(owner, ["gLogCols", "gLogRows", "gLogBase"])
-    },
-    unpacked6: {
-      columns: tableColumns.filter((label) => joined.includes(label)),
-      moduleChips: unpackedChipLabels.filter((label) =>
-        sources.fixtures.includes(label)
-      ),
-      navigationGroupLogs: includesAll(sources.navigation, ["治理", "集团日志"]),
-      rows: [
-        "恢复白桦母婴 AI",
-        "订单 API 降级为导入兜底",
-        "日成本上限 ¥180",
-        "退款诉求",
-        "复制模板",
-        "关闭工单",
-        "停用租户"
-      ].filter((label) => joined.includes(label))
-    }
+    filesRead: [ownerHtml, ...Object.values(sourceFiles)]
   };
   writeJson("unpacked-group-logs-source-mapping.json", mapping);
   return mapping;

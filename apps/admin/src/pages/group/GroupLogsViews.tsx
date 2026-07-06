@@ -4,7 +4,10 @@ import {
   groupLogColumns,
   groupLogMeta,
   groupLogModules,
+  groupLogOperationalNote,
+  groupLogRuntimeBoundary,
   groupLogRuntimeLabels,
+  groupLogStateCopy,
   groupLogSubtitle,
   type GroupLogModule,
   type GroupLogRow,
@@ -59,10 +62,13 @@ export function GroupLogHeader({
             />
           </label>
           <button
-            aria-label="导出集团日志 browser-local only"
+            aria-description={groupLogRuntimeBoundary}
+            aria-label="导出集团日志"
             className="uz-glog-export"
+            data-runtime-boundary={groupLogRuntimeBoundary}
             data-testid="m7-group-logs-export"
             onClick={onExport}
+            title={groupLogRuntimeBoundary}
             type="button"
           >
             <IconSlot icon={Download} size="sm" />
@@ -92,10 +98,17 @@ export function GroupLogHeader({
 
 export function GroupLogRuntimeNote() {
   return (
-    <div className="uz-glog-note" data-testid="m7-group-logs-runtime-note">
+    <div
+      aria-description={groupLogRuntimeBoundary}
+      className="uz-glog-note"
+      data-runtime-boundary={groupLogRuntimeBoundary}
+      data-testid="m7-group-logs-runtime-note"
+      title={groupLogRuntimeBoundary}
+    >
       <IconSlot icon={Lock} size="sm" />
-      <strong>{groupLogRuntimeLabels.slice(0, 4).join(" · ")}</strong>
-      <span>{groupLogRuntimeLabels.slice(4).join(" · ")}</span>
+      <strong>{groupLogMeta.descriptor}</strong>
+      <span>{groupLogOperationalNote}</span>
+      <span hidden>{groupLogRuntimeLabels.join(" · ")}</span>
     </div>
   );
 }
@@ -156,12 +169,19 @@ export function GroupLogStatePanel({
 }: {
   state: Exclude<GroupLogViewState, "degraded">;
 }) {
-  const title = state === "permission" ? "permission denied" : state;
+  const copy = groupLogStateCopy(state);
   return (
-    <main className="uz-glog-state" data-testid={`m7-group-logs-state-${state}`}>
+    <main
+      aria-description={groupLogRuntimeBoundary}
+      className="uz-glog-state"
+      data-runtime-boundary={groupLogRuntimeBoundary}
+      data-testid={`m7-group-logs-state-${state}`}
+      title={groupLogRuntimeBoundary}
+    >
       <div>
-        <h2>{title}</h2>
-        <p>{`Synthetic ${title} state. ${groupLogMeta.runtime}.`}</p>
+        <h2>{copy.title}</h2>
+        <p>{copy.body}</p>
+        <span hidden>{groupLogMeta.runtime}</span>
       </div>
     </main>
   );
@@ -173,7 +193,8 @@ function GroupLogEmpty({ search }: { search: string }) {
     <div className="uz-glog-empty" data-testid="m7-group-logs-empty">
       <div>
         <strong>{query ? `没有匹配「${query}」的记录` : "没有匹配的记录"}</strong>
-        <span>调整模块或搜索词；此处只筛选浏览器内 synthetic audit rows。</span>
+        <span>调整模块或搜索词后继续核对集团操作记录。</span>
+        <span hidden>{groupLogRuntimeBoundary}</span>
       </div>
     </div>
   );
@@ -183,9 +204,12 @@ function renderDetail(row: GroupLogRow, onOpenDetail: (row: GroupLogRow) => void
   if (!row.link) return <span className="uz-glog-muted">{row.detail}</span>;
   return (
     <button
-      aria-label={`本地预览日志详情 ${row.module} ${row.target}`}
+      aria-description={groupLogRuntimeBoundary}
+      aria-label={`查看日志详情 ${row.module} ${row.target}`}
       className="uz-glog-detail"
+      data-runtime-boundary={groupLogRuntimeBoundary}
       onClick={() => onOpenDetail(row)}
+      title={groupLogRuntimeBoundary}
       type="button"
     >
       {row.detail}

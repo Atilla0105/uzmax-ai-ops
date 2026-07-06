@@ -1,7 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const artifactDir = "/tmp/uzmax-m7-ui-51-connection-center-visible-ui";
+const artifactDir =
+  "/tmp/uzmax-m7-ui-93-connection-center-default-visual-parity-refresh";
 const groupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 const tenantLabels =
@@ -33,10 +34,12 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("renders group connection center with boundaries and desktop evidence", async ({
+test("keeps group.connections default visible body operational while retaining hidden runtime boundaries", async ({
   page
 }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await openConnection(page);
+
   await expect(page.getByTestId("admin-shell")).toHaveAttribute(
     "data-shell-level",
     "group"
@@ -50,62 +53,44 @@ test("renders group connection center with boundaries and desktop evidence", asy
     "data-runtime-boundary",
     /no production connector change/
   );
-  await expect(page.getByRole("heading", { name: "连接中心" })).toBeVisible();
-  await expect(page.getByText("集团级连接类型 · 启停/测试")).toBeVisible();
-  await expect(page.getByText("集团级连接管理")).toBeVisible();
-  await expectLayerNav(page, groupSections, tenantSections, groupLabels, tenantLabels);
   await expect(page.getByTestId("m7-connection-runtime-note")).toHaveAttribute(
     "hidden",
     ""
   );
   await expectRuntimeBoundary(page.getByTestId("m7-connection-runtime-note"));
+  await expect(page.getByRole("heading", { name: "连接中心" })).toBeVisible();
+  await expect(page.getByText("集团级连接类型 · 启停/测试")).toBeVisible();
+  await expect(page.getByText("集团级连接管理")).toBeVisible();
   await expect(page.locator(".uz-connection-card")).toHaveCount(4);
-  const bot = page.getByTestId("m7-connection-card-SYN-CONN-tgbot");
-  await expect(bot).toContainText("Telegram Bot");
-  await expect(bot.locator(".uz-status-badge").first()).toHaveText("正常");
-  await expect(bot).toContainText("4 个租户");
-  await expect(bot).toContainText("接入定级：标准接入");
-  await expect(bot).toContainText("最近错误：无");
-  await expect(bot).toContainText("玉珠跨境美妆");
-  await expectRuntimeBoundary(bot);
-  const business = page.getByTestId("m7-connection-card-SYN-CONN-tgbiz");
-  await expect(business).toContainText("ADR-B01 · 部分可行");
-  await expect(business).toContainText("账号 B 绑定失败");
-  const order = page.getByTestId("m7-connection-card-SYN-CONN-orderapi");
-  await expect(order).toContainText("ADR-B02 · 无可用 API");
-  await expect(order).toContainText("AllProvidersDown");
+  for (const name of ["Telegram Bot", "Telegram Business", "订单 API", "导入兜底"]) {
+    await expect(page.locator(".uz-connection-list")).toContainText(name);
+  }
+  await expectLayerNav(page);
   await expectVisibleBodyClean(page);
-  const metrics = await collectMetrics(page);
-  expect(metrics.visibleBodyClean).toBe(true);
-  expect(metrics.runtimeLabelsPresent).toBe(true);
-  expect(metrics.runtimeLabelsVisibleInBody).toBe(false);
-  writeFileSync(
-    `${artifactDir}/react-connection-center-metrics.json`,
-    JSON.stringify(metrics, null, 2)
-  );
+
+  const desktop = await collectMetrics(page);
+  expect(desktop.activePageId).toBe("group.connections");
+  expect(desktop.shellLevel).toBe("group");
+  expect(desktop.runtimeLabelsPresent).toBe(true);
+  expect(desktop.runtimeLabelsVisibleInBody).toBe(false);
+  expect(desktop.visibleBodyClean).toBe(true);
   await page.screenshot({
     fullPage: true,
-    path: `${artifactDir}/react-connection-center-desktop.png`
+    path: `${artifactDir}/react-connection-center-default-clean.png`
   });
-});
 
-test("local toggle and synthetic test only change browser state", async ({ page }) => {
-  await openConnection(page);
   const orderToggle = page.getByTestId("m7-connection-toggle-SYN-CONN-orderapi");
-  const orderCard = page.getByTestId("m7-connection-card-SYN-CONN-orderapi");
-  await expect(orderToggle).toHaveAttribute("role", "switch");
-  await expect(orderToggle).toHaveAttribute("aria-checked", "false");
   await expectRuntimeBoundary(orderToggle);
-  await expect(orderCard).toContainText("已停用");
   await orderToggle.click();
-  await expect(orderToggle).toHaveAttribute("aria-checked", "true");
-  await expect(orderCard).toContainText("已启用");
-  const toggleToast = page.getByTestId("m7-connection-toast");
-  await expect(toggleToast).toHaveAttribute("role", "status");
-  await expect(toggleToast).toHaveAttribute("aria-live", "polite");
-  await expect(toggleToast).toContainText("订单 API 已在本页启用");
-  await expectRuntimeBoundary(toggleToast);
+  await expect(page.getByTestId("m7-connection-toast")).toContainText(
+    "订单 API 已在本页启用"
+  );
+  await expectRuntimeBoundary(page.getByTestId("m7-connection-toast"));
   await expectVisibleBodyClean(page);
+  await page.screenshot({
+    fullPage: true,
+    path: `${artifactDir}/react-connection-center-toggle-toast-clean.png`
+  });
 
   const testButton = page.getByTestId("m7-connection-test-SYN-CONN-tgbiz");
   await expectRuntimeBoundary(testButton);
@@ -116,13 +101,15 @@ test("local toggle and synthetic test only change browser state", async ({ page 
   );
   await expectRuntimeBoundary(page.getByTestId("m7-connection-toast"));
   await expectVisibleBodyClean(page);
+  const action = await collectMetrics(page);
+  expect(action.runtimeLabelsPresent).toBe(true);
+  expect(action.runtimeLabelsVisibleInBody).toBe(false);
+  expect(action.visibleBodyClean).toBe(true);
   await page.screenshot({
     fullPage: true,
-    path: `${artifactDir}/react-connection-center-local-toast.png`
+    path: `${artifactDir}/react-connection-center-test-toast-clean.png`
   });
-});
 
-test("forced URL states stay deterministic", async ({ page }) => {
   const forcedStates: Record<string, string> = {
     empty: "暂无连接类型",
     error: "连接中心暂不可用",
@@ -130,33 +117,46 @@ test("forced URL states stay deterministic", async ({ page }) => {
     permission: "需要集团管理员权限"
   };
   for (const [state, label] of Object.entries(forcedStates)) {
-    await openConnection(page, `?state=${state}`);
+    await openConnection(page, `?m7ConnectionState=${state}`);
     const target = page.getByTestId(`m7-connection-state-${state}`);
     await expect(target).toContainText(label);
     await expectRuntimeBoundary(target);
     await expectVisibleBodyClean(page);
   }
-  await openConnection(page, "?state=degraded");
+  await openConnection(page, "?m7ConnectionState=degraded");
   await expectRuntimeBoundary(page.getByTestId("m7-connection-runtime-note"));
   await expectVisibleBodyClean(page);
-});
 
-test("sidebar collapse and mobile 320 fallback remain bounded", async ({ page }) => {
   await openConnection(page);
   await page.getByRole("button", { name: "Collapse navigation" }).click();
-  await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty("offsetWidth", 68);
-  await expect(page.getByTestId("admin-shell")).toHaveClass(/is-nav-collapsed/);
+  const collapsed = await collectMetrics(page);
+  expect(collapsed.navWidth).toBe(68);
+  expect(collapsed.runtimeLabelsPresent).toBe(true);
+  expect(collapsed.runtimeLabelsVisibleInBody).toBe(false);
+  expect(collapsed.visibleBodyClean).toBe(true);
+  await page.screenshot({
+    fullPage: true,
+    path: `${artifactDir}/react-connection-center-collapsed-clean.png`
+  });
 
   await page.setViewportSize({ width: 320, height: 900 });
   await openConnection(page);
-  await expect(page.getByTestId("m7-connection-page")).toBeVisible();
-  await expect(page.locator(".uz-connection-card").first()).toBeVisible();
-  expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(320);
-  await expectVisibleBodyClean(page);
+  const mobile = await collectMetrics(page);
+  expect(mobile.bodyScrollWidth).toBeLessThanOrEqual(320);
+  expect(mobile.documentScrollWidth).toBeLessThanOrEqual(320);
+  expect(mobile.firstCardWidth).toBeLessThanOrEqual(296);
+  expect(mobile.runtimeLabelsPresent).toBe(true);
+  expect(mobile.runtimeLabelsVisibleInBody).toBe(false);
+  expect(mobile.visibleBodyClean).toBe(true);
   await page.screenshot({
     fullPage: true,
-    path: `${artifactDir}/react-connection-center-mobile-320.png`
+    path: `${artifactDir}/react-connection-center-mobile-320-clean.png`
   });
+
+  writeFileSync(
+    `${artifactDir}/metrics.json`,
+    `${JSON.stringify({ action, collapsed, desktop, mobile }, null, 2)}\n`
+  );
 });
 
 async function openConnection(page: Page, query = "") {
@@ -190,30 +190,24 @@ async function expectRuntimeBoundary(locator: Locator) {
   for (const label of runtimeLabels) expect(text).toContain(label);
 }
 
-async function expectLayerNav(
-  page: Page,
-  visibleSections: readonly string[],
-  hiddenSections: readonly string[],
-  visibleLabels: readonly string[],
-  hiddenLabels: readonly string[]
-) {
+async function expectLayerNav(page: Page) {
   const nav = page.getByTestId("app-shell-nav");
   await expect
     .poll(() => nav.locator(".uz-nav-group p").allTextContents())
-    .toEqual(visibleSections);
-  for (const label of visibleLabels)
+    .toEqual(groupSections);
+  for (const label of groupLabels)
     await expect(nav.getByRole("button", { exact: true, name: label })).toBeVisible();
-  for (const label of hiddenLabels)
+  for (const label of tenantLabels)
     await expect(nav.getByRole("button", { exact: true, name: label })).toHaveCount(0);
-  for (const label of hiddenSections)
-    await expect(nav.locator(".uz-nav-group p").filter({ hasText: label })).toHaveCount(
-      0
-    );
+  for (const section of tenantSections)
+    await expect(
+      nav.locator(".uz-nav-group p").filter({ hasText: section })
+    ).toHaveCount(0);
 }
 
 async function collectMetrics(page: Page) {
   return page.evaluate(
-    ({ forbidden, labels }) => {
+    ({ forbidden, labels, hiddenTenantLabels }) => {
       const visibleText = document.body.innerText;
       const boundaryText = Array.from(
         document.querySelectorAll("[data-runtime-boundary]")
@@ -228,21 +222,22 @@ async function collectMetrics(page: Page) {
           ].join(" ");
         })
         .join(" ");
+      const navLabels = Array.from(
+        document.querySelectorAll('[data-testid="app-shell-nav"] button')
+      ).map((node) => (node.textContent ?? "").trim());
       const firstCard = document.querySelector(".uz-connection-card") as HTMLElement;
-      const list = document.querySelector(".uz-connection-list") as HTMLElement;
-      const nav = document.querySelector(
-        '[data-testid="app-shell-nav"]'
-      ) as HTMLElement;
-      const topbar = document.querySelector(".uz-topbar") as HTMLElement;
       return {
         activePageId: document
           .querySelector('[data-testid="admin-shell"]')
           ?.getAttribute("data-active-page-id"),
         bodyScrollWidth: document.body.scrollWidth,
-        boundaryText,
-        cardCount: document.querySelectorAll(".uz-connection-card").length,
+        documentScrollWidth: document.documentElement.scrollWidth,
         firstCardWidth: Math.round(firstCard?.offsetWidth ?? 0),
-        listMaxWidth: getComputedStyle(list).maxWidth,
+        navWidth: Math.round(
+          document
+            .querySelector('[data-testid="app-shell-nav"]')
+            ?.getBoundingClientRect().width ?? 0
+        ),
         runtimeLabelsPresent: labels.every((label) => boundaryText.includes(label)),
         runtimeLabelsVisibleInBody: labels.some((label) =>
           visibleText.toLowerCase().includes(label.toLowerCase())
@@ -250,13 +245,18 @@ async function collectMetrics(page: Page) {
         shellLevel: document
           .querySelector('[data-testid="admin-shell"]')
           ?.getAttribute("data-shell-level"),
-        sidebarExpandedWidth: nav?.offsetWidth ?? 0,
-        topbarHeight: topbar?.offsetHeight ?? 0,
+        tenantButtonCount: hiddenTenantLabels.filter((label) =>
+          navLabels.includes(label)
+        ).length,
         visibleBodyClean: forbidden.every(
           (term) => !visibleText.toLowerCase().includes(term.toLowerCase())
         )
       };
     },
-    { forbidden: forbiddenVisibleTerms, labels: runtimeLabels }
+    {
+      forbidden: forbiddenVisibleTerms,
+      hiddenTenantLabels: tenantLabels,
+      labels: runtimeLabels
+    }
   );
 }

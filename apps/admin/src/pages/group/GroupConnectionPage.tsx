@@ -11,6 +11,8 @@ import {
   connectionTestToast,
   connectionToggleToast,
   connectionMeta,
+  connectionRuntimeBoundary,
+  connectionRuntimeLabels,
   readConnectionViewState,
   type ConnectionCard
 } from "./groupConnectionFallback";
@@ -59,10 +61,13 @@ export function GroupConnectionPage() {
 
   return (
     <section
+      aria-description={connectionRuntimeBoundary}
       className="uz-connection-page"
+      data-runtime-boundary={connectionRuntimeBoundary}
       data-runtime-source={connectionMeta.source}
       data-runtime-state={viewState}
       data-testid="m7-connection-page"
+      title={connectionRuntimeBoundary}
     >
       <style>{connectionStyles}</style>
       <ConnectionHeader />
@@ -70,12 +75,16 @@ export function GroupConnectionPage() {
       {toast ? (
         <div
           aria-atomic="true"
+          aria-description={connectionRuntimeBoundary}
           aria-live="polite"
           className="uz-connection-toast"
+          data-runtime-boundary={connectionRuntimeBoundary}
           data-testid="m7-connection-toast"
           role="status"
+          title={connectionRuntimeBoundary}
         >
-          {toast}
+          <span hidden>{connectionRuntimeLabels.join(" · ")}</span>
+          <span>{toast}</span>
         </div>
       ) : null}
       {viewState === "degraded" ? (

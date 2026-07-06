@@ -3,7 +3,9 @@ import type { LucideIcon } from "lucide-react";
 import { IconSlot, StatusBadge, Toggle } from "../../primitives";
 import {
   connectionMeta,
+  connectionRuntimeBoundary,
   connectionRuntimeLabels,
+  connectionStateCopy,
   toneLabel,
   type ConnectionCard,
   type ConnectionIconKey,
@@ -45,7 +47,14 @@ export function ConnectionHeader() {
 
 export function ConnectionRuntimeNote() {
   return (
-    <div className="uz-connection-note" data-testid="m7-connection-runtime-note">
+    <div
+      aria-description={connectionRuntimeBoundary}
+      className="uz-connection-note"
+      data-runtime-boundary={connectionRuntimeBoundary}
+      data-testid="m7-connection-runtime-note"
+      hidden
+      title={connectionRuntimeBoundary}
+    >
       <IconSlot icon={Lock} size="sm" />
       <strong>{connectionRuntimeLabels.slice(0, 3).join(" · ")}</strong>
       <span>{connectionRuntimeLabels.slice(3).join(" · ")}</span>
@@ -54,11 +63,19 @@ export function ConnectionRuntimeNote() {
 }
 
 export function ConnectionStatePanel({ state }: StateProps) {
+  const copy = connectionStateCopy[state];
   return (
-    <main className="uz-connection-state" data-testid={`m7-connection-state-${state}`}>
+    <main
+      aria-description={connectionRuntimeBoundary}
+      className="uz-connection-state"
+      data-runtime-boundary={connectionRuntimeBoundary}
+      data-testid={`m7-connection-state-${state}`}
+      title={connectionRuntimeBoundary}
+    >
       <div>
-        <h2>{state}</h2>
-        <p>{`Synthetic ${state} state. ${connectionMeta.runtime}.`}</p>
+        <h2>{copy.title}</h2>
+        <p>{copy.body}</p>
+        <span hidden>{connectionRuntimeLabels.join(" · ")}</span>
       </div>
     </main>
   );
@@ -93,8 +110,11 @@ function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardPr
   const Icon = iconMap[card.icon];
   return (
     <article
+      aria-description={connectionRuntimeBoundary}
       className="uz-connection-card"
+      data-runtime-boundary={connectionRuntimeBoundary}
       data-testid={`m7-connection-card-${card.id}`}
+      title={connectionRuntimeBoundary}
     >
       <span className="uz-connection-icon">
         <IconSlot icon={Icon} size="lg" />
@@ -103,7 +123,7 @@ function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardPr
         <div className="uz-connection-card-head">
           <strong>{card.title}</strong>
           <StatusBadge tone={healthTone}>{card.health}</StatusBadge>
-          <span className="uz-connection-sr-only">{`mock ${card.health}`}</span>
+          <span hidden>{`mock ${card.health}`}</span>
           {card.adr ? (
             <span className="uz-connection-adr">
               {`${card.adr} · ${card.adrVerdict}`}
@@ -115,15 +135,15 @@ function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardPr
           <span>
             <strong>覆盖租户 </strong>
             {card.tenantCount}
-            <span className="uz-connection-sr-only">{`mock ${card.tenantCount}`}</span>
+            <span hidden>{`mock ${card.tenantCount}`}</span>
           </span>
           <span className="uz-connection-mono">
             {`接入定级：${card.spike}`}
-            <span className="uz-connection-sr-only">{`接入定级：mock ${card.spike}`}</span>
+            <span hidden>{`接入定级：mock ${card.spike}`}</span>
           </span>
           <span className={`uz-connection-error${recentErrorClear ? " is-clear" : ""}`}>
             {`最近错误：${card.recentError}`}
-            <span className="uz-connection-sr-only">{`最近错误：mock ${card.recentError}`}</span>
+            <span hidden>{`最近错误：mock ${card.recentError}`}</span>
           </span>
         </div>
         <div className="uz-connection-tenants" aria-label={`${card.title} 租户`}>
@@ -137,24 +157,28 @@ function ConnectionCardItem({ card, enabled, onTest, onToggle, testing }: CardPr
       <div className="uz-connection-controls">
         <div className="uz-connection-switch-row">
           <Toggle
-            aria-label={`${card.title} browser-local enabled preview`}
+            aria-description={connectionRuntimeBoundary}
+            aria-label={`${card.title} 启停预览`}
             checked={enabled}
+            data-runtime-boundary={connectionRuntimeBoundary}
             data-testid={`m7-connection-toggle-${card.id}`}
             onClick={() => onToggle(card)}
+            title={connectionRuntimeBoundary}
           />
           <span className={`uz-connection-state-label ${enabled ? "is-on" : "is-off"}`}>
             {enabled ? "已启用" : "已停用"}
-            <span className="uz-connection-sr-only">
-              {enabled ? "mock 已启用" : "mock 已停用"}
-            </span>
+            <span hidden>{enabled ? "mock 已启用" : "mock 已停用"}</span>
           </span>
         </div>
         <button
+          aria-description={connectionRuntimeBoundary}
           aria-busy={testing}
           className="uz-connection-action"
+          data-runtime-boundary={connectionRuntimeBoundary}
           data-testid={`m7-connection-test-${card.id}`}
           disabled={testing}
           onClick={() => onTest(card)}
+          title={connectionRuntimeBoundary}
           type="button"
         >
           {testing ? "测试中..." : "测试连接"}

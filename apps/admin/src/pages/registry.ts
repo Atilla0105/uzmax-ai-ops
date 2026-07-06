@@ -114,7 +114,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-11-release-acceptance-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "租户管理",
     id: "group.tenants",
     label: "租户管理",
@@ -124,9 +125,9 @@ const adminPageRegistry = [
     order: 6,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupTenantPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupTenantPage.tsx",
-    targetSpecId: "M7-UI-04F-group-tenant"
+    targetSpecId: "M7-UI-52-tenant-management-page"
   },
   {
     evidenceStatus: "not_started",

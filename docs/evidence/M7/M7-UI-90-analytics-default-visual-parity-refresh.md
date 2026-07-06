@@ -101,7 +101,7 @@ Completed validation:
 - PASS: `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node scripts/guards/pr-shape.mjs --base codex/m7-ui-89-config-default-visual-parity-refresh --spec docs/specs/M7-UI-90-analytics-default-visual-parity-refresh.md --include-worktree`
   - changedFiles `9`
   - categories: `source=2`, `test=3`, `docs=4`
-  - source changedFiles `2`, source netLoc `0`, new source files `0`
+  - source changedFiles `2`, source netLoc `41`, new source files `0`
 - PASS: touched Prettier:
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/prettier/bin/prettier.cjs --check apps/admin/src/pages/analytics/AnalyticsPage.tsx apps/admin/src/pages/analytics/analyticsFallback.ts apps/admin/tests/m7-ui-analytics-page.spec.ts apps/admin/tests/m7-ui-analytics-source-parity.spec.ts apps/admin/tests/m7-ui-analytics-default-visual-parity.spec.ts docs/specs/M7-UI-90-analytics-default-visual-parity-refresh.md`
 - PASS: touched ESLint:

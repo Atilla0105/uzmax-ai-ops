@@ -53,8 +53,56 @@ jobs:
           base="${{ steps.guard-base.outputs.base }}"
           if git rev-parse --verify "$base" >/dev/null 2>&1; then
             changed_files="$(git diff --name-only "$base" HEAD)"
+            diff_base="$base"
           else
             changed_files="$(git diff --name-only HEAD^ HEAD)"
+            diff_base="HEAD^"
+          fi
+
+          workflow_m5r_true_db_closeout_changed=false
+          if printf '%s\n' "$changed_files" | grep -Fxq ".github/workflows/ci.yml"; then
+            m5r_step_start="$(
+              grep -n "^        name: Apply M5R dev smoke migrations$" .github/workflows/ci.yml |
+                cut -d: -f1 |
+                head -n 1 || true
+            )"
+            m5r_step_end="$(
+              grep -n "^        name: SPK-03 RLS Prisma pool spike$" .github/workflows/ci.yml |
+                cut -d: -f1 |
+                head -n 1 || true
+            )"
+
+            if [ -z "$m5r_step_start" ] || [ -z "$m5r_step_end" ]; then
+              workflow_m5r_true_db_closeout_changed=true
+            else
+              m5r_step_start=$((m5r_step_start - 1))
+              if git diff --unified=0 "$diff_base" HEAD -- .github/workflows/ci.yml |
+                awk -v start="$m5r_step_start" -v end="$m5r_step_end" '
+                  /^@@ / {
+                    if (match($0, /\+[0-9]+(,[0-9]+)?/)) {
+                      added = substr($0, RSTART + 1, RLENGTH - 1)
+                      split(added, parts, ",")
+                      line = parts[1] + 0
+                    }
+                    next
+                  }
+                  /^\+/ && !/^\+\+\+/ {
+                    if (line >= start && line < end) found = 1
+                    line += 1
+                    next
+                  }
+                  /^-/ && !/^---/ {
+                    if (line >= start && line < end) found = 1
+                    next
+                  }
+                  {
+                    if (line > 0) line += 1
+                  }
+                  END { exit found ? 0 : 1 }
+                '; then
+                workflow_m5r_true_db_closeout_changed=true
+              fi
+            fi
           fi
 
           docs_only=true
@@ -62,7 +110,7 @@ jobs:
           redis_smoke_changed=false
           spike_changed=false
           true_db_smoke_changed=false
-          m5r_true_db_closeout_changed=false
+          m5r_true_db_closeout_changed="$workflow_m5r_true_db_closeout_changed"
 
           if [ -z "$changed_files" ]; then
             docs_only=false
@@ -104,7 +152,7 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/ci.yml|scripts/tests/m5r-true-integration-closeout.test.mjs|docs/specs/M5R-08-true-integration-closeout.md|docs/specs/M5R-08-true-db-ci-closeout.md|docs/evidence/M5R/M5R-08-true-integration-closeout.md|docs/evidence/M5R/README.md|docs/evidence/M5/README.md)
+              scripts/tests/m5r-true-integration-closeout.test.mjs|docs/specs/M5R-08-true-integration-closeout.md|docs/specs/M5R-08-true-db-ci-closeout.md|docs/evidence/M5R/M5R-08-true-integration-closeout.md|docs/evidence/M5R/README.md|docs/evidence/M5/README.md)
                 m5r_true_db_closeout_changed=true
                 ;;
             esac

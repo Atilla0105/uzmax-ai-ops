@@ -46,6 +46,9 @@ This slice adds a PR-level jscpd regression guard for the M7 stack. It does not 
 - Did not add a `guard:jscpd-regression` npm script; `package.json` remains unchanged.
 - Replaced the PR CI core jscpd step with `node scripts/guards/jscpd-regression.mjs --base "$JSCPD_REGRESSION_BASE"`.
 - Keeping `package.json` out of the diff avoids package-manifest path-scope triggering `run_true_db_smoke=true` solely to add a helper alias in this narrow CI guard PR.
+- GitHub CI run `28773022063` proved the direct `node scripts/guards/jscpd-regression.mjs --base "$JSCPD_REGRESSION_BASE"` guard path passed, then failed in `M5R true integration closeout` because the path-scope treated any `.github/workflows/ci.yml` diff as an M5R closeout change.
+- Narrowed the M5R closeout workflow scope so unrelated workflow changes, including this jscpd guard CI line, do not set `m5r_true_db_closeout_changed=true`.
+- Preserved M5R protection by keeping direct M5R test/spec/evidence path triggers, failing closed if M5R workflow anchors disappear, and treating workflow diffs inside the actual M5R true closeout step region as M5R changes.
 - Kept `npm run jscpd` and `jscpd.config.json` unchanged for absolute whole-repo duplicate debt checks.
 - Added a fail-closed guard that:
   - resolves the base ref to a commit;
@@ -66,7 +69,7 @@ This slice adds a PR-level jscpd regression guard for the M7 stack. It does not 
 
 ## Validation
 
-Validation status: `PASS`.
+Validation status: `PASS_AGAINST_PR_BASE_WITH_SCRIPT_NOTES`.
 
 Environment note:
 
@@ -75,8 +78,15 @@ Environment note:
 
 Final validation against `origin/codex/m7-ui-96a-stack-typecheck-cleanup`:
 
+- PASS: local CI path-scope smoke for the #240 diff
+  - Result: `workflow_m5r_true_db_closeout_changed=false`.
+  - Changed files included `.github/workflows/ci.yml`, the 96C spec/evidence/index, `scripts/guards/jscpd-regression.mjs` and `scripts/tests/jscpd-regression.test.mjs`.
+- PASS: temporary local M5R step-region probe, then reverted before final diff
+  - Result: `m5r_step_region_probe=true` when a temporary uncommitted edit touched the `Apply M5R dev smoke migrations` step region.
 - PASS: `npm run format:check`
   - Result: `All matched files use Prettier code style!`.
+- NOT RUN BY SCRIPT: `npm run prettier:check-ignore`
+  - Result: npm reported `Missing script: "prettier:check-ignore"` in current `package.json`.
 - PASS: `npm run guard:prettier-ignore -- --base origin/codex/m7-ui-96a-stack-typecheck-cleanup`
   - Result: `8 baseline file(s), 89/89 marker(s)` and diff check ok.
 - PASS: `npm run typecheck`
@@ -89,12 +99,21 @@ Final validation against `origin/codex/m7-ui-96a-stack-typecheck-cleanup`:
   - Base `fc30eb3b5559e9366a8ae62f04fa1223840b6c9a`: `141` clones, `2538` duplicated lines, `2.79%`, `17547` duplicated tokens, `3.31%`.
   - Head: `141` clones, `2538` duplicated lines, `2.78%`, `17547` duplicated tokens, `3.30%`.
   - Result: head did not worsen duplicate metrics.
+- PASS: `node scripts/guards/jscpd-regression.mjs --base codex/m7-ui-96a-stack-typecheck-cleanup`
+  - Local base resolved to `065c4e9d8a0bf63dcd38c33469d7cd6f366f67c4`, not the PR base head.
+  - Result: head did not worsen duplicate metrics.
 - PASS: `npm run guard:pr-shape -- --base origin/codex/m7-ui-96a-stack-typecheck-cleanup --spec docs/specs/M7-UI-96C-jscpd-regression-guard.md --include-worktree`
   - `changedFiles`: `6`
   - categories: config `1`, docs `3`, source `1`, test `1`
   - source budget: changed files `1`, net LOC `317`, new source files `1`
+- EXPECTED LOCAL REF MISMATCH: `npm run guard:pr-shape -- --base codex/m7-ui-96a-stack-typecheck-cleanup`
+  - Result: failed because the local same-name base ref is not the PR base and includes inherited #239 `apps/admin/**` and 96A doc deltas outside the 96C spec touch list.
+- NOT RUN BY SCRIPT: `npm run check:diff -- --base codex/m7-ui-96a-stack-typecheck-cleanup`
+  - Result: npm reported `Missing script: "check:diff"` in current `package.json`.
 - PASS: `git diff --check origin/codex/m7-ui-96a-stack-typecheck-cleanup...HEAD`
-- PASS: `npm run build:admin`
+- PASS: `npm test`
+  - Result: `466/466` tests passed.
+- PASS: `npm run build`
   - Existing Vite warning: bundle chunk larger than 500 kB after minification.
 
 ## Cleanup Status

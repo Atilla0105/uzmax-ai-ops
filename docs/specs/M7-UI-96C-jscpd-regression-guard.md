@@ -121,6 +121,11 @@ Search conclusions:
   - duplicated token percentage
 - The guard passes when every duplicate metric is less than or equal to base and prints both summaries.
 - CI uses `node scripts/guards/jscpd-regression.mjs --base "$JSCPD_REGRESSION_BASE"` in the core path.
+- CI must not run M5R true integration closeout solely because this narrow
+  guard PR changes unrelated `.github/workflows/ci.yml` lines.
+- M5R true integration closeout still triggers when its test/spec/evidence paths
+  change, when workflow anchors for the M5R closeout step are missing, or when
+  the workflow diff overlaps the actual M5R true closeout step region.
 - 96C intentionally avoids any `package.json` diff so this narrow CI guard PR does not trigger `run_true_db_smoke=true` solely because a helper script alias was added.
 - `jscpd.config.json` remains unchanged and `npm run jscpd` remains available as an absolute whole-repo debt check.
 
@@ -128,6 +133,9 @@ Search conclusions:
 
 - Focused parser/comparator tests pass and include a controlled failure-path test for metric worsening.
 - Local guard against `origin/codex/m7-ui-96a-stack-typecheck-cleanup` passes on this branch if it does not worsen duplicate metrics.
+- Local CI path-scope smoke proves this PR's jscpd/workflow diff keeps
+  `workflow_m5r_true_db_closeout_changed=false` while preserving direct M5R
+  test/spec/evidence triggers and fail-closed missing-anchor behavior.
 - Validation commands from the task pass or are recorded honestly:
   - `npm run format:check`
   - `npm run guard:prettier-ignore -- --base origin/codex/m7-ui-96a-stack-typecheck-cleanup`

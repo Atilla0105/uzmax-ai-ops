@@ -130,7 +130,9 @@ async function collectTopbarMetrics(page: Page, state: string) {
 
     return collectReactTopbarMetricsForPage(traceState, rectFor);
 
-    function collectOwnerTopbarMetricsForPage(rectForFn: (element: Element | null) => Rect) {
+    function collectOwnerTopbarMetricsForPage(
+      rectForFn: (element: Element | null) => Rect
+    ) {
       const topbar = document.querySelector("header");
       if (!topbar) {
         return {

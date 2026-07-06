@@ -156,7 +156,7 @@ export function AppShell({
           <SearchInput
             aria-label="Search"
             className="uz-global-search"
-            kbdHint="Cmd K"
+            kbdHint="⌘K"
             placeholder="搜索会话、客户、订单、工单、知识..."
             readOnly
           />

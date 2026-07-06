@@ -307,7 +307,9 @@ function expectMarkerWhenAvailable(
   if (source.ok) expect(markers[marker]).toBe(true);
 }
 
-function writeUnavailableSources(sources: Array<ReturnType<typeof sourceAvailability>>) {
+function writeUnavailableSources(
+  sources: Array<ReturnType<typeof sourceAvailability>>
+) {
   const unavailable = sources.filter((source) => !source.ok);
   if (unavailable.length)
     writeFileSync(

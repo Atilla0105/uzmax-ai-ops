@@ -59,9 +59,9 @@ export const healthDot = (health: GroupOverviewRow["health"]) =>
   health === "tripped" ? "breaker" : health;
 
 export const groupOverviewFallbackMeta = {
-  label: "4 个租户 · fallback",
+  label: "4 个租户 · mock/degraded",
   reason:
-    "aggregate runtime unavailable: source-shaped mock/degraded fallback only, not production metrics.",
+    "centralized mock/degraded fallback only; aggregate runtime unavailable, not production metrics.",
   source: "centralized-mock-degraded"
 } as const;
 
@@ -75,49 +75,69 @@ export const groupHealthCards: GroupHealthCard[] = [
 ];
 
 export const groupOverviewRows: GroupOverviewRow[] = [
-  row("tenant-a", "Mock 租户 A", "业务线 A · mock", "attention", {
-    costSort: 30,
+  row("tenant-a", "玉珠跨境美妆", "美妆 · 中亚 · mock/degraded", "healthy", {
+    cost: "¥118",
+    costSort: 118,
     evalState: "blocked",
-    handoffSort: 30,
-    humanSort: 30,
-    last: "mock redline event",
+    handoff: "14%",
+    handoffSort: 14,
+    human: "7",
+    humanSort: 7,
+    last: "mock 红线 · 9分钟前",
     orderState: "degraded",
     redline: true,
-    sessionsSort: 40,
-    slaSort: 30
+    sessions: "1,204",
+    sessionsSort: 1204,
+    sla: "92%",
+    slaSort: 92
   }),
-  row("tenant-b", "Mock 租户 B", "业务线 B · mock", "degraded", {
-    costSort: 40,
+  row("tenant-b", "丝路数码", "3C · 俄语区 · mock/degraded", "degraded", {
+    cost: "¥204",
+    costSort: 204,
     evalState: "pass",
-    handoffSort: 20,
-    humanSort: 20,
-    last: "mock connector degraded",
+    handoff: "19%",
+    handoffSort: 19,
+    human: "3",
+    humanSort: 3,
+    last: "mock 成本 · 1小时前",
     orderState: "normal",
     redline: false,
-    sessionsSort: 30,
-    slaSort: 20
+    sessions: "862",
+    sessionsSort: 862,
+    sla: "88%",
+    slaSort: 88
   }),
-  row("tenant-c", "Mock 租户 C", "业务线 C · mock", "attention", {
-    costSort: 20,
+  row("tenant-c", "天净家居", "家居 · 哈萨克 · mock/degraded", "attention", {
+    cost: "¥96",
+    costSort: 96,
     evalState: "running",
-    handoffSort: 40,
-    humanSort: 40,
-    last: "mock connector fault",
+    handoff: "28%",
+    handoffSort: 28,
+    human: "11",
+    humanSort: 11,
+    last: "mock connector · 22分钟前",
     orderState: "fault",
     redline: false,
-    sessionsSort: 20,
-    slaSort: 40
+    sessions: "430",
+    sessionsSort: 430,
+    sla: "79%",
+    slaSort: 79
   }),
-  row("tenant-d", "Mock 租户 D", "业务线 D · mock", "tripped", {
-    costSort: 10,
-    evalState: "unavailable",
-    handoffSort: 10,
-    humanSort: 10,
-    last: "mock AI breaker",
-    orderState: "unavailable",
+  row("tenant-d", "白桦母婴", "母婴 · 俄语区 · mock/degraded", "tripped", {
+    cost: "¥0",
+    costSort: 0,
+    evalState: "pass",
+    handoff: "—",
+    handoffSort: 0,
+    human: "0",
+    humanSort: 0,
+    last: "mock 熔断 · 3小时前",
+    orderState: "normal",
     redline: false,
-    sessionsSort: 10,
-    slaSort: 10
+    sessions: "0",
+    sessionsSort: 0,
+    sla: "—",
+    slaSort: 0
   })
 ];
 
@@ -155,26 +175,26 @@ function row(
   patch: Pick<
     GroupOverviewRow,
     | "costSort"
+    | "cost"
+    | "handoff"
     | "evalState"
     | "handoffSort"
+    | "human"
     | "humanSort"
     | "last"
     | "orderState"
     | "redline"
+    | "sessions"
     | "sessionsSort"
+    | "sla"
     | "slaSort"
   >
 ): GroupOverviewRow {
   return {
     ...patch,
     businessLine,
-    cost: "mock",
-    handoff: "mock",
     health,
-    human: "mock",
     id,
-    sessions: "mock",
-    sla: "mock",
     tenantName
   };
 }

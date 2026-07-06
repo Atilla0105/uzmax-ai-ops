@@ -39,6 +39,9 @@ test("renders group overview with group-only shell and degraded mock data", asyn
   await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
     "4 个租户"
   );
+  await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
+    "mock/degraded"
+  );
   await expect(page.getByTestId("m7-group-overview-runtime-note")).toContainText(
     "aggregate runtime unavailable"
   );
@@ -71,10 +74,11 @@ test("renders group overview with group-only shell and degraded mock data", asyn
       })
     ).toBeVisible();
   }
-  await expect(page.getByTestId("m7-group-overview-empty")).toContainText(
-    "没有匹配的租户"
-  );
-  await expect(page.locator("[data-testid^='m7-group-overview-row-']")).toHaveCount(0);
+  await expect(page.getByTestId("m7-group-overview-empty")).toHaveCount(0);
+  await expect(page.locator("[data-testid^='m7-group-overview-row-']")).toHaveCount(4);
+  for (const tenantName of ["玉珠跨境美妆", "丝路数码", "天净家居", "白桦母婴"]) {
+    await expect(page.getByTestId("m7-group-overview-table")).toContainText(tenantName);
+  }
 
   await expect(page.getByTestId("app-shell-nav")).toHaveJSProperty("offsetWidth", 232);
   const topbarHeight = await page.locator(".uz-topbar").evaluate((node) => {
@@ -90,37 +94,33 @@ test("supports search filters clear and sort without claiming runtime truth", as
   await page.goto("/design");
   const table = page.getByTestId("m7-group-overview-table");
 
-  await page.getByTestId("m7-group-overview-search").fill("租户 C");
+  await page.getByTestId("m7-group-overview-search").fill("天净");
   await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
     "显示 1 / 4 家租户"
   );
-  await expect(table.getByText("Mock 租户 C")).toBeVisible();
-  await expect(table.getByText("Mock 租户 A")).toHaveCount(0);
+  await expect(table.getByText("天净家居")).toBeVisible();
+  await expect(table.getByText("玉珠跨境美妆")).toHaveCount(0);
 
   await page.getByTestId("m7-group-health-card-orderFault").click();
   await expect(page.getByTestId("m7-group-overview-result-label")).toContainText(
     "订单 connector 故障"
   );
-  await expect(table.getByText("Mock 租户 C")).toBeVisible();
+  await expect(table.getByText("天净家居")).toBeVisible();
 
   await page.getByTestId("m7-group-overview-clear-filter").click();
-  await expect(table.getByText("Mock 租户 A")).toBeVisible();
-  await expect(table.getByText("Mock 租户 D")).toBeVisible();
+  await expect(table.getByText("玉珠跨境美妆")).toBeVisible();
+  await expect(table.getByText("白桦母婴")).toBeVisible();
+
+  await page.getByTestId("m7-group-overview-search").fill("不存在的租户");
+  await expect(page.getByTestId("m7-group-overview-empty")).toContainText(
+    "没有匹配的租户"
+  );
+  await page.getByTestId("m7-group-overview-clear-filter").click();
 
   await page.getByTestId("m7-group-sort-human").click();
-  await expectTenantOrder(page, [
-    "Mock 租户 C",
-    "Mock 租户 A",
-    "Mock 租户 B",
-    "Mock 租户 D"
-  ]);
+  await expectTenantOrder(page, ["天净家居", "玉珠跨境美妆", "丝路数码", "白桦母婴"]);
   await page.getByTestId("m7-group-sort-human").click();
-  await expectTenantOrder(page, [
-    "Mock 租户 D",
-    "Mock 租户 B",
-    "Mock 租户 A",
-    "Mock 租户 C"
-  ]);
+  await expectTenantOrder(page, ["白桦母婴", "丝路数码", "玉珠跨境美妆", "天净家居"]);
   await expect(page.getByTestId("m7-group-overview-runtime-note")).toContainText(
     "mock/degraded"
   );

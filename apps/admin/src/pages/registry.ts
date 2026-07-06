@@ -326,7 +326,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-54-config-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "分析",
     id: "tenant.analytics",
     label: "分析",
@@ -334,11 +335,16 @@ const adminPageRegistry = [
     navId: "analytics",
     navSection: "tenant",
     order: 18,
-    requiredStates: stateMatrix,
+    requiredStates: [
+      ...stateMatrix,
+      "delayed data",
+      "time/channel/language filters",
+      "mobile fallback"
+    ],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/analytics/AnalyticsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/analytics/AnalyticsPage.tsx",
-    targetSpecId: "M7-UI-04R-tenant-analytics"
+    targetSpecId: "M7-UI-55-analytics-page"
   },
   {
     evidenceStatus: "not_started",

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Lock, Plus } from "lucide-react";
 import { IconSlot, StatusBadge } from "../../primitives";
-import { TenantHtmlTable, TenantNewModal } from "./GroupTenantViews";
+import { TenantHtmlTable } from "./GroupTenantTable";
+import { TenantNewModal } from "./GroupTenantViews";
 import {
   createInitialTenantForm,
   initialTenantSeeds,

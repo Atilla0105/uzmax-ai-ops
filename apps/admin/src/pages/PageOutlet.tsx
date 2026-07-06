@@ -5,6 +5,7 @@ import { AgentsPage } from "./agents/AgentsPage";
 import { ConversationsPage } from "./conversations/ConversationsPage";
 import { CustomersPage } from "./customers/CustomersPage";
 import { EvalPage } from "./evals/EvalPage";
+import { GroupConnectionPage } from "./group/GroupConnectionPage";
 import { GroupModelRiskPage } from "./group/GroupModelRiskPage";
 import { GroupOverviewPage } from "./group/GroupOverviewPage";
 import { GroupTemplatePage } from "./group/GroupTemplatePage";
@@ -50,6 +51,9 @@ const implementedPageRenderers: Partial<Record<AdminPageId, ImplementedPageRende
     }),
     "group.templates": () => ({
       content: <GroupTemplatePage />
+    }),
+    "group.connections": () => ({
+      content: <GroupConnectionPage />
     }),
     "tenant.aiMembers": ({ selectedTenantId }) => ({
       content: <AgentsPage key={selectedTenantId} selectedTenantId={selectedTenantId} />

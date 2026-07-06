@@ -259,18 +259,14 @@ async function captureOwnerHtmlTeamSample(page: Page) {
 }
 
 function writeSourceSampling() {
-  const availability = [
-    { kind: "page", ok: existsSync(sourcePaths.page), path: sourcePaths.page },
-    { kind: "fixture", ok: existsSync(sourcePaths.fixture), path: sourcePaths.fixture },
-    { kind: "ownerHtml", ok: existsSync(ownerHtml), path: ownerHtml }
-  ] as const;
-  const pageSource = existsSync(sourcePaths.page)
-    ? readFileSync(sourcePaths.page, "utf8")
-    : "";
-  const fixtureSource = existsSync(sourcePaths.fixture)
-    ? readFileSync(sourcePaths.fixture, "utf8")
-    : "";
-  const ownerSource = existsSync(ownerHtml) ? readFileSync(ownerHtml, "utf8") : "";
+  const availability = {
+    fixture: sourceAvailability("fixture", sourcePaths.fixture),
+    ownerHtml: sourceAvailability("ownerHtml", ownerHtml),
+    page: sourceAvailability("page", sourcePaths.page)
+  };
+  const pageSource = readAvailableSource(availability.page);
+  const fixtureSource = readAvailableSource(availability.fixture);
+  const ownerSource = readAvailableSource(availability.ownerHtml);
   const sampling = {
     fixture: markerMap(fixtureSource, ["PERM_GROUPS", "TEAM_MEMBERS", "TEAM_COLS"]),
     owner: markerMap(ownerSource, [
@@ -285,22 +281,39 @@ function writeSourceSampling() {
       "邀请成员",
       "MemberDrawer"
     ]),
-    availability,
+    availability: Object.values(availability),
     sourcePaths: { ...sourcePaths, ownerHtml }
   };
-  if (availability.find((source) => source.kind === "page")?.ok)
-    expect(sampling.page["TeamPage"]).toBe(true);
-  if (availability.find((source) => source.kind === "fixture")?.ok)
-    expect(sampling.fixture["TEAM_MEMBERS"]).toBe(true);
-  if (availability.find((source) => source.kind === "ownerHtml")?.ok)
-    expect(sampling.owner["团队"]).toBe(true);
-  const unavailable = availability.filter((source) => !source.ok);
+  expectMarkerWhenAvailable(availability.page, sampling.page, "TeamPage");
+  expectMarkerWhenAvailable(availability.fixture, sampling.fixture, "TEAM_MEMBERS");
+  expectMarkerWhenAvailable(availability.ownerHtml, sampling.owner, "团队");
+  writeUnavailableSources(Object.values(availability));
+  writeJson("source-sampling.json", sampling);
+}
+
+function sourceAvailability(kind: string, path: string) {
+  return { kind, ok: existsSync(path), path };
+}
+
+function readAvailableSource(source: ReturnType<typeof sourceAvailability>) {
+  return source.ok ? readFileSync(source.path, "utf8") : "";
+}
+
+function expectMarkerWhenAvailable(
+  source: ReturnType<typeof sourceAvailability>,
+  markers: Record<string, boolean>,
+  marker: string
+) {
+  if (source.ok) expect(markers[marker]).toBe(true);
+}
+
+function writeUnavailableSources(sources: Array<ReturnType<typeof sourceAvailability>>) {
+  const unavailable = sources.filter((source) => !source.ok);
   if (unavailable.length)
     writeFileSync(
       `${artifactDir}/source-unavailable.md`,
       unavailable.map((source) => `${source.kind}: ${source.path}`).join("\n")
     );
-  writeJson("source-sampling.json", sampling);
 }
 
 function markerMap(text: string, markers: string[]) {

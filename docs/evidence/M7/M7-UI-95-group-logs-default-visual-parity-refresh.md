@@ -125,7 +125,12 @@ Completed validation:
 - PASS: touched ESLint:
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/eslint/bin/eslint.js apps/admin/tests/m7-ui-group-logs.helpers.ts apps/admin/tests/m7-ui-group-logs.spec.ts apps/admin/tests/m7-ui-group-logs-source-parity.spec.ts apps/admin/tests/m7-ui-group-logs-default-visual-parity.spec.ts`
 - PASS: full typecheck:
-  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`
+  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json`
+- PASS: `knip` after making helper-only constants module-local:
+  - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/knip/bin/knip.js -c package.json#knip --no-progress --duration --no-config-hints --no-tag-hints`
+- PASS: full lint using the `package.json` script body because `npm` is unavailable in this shell:
+  - `export PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH`
+  - `find apps packages scripts -path '*/node_modules' -prune -o -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.mjs" -o -name "*.cjs" \) -print0 | xargs -0 node node_modules/eslint/bin/eslint.js eslint.config.mjs dependency-cruiser.config.cjs playwright.config.ts`
 - PASS: Admin build with existing Vite warning:
   - `PATH=/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir`
   - Existing warning: bundle chunk larger than 500 kB after minification.

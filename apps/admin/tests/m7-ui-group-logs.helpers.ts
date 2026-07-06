@@ -3,7 +3,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 export const groupLogArtifactDir =
   "/tmp/uzmax-m7-ui-95-group-logs-default-visual-parity-refresh";
-export const groupLogGroupLabels =
+const groupLogGroupLabels =
   "集团总览|模型/成本/风险|模板中心|连接中心|发布与验收|租户管理|集团日志".split("|");
 export const groupLogTenantLabels =
   "对话|工单|确认队列|客户资产|订单|知识与资源|评测中心|AI 成员|团队|配置|分析|日志".split(
@@ -15,7 +15,7 @@ export const groupLogOwnerChipLabels =
   "全部模块|AI 成员|连接中心|配置|租户管理|对话|工单".split("|");
 export const groupLogTableColumns =
   "操作时间|租户|操作人|操作模块|操作功能|操作对象|操作内容".split("|");
-export const groupLogRuntimeLabels = [
+const groupLogRuntimeLabels = [
   "degraded",
   "mock",
   "read-only",
@@ -26,7 +26,7 @@ export const groupLogRuntimeLabels = [
   "no audit runtime call",
   "no real tenant/action navigation"
 ];
-export const groupLogForbiddenVisibleTerms = [
+const groupLogForbiddenVisibleTerms = [
   ...groupLogRuntimeLabels,
   "Synthetic",
   "synthetic"

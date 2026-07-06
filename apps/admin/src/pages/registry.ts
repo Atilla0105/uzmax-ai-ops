@@ -347,7 +347,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-55-analytics-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "日志",
     id: "tenant.logs",
     label: "日志",
@@ -357,9 +358,9 @@ const adminPageRegistry = [
     order: 19,
     requiredStates: [...stateMatrix, "high-risk refs"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/logs/LogsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/logs/LogsPage.tsx",
-    targetSpecId: "M7-UI-04S-tenant-logs"
+    targetSpecId: "M7-UI-56-logs-page"
   }
 ] as const satisfies readonly AdminPageRegistryEntry[];
 

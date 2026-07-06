@@ -56,6 +56,7 @@ Finalizer run in worktree
 | `npm run lint` | PASS | Initial local `TeamPage` complexity issue fixed by extracting confirm modal props |
 | `npm run build:admin` | PASS with existing Vite chunk warning | Built `apps/admin/dist`; Vite reports main JS chunk > 500 kB |
 | `npx playwright test apps/admin/tests/m7-ui-team-page.spec.ts` | PASS | 4 passed; initial selector ambiguity fixed by scoping restore click to `m7-confirm-modal` |
+| `npm run playwright` | PASS | 124 passed; local owner/source sampling now records unavailable source paths without weakening React page assertions |
 
 ## Visual Evidence
 

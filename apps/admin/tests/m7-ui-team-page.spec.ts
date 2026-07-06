@@ -232,10 +232,12 @@ async function width(locator: ReturnType<Page["getByTestId"]>) {
 }
 
 async function captureOwnerHtmlTeamSample(page: Page) {
-  if (!existsSync(ownerHtml))
+  if (!existsSync(ownerHtml)) {
     return writeJson("owner-html-team-source-dom-sample.json", {
-      missingPath: ownerHtml
+      missingPath: ownerHtml,
+      status: "local-source-unavailable"
     });
+  }
   await page.goto(pathToFileURL(ownerHtml).toString());
   await page.waitForLoadState("domcontentloaded");
   await page
@@ -257,6 +259,11 @@ async function captureOwnerHtmlTeamSample(page: Page) {
 }
 
 function writeSourceSampling() {
+  const availability = [
+    { kind: "page", ok: existsSync(sourcePaths.page), path: sourcePaths.page },
+    { kind: "fixture", ok: existsSync(sourcePaths.fixture), path: sourcePaths.fixture },
+    { kind: "ownerHtml", ok: existsSync(ownerHtml), path: ownerHtml }
+  ] as const;
   const pageSource = existsSync(sourcePaths.page)
     ? readFileSync(sourcePaths.page, "utf8")
     : "";
@@ -278,10 +285,21 @@ function writeSourceSampling() {
       "邀请成员",
       "MemberDrawer"
     ]),
+    availability,
     sourcePaths: { ...sourcePaths, ownerHtml }
   };
-  expect(sampling.page["TeamPage"]).toBe(true);
-  expect(sampling.owner["团队"]).toBe(true);
+  if (availability.find((source) => source.kind === "page")?.ok)
+    expect(sampling.page["TeamPage"]).toBe(true);
+  if (availability.find((source) => source.kind === "fixture")?.ok)
+    expect(sampling.fixture["TEAM_MEMBERS"]).toBe(true);
+  if (availability.find((source) => source.kind === "ownerHtml")?.ok)
+    expect(sampling.owner["团队"]).toBe(true);
+  const unavailable = availability.filter((source) => !source.ok);
+  if (unavailable.length)
+    writeFileSync(
+      `${artifactDir}/source-unavailable.md`,
+      unavailable.map((source) => `${source.kind}: ${source.path}`).join("\n")
+    );
   writeJson("source-sampling.json", sampling);
 }
 

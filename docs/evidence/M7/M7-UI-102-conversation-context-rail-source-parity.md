@@ -59,11 +59,11 @@ This slice fixes only the visible `tenant.conversations` right customer context 
 |---|---|
 | `apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts` | Added optional `profileRows` to the local conversation row type for source-like synthetic profile display. |
 | `apps/admin/src/pages/conversations/conversationWorkbenchFallback.ts` | Added Dilnoza source profile rows: customer ID, language, journey stage, cumulative orders, open issue and created date. |
-| `apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx` | Rail header now uses a single source initial and prefers Telegram handle for the secondary ref; profile tab renders `profileRows` when present and no longer uses operational refs in the main profile rows; tag section appends `+ 添加`. |
-| `apps/admin/tests/m7-ui-102-conversation-context-rail-source-parity.spec.ts` | Added focused Playwright test for synthetic fallback route, tenant entry, runtime degraded attributes, exact header/profile/tag/custom-field/dual-track/quick-action texts, profile forbidden labels, desktop/mobile screenshots and metrics. |
+| `apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx` | Rail header now uses a single source initial and prefers a real participant ref for the secondary ref, falling back to valid `customerRef` when the parser supplies `customer-ref-unavailable`; profile tab renders `profileRows` when present and suppresses operational refs only for that explicit source-profile path; non-profileRows API data keeps the previous six-row operational fallback; tag section appends `+ 添加`. |
+| `apps/admin/tests/m7-ui-102-conversation-context-rail-source-parity.spec.ts` | Added focused Playwright coverage for the synthetic source-profile route plus an API/non-profileRows regression case that confirms `customer-ref-unavailable` does not override `customerRef` and that `未决工单`, `订单快照`, `报价记录` remain visible for API fallback data. |
 | `docs/specs/M7-UI-102-conversation-context-rail-source-parity.md` | Added narrow fix spec, allowed files, budgets, source boundary, implementation requirements and validation plan. |
 
-Source budget: changed source files = 3; source net LOC = +10; new source files = 0. No package/lock/config/backend/API/DB/AppShell/global primitive changes.
+Source budget: changed source files = 3; source net LOC = +24; new source files = 0. No package/lock/config/backend/API/DB/AppShell/global primitive changes.
 
 ## Browser Evidence
 
@@ -116,6 +116,13 @@ Focused rail assertions confirmed:
 | `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm dlx npm@11.9.0 run guard:pr-shape -- --base origin/codex/m7-ui-31-orders-visible-ui` | pass; no PR context detected for this branch, so PR-only checks were skipped. |
 
 Note: first `jscpd` attempt found a 10-line helper clone with M7-UI-101. The test navigation helper was rewritten into selector-state assertions, then `jscpd` and the focused Playwright test were rerun successfully.
+
+Code-quality follow-up validation:
+
+- Fixed Major issue 1: `contextRows()` now preserves the previous operational six-row fallback for API/non-profileRows data and only suppresses `未决工单`, `订单快照`, `报价记录` when explicit `profileRows` exist.
+- Fixed Major issue 2: `railHeader()` now ignores the parser sentinel `customer-ref-unavailable` before falling back to valid `customerRef`; a real participant ref still wins.
+- Focused Playwright rerun: `2 passed` for source-profile synthetic coverage and API/non-profileRows regression coverage.
+- Required reruns after the follow-up: `git diff --check` pass; `npm run typecheck` pass; `npm run build:admin` pass with existing Vite large-chunk warning; `npm run jscpd` pass with `Found 0 clones`.
 
 ## Remaining Differences / Non-Claims
 

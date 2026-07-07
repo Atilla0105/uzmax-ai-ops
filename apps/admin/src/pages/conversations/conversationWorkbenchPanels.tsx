@@ -143,7 +143,10 @@ function railHeader(active?: ConversationRow) {
   return {
     initial: sourceInitial(primaryName),
     name: primaryName,
-    ref: participantExternalRef || customerRef || "customer context runtime missing",
+    ref:
+      usableRef(participantExternalRef) ||
+      usableRef(customerRef) ||
+      "customer context runtime missing",
     stage: journeyStage || "—"
   };
 }
@@ -153,19 +156,30 @@ function contextRows(active?: ConversationRow) {
     customerRef = "",
     journeyStage = "客户上下文待接入",
     language = "unavailable",
+    orderRef = "—",
     participantExternalRef = "unavailable",
-    profileRows
+    profileRows,
+    quoteRef = "—",
+    ticketRef = "—"
   } = active ?? {};
   if (profileRows?.length) return profileRows.map((row) => [row.label, row.value]);
   return [
     ["客户ID", customerRef || participantExternalRef],
     ["语言", language],
-    ["旅程阶段", journeyStage]
+    ["旅程阶段", journeyStage],
+    ["未决工单", ticketRef],
+    ["订单快照", orderRef],
+    ["报价记录", quoteRef]
   ];
 }
 
 function sourceInitial(value: string) {
   return Array.from(value.trim())[0] || "?";
+}
+
+function usableRef(value: string | undefined) {
+  const trimmed = value?.trim() ?? "";
+  return trimmed && trimmed !== "customer-ref-unavailable" ? trimmed : "";
 }
 
 function KeyValueSection({ rows, title }: { rows: string[][]; title: string }) {

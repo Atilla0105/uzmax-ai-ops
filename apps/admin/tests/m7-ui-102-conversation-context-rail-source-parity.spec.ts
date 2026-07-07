@@ -96,6 +96,31 @@ test("aligns synthetic conversation context rail to owner source", async ({ page
   );
 });
 
+test("preserves API context rail operational fallback rows", async ({ page }) => {
+  await serveApiConversationWithoutSourceProfile(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await enterTenantConversationWorkbench(page);
+
+  const workbench = page.getByTestId("m7-conversation-workbench-page");
+  const rail = conversationRail(page);
+  const apiHeader = rail.locator(".uz-conv-rail__head");
+  await expect(workbench).toHaveAttribute("data-runtime-source", "api");
+  await expect(apiHeader.locator(".uz-avatar")).toHaveText("A");
+  await expect(apiHeader.locator(":scope > div > strong")).toHaveText(
+    "API Context Customer"
+  );
+  await expect(apiHeader.locator(":scope > div > span")).toHaveText("CU-API-7701");
+
+  expect(await keyValues(sectionByHeading(rail, "客户档案"))).toEqual([
+    ["客户ID", "CU-API-7701"],
+    ["语言", "中文 / ru"],
+    ["旅程阶段", "售后跟进"],
+    ["未决工单", "TK-API-42"],
+    ["订单快照", "UZ-API-2042"],
+    ["报价记录", "QT-API-2042"]
+  ]);
+});
+
 async function serveSyntheticConversationFallback(page: Page) {
   await page.route("**/conversation-ticket/conversations", async (route) => {
     await route.fulfill({
@@ -104,6 +129,50 @@ async function serveSyntheticConversationFallback(page: Page) {
       status: 200
     });
   });
+}
+
+async function serveApiConversationWithoutSourceProfile(page: Page) {
+  const item = {
+    aiState: "active",
+    awaitingReply: false,
+    channel: "Business",
+    customerName: "API Context Customer",
+    customerRef: "CU-API-7701",
+    customFields: [],
+    displayRef: "UZ-API-2042",
+    dualTracks: [],
+    externalConversationRef: "api-context-fallback",
+    id: "api-context-fallback",
+    journeyStage: "售后跟进",
+    language: "中文 / ru",
+    lastPreview: "API context rail fallback",
+    memberLabel: "AI Samarkand",
+    notes: [],
+    orderRef: "UZ-API-2042",
+    quoteRef: "QT-API-2042",
+    slaRisk: false,
+    status: "open",
+    subject: "API Context Customer",
+    tags: [],
+    tenantId: "tenant-a",
+    ticketRef: "TK-API-42",
+    timeLabel: "刚刚",
+    unreadCount: 0
+  };
+  await page.route("**/conversation-ticket/conversations", async (route) => {
+    await route.fulfill({ json: { items: [item] } });
+  });
+  await page.route(
+    "**/conversation-ticket/conversations/api-context-fallback",
+    async (route) => {
+      await route.fulfill({
+        json: {
+          conversation: item,
+          messages: []
+        }
+      });
+    }
+  );
 }
 
 async function enterTenantConversationWorkbench(page: Page) {

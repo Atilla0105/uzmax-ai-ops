@@ -71,6 +71,8 @@ Captured focused metrics:
 |---|---|
 | `git diff --check` | pass |
 | Prettier 3.8.4 full CI-equivalent check: `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /Users/atilla/.codex/worktrees/m7-ui-12-group-overview-visible-ui/node_modules/prettier/bin/prettier.cjs --check .` | pass |
+| full lint with bundled node: `find apps packages scripts -path '*/node_modules' -prune -o -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.mjs" -o -name "*.cjs" \) -print0 \| xargs -0 /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/eslint/bin/eslint.js eslint.config.mjs dependency-cruiser.config.cjs playwright.config.ts` | pass |
 | focused Playwright conversation tests: `m7-ui-100-conversation-handoff-default-visual-parity.spec.ts`, `m7-ui-conversation-workbench-fallback.spec.ts`, `m7-ui-conversation-workbench.spec.ts` with `--project=desktop-chromium` | pass, 12/12 |
 | `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir` | pass, Vite large chunk warning only |
-| `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-100-conversation-handoff-default-visual-parity.md` | pass; changedFiles 9; source changedFiles 4; netLoc 65; newFiles 0 |
+| `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/size-limit/bin.js` | pass; size 177.1 kB brotlied against 250 kB limit |
+| `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-100-conversation-handoff-default-visual-parity.md` | pass; changedFiles 9; source changedFiles 4; netLoc 66; newFiles 0 |

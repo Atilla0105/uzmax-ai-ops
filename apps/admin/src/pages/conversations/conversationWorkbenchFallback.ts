@@ -5,6 +5,12 @@ import type {
 } from "./conversationWorkbenchRuntime";
 export const syntheticRuntimeUnavailableReason =
   "runtime-unavailable: conversation-ticket API absent/non-JSON in local preview; showing owner-source-like degraded/mock workbench data, not production metrics.";
+function note(text: string, time: string, who: string) {
+  return { text, time, who };
+}
+function track(stage: string, time: string, via: string) {
+  return { stage, time, via };
+}
 const syntheticConversationRowsTemplate: ConversationRow[] = [
   {
     aiState: "suspended",
@@ -22,16 +28,8 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     draftText:
       "Hurmatli Dilnoza, tushunamiz. Pulni qaytarish uchun buyurtmani bekor qilishim mumkin yoki 2 kun kutishni so‘raymiz — qaysi birini tanlaysiz?",
     dualTracks: [
-      {
-        stage: "报价",
-        time: "06-25",
-        via: "教程旅程自动定位"
-      },
-      {
-        stage: "售后",
-        time: "06-26",
-        via: "红线转人工"
-      }
+      track("报价", "06-25", "教程旅程自动定位"),
+      track("售后", "06-26", "红线转人工")
     ],
     externalConversationRef: "telegram-c1-owner-like",
     id: "mock-dilnoza-risk",
@@ -44,11 +42,7 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     lastPreview: "Juda uzoq-ku! Pulni qaytarib bering, men kutmoqchi emasman.",
     memberLabel: "AI → 韩雪",
     notes: [
-      {
-        text: "已安抚，赠 ¥20 优惠券，客户同意继续等待物流。",
-        time: "06-26 11:24",
-        who: "韩雪"
-      }
+      note("已安抚，赠 ¥20 优惠券，客户同意继续等待物流。", "06-26 11:24", "韩雪")
     ],
     orderRef: "UZ-20413",
     participantExternalRef: "@dilnoza_r",
@@ -83,13 +77,7 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     language: "俄语",
     lastPreview: "Да, крем вытек прямо в коробке, все запачкано.",
     memberLabel: "AI → 李航",
-    notes: [
-      {
-        text: "已请求补充破损照片，待人工确认退款口径。",
-        time: "今天 11:08",
-        who: "李航"
-      }
-    ],
+    notes: [note("已请求补充破损照片，待人工确认退款口径。", "今天 11:08", "李航")],
     orderRef: "UZ-20408",
     participantExternalRef: "@ivan_p",
     quoteRef: "—",
@@ -123,13 +111,7 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     language: "乌兹别克语（西里尔）",
     lastPreview: "Салом! Буюртма қачон етиб келади?",
     memberLabel: "李航",
-    notes: [
-      {
-        text: "确认无叠加折扣，已发放新人券引导下单。",
-        time: "06-22 15:02",
-        who: "李航"
-      }
-    ],
+    notes: [note("确认无叠加折扣，已发放新人券引导下单。", "06-22 15:02", "李航")],
     orderRef: "UZ-20401",
     participantExternalRef: "@aziz_k",
     quoteRef: "护肤入门套装 ¥268",
@@ -195,13 +177,7 @@ function compactRow(seed: string): ConversationRow {
     customerRef: field(parts, 3),
     customFields: [{ label: "偏好品类", value: "面部护理" }],
     displayRef: field(parts, 4),
-    dualTracks: [
-      {
-        stage: status === "closed" ? "售后" : "报价",
-        time: "06-25",
-        via: "红线转人工"
-      }
-    ],
+    dualTracks: [track(status === "closed" ? "售后" : "报价", "06-25", "红线转人工")],
     externalConversationRef: `telegram-${field(parts, 0)}`,
     id: field(parts, 0),
     inFlightAiMessages: [],

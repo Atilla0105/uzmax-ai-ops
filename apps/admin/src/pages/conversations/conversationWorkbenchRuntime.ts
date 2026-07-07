@@ -1,17 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  degradedReason,
-  handoffBlocker,
-  handoffTarget,
-  syntheticHandoffBlocker
-} from "./conversationWorkbenchHandoff";
-import {
-  firstSyntheticConversationId,
-  syntheticConversationDetail,
-  syntheticLocalHandoffConversation,
-  syntheticConversationRows,
-  syntheticRuntimeUnavailableReason
-} from "./conversationWorkbenchFallback";
+import * as fallback from "./conversationWorkbenchFallback";
+import * as handoff from "./conversationWorkbenchHandoff";
 import {
   canUseSyntheticFallback,
   createConversationClient,
@@ -86,6 +75,10 @@ function text(value: unknown, fallback = "") {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "handoff runtime unavailable";
+}
+
 export function useConversationWorkbenchRuntime(selectedTenantId: string) {
   const client = useMemo(() => createConversationClient(), []);
   const [activeId, setActiveId] = useState("");
@@ -134,13 +127,16 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
     } catch (error) {
       if (requestId !== listRequestIdRef.current) return;
       if (canUseSyntheticFallback(error)) {
-        const fallbackRows = syntheticConversationRows(selectedTenantId);
-        const fallbackActiveId = firstSyntheticConversationId(selectedTenantId);
+        const fallbackRows = fallback.syntheticConversationRows(selectedTenantId);
+        const fallbackActiveId =
+          fallback.firstSyntheticConversationId(selectedTenantId);
         setRuntimeSource("synthetic");
-        setLastError(syntheticRuntimeUnavailableReason);
+        setLastError(fallback.syntheticRuntimeUnavailableReason);
         setConversations(fallbackRows);
         setActiveId(fallbackActiveId);
-        setDetail(syntheticConversationDetail(fallbackActiveId, selectedTenantId));
+        setDetail(
+          fallback.syntheticConversationDetail(fallbackActiveId, selectedTenantId)
+        );
         setStatus("ready");
         return;
       }
@@ -165,8 +161,8 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
   useEffect(() => {
     if (!activeId || status !== "ready") return;
     if (runtimeSource === "synthetic") {
-      setDetail(syntheticConversationDetail(activeId, selectedTenantId));
-      setLastError(syntheticRuntimeUnavailableReason);
+      setDetail(fallback.syntheticConversationDetail(activeId, selectedTenantId));
+      setLastError(fallback.syntheticRuntimeUnavailableReason);
       return;
     }
     let cancelled = false;
@@ -211,8 +207,8 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
     );
   const handoffDisabledReason =
     runtimeSource === "synthetic"
-      ? syntheticHandoffBlocker(activeDetail, handoffPending)
-      : handoffBlocker(status, activeDetail, handoffPending);
+      ? handoff.syntheticHandoffBlocker(activeDetail, handoffPending)
+      : handoff.handoffBlocker(status, activeDetail, handoffPending);
   const canRequestHandoff = !handoffDisabledReason;
 
   const select = useCallback(
@@ -220,41 +216,49 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
       setActiveId(conversationId);
       setDetail(null);
       setLastError(
-        runtimeSource === "synthetic" ? syntheticRuntimeUnavailableReason : ""
+        runtimeSource === "synthetic" ? fallback.syntheticRuntimeUnavailableReason : ""
       );
     },
     [runtimeSource]
   );
 
-  const requestHandoff = useCallback(async () => {
-    if (runtimeSource === "synthetic") {
-      const reason = syntheticHandoffBlocker(activeDetail, handoffPending);
-      if (reason) {
-        setLastError(reason);
-        return;
-      }
-      const activeSynthetic = activeDetail!.conversation;
-      const nextConversation = syntheticLocalHandoffConversation(activeSynthetic);
-      setConversations((rows) =>
-        replaceHandoffConversation(rows, nextConversation, selectedTenantId)
-      );
-      setDetail((current) =>
-        replaceHandoffDetail(
-          current,
-          nextConversation,
-          activeSynthetic.id,
-          selectedTenantId,
-          activeIdRef.current
-        )
-      );
-      setLastError(syntheticRuntimeUnavailableReason);
+  const requestSyntheticHandoff = useCallback(() => {
+    const reason = handoff.syntheticHandoffBlocker(activeDetail, handoffPending);
+    if (reason) {
+      setLastError(reason);
       return;
     }
-    const target = handoffTarget(status, activeDetail, handoffPending);
+    const activeSynthetic = activeDetail!.conversation;
+    const nextConversation =
+      fallback.syntheticLocalHandoffConversation(activeSynthetic);
+    setConversations((rows) =>
+      replaceHandoffConversation(rows, nextConversation, selectedTenantId)
+    );
+    setDetail((current) =>
+      replaceHandoffDetail(
+        current,
+        nextConversation,
+        activeSynthetic.id,
+        selectedTenantId,
+        activeIdRef.current
+      )
+    );
+    setLastError(fallback.syntheticRuntimeUnavailableReason);
+  }, [activeDetail, handoffPending, selectedTenantId]);
+
+  const requestHandoff = useCallback(async () => {
+    if (runtimeSource === "synthetic") {
+      requestSyntheticHandoff();
+      return;
+    }
+    const target = handoff.handoffTarget(status, activeDetail, handoffPending);
     if ("reason" in target) {
       setLastError(target.reason);
       return;
     }
+    const setTargetError = (message: string) => {
+      if (activeIdRef.current === target.id) setLastError(message);
+    };
     const requestId = handoffRequestIdRef.current + 1;
     handoffRequestIdRef.current = requestId;
     const requestTenantId = selectedTenantId;
@@ -273,7 +277,7 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
         requestTenantId
       );
       if (validationError) {
-        if (activeIdRef.current === target.id) setLastError(validationError);
+        setTargetError(validationError);
         return;
       }
       setConversations((rows) =>
@@ -289,21 +293,26 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
         )
       );
     } catch (error) {
-      if (isCurrentRequest() && activeIdRef.current === target.id)
-        setLastError(
-          error instanceof Error ? error.message : "handoff runtime unavailable"
-        );
+      if (isCurrentRequest()) setTargetError(errorMessage(error));
     } finally {
       if (isCurrentRequest()) setHandoffPending(false);
     }
-  }, [activeDetail, client, handoffPending, runtimeSource, selectedTenantId, status]);
+  }, [
+    activeDetail,
+    client,
+    handoffPending,
+    requestSyntheticHandoff,
+    runtimeSource,
+    selectedTenantId,
+    status
+  ]);
 
   return {
     activeId,
     activeConversation,
     canRequestHandoff,
     conversations,
-    degradedReason: degradedReason(
+    degradedReason: handoff.degradedReason(
       status,
       lastError,
       activeDetail,

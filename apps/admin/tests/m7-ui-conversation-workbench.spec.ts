@@ -42,7 +42,7 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
     "data-runtime-state",
     "degraded"
   );
-  await expect(degraded(page)).toContainText("只读预览");
+  await expect(degraded(page)).toContainText("degraded");
   await expect(degraded(page)).toHaveAttribute("title", /SLA policyRef/);
   await expect(takeover(page)).toBeDisabled();
   await expect(page.getByTestId("m7-conversation-query-degraded")).toHaveCount(0);
@@ -58,7 +58,9 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
     expect.not.stringContaining("rgba(0, 0, 0, 0)"),
     "3px"
   ]);
-  await expect(page.getByText("SLA 即将超时")).toBeVisible();
+  await expect(
+    page.getByTestId("m7-conversation-thread").getByText("SLA 16m")
+  ).toBeVisible();
   await expect(page.getByText("AI 已暂停", { exact: true })).toBeVisible();
   await expect(page.getByText("红线检查通过")).toBeVisible();
   for (const noisy of ["已撤回", "取消中", "需人工确认", "拒绝"])

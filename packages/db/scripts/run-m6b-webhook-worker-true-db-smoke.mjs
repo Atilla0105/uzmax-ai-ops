@@ -255,6 +255,13 @@ async function compileRuntimeModules() {
       )
       .replaceAll("../../../packages/db/src/index.ts", "./db.mjs")
   );
+  await writeModule(
+    "bot-persistence.mjs",
+    readRepoText("apps/worker/src/telegram-bot-conversation-persistence.ts").replaceAll(
+      "../../../packages/db/src/index.ts",
+      "./db.mjs"
+    )
+  );
   await writeFile(
     path.join(tempDir, "order-import-bullmq-runtime.mjs"),
     `
@@ -280,6 +287,7 @@ async function compileRuntimeModules() {
         "./order-import-bullmq-runtime.mjs"
       )
       .replaceAll("./conversation-runtime.ts", "./conversation-runtime.mjs")
+      .replaceAll("./telegram-bot-conversation-persistence.ts", "./bot-persistence.mjs")
       .replaceAll("./main.ts", "./main.mjs")
       .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs")
   );

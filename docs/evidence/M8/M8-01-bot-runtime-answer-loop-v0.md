@@ -21,7 +21,15 @@ Date: 2026-07-07
 Command:
 
 ```bash
-PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" pnpm run lint -- apps/worker/src/conversation-runtime.ts apps/worker/src/telegram-bot-answer-runtime.ts apps/worker/src/telegram-bot-conversation-persistence.ts apps/worker/src/worker-service-shell.ts packages/channels/src/index.ts scripts/tests/m8-bot-runtime-answer-loop-v0.test.mjs scripts/tests/m8-bot-runtime-answer-loop-support.mjs
+PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" pnpm run lint -- apps/worker/src/conversation-runtime.ts apps/worker/src/telegram-bot-answer-runtime.ts apps/worker/src/telegram-bot-conversation-persistence.ts apps/worker/src/worker-service-shell.ts packages/channels/src/index.ts packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs packages/db/scripts/run-m6b-webhook-worker-true-db-smoke.mjs scripts/tests/m8-bot-runtime-answer-loop-v0.test.mjs scripts/tests/m8-bot-runtime-answer-loop-support.mjs
+```
+
+Result: pass.
+
+Command:
+
+```bash
+PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" pnpm exec prettier --check apps/worker/src/conversation-runtime.ts apps/worker/src/telegram-bot-answer-runtime.ts apps/worker/src/telegram-bot-conversation-persistence.ts apps/worker/src/worker-service-shell.ts packages/channels/src/index.ts packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs packages/db/scripts/run-m6b-webhook-worker-true-db-smoke.mjs scripts/tests/m8-bot-runtime-answer-loop-support.mjs scripts/tests/m8-bot-runtime-answer-loop-v0.test.mjs docs/specs/M8-01-bot-runtime-answer-loop-v0.md docs/evidence/M8/M8-01-bot-runtime-answer-loop-v0.md docs/incidents/INC-2026-07-07-m8-01-root-patch-target.md
 ```
 
 Result: pass.
@@ -37,10 +45,34 @@ Result: pass. 41 tests, 0 failures.
 Command:
 
 ```bash
+PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node --check packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs
+```
+
+Result: pass.
+
+Command:
+
+```bash
+PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node --check packages/db/scripts/run-m6b-webhook-worker-true-db-smoke.mjs
+```
+
+Result: pass.
+
+Command:
+
+```bash
 PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M8-01-bot-runtime-answer-loop-v0.md --include-worktree
 ```
 
-Result: pass. `changedFiles=11`, source `changedFiles=6`, source `netLoc=600`, source `newFiles=2`, categories `source=6/docs=3/test=2`.
+Result: pass. `changedFiles=12`, source `changedFiles=7`, source `netLoc=596`, source `newFiles=2`, categories `source=7/docs=3/test=2`.
+
+Command:
+
+```bash
+PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" pnpm run jscpd
+```
+
+Result: pass. 0 clones.
 
 Command:
 

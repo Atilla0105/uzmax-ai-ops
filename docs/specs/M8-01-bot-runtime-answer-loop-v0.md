@@ -66,6 +66,7 @@ This is an implementation slice. It does not reopen UI migration or create anoth
   - `apps/worker/src/telegram-bot-conversation-persistence.ts`
   - `apps/worker/src/worker-service-shell.ts`
   - `packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs`
+  - `packages/db/scripts/run-m6b-webhook-worker-true-db-smoke.mjs`
   - `scripts/tests/m8-bot-runtime-answer-loop-support.mjs`
   - `scripts/tests/m8-bot-runtime-answer-loop-v0.test.mjs`
 
@@ -86,7 +87,7 @@ Read-only anchors:
 
 ## Change Budget
 
-- Source: up to 6 changed/new files, net source LOC target <= 600.
+- Source: up to 7 changed/new files, net source LOC target <= 600.
 - Test: up to 2 new focused test/support files.
 - Docs/evidence/incident: this spec, one evidence file, one incident file.
 - Generated, migration, schema, lock, CI/config: none.

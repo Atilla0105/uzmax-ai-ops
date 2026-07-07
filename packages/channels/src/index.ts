@@ -5,11 +5,7 @@ export const telegramBotAllowedUpdates = ["message", "callback_query"] as const;
 export type TelegramBotAllowedUpdate = (typeof telegramBotAllowedUpdates)[number];
 export type TelegramBotUpdateKind = "callback_query" | "message" | "unsupported";
 export type TelegramBotContentKind =
-  | "callback"
-  | "image"
-  | "text"
-  | "unsupported"
-  | "voice";
+  "callback" | "image" | "text" | "unsupported" | "voice";
 
 export type NormalizedTelegramBotIngress = {
   callbackData?: string;

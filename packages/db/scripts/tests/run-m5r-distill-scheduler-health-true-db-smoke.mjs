@@ -283,6 +283,11 @@ async function runAppRuntimeProbe(prisma, operation, tenantId) {
 }
 
 async function cleanupSyntheticRows(prisma) {
+  await prisma.distillHealthDaily.deleteMany({ where: { orgId: ORG_ID } });
+  await prisma.confirmationItem.deleteMany({ where: { orgId: ORG_ID } });
+  await prisma.auditLog.deleteMany({ where: { orgId: ORG_ID } });
+  await prisma.distillRun.deleteMany({ where: { orgId: ORG_ID } });
+  await prisma.tenant.deleteMany({ where: { orgId: ORG_ID } });
   await prisma.org.deleteMany({ where: { id: ORG_ID } });
 }
 
@@ -290,9 +295,11 @@ async function syntheticResidueCount(prisma) {
   const rows = await prisma.$queryRaw`
     select (
       (select count(*) from org where id::text = ${ORG_ID})
-      + (select count(*) from distill_run where metadata->>'auditRef' = 'controlled://distill-audit/m5r-03/run')
-      + (select count(*) from confirmation_item where metadata->>'distillRunId' = ${RUN_ID})
-      + (select count(*) from audit_log where module = 'distill' and trace_id like 'distill%')
+      + (select count(*) from tenant where org_id::text = ${ORG_ID})
+      + (select count(*) from distill_health_daily where org_id::text = ${ORG_ID})
+      + (select count(*) from distill_run where org_id::text = ${ORG_ID} and (id::text = ${RUN_ID} or metadata->>'auditRef' = 'controlled://distill-audit/m5r-03/run'))
+      + (select count(*) from confirmation_item where org_id::text = ${ORG_ID} and (distill_run_id::text = ${RUN_ID} or metadata->>'distillRunId' = ${RUN_ID}))
+      + (select count(*) from audit_log where org_id::text = ${ORG_ID} and module = 'distill' and trace_id like 'distill%')
     )::int as residue
   `;
   return Number(rows[0]?.residue ?? -1);

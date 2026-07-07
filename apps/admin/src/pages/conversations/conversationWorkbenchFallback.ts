@@ -46,6 +46,14 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     ],
     orderRef: "UZ-20413",
     participantExternalRef: "@dilnoza_r",
+    profileRows: [
+      { label: "客户ID", value: "CU-59284013" },
+      { label: "语言", value: "乌兹别克语（拉丁）" },
+      { label: "旅程阶段", value: "售后" },
+      { label: "累计订单", value: "4 单 · ¥1,026" },
+      { label: "未决问题", value: "退款" },
+      { label: "建档时间", value: "2026-03-02" }
+    ],
     quoteRef: "护肤入门套装 ¥268",
     slaRisk: true,
     slaText: "04:12",

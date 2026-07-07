@@ -33,6 +33,7 @@ export type ConversationRow = {
   notes?: Array<{ text: string; time: string; who: string }>;
   orderRef?: string;
   participantExternalRef: string;
+  profileRows?: Array<{ label: string; value: string }>;
   quoteRef?: string;
   slaPolicyRef?: string;
   slaRisk?: boolean;

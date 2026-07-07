@@ -8,6 +8,7 @@ import {
 } from "./conversationWorkbenchRuntime";
 
 export type RailTab = "profile" | "tickets" | "orders" | "quotes";
+type RailListProps = { collapsed?: boolean; items: string[][]; title: string };
 
 const railTabs: Array<{ id: RailTab; label: string }> = [
   { id: "profile", label: "档案" },
@@ -15,6 +16,11 @@ const railTabs: Array<{ id: RailTab; label: string }> = [
   { id: "orders", label: "订单" },
   { id: "quotes", label: "报价" }
 ];
+const stateCopy = {
+  empty: ["暂无会话", "没有会话，不会回退到 prototype fixture。"],
+  loading: ["对话工作台加载中", "正在读取 conversation-ticket 运行时。"],
+  permission: ["无对话工作台权限", "缺少 conversation:read 或 ticket:write。"]
+} as const;
 
 export function ContextRail({
   active,
@@ -26,7 +32,8 @@ export function ContextRail({
   setRailTab: (tab: RailTab) => void;
 }) {
   const data = railData(active);
-  const title = railTabs.find((tab) => tab.id === railTab)?.label ?? "档案";
+  const railLabel = railTabs.find((tab) => tab.id === railTab)?.label ?? "档案";
+  const sectionTitle = railTab === "profile" ? "客户档案" : `${railLabel}上下文`;
   return (
     <aside className="uz-conv-rail" data-testid="m7-conversation-context-rail">
       <header className="uz-conv-rail__head">
@@ -51,10 +58,7 @@ export function ContextRail({
         ))}
       </div>
       <div className="uz-conv-rail__body">
-        <KeyValueSection
-          rows={data.rows}
-          title={railTab === "profile" ? "客户档案" : `${title}上下文`}
-        />
+        <KeyValueSection rows={data.rows} title={sectionTitle} />
         <TagSection tags={data.tags} />
         <KeyValueSection
           rows={data.customFields.map((field) => [field.label, field.value])}
@@ -67,24 +71,13 @@ export function ContextRail({
           ])}
           title="双轨引导"
         />
-        <RailList
-          items={data.notes.map((note) => [`${note.who} · ${note.time}`, note.text])}
-          title="人工备注"
-        />
       </div>
-      <section className="uz-conv-rail__quick-actions">
-        <h3>快捷动作</h3>
-        <div className="uz-conv-quick">
-          <Button disabled icon={<IconSlot icon={Ticket} />}>
-            创建工单
-          </Button>
-          <Button disabled icon={<IconSlot icon={ClipboardList} />}>
-            生成报价
-          </Button>
-          <Button disabled>身份归并</Button>
-          <Button disabled>完整档案</Button>
-        </div>
-      </section>
+      <QuickActions />
+      <RailList
+        collapsed
+        items={data.notes.map((note) => [`${note.who} · ${note.time}`, note.text])}
+        title="人工备注"
+      />
     </aside>
   );
 }
@@ -95,33 +88,17 @@ export function renderConversationState(
   reload: () => void
 ) {
   if (status === "ready") return null;
-  if (status === "loading")
+  if (status in stateCopy) {
+    const copy = stateCopy[status as keyof typeof stateCopy];
     return (
       <PageState
-        data-testid="m7-conversation-loading"
-        kind="loading"
-        message="正在读取 conversation-ticket 运行时。"
-        title="对话工作台加载中"
+        data-testid={`m7-conversation-${status}`}
+        kind={status}
+        message={copy[1]}
+        title={copy[0]}
       />
     );
-  if (status === "empty")
-    return (
-      <PageState
-        data-testid="m7-conversation-empty"
-        kind="empty"
-        message="没有会话，不会回退到 prototype fixture。"
-        title="暂无会话"
-      />
-    );
-  if (status === "permission")
-    return (
-      <PageState
-        data-testid="m7-conversation-permission"
-        kind="permission"
-        message="缺少 conversation:read 或 ticket:write。"
-        title="无对话工作台权限"
-      />
-    );
+  }
   return (
     <PageState
       action={
@@ -159,43 +136,35 @@ function fallbackList<T>(value: T[] | undefined, fallback: T[]) {
 }
 
 function railHeader(active?: ConversationRow) {
-  if (!active)
-    return {
-      initial: "?",
-      name: "客户上下文不可用",
-      ref: "customer context runtime missing",
-      stage: "—"
-    };
+  const name = active ? displayName(active) : "";
+  const { customerName, customerRef, journeyStage, participantExternalRef } =
+    active ?? {};
   return {
-    initial: displayName(active),
-    name: firstText(active.customerName, displayName(active)),
-    ref: firstText(active.customerRef, active.participantExternalRef),
-    stage: firstText(active.journeyStage, "—")
+    initial: name || "?",
+    name: customerName || name || "客户上下文不可用",
+    ref: customerRef || participantExternalRef || "customer context runtime missing",
+    stage: journeyStage || "—"
   };
 }
 
 function contextRows(active?: ConversationRow) {
-  if (!active)
-    return [
-      ["客户ID", "unavailable"],
-      ["语言", "unavailable"],
-      ["旅程阶段", "客户上下文待接入"],
-      ["未决工单", "—"],
-      ["订单快照", "—"],
-      ["报价记录", "—"]
-    ];
+  const {
+    customerRef = "",
+    journeyStage = "客户上下文待接入",
+    language = "unavailable",
+    orderRef = "—",
+    participantExternalRef = "unavailable",
+    quoteRef = "—",
+    ticketRef = "—"
+  } = active ?? {};
   return [
-    ["客户ID", firstText(active.customerRef, active.participantExternalRef)],
-    ["语言", active.language ?? "unavailable"],
-    ["旅程阶段", active.journeyStage ?? "客户上下文待接入"],
-    ["未决工单", active.ticketRef ?? "—"],
-    ["订单快照", active.orderRef ?? "—"],
-    ["报价记录", active.quoteRef ?? "—"]
+    ["客户ID", customerRef || participantExternalRef],
+    ["语言", language],
+    ["旅程阶段", journeyStage],
+    ["未决工单", ticketRef],
+    ["订单快照", orderRef],
+    ["报价记录", quoteRef]
   ];
-}
-
-function firstText(primary?: string, fallback = "unavailable") {
-  return primary || fallback;
 }
 
 function KeyValueSection({ rows, title }: { rows: string[][]; title: string }) {
@@ -229,17 +198,48 @@ function TagSection({ tags }: { tags: string[] }) {
   );
 }
 
-function RailList({ items, title }: { items: string[][]; title: string }) {
+function RailList({ collapsed = false, items, title }: RailListProps) {
+  const list = (
+    <div className="uz-conv-rail-list">
+      {items.map(([head, body]) => (
+        <div key={`${title}-${head}`}>
+          <strong>{head}</strong>
+          <span>{body}</span>
+        </div>
+      ))}
+    </div>
+  );
+  if (collapsed)
+    return (
+      <details
+        className="uz-conv-section uz-conv-notes"
+        data-testid="m7-conversation-notes"
+      >
+        <summary>{title}</summary>
+        {list}
+      </details>
+    );
   return (
     <section className="uz-conv-section">
       <h3>{title}</h3>
-      <div className="uz-conv-rail-list">
-        {items.map(([head, body]) => (
-          <div key={`${title}-${head}`}>
-            <strong>{head}</strong>
-            <span>{body}</span>
-          </div>
-        ))}
+      {list}
+    </section>
+  );
+}
+
+function QuickActions() {
+  return (
+    <section className="uz-conv-rail__quick-actions">
+      <h3>快捷动作</h3>
+      <div className="uz-conv-quick">
+        <Button disabled icon={<IconSlot icon={Ticket} />}>
+          创建工单
+        </Button>
+        <Button disabled icon={<IconSlot icon={ClipboardList} />}>
+          生成报价
+        </Button>
+        <Button disabled>身份归并</Button>
+        <Button disabled>完整档案</Button>
       </div>
     </section>
   );

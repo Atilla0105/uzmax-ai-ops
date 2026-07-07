@@ -6,9 +6,9 @@ import {
 } from "./order-import-bullmq-runtime.ts";
 import {
   createTelegramBotConversationBullmqWorker,
-  PrismaTelegramBotConversationPersistenceGateway,
   type TelegramBotConversationPersistenceGateway
 } from "./conversation-runtime.ts";
+import { PrismaTelegramBotConversationPersistenceGateway } from "./telegram-bot-conversation-persistence.ts";
 import {
   runOrderImportCsvTextPersistenceJob,
   type OrderImportWorkerPersistenceGateway
@@ -280,12 +280,12 @@ function createTelemetryOnlyTelegramBotConversationGateway(
           event: "worker.telegram_bot.persist.deduped",
           providerUpdateId: input.dedupe.providerUpdateId,
           service: "worker",
-          traceId: input.ticketEvent.traceId
+          traceId: input.traceId
         });
         return {
           providerUpdateId: input.dedupe.providerUpdateId,
           status: "deduped",
-          traceId: input.ticketEvent.traceId
+          traceId: input.traceId
         };
       }
 
@@ -294,16 +294,20 @@ function createTelemetryOnlyTelegramBotConversationGateway(
         contentKind: input.message.contentKind,
         event: "worker.telegram_bot.persist.accepted",
         providerUpdateId: input.dedupe.providerUpdateId,
+        runtimeBranch: input.runtimeBranch,
         service: "worker",
-        traceId: input.ticketEvent.traceId
+        traceId: input.traceId
       });
       return {
         conversationId: input.conversation.id,
         messageId: input.message.id,
+        outboundMessageId:
+          input.runtimeBranch === "answer" ? input.outboundMessage.id : undefined,
         providerUpdateId: input.dedupe.providerUpdateId,
+        runtimeBranch: input.runtimeBranch,
         status: "accepted",
-        ticketId: input.ticket.id,
-        traceId: input.ticketEvent.traceId
+        ticketId: input.runtimeBranch === "handoff" ? input.ticket.id : undefined,
+        traceId: input.traceId
       };
     }
   };

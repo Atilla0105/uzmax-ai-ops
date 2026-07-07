@@ -82,6 +82,9 @@ export type ConversationTicketRepositoryProviderInput = {
   inMemoryRepository?: ConversationTicketRepositoryPort;
   mode?: RuntimeMode;
   prismaClient?: ConversationTicketPrismaClientPort;
+  prismaClientFactory?: (
+    databaseUrl: string
+  ) => MaybePromise<ConversationTicketPrismaClientPort>;
   rlsTransactionRunner?: ConversationTicketRlsTransactionRunner;
 };
 
@@ -287,7 +290,10 @@ export function createConversationTicketRepositoryProviderFromEnv(
     return new RlsPrismaConversationTicketRepository(
       createConversationTicketRlsTransactionRunner(input.prismaClient)
     );
-  return createPrismaClientFromEnv(input.env ?? process.env).then(
+  return createPrismaClientFromEnv(
+    input.env ?? process.env,
+    input.prismaClientFactory
+  ).then(
     (prisma) =>
       new RlsPrismaConversationTicketRepository(
         createConversationTicketRlsTransactionRunner(prisma)
@@ -296,11 +302,23 @@ export function createConversationTicketRepositoryProviderFromEnv(
 }
 
 async function createPrismaClientFromEnv(
-  env: RuntimeEnv
+  env: RuntimeEnv,
+  prismaClientFactory: (
+    databaseUrl: string
+  ) => MaybePromise<ConversationTicketPrismaClientPort> = createDefaultConversationTicketPrismaClient
 ): Promise<ConversationTicketPrismaClientPort> {
   const url = env.UZMAX_RLS_DATABASE_URL?.trim();
   if (!url) throw new Error("UZMAX_RLS_DATABASE_URL is required for Prisma runtime");
-  throw new Error("Conversation-ticket Prisma client injection is required");
+  return prismaClientFactory(url);
+}
+
+async function createDefaultConversationTicketPrismaClient(
+  databaseUrl: string
+): Promise<ConversationTicketPrismaClientPort> {
+  const { PrismaClient } = await import("@prisma/client");
+  return new PrismaClient({
+    datasources: { db: { url: databaseUrl } }
+  }) as unknown as ConversationTicketPrismaClientPort;
 }
 
 function scopeFromAccessContext(accessContext: AccessContext): RlsScope {

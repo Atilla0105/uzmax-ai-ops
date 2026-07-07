@@ -169,9 +169,7 @@ export async function processTelegramBotConversationJob(
     const reservedDedupe = { ...dedupe, reserved: true };
     try {
       const answer = await options.answerRuntime.answer({
-        orgId: payload.orgId,
         providerUpdateId: payload.providerUpdateId,
-        tenantId: payload.tenantId,
         text: requiredTextValue(payload.text, "telegram bot text"),
         traceId: payload.traceId
       });
@@ -357,11 +355,8 @@ function safeOutboundMessageContent(
   sendResult: TelegramBotOutboundSendResult
 ) {
   return removeUndefined({
-    dryRun: sendResult.dryRun,
     providerMessageRef: sendResult.providerMessageRef,
-    requestId: sendResult.requestId,
-    text: answerTextValue,
-    traceId: sendResult.traceId
+    text: answerTextValue
   });
 }
 
@@ -371,8 +366,7 @@ function safeMessageContent(payload: TelegramBotConversationJobPayload) {
     provider: payload.provider,
     providerUpdateId: payload.providerUpdateId,
     textLength: payload.text?.length ?? 0,
-    traceId: payload.traceId,
-    unsupportedReason: payload.unsupportedReason
+    traceId: payload.traceId
   };
 }
 

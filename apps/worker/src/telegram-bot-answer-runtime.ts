@@ -2,9 +2,7 @@ type MaybePromise<T> = T | Promise<T>;
 
 type TelegramBotAnswerRuntimeRequest = {
   locale?: string;
-  orgId: string;
   providerUpdateId: string;
-  tenantId: string;
   text: string;
   traceId: string;
 };

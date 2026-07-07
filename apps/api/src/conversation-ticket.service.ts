@@ -13,7 +13,7 @@ import {
 } from "../../../packages/capabilities/handoff/src/index.ts";
 
 import { requireFound } from "./conversation-ticket.errors.ts";
-import { InMemoryConversationTicketRepository } from "./conversation-ticket.repository.ts";
+import type { ConversationTicketRepositoryPort } from "./conversation-ticket.repository.ts";
 import type {
   ConversationListFilters,
   TicketActionInput
@@ -21,26 +21,31 @@ import type {
 
 @Injectable()
 export class ConversationTicketService {
-  constructor(private readonly repository: InMemoryConversationTicketRepository) {}
+  constructor(private readonly repository: ConversationTicketRepositoryPort) {}
 
   async listConversations(
     accessContext: AccessContext,
     filters: ConversationListFilters
   ) {
     assertPermission(accessContext, "conversation:read");
-    return { items: this.repository.listConversations(accessContext, filters) };
+    return { items: await this.repository.listConversations(accessContext, filters) };
   }
 
   async getConversationDetail(accessContext: AccessContext, conversationId: string) {
     assertPermission(accessContext, "conversation:read");
     const conversation = requireFound(
-      this.repository.getConversation(accessContext, conversationId),
+      await this.repository.getConversation(accessContext, conversationId),
       "conversation_not_found",
       "conversation not found"
     );
+    const [messages, tickets] = await Promise.all([
+      this.repository.listMessages(accessContext, conversationId),
+      this.repository.listTickets(accessContext, conversationId)
+    ]);
     return {
       conversation,
-      messages: this.repository.listMessages(accessContext, conversationId)
+      messages,
+      tickets
     };
   }
 
@@ -51,7 +56,7 @@ export class ConversationTicketService {
     assertPermission(accessContext, "conversation:read");
     assertPermission(accessContext, "ticket:write");
     const conversation = requireFound(
-      this.repository.getConversation(accessContext, input.conversationId),
+      await this.repository.getConversation(accessContext, input.conversationId),
       "conversation_not_found",
       "conversation not found"
     );
@@ -82,16 +87,16 @@ export class ConversationTicketService {
     });
 
     return {
-      conversation: this.repository.saveConversation(handoff.conversation),
+      conversation: await this.repository.saveConversation(handoff.conversation),
       inFlightAiMessages: handoff.inFlightAiMessages,
-      ticket: this.repository.saveTicket(ticket)
+      ticket: await this.repository.saveTicket(ticket)
     };
   }
 
   async applyTicketAction(accessContext: AccessContext, input: TicketActionInput) {
     assertPermission(accessContext, "ticket:write");
     const ticket = requireFound(
-      this.repository.getTicket(accessContext, input.ticketId),
+      await this.repository.getTicket(accessContext, input.ticketId),
       "ticket_not_found",
       "ticket not found"
     );
@@ -100,6 +105,6 @@ export class ConversationTicketService {
       actorUserId: accessContext.userId
     } as TicketAction);
 
-    return { ticket: this.repository.saveTicket(updated) };
+    return { ticket: await this.repository.saveTicket(updated) };
   }
 }

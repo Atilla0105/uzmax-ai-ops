@@ -4,13 +4,97 @@ import type {
   TicketState
 } from "../../../packages/capabilities/handoff/src/index.ts";
 
+import {
+  compareConversationPriority,
+  compareOccurredAt,
+  compareTicketEventRows,
+  matchesConversationFilters,
+  record,
+  requiredText,
+  rowArray,
+  toConversation,
+  toMessage,
+  toTicket,
+  type DbRow
+} from "./conversation-ticket.db-mappers.ts";
 import type {
   ConversationListFilters,
   ConversationMessage,
   ConversationTicketSeed
 } from "./conversation-ticket.types.ts";
 
-export class InMemoryConversationTicketRepository {
+type MaybePromise<T> = T | Promise<T>;
+type DbOperation<T = unknown> = MaybePromise<T>;
+type RuntimeEnv = Partial<
+  Record<"UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE" | "UZMAX_RLS_DATABASE_URL", string>
+>;
+type RuntimeMode = "in_memory" | "rls_prisma_gateway";
+type RlsScope = { orgId: string; tenantId: string };
+type PrismaDelegate = {
+  findFirst(input: unknown): DbOperation<unknown>;
+  findMany(input: unknown): DbOperation<unknown>;
+};
+
+type ConversationTicketPrismaClientPort = {
+  $executeRawUnsafe(sql: string): DbOperation;
+  $queryRaw(...args: readonly unknown[]): DbOperation;
+  $transaction<T extends readonly DbOperation[]>(
+    operations: T
+  ): Promise<{ [K in keyof T]: Awaited<T[K]> }>;
+  channelConversation: PrismaDelegate;
+  channelMessage: Pick<PrismaDelegate, "findMany">;
+  supportTicket: PrismaDelegate;
+  supportTicketEvent: Pick<PrismaDelegate, "findMany">;
+};
+type ConversationTicketRlsTransactionRunner = <T>(input: {
+  map?(rows: readonly unknown[]): T;
+  ops(client: ConversationTicketPrismaClientPort): readonly DbOperation[];
+  scope: RlsScope;
+}) => Promise<T>;
+export type ConversationTicketRepositoryPort = {
+  getConversation(
+    accessContext: AccessContext,
+    conversationId: string
+  ): MaybePromise<HandoffConversation | undefined>;
+  getTicket(
+    accessContext: AccessContext,
+    ticketId: string
+  ): MaybePromise<TicketState | undefined>;
+  listConversations(
+    accessContext: AccessContext,
+    filters: ConversationListFilters
+  ): MaybePromise<HandoffConversation[]>;
+  listMessages(
+    accessContext: AccessContext,
+    conversationId: string
+  ): MaybePromise<ConversationMessage[]>;
+  listTickets(
+    accessContext: AccessContext,
+    conversationId: string
+  ): MaybePromise<TicketState[]>;
+  saveConversation(
+    conversation: HandoffConversation
+  ): MaybePromise<HandoffConversation>;
+  saveTicket(ticket: TicketState): MaybePromise<TicketState>;
+};
+export type ConversationTicketRepositoryProviderInput = {
+  env?: RuntimeEnv;
+  inMemoryRepository?: ConversationTicketRepositoryPort;
+  mode?: RuntimeMode;
+  prismaClient?: ConversationTicketPrismaClientPort;
+  rlsTransactionRunner?: ConversationTicketRlsTransactionRunner;
+};
+
+export const CONVERSATION_TICKET_REPOSITORY = Symbol("CONVERSATION_TICKET_REPOSITORY");
+const conversationTicketRepositoryRuntimeModes = {
+  inMemory: "in_memory",
+  rlsPrismaGateway: "rls_prisma_gateway"
+} as const;
+
+const runtimeRoleSql = 'set local role "uzmax_app_runtime"';
+const rlsSettings = { orgId: "app.org_id", tenantId: "app.tenant_id" } as const;
+
+export class InMemoryConversationTicketRepository implements ConversationTicketRepositoryPort {
   private conversations: HandoffConversation[];
   private messages: ConversationMessage[];
   private tickets: TicketState[];
@@ -39,6 +123,13 @@ export class InMemoryConversationTicketRepository {
   listMessages(accessContext: AccessContext, conversationId: string) {
     return scoped(this.messages, accessContext)
       .filter((message) => message.conversationId === conversationId)
+      .sort(compareOccurredAt)
+      .map(clone);
+  }
+
+  listTickets(accessContext: AccessContext, conversationId: string) {
+    return scoped(this.tickets, accessContext)
+      .filter((ticket) => ticket.conversationId === conversationId)
       .map(clone);
   }
 
@@ -59,49 +150,207 @@ export class InMemoryConversationTicketRepository {
   }
 }
 
-function matchesConversationFilters(
-  conversation: HandoffConversation,
-  filters: ConversationListFilters
-): boolean {
-  return (
-    (!filters.status || conversation.status === filters.status) &&
-    (!filters.unreadOnly || conversation.unreadCount > 0) &&
-    (!filters.awaitingReply || conversation.awaitingReply === true) &&
-    (!filters.slaRiskOnly || conversation.slaRisk === true)
+class RlsPrismaConversationTicketRepository implements ConversationTicketRepositoryPort {
+  private readonly transaction: ConversationTicketRlsTransactionRunner;
+
+  constructor(transaction: ConversationTicketRlsTransactionRunner) {
+    this.transaction = transaction;
+  }
+
+  listConversations(
+    accessContext: AccessContext,
+    filters: ConversationListFilters
+  ): Promise<HandoffConversation[]> {
+    const scope = scopeFromAccessContext(accessContext);
+    return this.transaction({
+      map: ([rows]) =>
+        rowArray(rows, "conversation rows")
+          .map(toConversation)
+          .filter((conversation) => matchesConversationFilters(conversation, filters))
+          .sort(compareConversationPriority),
+      ops: (prisma) => [prisma.channelConversation.findMany({ where: scope })],
+      scope
+    });
+  }
+
+  getConversation(
+    accessContext: AccessContext,
+    conversationId: string
+  ): Promise<HandoffConversation | undefined> {
+    const scope = scopeFromAccessContext(accessContext);
+    return this.transaction({
+      map: ([row]) =>
+        row ? toConversation(record(row, "conversation row")) : undefined,
+      ops: (prisma) => [
+        prisma.channelConversation.findFirst({
+          where: { ...scope, id: conversationId }
+        })
+      ],
+      scope
+    });
+  }
+
+  listMessages(
+    accessContext: AccessContext,
+    conversationId: string
+  ): Promise<ConversationMessage[]> {
+    const scope = scopeFromAccessContext(accessContext);
+    return this.transaction({
+      map: ([rows]) =>
+        rowArray(rows, "message rows").map(toMessage).sort(compareOccurredAt),
+      ops: (prisma) => [
+        prisma.channelMessage.findMany({
+          orderBy: { occurredAt: "asc" },
+          where: { ...scope, conversationId }
+        })
+      ],
+      scope
+    });
+  }
+
+  saveConversation(): never {
+    throw new Error("conversation-ticket DB repository is read-only in M8-02");
+  }
+
+  saveTicket(): never {
+    throw new Error("conversation-ticket DB repository is read-only in M8-02");
+  }
+
+  async getTicket(
+    accessContext: AccessContext,
+    ticketId: string
+  ): Promise<TicketState | undefined> {
+    const scope = scopeFromAccessContext(accessContext);
+    const ticket = await this.transaction({
+      map: ([row]) => (row ? record(row, "ticket row") : undefined),
+      ops: (prisma) => [
+        prisma.supportTicket.findFirst({ where: { ...scope, id: ticketId } })
+      ],
+      scope
+    });
+    if (!ticket) return undefined;
+    return toTicket(ticket, await this.listTicketEvents(scope, [ticketId]));
+  }
+
+  async listTickets(
+    accessContext: AccessContext,
+    conversationId: string
+  ): Promise<TicketState[]> {
+    const scope = scopeFromAccessContext(accessContext);
+    const tickets = await this.transaction({
+      map: ([rows]) => rowArray(rows, "ticket rows"),
+      ops: (prisma) => [
+        prisma.supportTicket.findMany({
+          orderBy: { updatedAt: "desc" },
+          where: { ...scope, conversationId }
+        })
+      ],
+      scope
+    });
+    const events = await this.listTicketEvents(
+      scope,
+      tickets.map((ticket) => requiredText(ticket.id, "ticket id"))
+    );
+    return tickets.map((ticket) => toTicket(ticket, events));
+  }
+
+  private listTicketEvents(
+    scope: RlsScope,
+    ticketIds: readonly string[]
+  ): Promise<DbRow[]> {
+    if (ticketIds.length === 0) return Promise.resolve([]);
+    return this.transaction({
+      map: ([rows]) => rowArray(rows, "ticket event rows").sort(compareTicketEventRows),
+      ops: (prisma) => [
+        prisma.supportTicketEvent.findMany({
+          orderBy: { occurredAt: "asc" },
+          where: { ...scope, ticketId: { in: [...ticketIds] } }
+        })
+      ],
+      scope
+    });
+  }
+}
+
+export function createConversationTicketRepositoryProviderFromEnv(
+  input: ConversationTicketRepositoryProviderInput = {}
+): MaybePromise<ConversationTicketRepositoryPort> {
+  const mode =
+    input.mode ?? readConversationTicketRepositoryRuntimeMode(input.env ?? process.env);
+  if (mode === conversationTicketRepositoryRuntimeModes.inMemory)
+    return input.inMemoryRepository ?? new InMemoryConversationTicketRepository();
+  if (mode !== conversationTicketRepositoryRuntimeModes.rlsPrismaGateway)
+    throw new Error(`unsupported conversation-ticket repository mode: ${mode}`);
+  if (input.rlsTransactionRunner)
+    return new RlsPrismaConversationTicketRepository(input.rlsTransactionRunner);
+  if (input.prismaClient)
+    return new RlsPrismaConversationTicketRepository(
+      createConversationTicketRlsTransactionRunner(input.prismaClient)
+    );
+  return createPrismaClientFromEnv(input.env ?? process.env).then(
+    (prisma) =>
+      new RlsPrismaConversationTicketRepository(
+        createConversationTicketRlsTransactionRunner(prisma)
+      )
   );
 }
 
-function compareConversationPriority(
-  left: HandoffConversation,
-  right: HandoffConversation
-): number {
-  return priority(left) - priority(right) || right.id.localeCompare(left.id);
+async function createPrismaClientFromEnv(
+  env: RuntimeEnv
+): Promise<ConversationTicketPrismaClientPort> {
+  const url = env.UZMAX_RLS_DATABASE_URL?.trim();
+  if (!url) throw new Error("UZMAX_RLS_DATABASE_URL is required for Prisma runtime");
+  throw new Error("Conversation-ticket Prisma client injection is required");
 }
 
-function priority(conversation: HandoffConversation): number {
-  if (conversation.status === "pending_handoff") return 0;
-  if (conversation.slaRisk) return 1;
-  return 2;
+function scopeFromAccessContext(accessContext: AccessContext): RlsScope {
+  return { orgId: accessContext.orgId, tenantId: accessContext.selectedTenantId };
 }
 
 function scoped<T extends { orgId: string; tenantId: string }>(
   items: readonly T[],
   accessContext: AccessContext
 ): T[] {
-  return items.filter((item) => {
-    return (
+  return items.filter(
+    (item) =>
       item.orgId === accessContext.orgId &&
       item.tenantId === accessContext.selectedTenantId
-    );
-  });
+  );
 }
 
 function upsertById<T extends { id: string }>(items: readonly T[], item: T): T[] {
-  const found = items.some((candidate) => candidate.id === item.id);
-  if (!found) return [...items, clone(item)];
-  return items.map((candidate) => (candidate.id === item.id ? clone(item) : candidate));
+  return items.some((candidate) => candidate.id === item.id)
+    ? items.map((candidate) => (candidate.id === item.id ? clone(item) : candidate))
+    : [...items, clone(item)];
 }
 
 function clone<T>(value: T): T {
   return structuredClone(value);
+}
+
+function readConversationTicketRepositoryRuntimeMode(env: RuntimeEnv): RuntimeMode {
+  const mode = env.UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE?.trim() || "in_memory";
+  if (mode === "prisma_gateway")
+    throw new Error("conversation-ticket repository env must use RLS Prisma gateway");
+  if (
+    mode === conversationTicketRepositoryRuntimeModes.inMemory ||
+    mode === conversationTicketRepositoryRuntimeModes.rlsPrismaGateway
+  )
+    return mode;
+  throw new Error(`unsupported conversation-ticket repository mode: ${mode}`);
+}
+
+function createConversationTicketRlsTransactionRunner(
+  prisma: ConversationTicketPrismaClientPort
+): ConversationTicketRlsTransactionRunner {
+  return async ({ map, ops, scope }) => {
+    const rows = await prisma.$transaction([
+      prisma.$executeRawUnsafe(runtimeRoleSql),
+      prisma.$queryRaw`select set_config(${rlsSettings.orgId}, ${scope.orgId}, true)`,
+      prisma.$queryRaw`select set_config(${rlsSettings.tenantId}, ${scope.tenantId}, true)`,
+      ...ops(prisma)
+    ]);
+    const businessRows = rows.slice(3);
+    return map ? map(businessRows) : (businessRows as never);
+  };
 }

@@ -27,6 +27,7 @@
 }
 
 .uz-nav-brand {
+  box-sizing: border-box;
   display: flex;
   flex: none;
   align-items: center;
@@ -79,6 +80,7 @@
 .uz-app-shell.is-nav-collapsed .uz-nav-brand__text,
 .uz-app-shell.is-nav-collapsed .uz-nav-group p {
   opacity: 0;
+  visibility: hidden;
 }
 
 .uz-nav-body {
@@ -164,6 +166,7 @@
 
 .uz-nav-collapse {
   flex: none;
+  margin-top: auto;
   width: 100%;
   height: 40px;
 }
@@ -511,12 +514,19 @@
 .uz-button.uz-nav-collapse {
   justify-content: flex-start;
   gap: 11px;
+  min-height: 40px;
+  overflow: hidden;
   border: 0;
   border-top: 1px solid var(--ink-150);
   border-radius: 0;
   padding: 0 18px;
   color: var(--ink-500);
   font: 500 var(--text-sm) / 1 var(--font-body);
+}
+
+.uz-button.uz-nav-collapse > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .uz-button {
@@ -1323,5 +1333,11 @@
     right: var(--s-4);
     bottom: var(--s-4);
     left: var(--s-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uz-nav-collapse .uz-icon-slot {
+    transition: none;
   }
 }

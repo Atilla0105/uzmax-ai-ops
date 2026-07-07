@@ -71,7 +71,7 @@ export function AppShellNavGroup({
   onSelect
 }: AppShellNavGroupProps) {
   return (
-    <section className="uz-nav-group">
+    <section className="uz-nav-group" data-nav-group-label={group.label}>
       <p>{group.label}</p>
       {group.items.map(({ id, navId, ...item }) => (
         <NavItem

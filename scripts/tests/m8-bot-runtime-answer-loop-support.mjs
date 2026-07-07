@@ -275,11 +275,11 @@ async function importSource(relativePath) {
   return import(moduleUrlForFixture(relativePath));
 }
 
-function moduleUrlForFixture(relativePath) {
+export function moduleUrlForFixture(relativePath) {
   return dataModuleUrl(jsFromTs(sourceOf(relativePath)));
 }
 
-function jsFromTs(sourceText) {
+export function jsFromTs(sourceText) {
   const result = ts.transpileModule(sourceText, {
     compilerOptions: {
       emitDecoratorMetadata: false,
@@ -291,12 +291,12 @@ function jsFromTs(sourceText) {
   return result.outputText;
 }
 
-function dataModuleUrl(sourceText) {
+export function dataModuleUrl(sourceText) {
   const encoded = Buffer.from(sourceText, "utf8").toString("base64");
   return `data:text/javascript;base64,${encoded}`;
 }
 
-function sourceOf(relativePath) {
+export function sourceOf(relativePath) {
   const absolutePath = path.join(repoRoot, relativePath);
   assert.equal(existsSync(absolutePath), true, `missing ${relativePath}`);
   return readFileSync(absolutePath, "utf8");

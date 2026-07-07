@@ -6,34 +6,47 @@ import {
   createHumanHandoff,
   createTicketState
 } from "../../../packages/capabilities/handoff/src/index.ts";
-import {
-  createRlsTransactionContext,
-  type RlsTenantContext
-} from "../../../packages/db/src/index.ts";
+import type { RlsTenantContext } from "../../../packages/db/src/index.ts";
 import {
   telegramBotConversationQueueDefaults,
-  type TelegramBotConversationJobPayload
+  type TelegramBotConversationJobPayload,
+  type TelegramBotOutboundDeliveryStatus,
+  type TelegramBotOutboundSendPort,
+  type TelegramBotOutboundSendResult
 } from "../../../packages/channels/src/index.ts";
+import type { TelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts";
 
 type MaybePromise<T> = T | Promise<T>;
 type RuntimeStatus = "accepted" | "deduped";
-type RuntimeIds = {
-  conversationId?: string;
-  messageId?: string;
-  ticketId?: string;
-};
-type RuntimeResult = RuntimeIds & {
-  providerUpdateId: string;
-  status: RuntimeStatus;
-  traceId: string;
+type RuntimeBranch = "answer" | "handoff";
+type RuntimeIds = Partial<
+  Record<"conversationId" | "messageId" | "outboundMessageId" | "ticketId", string>
+>;
+export type RuntimeResult = RuntimeIds &
+  Record<"providerUpdateId" | "traceId", string> & {
+    runtimeBranch?: RuntimeBranch;
+    status: RuntimeStatus;
+  };
+type RuntimeDedupeResult = Record<"providerUpdateId" | "traceId", string> & {
+  status: "deduped" | "reserved";
 };
 
-type RuntimePersistInput = {
+export type RuntimePersistInput = AnswerPersistInput | HandoffPersistInput;
+type BasePersistInput = {
   conversation: ConversationDraft;
   dedupe: DedupeDraft;
   message: MessageDraft;
+  runtimeBranch: RuntimeBranch;
+  traceId: string;
+};
+type HandoffPersistInput = BasePersistInput & {
+  runtimeBranch: "handoff";
   ticket: TicketDraft;
   ticketEvent: TicketEventDraft;
+};
+type AnswerPersistInput = BasePersistInput & {
+  outboundMessage: OutboundMessageDraft;
+  runtimeBranch: "answer";
 };
 
 type ConversationDraft = RlsTenantContext & {
@@ -52,49 +65,35 @@ type MessageDraft = RlsTenantContext & {
   id: string;
   occurredAt: string;
 };
-type TicketDraft = RlsTenantContext & {
-  conversationId: string;
-  id: string;
-  summary: string;
-};
-type TicketEventDraft = RlsTenantContext & {
-  id: string;
-  ticketId: string;
-  traceId: string;
-};
-type DedupeDraft = RlsTenantContext & {
+type OutboundMessageDraft = RlsTenantContext & {
   channelConnectionId: string;
-  providerUpdateId: string;
-  updateKind: string;
+  content: Record<string, unknown>;
+  contentKind: "text";
+  conversationId: string;
+  deliveryStatus: TelegramBotOutboundDeliveryStatus;
+  externalMessageRef?: string;
+  id: string;
+  occurredAt: string;
 };
+type TicketDraft = RlsTenantContext &
+  Record<"conversationId" | "id" | "summary", string>;
+type TicketEventDraft = RlsTenantContext &
+  Record<"id" | "ticketId" | "traceId", string>;
+export type DedupeDraft = RlsTenantContext &
+  Record<"channelConnectionId" | "providerUpdateId" | "updateKind", string> & {
+    reserved?: boolean;
+  };
 
 export type TelegramBotConversationPersistenceGateway = {
   persistAcceptedUpdate(input: RuntimePersistInput): MaybePromise<RuntimeResult>;
+  reserveProviderUpdate?(
+    input: DedupeDraft & { traceId: string }
+  ): MaybePromise<RuntimeDedupeResult>;
 };
 
-type PrismaClientPort = {
-  $executeRawUnsafe(sql: string): MaybePromise<unknown>;
-  $queryRaw(
-    strings: TemplateStringsArray,
-    ...values: readonly unknown[]
-  ): MaybePromise<unknown>;
-  $transaction<T>(action: (tx: PrismaClientPort) => Promise<T>): Promise<T>;
-  channelConversation: {
-    upsert(input: unknown): MaybePromise<{ id: string }>;
-  };
-  channelMessage: {
-    create(input: unknown): MaybePromise<unknown>;
-  };
-  supportTicket: {
-    create(input: unknown): MaybePromise<unknown>;
-  };
-  supportTicketEvent: {
-    create(input: unknown): MaybePromise<unknown>;
-  };
-  telegramUpdateDedupe: {
-    createMany(input: unknown): MaybePromise<{ count: number }>;
-    updateMany(input: unknown): MaybePromise<unknown>;
-  };
+export type TelegramBotConversationRuntimeOptions = {
+  answerRuntime?: TelegramBotAnswerRuntime;
+  sendPort?: TelegramBotOutboundSendPort;
 };
 
 type RuntimeJob = Job<
@@ -105,14 +104,13 @@ type RuntimeJob = Job<
 
 export async function processTelegramBotConversationJob(
   payload: TelegramBotConversationJobPayload,
-  gateway: TelegramBotConversationPersistenceGateway
+  gateway: TelegramBotConversationPersistenceGateway,
+  options: TelegramBotConversationRuntimeOptions = {}
 ): Promise<RuntimeResult> {
   assertPayload(payload);
   const occurredAt = payload.occurredAt ?? payload.enqueuedAt;
   const conversationId = randomUUID();
   const messageId = randomUUID();
-  const ticketId = randomUUID();
-  const systemUserId = "00000000-0000-4000-8000-000000000005";
   const conversation = {
     channelConnectionId: payload.channelConnectionId,
     externalConversationRef:
@@ -123,64 +121,126 @@ export async function processTelegramBotConversationJob(
     participantExternalRef: payload.participantExternalRef ?? "telegram:user:unknown",
     tenantId: payload.tenantId
   };
-  const handoff = createHumanHandoff({
-    conversation: {
-      ...conversation,
-      status: "open",
-      unreadCount: 1
-    },
-    reason: `telegram_bot_${payload.contentKind}_requires_operator_review`,
-    requestedByUserId: systemUserId,
-    slaPolicyRef: "m6b-05a-runtime-smoke"
-  });
-  const ticket = createTicketState({
-    conversationId,
-    events: [],
-    id: ticketId,
+  const dedupe = {
+    channelConnectionId: payload.channelConnectionId,
     orgId: payload.orgId,
-    priority: handoff.ticketDraft.priority,
-    sla: handoff.ticketDraft.sla,
-    status: "open",
-    suggestedAction: handoff.ticketDraft.suggestedAction,
-    summary: handoff.ticketDraft.summary,
+    providerUpdateId: payload.providerUpdateId,
+    tenantId: payload.tenantId,
+    updateKind: payload.updateKind
+  };
+  const message = {
+    channelConnectionId: payload.channelConnectionId,
+    content: safeMessageContent(payload),
+    contentKind: payload.contentKind,
+    conversationId,
+    externalMessageRef: payload.messageExternalRef,
+    id: messageId,
+    occurredAt,
+    orgId: payload.orgId,
     tenantId: payload.tenantId
-  });
+  };
 
-  return gateway.persistAcceptedUpdate({
-    conversation,
-    dedupe: {
-      channelConnectionId: payload.channelConnectionId,
-      orgId: payload.orgId,
-      providerUpdateId: payload.providerUpdateId,
-      tenantId: payload.tenantId,
-      updateKind: payload.updateKind
-    },
-    message: {
-      channelConnectionId: payload.channelConnectionId,
-      content: safeMessageContent(payload),
-      contentKind: payload.contentKind,
-      conversationId,
-      externalMessageRef: payload.messageExternalRef,
-      id: messageId,
-      occurredAt,
-      orgId: payload.orgId,
-      tenantId: payload.tenantId
-    },
-    ticket: {
-      conversationId,
-      id: ticket.id,
-      orgId: payload.orgId,
-      summary: ticket.summary,
-      tenantId: payload.tenantId
-    },
-    ticketEvent: {
-      id: randomUUID(),
-      orgId: payload.orgId,
-      tenantId: payload.tenantId,
-      ticketId: ticket.id,
-      traceId: payload.traceId
+  if (canAttemptAnswer(payload, options)) {
+    if (!gateway.reserveProviderUpdate) {
+      return gateway.persistAcceptedUpdate(
+        createHandoffPersistInput({
+          conversation,
+          dedupe,
+          message,
+          payload,
+          reasonCode: "answer_dedupe_reserve_unavailable"
+        })
+      );
     }
-  });
+
+    const reserve = await gateway.reserveProviderUpdate({
+      ...dedupe,
+      traceId: payload.traceId
+    });
+    if (reserve.status === "deduped") {
+      return {
+        providerUpdateId: payload.providerUpdateId,
+        runtimeBranch: "answer",
+        status: "deduped",
+        traceId: payload.traceId
+      };
+    }
+
+    const reservedDedupe = { ...dedupe, reserved: true };
+    try {
+      const answer = await options.answerRuntime.answer({
+        providerUpdateId: payload.providerUpdateId,
+        text: requiredTextValue(payload.text, "telegram bot text"),
+        traceId: payload.traceId
+      });
+      if (answer.status !== "answered") {
+        return gateway.persistAcceptedUpdate(
+          createHandoffPersistInput({
+            conversation,
+            dedupe: reservedDedupe,
+            message,
+            payload,
+            reasonCode: answer.reasonCode
+          })
+        );
+      }
+
+      const answerTextValue = requiredTextValue(answer.answerText, "answer text").slice(
+        0,
+        4096
+      );
+      const sendResult = await options.sendPort.sendMessage({
+        channelConnectionId: payload.channelConnectionId,
+        chatExternalRef: requiredTextValue(payload.chatExternalRef, "chatExternalRef"),
+        idempotencyKey: createAnswerIdempotencyKey(payload),
+        orgId: payload.orgId,
+        replyToMessageExternalRef: payload.messageExternalRef,
+        tenantId: payload.tenantId,
+        text: answerTextValue,
+        traceId: payload.traceId
+      });
+
+      return gateway.persistAcceptedUpdate({
+        conversation,
+        dedupe: reservedDedupe,
+        message,
+        outboundMessage: {
+          channelConnectionId: payload.channelConnectionId,
+          content: safeOutboundMessageContent(answerTextValue, sendResult),
+          contentKind: "text",
+          conversationId,
+          deliveryStatus: sendResult.status,
+          externalMessageRef: sendResult.providerMessageRef,
+          id: randomUUID(),
+          occurredAt: sendResult.sentAt,
+          orgId: payload.orgId,
+          tenantId: payload.tenantId
+        },
+        runtimeBranch: "answer",
+        traceId: payload.traceId
+      });
+    } catch {
+      return gateway.persistAcceptedUpdate(
+        createHandoffPersistInput({
+          conversation,
+          dedupe: reservedDedupe,
+          message,
+          payload,
+          reasonCode: "answer_runtime_error"
+        })
+      );
+    }
+  }
+
+  return gateway.persistAcceptedUpdate(
+    createHandoffPersistInput({
+      conversation,
+      dedupe,
+      message,
+      payload,
+      reasonCode: "requires_operator_review"
+    })
+  );
 }
 
 export function createTelegramBotConversationBullmqProcessor(
@@ -207,147 +267,131 @@ export function createTelegramBotConversationBullmqWorker(options: {
   );
 }
 
-export class PrismaTelegramBotConversationPersistenceGateway implements TelegramBotConversationPersistenceGateway {
-  constructor(private readonly prisma: PrismaClientPort) {}
-
-  persistAcceptedUpdate(input: RuntimePersistInput): Promise<RuntimeResult> {
-    const scope = { orgId: input.dedupe.orgId, tenantId: input.dedupe.tenantId };
-    const context = createRlsTransactionContext(scope);
-    return this.prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(context.roleSql);
-      for (const setting of context.settings) {
-        await tx.$queryRaw`select set_config(${setting.key}, ${setting.value}, true)`;
-      }
-
-      const dedupe = await tx.telegramUpdateDedupe.createMany({
-        data: {
-          channelConnectionId: input.dedupe.channelConnectionId,
-          orgId: input.dedupe.orgId,
-          providerUpdateId: input.dedupe.providerUpdateId,
-          tenantId: input.dedupe.tenantId,
-          updateKind: input.dedupe.updateKind
-        },
-        skipDuplicates: true
-      });
-      if (dedupe.count === 0) {
-        return {
-          providerUpdateId: input.dedupe.providerUpdateId,
-          status: "deduped",
-          traceId: input.ticketEvent.traceId
-        };
-      }
-
-      const persisted = await persistConversationRuntime(tx, input);
-      return {
-        conversationId: persisted.conversationId,
-        messageId: input.message.id,
-        providerUpdateId: input.dedupe.providerUpdateId,
-        status: "accepted",
-        ticketId: input.ticket.id,
-        traceId: input.ticketEvent.traceId
-      };
-    });
-  }
-}
-
-async function persistConversationRuntime(
-  tx: PrismaClientPort,
-  input: RuntimePersistInput
-) {
-  const conversation = await tx.channelConversation.upsert({
-    create: {
-      channelConnectionId: input.conversation.channelConnectionId,
-      externalConversationRef: input.conversation.externalConversationRef,
-      id: input.conversation.id,
-      lastMessageAt: new Date(input.conversation.lastMessageAt),
-      orgId: input.conversation.orgId,
-      participantExternalRef: input.conversation.participantExternalRef,
-      status: "PENDING_HANDOFF",
-      tenantId: input.conversation.tenantId,
+function createHandoffPersistInput(input: {
+  conversation: ConversationDraft;
+  dedupe: DedupeDraft;
+  message: MessageDraft;
+  payload: TelegramBotConversationJobPayload;
+  reasonCode: string;
+}): HandoffPersistInput {
+  const ticketId = randomUUID();
+  const systemUserId = "00000000-0000-4000-8000-000000000005";
+  const handoff = createHumanHandoff({
+    conversation: {
+      ...input.conversation,
+      status: "open",
       unreadCount: 1
     },
-    update: {
-      lastMessageAt: new Date(input.conversation.lastMessageAt),
-      status: "PENDING_HANDOFF",
-      unreadCount: { increment: 1 }
+    reason: `telegram_bot_${input.payload.contentKind}_${safeReasonCode(
+      input.reasonCode
+    )}`,
+    requestedByUserId: systemUserId,
+    slaPolicyRef: "m8-01-bot-runtime-answer-loop-v0"
+  });
+  const ticket = createTicketState({
+    conversationId: input.conversation.id,
+    events: [],
+    id: ticketId,
+    orgId: input.payload.orgId,
+    priority: handoff.ticketDraft.priority,
+    sla: handoff.ticketDraft.sla,
+    status: "open",
+    suggestedAction: handoff.ticketDraft.suggestedAction,
+    summary: handoff.ticketDraft.summary,
+    tenantId: input.payload.tenantId
+  });
+
+  return {
+    conversation: input.conversation,
+    dedupe: input.dedupe,
+    message: input.message,
+    runtimeBranch: "handoff",
+    ticket: {
+      conversationId: input.conversation.id,
+      id: ticket.id,
+      orgId: input.payload.orgId,
+      summary: ticket.summary,
+      tenantId: input.payload.tenantId
     },
-    where: {
-      orgId_tenantId_channelConnectionId_externalConversationRef: {
-        channelConnectionId: input.conversation.channelConnectionId,
-        externalConversationRef: input.conversation.externalConversationRef,
-        orgId: input.conversation.orgId,
-        tenantId: input.conversation.tenantId
-      }
-    }
+    ticketEvent: {
+      id: randomUUID(),
+      orgId: input.payload.orgId,
+      tenantId: input.payload.tenantId,
+      ticketId: ticket.id,
+      traceId: input.payload.traceId
+    },
+    traceId: input.payload.traceId
+  };
+}
+
+function canAttemptAnswer(
+  payload: TelegramBotConversationJobPayload,
+  options: TelegramBotConversationRuntimeOptions
+): options is {
+  answerRuntime: TelegramBotAnswerRuntime;
+  sendPort: TelegramBotOutboundSendPort;
+} {
+  return Boolean(
+    payload.contentKind === "text" &&
+    payload.text?.trim() &&
+    payload.chatExternalRef?.trim() &&
+    options.answerRuntime &&
+    options.sendPort
+  );
+}
+
+function createAnswerIdempotencyKey(payload: TelegramBotConversationJobPayload) {
+  return `telegram-bot-answer__${payload.orgId}__${payload.tenantId}__${payload.channelConnectionId}__${payload.providerUpdateId}`;
+}
+
+function safeOutboundMessageContent(
+  answerTextValue: string,
+  sendResult: TelegramBotOutboundSendResult
+) {
+  return removeUndefined({
+    providerMessageRef: sendResult.providerMessageRef,
+    text: answerTextValue
   });
-  const conversationId = conversation.id as string;
-  await tx.channelMessage.create({
-    data: {
-      channelConnectionId: input.message.channelConnectionId,
-      content: input.message.content,
-      contentKind: dbContentKind(input.message.contentKind),
-      conversationId,
-      deliveryStatus: "RECEIVED",
-      direction: "INBOUND",
-      externalMessageRef: input.message.externalMessageRef,
-      id: input.message.id,
-      occurredAt: new Date(input.message.occurredAt),
-      orgId: input.message.orgId,
-      tenantId: input.message.tenantId
-    }
-  });
-  await tx.supportTicket.create({
-    data: {
-      conversationId,
-      id: input.ticket.id,
-      orgId: input.ticket.orgId,
-      priority: 3,
-      status: "OPEN",
-      summary: input.ticket.summary,
-      tenantId: input.ticket.tenantId
-    }
-  });
-  await tx.supportTicketEvent.create({
-    data: {
-      eventType: "CREATED",
-      id: input.ticketEvent.id,
-      orgId: input.ticketEvent.orgId,
-      payload: { traceId: input.ticketEvent.traceId },
-      tenantId: input.ticketEvent.tenantId,
-      ticketId: input.ticketEvent.ticketId
-    }
-  });
-  await tx.telegramUpdateDedupe.updateMany({
-    data: { processedAt: new Date() },
-    where: {
-      channelConnectionId: input.dedupe.channelConnectionId,
-      orgId: input.dedupe.orgId,
-      providerUpdateId: input.dedupe.providerUpdateId,
-      tenantId: input.dedupe.tenantId
-    }
-  });
-  return { conversationId };
 }
 
 function safeMessageContent(payload: TelegramBotConversationJobPayload) {
   return {
-    callbackDataLength: payload.callbackData?.length ?? 0,
     contentKind: payload.contentKind,
-    fileCount: payload.fileIds?.length ?? 0,
     provider: payload.provider,
     providerUpdateId: payload.providerUpdateId,
     textLength: payload.text?.length ?? 0,
-    traceId: payload.traceId,
-    unsupportedReason: payload.unsupportedReason
+    traceId: payload.traceId
   };
 }
 
-function dbContentKind(kind: TelegramBotConversationJobPayload["contentKind"]) {
-  return kind.toUpperCase();
+function requiredTextValue(value: unknown, label: string): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`${label} is required`);
+  }
+  return value.trim();
+}
+
+function safeReasonCode(value: unknown): string {
+  const text = typeof value === "string" ? value : "unknown";
+  return (
+    text
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_:.-]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 96) || "unknown"
+  );
+}
+
+function removeUndefined<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)
+  ) as T;
 }
 
 function assertPayload(payload: TelegramBotConversationJobPayload) {
-  for (const key of ["channelConnectionId", "orgId", "providerUpdateId", "tenantId"]) {
+  const requiredKeys = ["channelConnectionId", "orgId", "providerUpdateId", "tenantId"];
+  for (const key of requiredKeys) {
     if (typeof payload[key as keyof TelegramBotConversationJobPayload] !== "string") {
       throw new Error(`${key} is required`);
     }

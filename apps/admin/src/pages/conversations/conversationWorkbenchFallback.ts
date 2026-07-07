@@ -378,6 +378,19 @@ export function syntheticConversationDetail(
   };
 }
 
+export function syntheticLocalHandoffConversation(
+  conversation: ConversationRow
+): ConversationRow {
+  return {
+    ...conversation,
+    aiState: "suspended",
+    awaitingReply: true,
+    lastPreview: "人工已接管，AI 自动回复暂停；Business 外发仍需人工确认。",
+    memberLabel: "韩雪",
+    status: "handoff"
+  };
+}
+
 function message(
   id: string,
   direction: MessageRow["direction"],

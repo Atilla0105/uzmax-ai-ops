@@ -5,8 +5,7 @@ import type {
 } from "./conversationWorkbenchRuntime";
 
 type HandoffTarget =
-  | { id: string; policyRef: string; ref: string }
-  | { reason: string };
+  { id: string; policyRef: string; ref: string } | { reason: string };
 
 const statusBlockers: Record<ConversationRow["status"], string> = {
   closed: "已解决会话不可重复接管；如需重开需要 approved runtime。",
@@ -44,6 +43,25 @@ export function handoffBlocker(
   if (conversation.status === "open" && conversation.aiState === "suspended")
     return "AI 已暂停但 runtime 未返回可接管动作；保持禁用。";
   return statusBlockers[conversation.status];
+}
+
+export function syntheticHandoffBlocker(
+  detail: ConversationDetail | null,
+  handoffPending: boolean
+) {
+  if (!detail) return "synthetic fallback detail 未同步；本地接管预览保持禁用。";
+  if (handoffPending) return "本地接管状态切换中。";
+  const conversation = detail.conversation;
+  if (conversation.status === "handoff")
+    return "synthetic fallback 已显示人工接管状态。";
+  if (conversation.status === "closed") return "已解决 synthetic 会话不可本地接管。";
+  if (
+    conversation.status === "pending_handoff" ||
+    conversation.aiState === "suspended" ||
+    conversation.slaRisk
+  )
+    return "";
+  return "synthetic fallback 只允许 pending handoff、AI 暂停或 SLA-risk 会话做本地接管预览。";
 }
 
 export function handoffTarget(

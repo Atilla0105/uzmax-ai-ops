@@ -69,7 +69,7 @@ Fresh closeout commands run on 2026-07-07:
   - source net LOC: 10850
   - new source files: 54
   - Exception: `large_change_exception`
-- PASS targeted Prettier check for changed admin files and new consolidation docs.
+- PASS `prettier --check .` with lockfile-aligned Prettier 3.8.4.
 - PASS `node scripts/guards/prettier-ignore-boundary.mjs --base origin/main`
 - PASS ESLint equivalent of repo `lint` script.
 - PASS `node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json`
@@ -87,7 +87,7 @@ Fresh closeout commands run on 2026-07-07:
 Environment caveat:
 
 - The local shell does not expose `npm`; commands were run with the bundled Codex Node executable and project-local CLI entrypoints.
-- A full `prettier --check .` would include files not changed by this consolidation branch. The unchanged main-side files were not reformatted in this PR to avoid unrelated churn.
+- The worktree-local `node_modules` had Prettier 3.9.4, while `package-lock.json` pins Prettier 3.8.4 for CI. The final format pass used the lockfile-aligned 3.8.4 binary from the root checkout.
 
 ## Non-Closure
 

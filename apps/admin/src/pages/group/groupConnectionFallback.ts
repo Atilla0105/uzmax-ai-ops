@@ -1,5 +1,9 @@
 export type ConnectionViewState =
-  "degraded" | "empty" | "error" | "loading" | "permission";
+  | "degraded"
+  | "empty"
+  | "error"
+  | "loading"
+  | "permission";
 export type ConnectionTone = "danger" | "info" | "neutral" | "ok" | "warn";
 export type ConnectionIconKey = "bot" | "briefcase" | "plugZap" | "upload";
 

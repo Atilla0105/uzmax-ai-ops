@@ -1,5 +1,9 @@
 export type GroupLogViewState =
-  "degraded" | "empty" | "error" | "loading" | "permission";
+  | "degraded"
+  | "empty"
+  | "error"
+  | "loading"
+  | "permission";
 export type GroupLogModule =
   | "全部模块"
   | "AI 成员"

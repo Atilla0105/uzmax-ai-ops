@@ -3,9 +3,19 @@ import { FileText } from "lucide-react";
 import { IconSlot } from "../../primitives";
 
 export type KnowledgeTab =
-  "journey" | "facts" | "public" | "private" | "assets" | "templates";
+  | "journey"
+  | "facts"
+  | "public"
+  | "private"
+  | "assets"
+  | "templates";
 export type KnowledgeViewState =
-  "degraded" | "empty" | "error" | "gate" | "loading" | "permission";
+  | "degraded"
+  | "empty"
+  | "error"
+  | "gate"
+  | "loading"
+  | "permission";
 type FeedbackLevel = "high" | "low" | "medium";
 type FactEvaluation = "blocked" | "passed" | "queued";
 type TemplateStatus = "has-update" | "local-change" | "synced";

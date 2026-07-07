@@ -5,7 +5,8 @@ import type {
 } from "./conversationWorkbenchRuntime";
 
 type HandoffTarget =
-  { id: string; policyRef: string; ref: string } | { reason: string };
+  | { id: string; policyRef: string; ref: string }
+  | { reason: string };
 
 const statusBlockers: Record<ConversationRow["status"], string> = {
   closed: "已解决会话不可重复接管；如需重开需要 approved runtime。",

@@ -1,5 +1,9 @@
 export type TemplateViewState =
-  "degraded" | "empty" | "error" | "loading" | "permission";
+  | "degraded"
+  | "empty"
+  | "error"
+  | "loading"
+  | "permission";
 type TemplateTone = "danger" | "info" | "neutral" | "ok" | "warn";
 export type TemplateTabId = "agent" | "config" | "eval" | "knowledge" | "quick_reply";
 

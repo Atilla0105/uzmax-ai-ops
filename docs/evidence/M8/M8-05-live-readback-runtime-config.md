@@ -1,6 +1,6 @@
 # M8-05 Live Readback Runtime Config Evidence
 
-Status: `local_validation_pending`
+Status: `local_and_ci_validation_passed_pr_open`
 Date: 2026-07-07
 
 ## Scope
@@ -132,6 +132,14 @@ git diff --check
 ```
 
 Result: pass.
+
+PR CI:
+
+- PR: https://github.com/Atilla0105/uzmax-ai-ops/pull/278
+- Run: https://github.com/Atilla0105/uzmax-ai-ops/actions/runs/28887705037
+- Result: pass. `checks` job passed in `14m47s`.
+- Final merge still requires the current PR checks to be green at merge time.
+- Note: the first CI run failed in `guard:pr-shape` because the PR body did not expose plain `Spec ID` and `Spec file` fields. The PR body was corrected and an empty commit refreshed the pull request event payload; no repo code change was required for that PR-body failure.
 
 ## Boundaries
 

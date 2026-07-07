@@ -36,7 +36,7 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-03-page-migration-ledger-and-router"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_candidate_pending_pr_review",
     iaPage: "集团总览",
     id: "group.overview",
     label: "集团总览",
@@ -46,12 +46,13 @@ const adminPageRegistry = [
     order: 1,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupOverviewPage.tsx",
-    targetSpecId: "M7-UI-04A-group-overview"
+    targetSpecId: "M7-UI-12-group-overview-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_evidence_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "模型/成本/风险",
     id: "group.modelRisk",
     label: "模型/成本/风险",
@@ -61,12 +62,13 @@ const adminPageRegistry = [
     order: 2,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupModelPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupModelRiskPage.tsx",
-    targetSpecId: "M7-UI-04B-group-model-risk"
+    targetSpecId: "M7-UI-42-model-cost-risk-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "模板中心",
     id: "group.templates",
     label: "模板中心",
@@ -76,12 +78,13 @@ const adminPageRegistry = [
     order: 3,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupTemplatePage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupTemplatePage.tsx",
-    targetSpecId: "M7-UI-04C-group-template"
+    targetSpecId: "M7-UI-50-template-center-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "连接中心",
     id: "group.connections",
     label: "连接中心",
@@ -91,9 +94,9 @@ const adminPageRegistry = [
     order: 4,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupConnectionPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupConnectionPage.tsx",
-    targetSpecId: "M7-UI-04D-group-connection"
+    targetSpecId: "M7-UI-51-connection-center-page"
   },
   {
     evidenceStatus: "not_started",
@@ -111,7 +114,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-11-release-acceptance-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "租户管理",
     id: "group.tenants",
     label: "租户管理",
@@ -121,12 +125,13 @@ const adminPageRegistry = [
     order: 6,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupTenantPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupTenantPage.tsx",
-    targetSpecId: "M7-UI-04F-group-tenant"
+    targetSpecId: "M7-UI-52-tenant-management-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "集团日志",
     id: "group.logs",
     label: "集团日志",
@@ -136,12 +141,12 @@ const adminPageRegistry = [
     order: 7,
     requiredStates: stateMatrix,
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/group/GroupLogsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/group/GroupLogsPage.tsx",
-    targetSpecId: "M7-UI-04G-group-logs"
+    targetSpecId: "M7-UI-57-group-logs-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "对话",
     id: "tenant.conversations",
     label: "对话",
@@ -149,15 +154,23 @@ const adminPageRegistry = [
     navId: "conversations",
     navSection: "tenant",
     order: 8,
-    requiredStates: [...stateMatrix, "SLA risk"],
+    requiredStates: [
+      ...stateMatrix,
+      "mobile fallback",
+      "SLA risk",
+      "handoff/takeover",
+      "AI suspended",
+      "withdrawn/pending_cancel",
+      "customer context unavailable"
+    ],
     sourcePath:
       "/Users/atilla/源码/unpacked 6/pages/conversations/ConversationsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/conversations/ConversationsPage.tsx",
-    targetSpecId: "M7-UI-04H-tenant-conversations"
+    targetSpecId: "M7-UI-20-conversation-workbench-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "工单",
     id: "tenant.tickets",
     label: "工单",
@@ -167,12 +180,12 @@ const adminPageRegistry = [
     order: 9,
     requiredStates: [...stateMatrix, "close-result-required"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/tickets/TicketsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/tickets/TicketsPage.tsx",
-    targetSpecId: "M7-UI-04I-tenant-tickets"
+    targetSpecId: "M7-UI-21-ticket-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "客户资产",
     id: "tenant.customers",
     label: "客户资产",
@@ -182,12 +195,12 @@ const adminPageRegistry = [
     order: 11,
     requiredStates: [...stateMatrix, "privacy boundary"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/customers/CustomersPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/customers/CustomersPage.tsx",
-    targetSpecId: "M7-UI-04J-tenant-customers"
+    targetSpecId: "M7-UI-30-customer-assets-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus: "implementation_evidence_pending_pr_review",
     iaPage: "订单",
     id: "tenant.orders",
     label: "订单",
@@ -197,12 +210,13 @@ const adminPageRegistry = [
     order: 12,
     requiredStates: [...stateMatrix, "stale snapshot"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/orders/OrdersPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/orders/OrdersPage.tsx",
-    targetSpecId: "M7-UI-04K-tenant-orders"
+    targetSpecId: "M7-UI-31-orders-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_evidence_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "知识与资源",
     id: "tenant.knowledge",
     label: "知识与资源",
@@ -210,11 +224,11 @@ const adminPageRegistry = [
     navId: "knowledge",
     navSection: "tenant",
     order: 13,
-    requiredStates: [...stateMatrix, "eval-gated publish"],
+    requiredStates: [...stateMatrix, "eval-gated publish", "no formal knowledge write"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/knowledge/KnowledgePage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/knowledge/KnowledgePage.tsx",
-    targetSpecId: "M7-UI-04L-tenant-knowledge"
+    targetSpecId: "M7-UI-32-knowledge-resources-page"
   },
   {
     evidenceStatus: "implementation_evidence_pending_pr_review",
@@ -232,7 +246,8 @@ const adminPageRegistry = [
     targetSpecId: "M7-UI-10-confirmation-queue-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_evidence_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "评测中心",
     id: "tenant.eval",
     label: "评测中心",
@@ -240,14 +255,21 @@ const adminPageRegistry = [
     navId: "eval",
     navSection: "tenant",
     order: 14,
-    requiredStates: [...stateMatrix, "gate blocked"],
+    requiredStates: [
+      ...stateMatrix,
+      "gate blocked",
+      "manual review",
+      "publish disabled-enabled",
+      "mobile fallback"
+    ],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/evals/EvalPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/evals/EvalPage.tsx",
-    targetSpecId: "M7-UI-04N-tenant-eval"
+    targetSpecId: "M7-UI-40-eval-center-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_evidence_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "AI 成员",
     id: "tenant.aiMembers",
     label: "AI 成员",
@@ -255,14 +277,20 @@ const adminPageRegistry = [
     navId: "ai-members",
     navSection: "tenant",
     order: 15,
-    requiredStates: [...stateMatrix, "emergency stop/recovery"],
+    requiredStates: [
+      ...stateMatrix,
+      "emergency stop/recovery",
+      "persona eval gate",
+      "mobile fallback"
+    ],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/agents/AgentsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/agents/AgentsPage.tsx",
-    targetSpecId: "M7-UI-04O-tenant-ai-members"
+    targetSpecId: "M7-UI-41-ai-members-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "团队",
     id: "tenant.team",
     label: "团队",
@@ -270,14 +298,20 @@ const adminPageRegistry = [
     navId: "team",
     navSection: "tenant",
     order: 16,
-    requiredStates: stateMatrix,
+    requiredStates: [
+      ...stateMatrix,
+      "invite local-only",
+      "disable/restore reason",
+      "permission denied"
+    ],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/team/TeamPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/team/TeamPage.tsx",
-    targetSpecId: "M7-UI-04P-tenant-team"
+    targetSpecId: "M7-UI-53-team-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "配置",
     id: "tenant.config",
     label: "配置",
@@ -287,12 +321,13 @@ const adminPageRegistry = [
     order: 17,
     requiredStates: [...stateMatrix, "rollback confirmation"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/config/ConfigPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/config/ConfigPage.tsx",
-    targetSpecId: "M7-UI-04Q-tenant-config"
+    targetSpecId: "M7-UI-54-config-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "分析",
     id: "tenant.analytics",
     label: "分析",
@@ -300,14 +335,20 @@ const adminPageRegistry = [
     navId: "analytics",
     navSection: "tenant",
     order: 18,
-    requiredStates: stateMatrix,
+    requiredStates: [
+      ...stateMatrix,
+      "delayed data",
+      "time/channel/language filters",
+      "mobile fallback"
+    ],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/analytics/AnalyticsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/analytics/AnalyticsPage.tsx",
-    targetSpecId: "M7-UI-04R-tenant-analytics"
+    targetSpecId: "M7-UI-55-analytics-page"
   },
   {
-    evidenceStatus: "not_started",
+    evidenceStatus:
+      "implementation_candidate_pending_pr_review_not_accepted_not_runtime_closed",
     iaPage: "日志",
     id: "tenant.logs",
     label: "日志",
@@ -317,9 +358,9 @@ const adminPageRegistry = [
     order: 19,
     requiredStates: [...stateMatrix, "high-risk refs"],
     sourcePath: "/Users/atilla/源码/unpacked 6/pages/logs/LogsPage.tsx",
-    status: "not_started",
+    status: "implemented_in_worker_pending_pr",
     targetPath: "apps/admin/src/pages/logs/LogsPage.tsx",
-    targetSpecId: "M7-UI-04S-tenant-logs"
+    targetSpecId: "M7-UI-56-logs-page"
   }
 ] as const satisfies readonly AdminPageRegistryEntry[];
 

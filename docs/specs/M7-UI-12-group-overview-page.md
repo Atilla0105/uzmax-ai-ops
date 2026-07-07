@@ -2,37 +2,35 @@
 
 ## 目标
 
-Create the page-specific migration contract for `group.overview` / 集团总览.
+Implement the visible UI-first `group.overview` / 集团总览 page in `apps/admin`.
 
-This is a docs-only planning slice. It supersedes the older ledger placeholder `M7-UI-04A-group-overview` for future implementation planning, but it does not implement the page, wire runtime/API data, create tests, change CSS, migrate fixtures, claim owner acceptance, close runtime gaps, approve GA-0/production, or approve 1.0 release.
-
-The later implementation worker may not start until the coordinator confirms this spec remains the active group-overview target and confirms no overlap with other page/router/runtime workers.
+This implementation slice supersedes the earlier docs-only planning posture for this same spec. It renders the real page route with a truthful centralized mock/degraded fallback because DB/API/runtime foundation is downgraded for this visual shell. It may provide a controlled UI-only degraded tenant-entry affordance so the owner can see the group layer -> tenant layer boundary. That affordance does not claim runtime authorization, tenant-cache invalidation, production access closure, real operational numbers, owner visual acceptance, runtime gap closure, GA-0/production approval or 1.0 release approval.
 
 ## 项目 owner 确认点与 AI agent 执行/复核责任
 
 Owner/coordinator:
 
-- Confirm this PR is a spec/evidence/ledger docs PR only.
-- Confirm `M7-UI-12-group-overview-page` replaces the `M7-UI-04A-group-overview` placeholder as the planning spec for `group.overview`.
-- Decide whether missing group aggregate runtime/API contracts should be implemented in the page worker or split first; AI agents must not invent runtime truth.
+- Confirm this PR is a UI-first implementation candidate stacked on PR #182 head/base, not runtime closure.
+- Confirm `M7-UI-12-group-overview-page` replaces the `M7-UI-04A-group-overview` placeholder for the `group.overview` visible page route.
+- Decide later whether missing group aggregate runtime/API contracts proceed through the downgraded DB/API lane; AI agents must not invent runtime truth or treat the visual tenant-entry affordance as production authorization closure.
 - Keep final scope, production/staging, real customer/order data, customer LLM, LLM key, cost/compliance, GA-0, production and 1.0 release decisions as owner-only.
 
 AI agent:
 
-- Work only in `/Users/atilla/.codex/worktrees/m7-ui-12-group-overview-page-spec` on branch `codex/m7-ui-12-group-overview-page-spec`.
+- Work only in `/Users/atilla/.codex/worktrees/m7-ui-12-group-overview-visible-ui` on branch `codex/m7-ui-12-group-overview-visible-ui`.
 - Keep `/Users/atilla/Applications/UZMAX智能运营` root/main read-only.
-- Do not touch #178, #182 or #184 branches/worktrees.
+- Do not touch #178, #182, #184 or root/main checkout branches/worktrees.
 - Read AGENTS, v1.1 source-of-truth docs, admin design system, current M7 ledger/evidence, registry/page outlet state, owner HTML, and the unpacked group overview sources before drafting.
 - Record entry evidence, source mapping, runtime gaps and validation results in this spec/evidence.
-- Do not implement UI in this spec-only PR.
+- Implement only the visible group overview route with centralized mock/degraded data and focused Playwright coverage.
 
 ## 时间盒
 
-0.25 workday. If drafting requires UI implementation, backend/API changes, package/lock updates, raw fixture copying, DB/schema changes, CI/global config changes, release/production action, or edits to #178/#182/#184 worktrees, stop and report `BLOCKED`.
+0.5 workday. If implementation requires backend/API changes, package/lock updates, raw fixture copying, DB/schema changes, CI/global config changes, release/production action, or edits to #178/#182/#184 worktrees, stop and report `BLOCKED`.
 
 ## Spec 类型
 
-docs
+feature
 
 ## 触碰模块/文件
 
@@ -41,44 +39,29 @@ docs
   - `docs/evidence/M7/M7-UI-12-group-overview-page.md`
   - `docs/admin-ui-page-migration-ledger.md`
   - `docs/evidence/M7/README.md`
+  - `apps/admin/src/App.tsx`
+  - `apps/admin/src/pages/PageOutlet.tsx`
+  - `apps/admin/src/pages/registry.ts`
+  - `apps/admin/src/pages/group/GroupOverviewPage.tsx`
+  - `apps/admin/src/pages/group/groupOverviewFallback.ts`
+  - `apps/admin/tests/m7-ui-group-overview.spec.ts`
 - 说明/备注：
-  - This PR may touch only the four docs paths above.
-  - Future implementation paths are listed separately below and are not part of this docs-only PR touch list.
-  - A future implementation PR must add or confirm its own machine-readable implementation touch list before code changes.
+  - This PR may touch only the implementation and evidence paths above.
+  - Shared shell/sidebar badge calibration remains owned by its base/shared-shell slice; this page slice reads and validates navigation behavior but does not change `AppShellNavigation.tsx`.
   - If future implementation needs a shared group aggregate ApiClient/hook outside the listed paths, backend/API routes, WebSocket contracts, package/lock, token package, shared patterns, CI/guard scripts or DB/schema changes, stop and split to a separate approved spec.
 - 未列出的模块默认不可改。
 
-## Future Implementation Candidate Paths (Non-Guard)
-
-This section is intentionally descriptive and is not the machine-readable touch list consumed by `guard:pr-shape`. A future implementation PR must add or confirm its own implementation touch list before changing code.
-
-- apps/admin/src/pages/group/GroupOverviewPage.tsx
-- apps/admin/src/pages/PageOutlet.tsx
-- apps/admin/src/pages/registry.ts
-- apps/admin/tests/m7-ui-group-overview.spec.ts
-- apps/admin/tests/m7-ui-page-router.spec.ts
-
 ## 变更预算与路径分类
 
-Spec-only PR budget:
+Implementation PR budget:
 
-- source changed files: 0
-- source net LOC: 0
-- new source files: 0
-- test files changed: 0
-- docs changed: <= 4
-- package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
-- binary screenshots/artifacts: 0
-
-Future implementation budget after coordinator approval:
-
-- source changed files: <= 4
-- source net LOC: <= 450
+- source changed files: <= 5
+- source net LOC: <= 600
 - new source files: <= 2
-- test files changed: <= 2 focused Playwright specs
-- docs changed: <= 3 evidence/ledger updates
+- test files changed: <= 1 focused Playwright spec
+- docs changed: <= 4 evidence/ledger/spec updates
 - package/lock/generated/config/backend/API/DB/worker/cron/CI/global config: 0
-- external API/SDK/provider/connector/adapter basis: none; use approved internal runtime contracts or truthful degraded/read-only state only.
+- external API/SDK/provider/connector/adapter basis: none; render truthful degraded/mock visual state only. Controlled tenant-entry may demonstrate group -> tenant UI boundary, but is not runtime authorization/cache-invalidation evidence.
 - exceptions: none expected. If runtime/API gaps force expansion, stop for a separate spec instead of declaring an exception inside this page worker.
 
 ## 文档触发检查
@@ -87,7 +70,7 @@ updated
 
 ## 前置条件与读取记录
 
-Required reads completed for this spec-only PR:
+Required reads completed for this implementation PR:
 
 - `AGENTS.md`
 - `UZMAX智能运营系统-PRD-v1.1.md`
@@ -105,34 +88,33 @@ Required reads completed for this spec-only PR:
 - `/Users/atilla/源码/unpacked 6/App.tsx`
 - `/Users/atilla/源码/unpacked 6/shell/navigation.ts`
 - `/Users/atilla/Downloads/运营塔台1.0.html` as visual reference only; no large HTML content copied.
-- #184 page visual acceptance notes, now merged to `origin/main` via `d7ea071`, for owner visual-baseline rules. Initial drafting inspected the #184 worktree read-only; no #184 branch/worktree files were edited.
-- Impeccable context and product register: dense product/admin UI, status-first hierarchy, complete loading/empty/error/permission/degraded states, desktop control-room primary, mobile fallback only, and no decorative/legacy-shell visual drift.
+- `apps/admin/src/shell/AppShell.tsx`, `apps/admin/src/shell/AppShellNavigation.tsx`, `apps/admin/src/shell/AppShell.css`
+- `apps/admin/src/pages/conversations/*` enough to preserve the stacked PR #182 workbench route.
+- Impeccable context and product register: dense product/admin UI, status-first hierarchy, complete degraded/mock states, desktop control-room primary, mobile fallback only, and no decorative/legacy-shell visual drift.
 
 Worktree / branch entry evidence:
 
 | Fact | Evidence |
 |---|---|
-| worker `pwd` | `/Users/atilla/.codex/worktrees/m7-ui-12-group-overview-page-spec` |
-| worker `git status --short --branch` | `## codex/m7-ui-12-group-overview-page-spec...origin/main` |
-| worker `git branch --show-current` | `codex/m7-ui-12-group-overview-page-spec` |
-| worker HEAD | `2193a51` / `M7-UI-06 shared shell topbar calibration (#183)` |
+| worker `pwd` | `/Users/atilla/.codex/worktrees/m7-ui-12-group-overview-visible-ui` |
+| worker `git status --short --branch` | `## codex/m7-ui-12-group-overview-visible-ui...origin/codex/m7-ui-20-conversation-workbench-page-impl` |
+| worker `git branch --show-current` | `codex/m7-ui-12-group-overview-visible-ui` |
+| stacked base | `origin/codex/m7-ui-20-conversation-workbench-page-impl` |
 | root/main checkout | `/Users/atilla/Applications/UZMAX智能运营` |
-| root/main status/head before edits | `## main...origin/main`; `2193a51` |
-| root `git branch --no-merged main` before edits | `codex/m7-ui-07-page-visual-acceptance-notes`; `codex/m7-ui-11-release-acceptance-page-impl`; `codex/m7-ui-20-conversation-workbench-page-impl` |
-| open PR/base audit | #178 Draft/Paused (`codex/m7-ui-11-release-acceptance-page-impl`, CI success at initial draft); #182 Draft conversation implementation candidate (`codex/m7-ui-20-conversation-workbench-page-impl`, CI success at initial draft); #184 page visual acceptance notes later squash-merged to `origin/main` as `d7ea071`, and this branch is rebased onto that base. |
+| root/main boundary | root/main remains read-only for this worker |
 
 ## Source Mapping
 
 | Source | Required use |
 |---|---|
 | `/Users/atilla/Downloads/运营塔台1.0.html` | Hard visual baseline for first-viewport layout density, health strip, table rhythm, sidebar grouping and shell relationship. Do not copy bundled HTML/runtime text. |
-| `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx` | Primary structured source for page anatomy: title/result label, clear filter chip, search field, six health cards, sortable tenant table, row click into tenant layer. |
+| `/Users/atilla/源码/unpacked 6/pages/group/GroupOverviewPage.tsx` | Primary structured source for page anatomy: title/result label, clear filter chip, search field, six health cards, sortable tenant table and tenant entry into tenant layer. |
 | `/Users/atilla/源码/unpacked 6/fixtures/group.ts` | Field-shape reference only: `GROUP_HEALTH`, `OV_ROWS`, `OV_COL_DEFS`, `ovFilterTest`. Fixture values are not runtime truth and must not be imported into production page code. |
 | `/Users/atilla/源码/unpacked 6/App.tsx` | Source mapping for group route `overview` and `onEnterTenant` transition to tenant conversations. |
 | `/Users/atilla/源码/unpacked 6/shell/navigation.ts` | Source mapping for group navigation category placement: 总览 -> 集团总览. |
-| `apps/admin/src/pages/registry.ts` | Current repo route state: `group.overview` exists as a registry row and still points at the old placeholder `M7-UI-04A-group-overview`. |
-| `apps/admin/src/pages/PageOutlet.tsx` | Current repo runtime state: non-migrated pages render scaffold/empty page state; `group.overview` is not implemented. |
-| `docs/admin-design-system.md` | Normalization layer: group overview is health strip + data table, no customer plaintext, row click enters authorized tenant context, all states required. |
+| `apps/admin/src/pages/registry.ts` | This implementation updates `group.overview` to `M7-UI-12-group-overview-page` as `implemented_in_worker_pending_pr`. |
+| `apps/admin/src/pages/PageOutlet.tsx` | This implementation renders `GroupOverviewPage` for `group.overview` and keeps tenant conversation routing intact. |
+| `docs/admin-design-system.md` | Normalization layer: group overview is health strip + data table, no customer plaintext, tenant entry enters authorized tenant context, all states required. |
 
 v1.1/doc references:
 
@@ -153,7 +135,7 @@ v1.1/doc references:
 | Eval state | pass, blocked/fail, running, unavailable/stale | Do not imply eval gate pass if runtime lacks evidence. |
 | Order connector state | normal, degraded, fault/down, unavailable/stale | Do not let LLM infer order status; use connector/runtime state. |
 | Last abnormal event | safe aggregate event label, category, age/time, severity | Must not reveal customer plaintext, raw payload or cross-tenant details. |
-| Tenant navigation target | authorized tenant layer route, expected default `tenant.conversations` | Row click must enter tenant layer only after authorization and clear tenant-scoped caches/permissions when real runtime exists. Back/exit path is handled by shell. |
+| Tenant navigation target | authorized tenant layer route, expected default `tenant.conversations` | In this UI-first slice, a controlled degraded/mock tenant-entry affordance may route sanitized fallback rows into the tenant layer to show the boundary. Future real runtime must authorize the tenant and clear/reload tenant-scoped caches, permissions and feature flags before production use. Back/exit path is handled by shell. |
 
 ### Filters And Actions
 
@@ -163,7 +145,7 @@ v1.1/doc references:
 | Health card filter | Cards filter tenant rows by aggregate state: total, abnormal, AI tripped, model fault, order connector fault, redline today. |
 | Clear filter | Clears active health filter and search query without changing runtime data. |
 | Sort columns | Sort numeric columns for sessions, human-needed, SLA risk, handoff rate and AI cost/day; stable dimensions and no layout shift. |
-| Click row to enter tenant layer | Enter only authorized tenant context. If runtime authorization/cache invalidation is missing, render disabled/degraded affordance instead of fake navigation success. |
+| Click row to enter tenant layer | UI-first slice may expose a degraded/mock tenant-entry affordance for sanitized fallback rows so the group -> tenant layer boundary is visible. It must remain clearly non-production and must not claim authorization/cache invalidation closure. Future production/runtime entry must enforce backend authorization and tenant-scoped cache/permission invalidation. |
 | Back/exit path | Handled by AppShell/layered navigation; this page must not invent a second shell. |
 
 ### Prohibited Behavior
@@ -171,76 +153,74 @@ v1.1/doc references:
 - No customer plaintext, conversation content, phone, Telegram username, raw order payload, raw prompt/completion or customer-specific evidence at group layer.
 - No unpacked fixture data as runtime truth; fixtures may only inform source mapping or sanitized tests.
 - No LLM judgment for cost, SLA, order state, connector health or model fault.
-- No cross-tenant data leak or unauthorized tenant row/click target.
+- No cross-tenant data leak, customer plaintext or production unauthorized tenant row/click target. UI-only degraded tenant-entry is allowed only for sanitized fallback rows and must not be represented as production access.
 - No old shell, old `--uzmax-*` token bridge or early visual wording as the target for new UI.
 - No release/acceptance displacement: this page does not approve M7 closeout, GA-0, production, owner acceptance or 1.0 release.
 
 ## Runtime Contract
 
-Current repo status:
+Current implementation status:
 
-- `apps/admin/src/pages/registry.ts` contains `group.overview`, but it still records `targetSpecId: "M7-UI-04A-group-overview"` and `status: "not_started"`.
-- `apps/admin/src/pages/PageOutlet.tsx` renders only the legacy evidence route and the merged confirmation queue page; `group.overview` still falls through to the planned-page scaffold.
-- No group aggregate ApiClient/hook exists in `apps/admin` for the REQ-G01 aggregate table/health strip.
+- `apps/admin/src/pages/registry.ts` records `group.overview` as `implemented_in_worker_pending_pr` under `M7-UI-12-group-overview-page`.
+- `apps/admin/src/pages/PageOutlet.tsx` renders `GroupOverviewPage` for `group.overview`.
+- No group aggregate ApiClient/hook exists in `apps/admin` for the REQ-G01 aggregate table/health strip, so this page renders an honest centralized mock/degraded contract with runtime evidence unavailable.
+- DB/API foundation is downgraded for this visual shell. The page may use controlled UI-only degraded tenant-entry to show the layer transition, but this does not close runtime authorization, cache invalidation, RLS, production access or real aggregate-data contracts.
 
-Future implementation must choose one approved path:
-
-1. Wire an approved real group aggregate API/client/hook that returns authorized aggregate-only data and state metadata.
-2. Render an honest read-only/degraded contract if the API/hook is absent, with unbacked interactions disabled and copy that states runtime evidence is unavailable.
+Future runtime implementation must wire an approved real group aggregate API/client/hook that returns authorized aggregate-only data and state metadata before populated values may be treated as operational truth.
 
 The implementation must not import `/Users/atilla/源码/unpacked 6/fixtures/group.ts`, copy fixture rows into runtime source, or simulate group health as if it were production truth.
 
 Data boundary:
 
 - Group layer data is authorized aggregate only.
-- Tenant row click may enter tenant layer only for an authorized tenant.
-- When real runtime exists, tenant transition must clear tenant-scoped caches, reload permissions/feature flags and avoid preserving stale tenant state from the previous tenant.
+- UI-first degraded tenant-entry may enter tenant layer only as a visual boundary demonstration using sanitized fallback rows.
+- When real runtime exists, tenant entry must be authorized by backend/runtime, must clear tenant-scoped caches, reload permissions/feature flags and avoid preserving stale tenant state from the previous tenant.
 - Backend/API remains the authority for authorization; hidden or disabled frontend controls are not authorization.
 
 ## State Coverage
 
 | State | Required behavior |
 |---|---|
-| `loading` | Health strip and table skeletons with stable dimensions; no spinner-only blank page. |
-| `empty` | No authorized tenants exist or no aggregate data is available; explain the allowed next step without decorative illustration. |
+| `loading` | Future runtime state. Health strip and table skeletons with stable dimensions; no spinner-only blank page. Not claimed in this UI-first DB/API blocker-exception slice. |
+| `empty` | Future runtime state for no authorized tenants or no aggregate data. UI-first slice covers source-like initial/filtered empty table only. |
 | `filtered_empty` | Active search/health filter produces no rows; show clear-filter action. |
-| `error` | Aggregate fetch failed; show retry and safe trace/reference if available. |
-| `permission_denied` | User lacks group overview permission; explain role/prerequisite and render no tenant data. |
-| `degraded` | Aggregate stale, partial, connector/model/eval source unavailable or runtime contract missing; show read-only truthful data where available and disable unbacked actions. |
+| `error` | Future runtime state. Aggregate fetch failed; show retry and safe trace/reference if available. Not claimed in this UI-first DB/API blocker-exception slice. |
+| `permission_denied` | Future runtime state. User lacks group overview permission; explain role/prerequisite and render no tenant data. Not claimed in this UI-first DB/API blocker-exception slice. |
+| `degraded` | Current UI-first covered state. Aggregate/runtime contract is unavailable; show truthful mock/degraded copy, avoid production metrics claims and allow only controlled visual affordances such as tenant-entry boundary demonstration. |
 | `mobile_fallback` | Readable stacked health cards and row summaries at 320px; table may become row summaries. Mobile polish is deferred, but no overflow/overlap is allowed. |
 
 ## Visual Acceptance
 
 - Owner HTML `/Users/atilla/Downloads/运营塔台1.0.html` and frozen source `/Users/atilla/源码/unpacked 6` are the hard baseline.
 - Desktop acceptance requires pixel/detail-level comparison against owner HTML and exact unpacked group overview source before visual acceptance can be claimed.
-- The future implementation must check sidebar category grouping and the bottom collapse control if the sidebar is visible.
+- This implementation must check sidebar category grouping and the bottom collapse control if the sidebar is visible.
 - Group and tenant layers remain separate: admin/home or `/design` starts at group layer/group overview; selecting/clicking an authorized tenant enters tenant layer.
 - Mobile remains a readable fallback in this phase; pixel-level mobile polish can be a later mobile-specific pass.
 - Visual target is current prototype + `docs/admin-design-system.md`, not legacy shell CSS or old `--uzmax-*` values.
 
-## Future Evidence / Validation Plan
+## Evidence / Validation Plan
 
-Future implementation must record:
+Implementation must record:
 
 - `git diff --check`
 - `npm run guard:doc-triggers`
-- Before running or using `pr-shape` against this spec for a future implementation PR, add or confirm that PR's own machine-readable implementation touch list; the docs-only touch list above is not valid for implementation code changes.
-- `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree`
+- `node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-20-conversation-workbench-page-impl --spec docs/specs/M7-UI-12-group-overview-page.md --include-worktree`
 - format/typecheck/lint/admin build as required by the implementation scope
-- focused Playwright for `group.overview`: loading, empty, filtered empty, error, permission denied, degraded, search, health-card filter/clear, sort, authorized row click
+- focused Playwright for `group.overview`: degraded, source-like initial/filtered empty table, search, health-card filter/clear, sort, controlled UI-only tenant-entry button click and keyboard activation, shell separation, sidebar collapse and 320px no-overflow fallback. Loading/error/permission runtime states are deferred/not claimed under the UI-first DB/API blocker exception.
 - desktop and 320px mobile screenshots/no-overflow evidence
 - desktop pixel/detail comparison against owner HTML and unpacked source
 - Impeccable/equivalent design audit with accepted/rejected recommendations and reasons
 - spec compliance review before code quality review
 
-This spec-only PR validation is limited to docs guards and does not provide runtime or visual acceptance evidence.
+Runtime states beyond degraded/mock visual shell, source-like filtered empty, mobile/collapse and shell/tenant-entry boundary are intentionally not implemented in this UI-first slice because DB/API foundation is downgraded.
 
 ## Pass Conditions
 
-- Only allowed docs files change.
-- Ledger row for `group.overview` points to `M7-UI-12-group-overview-page` and says spec-ready/docs-only while preserving no implementation merged.
-- Evidence file records required reads, entry state, open PR situation and validation results.
-- Spec contains source mapping, page matrix, runtime contract, state coverage, visual acceptance and prohibited behavior.
+- Only allowed implementation/evidence files change.
+- `group.overview` renders a visible page with title, truthful fallback/runtime note, search, filter clear, six health cards, nine-column tenant table frame, sort and accessible controlled UI-only tenant-entry boundary action.
+- Registry and ledger point `group.overview` to `M7-UI-12-group-overview-page` as an implementation candidate pending PR review, not merged or owner accepted.
+- Centralized mock/degraded data is visibly marked and does not present prototype metrics as runtime truth.
+- Focused Playwright covers group layer, tenant entry, shell nav separation, sidebar collapse and 320px no-overflow fallback.
 - Validation results are recorded honestly.
 
 ## Failure Branch
@@ -248,12 +228,12 @@ This spec-only PR validation is limited to docs guards and does not provide runt
 - If assigned worktree/branch state is wrong, stop and report `BLOCKED`.
 - If required source files or owner HTML are unavailable, record the missing path in evidence and stop before claiming spec-ready.
 - If validation requires an open PR or PR metadata, create the Draft PR first if possible; otherwise record the exact blocker.
-- If any file outside the allowed docs touch list changes, stop and report for cleanup.
+- If any file outside the allowed implementation touch list changes, stop and report for cleanup.
 
 ## Out Of Scope
 
-- No UI/page implementation.
-- No `apps/**`, `packages/**`, tests, lockfile, generated, CI/guard, DB/schema, backend/API, worker/cron or dependency changes.
+- No backend/API/DB/runtime implementation.
+- No package/lock, generated, CI/guard, DB/schema, backend/API, worker/cron or dependency changes.
 - No edits to `/Users/atilla/Downloads/运营塔台1.0.html` or `/Users/atilla/源码/unpacked 6`.
 - No raw HTML copy or large prototype excerpt.
 - No owner visual acceptance, page migration, runtime closure, GA-0, production, real customer/order-data use, customer LLM, Telegram Business automatic reply or 1.0 release approval.

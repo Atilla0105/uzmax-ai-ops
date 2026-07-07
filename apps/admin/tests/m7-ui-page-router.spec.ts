@@ -82,6 +82,9 @@ test("starts at group overview with group-only navigation", async ({ page }) => 
 test("tenant selection enters tenant conversations with tenant-only navigation", async ({
   page
 }) => {
+  await page.route("**/conversation-ticket/conversations", async (route) => {
+    await route.fulfill({ json: { items: [] } });
+  });
   await page.goto("/design");
 
   await page.getByTestId("tenant-switcher").selectOption("tenant-b");
@@ -95,6 +98,8 @@ test("tenant selection enters tenant conversations with tenant-only navigation",
   );
   await expect(page.getByTestId("active-layer-badge")).toContainText("租户层");
   await expect(page.getByTestId("route-breadcrumb")).toContainText("丝路数码");
+  await expect(page.getByTestId("m7-conversation-workbench-page")).toBeVisible();
+  await expect(page.getByTestId("page-scaffold")).toHaveCount(0);
   await expectLayerNav(
     page,
     tenantSectionLabels,

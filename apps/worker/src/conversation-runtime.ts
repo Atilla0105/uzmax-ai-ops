@@ -341,13 +341,7 @@ function canAttemptAnswer(
 }
 
 function createAnswerIdempotencyKey(payload: TelegramBotConversationJobPayload) {
-  return [
-    "telegram-bot-answer",
-    payload.orgId,
-    payload.tenantId,
-    payload.channelConnectionId,
-    payload.providerUpdateId
-  ].join("__");
+  return `telegram-bot-answer__${payload.orgId}__${payload.tenantId}__${payload.channelConnectionId}__${payload.providerUpdateId}`;
 }
 
 function safeOutboundMessageContent(

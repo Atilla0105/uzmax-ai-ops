@@ -169,10 +169,7 @@ export async function processTelegramBotConversationJob(
     const reservedDedupe = { ...dedupe, reserved: true };
     try {
       const answer = await options.answerRuntime.answer({
-        channelConnectionId: payload.channelConnectionId,
-        chatExternalRef: payload.chatExternalRef,
         orgId: payload.orgId,
-        participantExternalRef: payload.participantExternalRef,
         providerUpdateId: payload.providerUpdateId,
         tenantId: payload.tenantId,
         text: requiredTextValue(payload.text, "telegram bot text"),
@@ -370,9 +367,7 @@ function safeOutboundMessageContent(
 
 function safeMessageContent(payload: TelegramBotConversationJobPayload) {
   return {
-    callbackDataLength: payload.callbackData?.length ?? 0,
     contentKind: payload.contentKind,
-    fileCount: payload.fileIds?.length ?? 0,
     provider: payload.provider,
     providerUpdateId: payload.providerUpdateId,
     textLength: payload.text?.length ?? 0,

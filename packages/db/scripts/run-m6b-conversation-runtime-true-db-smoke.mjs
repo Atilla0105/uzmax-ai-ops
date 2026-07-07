@@ -188,7 +188,15 @@ async function importWorkerRuntime(channelsModuleUrl) {
     .replaceAll("../../../packages/db/src/index.ts", dbUrl)
     .replace('import { Worker, type Job, type QueueOptions } from "bullmq";', "");
   const moduleUrl = compileTsModuleUrl(source);
-  return { module: await import(moduleUrl), moduleUrl };
+  const persistenceSource = readRepoText(
+    "apps/worker/src/telegram-bot-conversation-persistence.ts"
+  ).replaceAll("../../../packages/db/src/index.ts", dbUrl);
+  return {
+    module: {
+      ...(await import(moduleUrl)),
+      ...(await import(compileTsModuleUrl(persistenceSource)))
+    }
+  };
 }
 
 function readRepoText(relativePath) {

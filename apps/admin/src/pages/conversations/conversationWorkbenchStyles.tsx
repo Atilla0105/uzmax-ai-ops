@@ -47,7 +47,7 @@ export function ThreadHeader({
         data-testid="m7-conversation-degraded"
         title={degradedReason}
       >
-        synthetic/degraded/not-production {degradedReason}{" "}
+        synthetic/degraded/not-production 只读预览 {degradedReason}{" "}
         发送、人工作业外发、客户聚合和 WS 实时同步保持禁用。
       </span>
       <div className="uz-conv-actions">

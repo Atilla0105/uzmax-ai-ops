@@ -1,10 +1,5 @@
 export type AnalyticsViewState =
-  | "degraded"
-  | "delayed"
-  | "empty"
-  | "error"
-  | "loading"
-  | "permission";
+  "degraded" | "delayed" | "empty" | "error" | "loading" | "permission";
 export type AnalyticsRange = "today" | "7d" | "30d";
 export type AnalyticsDimension =
   | "agent"

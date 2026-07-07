@@ -1,9 +1,5 @@
 export type ModelRiskViewState =
-  | "degraded"
-  | "empty"
-  | "error"
-  | "loading"
-  | "permission";
+  "degraded" | "empty" | "error" | "loading" | "permission";
 export type ModelTone = "danger" | "info" | "neutral" | "ok" | "warn" | "accent";
 
 export const modelRuntimeLabels =

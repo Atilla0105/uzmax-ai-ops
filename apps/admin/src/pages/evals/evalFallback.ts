@@ -1,11 +1,5 @@
 export type EvalViewState =
-  | "degraded"
-  | "empty"
-  | "error"
-  | "loading"
-  | "pass"
-  | "permission"
-  | "running";
+  "degraded" | "empty" | "error" | "loading" | "pass" | "permission" | "running";
 export type EvalResult = "fail" | "pass";
 export type BlindState = "done" | "pending" | "running";
 

@@ -139,32 +139,53 @@ function railHeader(active?: ConversationRow) {
   const name = active ? displayName(active) : "";
   const { customerName, customerRef, journeyStage, participantExternalRef } =
     active ?? {};
+  const primaryName = customerName || name || "客户上下文不可用";
   return {
-    initial: name || "?",
-    name: customerName || name || "客户上下文不可用",
-    ref: customerRef || participantExternalRef || "customer context runtime missing",
+    initial: sourceInitial(primaryName),
+    name: primaryName,
+    ref:
+      usableRef(participantExternalRef) ||
+      usableRef(customerRef) ||
+      "customer context runtime missing",
     stage: journeyStage || "—"
   };
 }
 
 function contextRows(active?: ConversationRow) {
-  const {
-    customerRef = "",
-    journeyStage = "客户上下文待接入",
-    language = "unavailable",
-    orderRef = "—",
-    participantExternalRef = "unavailable",
-    quoteRef = "—",
-    ticketRef = "—"
-  } = active ?? {};
+  return sourceProfileRows(active?.profileRows) ?? operationalContextRows(active);
+}
+
+function sourceProfileRows(profileRows: ConversationRow["profileRows"]) {
+  if (!profileRows?.length) return null;
+  return profileRows.map((row) => [row.label, row.value]);
+}
+
+function operationalContextRows(active?: ConversationRow) {
   return [
-    ["客户ID", customerRef || participantExternalRef],
-    ["语言", language],
-    ["旅程阶段", journeyStage],
-    ["未决工单", ticketRef],
-    ["订单快照", orderRef],
-    ["报价记录", quoteRef]
+    ["客户ID", customerIdentity(active)],
+    ["语言", fieldOr(active?.language, "unavailable")],
+    ["旅程阶段", fieldOr(active?.journeyStage, "客户上下文待接入")],
+    ["未决工单", fieldOr(active?.ticketRef, "—")],
+    ["订单快照", fieldOr(active?.orderRef, "—")],
+    ["报价记录", fieldOr(active?.quoteRef, "—")]
   ];
+}
+
+function customerIdentity(active?: ConversationRow) {
+  return active?.customerRef || active?.participantExternalRef || "unavailable";
+}
+
+function fieldOr(value: string | undefined, fallback: string) {
+  return value || fallback;
+}
+
+function sourceInitial(value: string) {
+  return Array.from(value.trim())[0] || "?";
+}
+
+function usableRef(value: string | undefined) {
+  const trimmed = value?.trim() ?? "";
+  return trimmed && trimmed !== "customer-ref-unavailable" ? trimmed : "";
 }
 
 function KeyValueSection({ rows, title }: { rows: string[][]; title: string }) {
@@ -188,7 +209,7 @@ function TagSection({ tags }: { tags: string[] }) {
     <section className="uz-conv-section">
       <h3>客户标签</h3>
       <div className="uz-conv-tags">
-        {tags.map((tag) => (
+        {[...tags, "+ 添加"].map((tag) => (
           <StatusBadge key={tag} tone="neutral">
             {tag}
           </StatusBadge>

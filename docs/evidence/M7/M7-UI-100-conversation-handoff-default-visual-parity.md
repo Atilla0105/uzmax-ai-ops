@@ -70,7 +70,7 @@ Captured focused metrics:
 | Command | Result |
 |---|---|
 | `git diff --check` | pass |
-| focused Prettier on changed files | pass |
+| Prettier 3.8.4 full CI-equivalent check: `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /Users/atilla/.codex/worktrees/m7-ui-12-group-overview-visible-ui/node_modules/prettier/bin/prettier.cjs --check .` | pass |
 | focused Playwright conversation tests: `m7-ui-100-conversation-handoff-default-visual-parity.spec.ts`, `m7-ui-conversation-workbench-fallback.spec.ts`, `m7-ui-conversation-workbench.spec.ts` with `--project=desktop-chromium` | pass, 12/12 |
 | `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/vite/bin/vite.js build apps/admin --emptyOutDir` | pass, Vite large chunk warning only |
-| `npm run guard:pr-shape -- --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-100-conversation-handoff-default-visual-parity.md` | pending final post-commit run; pre-commit working tree run is not meaningful because the guard reads `base..HEAD` |
+| `/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/guards/pr-shape.mjs --base origin/codex/m7-ui-31-orders-visible-ui --spec docs/specs/M7-UI-100-conversation-handoff-default-visual-parity.md` | pass; changedFiles 9; source changedFiles 4; netLoc 65; newFiles 0 |

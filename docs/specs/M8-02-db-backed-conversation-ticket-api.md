@@ -55,6 +55,7 @@ This slice is the backend readback half of the Bot closed loop. It does not impl
   - `apps/api/src/conversation-ticket.repository.ts`
   - `apps/api/src/conversation-ticket.service.ts`
   - `apps/api/src/app.module.ts`
+  - `apps/api/scripts/runtime-compiler.mjs`
   - `scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs`
 
 Read-only anchors:
@@ -70,7 +71,7 @@ Read-only anchors:
 
 ## Change Budget
 
-- Source: up to 4 changed/new files, net source LOC target <= 600.
+- Source: up to 5 changed/new files, net source LOC target <= 600.
 - Test: 1 new focused test.
 - Docs/evidence: this spec plus one evidence file.
 - Generated, migration, schema, lock, CI/config: none.

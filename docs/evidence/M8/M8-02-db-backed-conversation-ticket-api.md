@@ -30,7 +30,11 @@ Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m
   - Wires `ConversationTicketService` through the repository token.
   - Defaults to `in_memory`.
   - Leaves direct Prisma client construction as follow-up dependency wiring; this slice validates the RLS Prisma gateway through injected client/runner seams.
+- `apps/api/scripts/runtime-compiler.mjs`
+  - Includes the split conversation-ticket DB mapper module in the test runtime compiler.
+  - Rewrites repository imports to compiled `.mjs` modules so API shell tests do not import raw `.ts`.
 - `scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs`
+  - Loads the compiled runtime repository module instead of importing raw TypeScript.
   - Uses fake Prisma delegates only; no network and no real DB.
   - Covers env provider fallback/fail-closed behavior, RLS transaction settings, conversation list filters, conversation detail readback pieces, message ordering, ticket/event mapping, and tenant isolation.
 
@@ -39,7 +43,7 @@ Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m
 Lint command:
 
 ```bash
-PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" pnpm run lint -- apps/api/src/conversation-ticket.db-mappers.ts apps/api/src/conversation-ticket.repository.ts apps/api/src/conversation-ticket.service.ts apps/api/src/app.module.ts scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs
+PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" pnpm run lint -- apps/api/src/conversation-ticket.db-mappers.ts apps/api/src/conversation-ticket.repository.ts apps/api/src/conversation-ticket.service.ts apps/api/src/app.module.ts apps/api/scripts/runtime-compiler.mjs scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs
 ```
 
 Result: pass.
@@ -65,7 +69,8 @@ Additional checks:
 | `git diff --check` | passed |
 | `node --check scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs` with the Codex Node runtime | passed |
 | `rg -n "[ \t]+$" ...changed files...` | no trailing whitespace |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M8-02-db-backed-conversation-ticket-api.md --include-worktree` with the Codex Node runtime | passed: `changedFiles=7`, source `changedFiles=4`, source `netLoc=507`, source `newFiles=1`, categories `source=4/docs=2/test=1` |
+| `node --test scripts/tests/m1-02-api-access-context.test.mjs` with the Codex Node runtime | reached API runtime import; local run blocked by missing local `reflect-metadata`, after the prior raw `.ts` mapper import failure point |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M8-02-db-backed-conversation-ticket-api.md --include-worktree` with the Codex Node runtime | passed: `changedFiles=8`, source `changedFiles=5`, source `netLoc=512`, source `newFiles=1`, categories `source=5/docs=2/test=1` |
 
 ## Boundaries And Risks
 

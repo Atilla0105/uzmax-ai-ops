@@ -2,10 +2,20 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-
-import * as repositoryModule from "../../apps/api/src/conversation-ticket.repository.ts";
+import { pathToFileURL, URL } from "node:url";
 
 const repoRoot = process.cwd();
+const { compileApiRuntime } = await import(
+  new URL("../../apps/api/scripts/runtime-compiler.mjs", import.meta.url)
+);
+const runtimeOutDir = await compileApiRuntime({
+  outDir: path.join(repoRoot, "node_modules/.cache/uzmax-api-runtime-m8-02")
+});
+const repositoryModule = await import(
+  `${
+    pathToFileURL(path.join(runtimeOutDir, "conversation-ticket.repository.mjs")).href
+  }?t=${Date.now()}`
+);
 const ORG_ID = "11111111-1111-4111-8111-111111111111";
 const TENANT_A = "22222222-2222-4222-8222-222222222222";
 const TENANT_B = "33333333-3333-4333-8333-333333333333";

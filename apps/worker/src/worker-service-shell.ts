@@ -15,6 +15,7 @@ import {
 } from "./main.ts";
 import { telegramBotConversationQueueDefaults } from "../../../packages/channels/src/index.ts";
 
+export { createTelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts";
 type Env = Record<string, string | undefined>;
 type WorkerLog = (entry: Record<string, unknown>) => void;
 type WorkerKind = "order-import" | "telegram-bot-conversation";

@@ -1,6 +1,6 @@
 type MaybePromise<T> = T | Promise<T>;
 
-export type TelegramBotAnswerRuntimeRequest = {
+type TelegramBotAnswerRuntimeRequest = {
   channelConnectionId: string;
   chatExternalRef?: string;
   locale?: string;
@@ -12,7 +12,7 @@ export type TelegramBotAnswerRuntimeRequest = {
   traceId: string;
 };
 
-export type TelegramBotAnswerRuntimeResult =
+type TelegramBotAnswerRuntimeResult =
   | {
       answerText: string;
       status: "answered";

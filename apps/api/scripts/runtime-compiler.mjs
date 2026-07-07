@@ -328,6 +328,9 @@ function conversationTicketModules() {
   const handoff = {
     "../../../packages/capabilities/handoff/src/index.ts": "./handoff-index.mjs"
   };
+  const dbMappers = {
+    "./conversation-ticket.db-mappers.ts": "./conversation-ticket.db-mappers.mjs"
+  };
   const types = { "./conversation-ticket.types.ts": "./conversation-ticket.types.mjs" };
   return [
     [
@@ -341,9 +344,14 @@ function conversationTicketModules() {
       { ...authz, ...handoff }
     ],
     [
+      "apps/api/src/conversation-ticket.db-mappers.ts",
+      "conversation-ticket.db-mappers.mjs",
+      { ...handoff, ...types }
+    ],
+    [
       "apps/api/src/conversation-ticket.repository.ts",
       "conversation-ticket.repository.mjs",
-      { ...authz, ...handoff, ...types }
+      { ...authz, ...dbMappers, ...handoff, ...types }
     ],
     [
       "apps/api/src/conversation-ticket.service.ts",

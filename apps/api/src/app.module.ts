@@ -26,9 +26,12 @@ import {
   type TemplateCopyRuntimeRepositoryPort
 } from "./template-copy-runtime.ts";
 import {
+  CONVERSATION_TICKET_REPOSITORY,
   ConversationTicketController,
   ConversationTicketService,
-  InMemoryConversationTicketRepository
+  InMemoryConversationTicketRepository,
+  createConversationTicketRepositoryProviderFromEnv,
+  type ConversationTicketRepositoryPort
 } from "./conversation-ticket.ts";
 import { ConfirmationQueueController } from "./confirmation-queue.controller.ts";
 import {
@@ -306,7 +309,12 @@ class TelegramBotWebhookController {
         formalWritePipeline: ConfirmationFormalWritePipelinePort
       ) => new ConfirmationQueueService(repository, formalWritePipeline)
     },
-    ConversationTicketService,
+    {
+      inject: [CONVERSATION_TICKET_REPOSITORY],
+      provide: ConversationTicketService,
+      useFactory: (repository: ConversationTicketRepositoryPort) =>
+        new ConversationTicketService(repository)
+    },
     CustomerAssetService,
     OrderImportService,
     {
@@ -345,6 +353,14 @@ class TelegramBotWebhookController {
       useFactory: () => createTemplateCopyRuntimeRepositoryProviderFromEnv()
     },
     InMemoryConversationTicketRepository,
+    {
+      inject: [InMemoryConversationTicketRepository],
+      provide: CONVERSATION_TICKET_REPOSITORY,
+      useFactory: (repository: InMemoryConversationTicketRepository) =>
+        createConversationTicketRepositoryProviderFromEnv({
+          inMemoryRepository: repository
+        })
+    },
     InMemoryCustomerAssetRepository,
     {
       provide: CUSTOMER_ASSET_REPOSITORY,

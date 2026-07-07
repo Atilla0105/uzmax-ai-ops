@@ -70,7 +70,7 @@ Additional checks:
 | `node --check scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs` with the Codex Node runtime | passed |
 | `rg -n "[ \t]+$" ...changed files...` | no trailing whitespace |
 | `node --test scripts/tests/m1-02-api-access-context.test.mjs` with the Codex Node runtime | reached API runtime import; local run blocked by missing local `reflect-metadata`, after the prior raw `.ts` mapper import failure point |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M8-02-db-backed-conversation-ticket-api.md --include-worktree` with the Codex Node runtime | passed: `changedFiles=8`, source `changedFiles=5`, source `netLoc=512`, source `newFiles=1`, categories `source=5/docs=2/test=1` |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M8-02-db-backed-conversation-ticket-api.md --include-worktree` with the Codex Node runtime | passed: `changedFiles=8`, source `changedFiles=5`, source `netLoc=510`, source `newFiles=1`, categories `source=5/docs=2/test=1` |
 
 ## Boundaries And Risks
 

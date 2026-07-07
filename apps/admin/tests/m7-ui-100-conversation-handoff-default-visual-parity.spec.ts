@@ -161,16 +161,16 @@ async function primaryText(locator: Locator) {
 async function collectGeometry(page: Page) {
   return page.evaluate(() => {
     const rectFor = (selector: string) => {
-      const element = document.querySelector(selector);
-      if (!element) return { height: 0, right: 0, width: 0, x: 0, y: 0 };
-      const rect = element.getBoundingClientRect();
-      return {
-        height: Math.round(rect.height),
-        right: Math.round(rect.right),
-        width: Math.round(rect.width),
-        x: Math.round(rect.x),
-        y: Math.round(rect.y)
-      };
+      const rect = document.querySelector(selector)?.getBoundingClientRect();
+      return rect
+        ? {
+            height: Math.round(rect.height),
+            right: Math.round(rect.right),
+            width: Math.round(rect.width),
+            x: Math.round(rect.x),
+            y: Math.round(rect.y)
+          }
+        : { height: 0, right: 0, width: 0, x: 0, y: 0 };
     };
     return {
       bodyScrollWidth: document.body.scrollWidth,

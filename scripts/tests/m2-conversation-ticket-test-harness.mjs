@@ -137,9 +137,14 @@ async function importConversationTicketApiSource(context) {
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
     "@nestjs/common": context.nestCommon
   });
+  const dbMappersModuleUrl = writeSource(context, "conversation-ticket.db-mappers", {
+    "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+    "./conversation-ticket.types.ts": typesModuleUrl
+  });
   const repositoryModuleUrl = writeSource(context, "conversation-ticket.repository", {
     "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+    "./conversation-ticket.db-mappers.ts": dbMappersModuleUrl,
     "./conversation-ticket.types.ts": typesModuleUrl
   });
   const serviceModuleUrl = writeSource(context, "conversation-ticket.service", {

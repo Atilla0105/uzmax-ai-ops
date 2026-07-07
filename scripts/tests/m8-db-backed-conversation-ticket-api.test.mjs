@@ -32,6 +32,7 @@ const EVENT_NOTE = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 const SYSTEM_ACTOR = "00000000-0000-4000-8000-000000000005";
 const NOW = "2026-06-17T00:00:00.000Z";
 const appModuleSource = read("apps/api/src/app.module.ts");
+const renderConfig = read("render.yaml");
 const serviceSource = read("apps/api/src/conversation-ticket.service.ts");
 
 describe("M8-02 DB-backed conversation-ticket API", () => {
@@ -61,6 +62,28 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
           }
         }),
       /UZMAX_RLS_DATABASE_URL is required/
+    );
+    const factoryCalls = [];
+    const factoryProvider =
+      await repositoryModule.createConversationTicketRepositoryProviderFromEnv({
+        env: {
+          UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE: "rls_prisma_gateway",
+          UZMAX_RLS_DATABASE_URL: "postgres://controlled.example/uzmax"
+        },
+        prismaClientFactory(databaseUrl) {
+          factoryCalls.push(databaseUrl);
+          return fakePrisma();
+        }
+      });
+    assert.deepEqual(factoryCalls, ["postgres://controlled.example/uzmax"]);
+    assert.equal(
+      (
+        await factoryProvider.listConversations(
+          contextFor(TENANT_A, ["conversation:read"]),
+          {}
+        )
+      ).length,
+      2
     );
     assert.match(appModuleSource, /CONVERSATION_TICKET_REPOSITORY/);
     assert.match(appModuleSource, /createConversationTicketRepositoryProviderFromEnv/);
@@ -138,6 +161,39 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
       { key: "app.org_id", kind: "set_config", value: ORG_ID },
       { key: "app.tenant_id", kind: "set_config", value: TENANT_A }
     ]);
+  });
+
+  it("declares Render API/worker DB-backed dry-run closed-loop config", () => {
+    assert.match(
+      renderConfig,
+      /UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE\s*\n\s*value: rls_prisma_gateway/
+    );
+    assert.match(renderConfig, /UZMAX_RLS_DATABASE_URL\s*\n\s*sync: false/);
+    assert.match(
+      renderConfig,
+      /UZMAX_WORKER_TELEGRAM_BOT_PERSISTENCE_MODE\s*\n\s*value: rls_prisma_gateway/
+    );
+    assert.match(
+      renderConfig,
+      /UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE\s*\n\s*value: dry_run/
+    );
+    assert.match(
+      renderConfig,
+      /UZMAX_WORKER_TELEGRAM_BOT_AI_MEMBER_KEY\s*\n\s*value: support_bot/
+    );
+    assert.match(
+      renderConfig,
+      /UZMAX_WORKER_TELEGRAM_BOT_KB_ENTRY_KEY\s*\n\s*value: setup/
+    );
+    assert.match(
+      renderConfig,
+      /UZMAX_WORKER_TELEGRAM_BOT_REQUIRED_CAPABILITY_KEY\s*\n\s*value: TUTORIAL/
+    );
+    assert.match(renderConfig, /UZMAX_TELEGRAM_BOT_TOKEN\s*\n\s*sync: false/);
+    assert.doesNotMatch(
+      renderConfig,
+      /UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE\s*\n\s*value: live/
+    );
   });
 });
 

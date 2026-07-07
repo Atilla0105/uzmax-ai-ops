@@ -40,7 +40,7 @@ Command:
 PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M8-01-bot-runtime-answer-loop-v0.md --include-worktree
 ```
 
-Result: pass. `changedFiles=10`, source `changedFiles=5`, source `netLoc=600`, source `newFiles=2`, categories `source=5/docs=3/test=2`.
+Result: pass. `changedFiles=10`, source `changedFiles=5`, source `netLoc=599`, source `newFiles=2`, categories `source=5/docs=3/test=2`.
 
 Command:
 

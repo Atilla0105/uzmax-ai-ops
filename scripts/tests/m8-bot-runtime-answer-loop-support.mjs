@@ -243,53 +243,60 @@ function dedupeKey(input) {
 }
 
 async function importChannelsSource() {
-  const moduleUrl = transpileToTempModule("packages/channels/src/index.ts");
+  const moduleUrl = moduleUrlForFixture("packages/channels/src/index.ts");
   return { module: await import(moduleUrl), moduleUrl };
 }
 
 async function importWorkerConversationRuntime(channelsModuleUrl) {
-  const handoffUrl = transpileToTempModule(
-    "packages/capabilities/handoff/src/index.ts"
-  );
-  const dbUrl = transpileToTempModule("packages/db/src/index.ts");
-  const source = read("apps/worker/src/conversation-runtime.ts")
-    .replace("../../../packages/channels/src/index.ts", channelsModuleUrl)
-    .replace("../../../packages/capabilities/handoff/src/index.ts", handoffUrl)
-    .replace("../../../packages/db/src/index.ts", dbUrl)
-    .replace("./telegram-bot-answer-runtime.ts", awaitAnswerRuntimeUrl())
-    .replace('import { Worker, type Job, type QueueOptions } from "bullmq";', "");
-  return import(moduleUrlFromSource(transpileSource(source)));
-}
-
-function awaitAnswerRuntimeUrl() {
-  return transpileToTempModule("apps/worker/src/telegram-bot-answer-runtime.ts");
+  const replacements = [
+    ["../../../packages/channels/src/index.ts", channelsModuleUrl],
+    [
+      "../../../packages/capabilities/handoff/src/index.ts",
+      moduleUrlForFixture("packages/capabilities/handoff/src/index.ts")
+    ],
+    [
+      "../../../packages/db/src/index.ts",
+      moduleUrlForFixture("packages/db/src/index.ts")
+    ],
+    [
+      "./telegram-bot-answer-runtime.ts",
+      moduleUrlForFixture("apps/worker/src/telegram-bot-answer-runtime.ts")
+    ],
+    ['import { Worker, type Job, type QueueOptions } from "bullmq";', ""]
+  ];
+  let runtimeSource = sourceOf("apps/worker/src/conversation-runtime.ts");
+  for (const [needle, value] of replacements) {
+    runtimeSource = runtimeSource.replace(needle, value);
+  }
+  return import(dataModuleUrl(jsFromTs(runtimeSource)));
 }
 
 async function importSource(relativePath) {
-  return import(transpileToTempModule(relativePath));
+  return import(moduleUrlForFixture(relativePath));
 }
 
-function transpileToTempModule(relativePath) {
-  return moduleUrlFromSource(transpileSource(read(relativePath)));
+function moduleUrlForFixture(relativePath) {
+  return dataModuleUrl(jsFromTs(sourceOf(relativePath)));
 }
 
-function transpileSource(sourceText) {
-  return ts.transpileModule(sourceText, {
+function jsFromTs(sourceText) {
+  const result = ts.transpileModule(sourceText, {
     compilerOptions: {
       emitDecoratorMetadata: false,
       experimentalDecorators: true,
       module: ts.ModuleKind.ES2022,
       target: ts.ScriptTarget.ES2023
     }
-  }).outputText;
+  });
+  return result.outputText;
 }
 
-function moduleUrlFromSource(sourceText) {
+function dataModuleUrl(sourceText) {
   const encoded = Buffer.from(sourceText, "utf8").toString("base64");
   return `data:text/javascript;base64,${encoded}`;
 }
 
-function read(relativePath) {
+function sourceOf(relativePath) {
   const absolutePath = path.join(repoRoot, relativePath);
   assert.equal(existsSync(absolutePath), true, `missing ${relativePath}`);
   return readFileSync(absolutePath, "utf8");

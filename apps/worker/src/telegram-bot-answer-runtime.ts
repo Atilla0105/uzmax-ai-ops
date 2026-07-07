@@ -84,13 +84,12 @@ function guardedKbAnswer(
   kb: Record<string, unknown>
 ): TelegramBotAnswerRuntimeResult {
   if (!options.guardRedlineOutput) return handoff("redline_guard_unavailable");
-  const refs: string[] = [];
   const outputRef = `controlled://telegram-bot-answer/${refSegment(
     request.providerUpdateId
   )}`;
   const redline = asRecord(
     options.guardRedlineOutput({
-      controlledRefs: refs,
+      controlledRefs: [],
       output: answerText(asRecord(kb.card, "kb card").answer),
       outputRef
     }),

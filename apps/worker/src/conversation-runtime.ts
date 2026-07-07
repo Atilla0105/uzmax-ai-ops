@@ -14,10 +14,7 @@ import {
   type TelegramBotOutboundSendPort,
   type TelegramBotOutboundSendResult
 } from "../../../packages/channels/src/index.ts";
-import type {
-  TelegramBotAnswerRuntime,
-  TelegramBotAnswerRuntimeResult
-} from "./telegram-bot-answer-runtime.ts";
+import type { TelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts";
 
 type MaybePromise<T> = T | Promise<T>;
 type RuntimeStatus = "accepted" | "deduped";
@@ -214,7 +211,7 @@ export async function processTelegramBotConversationJob(
         message,
         outboundMessage: {
           channelConnectionId: payload.channelConnectionId,
-          content: safeOutboundMessageContent(answer, answerTextValue, sendResult),
+          content: safeOutboundMessageContent(answerTextValue, sendResult),
           contentKind: "text",
           conversationId,
           deliveryStatus: sendResult.status,
@@ -359,7 +356,6 @@ function createAnswerIdempotencyKey(payload: TelegramBotConversationJobPayload) 
 }
 
 function safeOutboundMessageContent(
-  answer: Extract<TelegramBotAnswerRuntimeResult, { status: "answered" }>,
   answerTextValue: string,
   sendResult: TelegramBotOutboundSendResult
 ) {

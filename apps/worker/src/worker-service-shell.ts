@@ -4,11 +4,19 @@ import {
   createOrderImportCsvTextBullmqWorker,
   orderImportBullmqQueueDefaults
 } from "./order-import-bullmq-runtime.ts";
+import { createTelegramBotConversationBullmqWorker } from "./conversation-runtime.ts";
 import {
-  createTelegramBotConversationBullmqWorker,
-  type TelegramBotConversationPersistenceGateway
-} from "./conversation-runtime.ts";
-import { PrismaTelegramBotConversationPersistenceGateway } from "./telegram-bot-conversation-persistence.ts";
+  createTelegramBotConversationGateway,
+  createTelegramBotConversationRuntimeOptions,
+  optionalHttpUrl,
+  parseTelegramAnswerMode,
+  parseTelegramPersistenceMode,
+  parseTelegramRequiredCapability,
+  requiredTelegramRlsDatabaseUrl,
+  type TelegramAnswerMode,
+  type TelegramBotWorkerRuntimeConfig,
+  type TelegramPersistenceMode
+} from "./telegram-bot-worker-service-runtime.ts";
 import {
   runOrderImportCsvTextPersistenceJob,
   type OrderImportWorkerPersistenceGateway
@@ -19,18 +27,12 @@ export { createTelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts
 type Env = Record<string, string | undefined>;
 type WorkerLog = (entry: Record<string, unknown>) => void;
 type WorkerKind = "order-import" | "telegram-bot-conversation";
-type TelegramPersistenceMode = "rls_prisma_gateway" | "telemetry";
-type TelegramBotPrismaGatewayClient = ConstructorParameters<
-  typeof PrismaTelegramBotConversationPersistenceGateway
->[0];
-type WorkerServiceConfig = {
+type WorkerServiceConfig = TelegramBotWorkerRuntimeConfig & {
   connection: QueueOptions["connection"];
   orderImportQueueName: string;
   prefix?: string;
   queues: readonly WorkerKind[];
-  rlsDatabaseUrl?: string;
   telegramBotConversationQueueName: string;
-  telegramPersistenceMode: TelegramPersistenceMode;
 };
 type WorkerJob = {
   attemptsMade: number;
@@ -55,6 +57,7 @@ export type WorkerServiceShell = {
     orderImportQueueName: string;
     prefix?: string;
     queues: readonly WorkerKind[];
+    telegramAnswerMode: TelegramAnswerMode;
     telegramBotConversationQueueName: string;
     telegramPersistenceMode: TelegramPersistenceMode;
   };
@@ -86,15 +89,21 @@ export async function startWorkerServiceShell(
   }
 
   if (config.queues.includes("telegram-bot-conversation")) {
-    const { gateway, resource } = await createTelegramBotConversationGateway(
+    const { gateway, prisma, resource } = await createTelegramBotConversationGateway(
       config,
       log
     );
+    const runtimeOptions = createTelegramBotConversationRuntimeOptions({
+      config,
+      log,
+      prisma
+    });
     const worker = createTelegramBotConversationBullmqWorker({
       connection: config.connection,
       gateway,
       prefix: config.prefix,
-      queueName: config.telegramBotConversationQueueName
+      queueName: config.telegramBotConversationQueueName,
+      runtimeOptions
     });
     attachTelegramBotConversationLogs(
       worker,
@@ -144,6 +153,7 @@ export async function startWorkerServiceShell(
       orderImportQueueName: config.orderImportQueueName,
       prefix: config.prefix,
       queues: config.queues,
+      telegramAnswerMode: config.telegramAnswerMode,
       telegramBotConversationQueueName: config.telegramBotConversationQueueName,
       telegramPersistenceMode: config.telegramPersistenceMode
     }
@@ -242,83 +252,14 @@ function attachTelegramBotConversationLogs(
   });
 }
 
-async function createTelegramBotConversationGateway(
-  config: WorkerServiceConfig,
-  log: WorkerLog
-): Promise<{
-  gateway: TelegramBotConversationPersistenceGateway;
-  resource?: ClosableResource;
-}> {
-  if (config.telegramPersistenceMode === "telemetry") {
-    return { gateway: createTelemetryOnlyTelegramBotConversationGateway(log) };
-  }
-
-  const dbUrl = requiredValue(config.rlsDatabaseUrl, "UZMAX_RLS_DATABASE_URL");
-  const { PrismaClient } = await import("@prisma/client");
-  const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
-  return {
-    gateway: new PrismaTelegramBotConversationPersistenceGateway(
-      prisma as unknown as TelegramBotPrismaGatewayClient
-    ),
-    resource: prisma
-  };
-}
-
-function createTelemetryOnlyTelegramBotConversationGateway(
-  log: WorkerLog
-): TelegramBotConversationPersistenceGateway {
-  const seen = new Set<string>();
-  return {
-    persistAcceptedUpdate(input) {
-      const key = [
-        input.dedupe.orgId,
-        input.dedupe.tenantId,
-        input.dedupe.channelConnectionId,
-        input.dedupe.providerUpdateId
-      ].join("__");
-      if (seen.has(key)) {
-        log({
-          event: "worker.telegram_bot.persist.deduped",
-          providerUpdateId: input.dedupe.providerUpdateId,
-          service: "worker",
-          traceId: input.traceId
-        });
-        return {
-          providerUpdateId: input.dedupe.providerUpdateId,
-          status: "deduped",
-          traceId: input.traceId
-        };
-      }
-
-      seen.add(key);
-      log({
-        contentKind: input.message.contentKind,
-        event: "worker.telegram_bot.persist.accepted",
-        providerUpdateId: input.dedupe.providerUpdateId,
-        runtimeBranch: input.runtimeBranch,
-        service: "worker",
-        traceId: input.traceId
-      });
-      return {
-        conversationId: input.conversation.id,
-        messageId: input.message.id,
-        outboundMessageId:
-          input.runtimeBranch === "answer" ? input.outboundMessage.id : undefined,
-        providerUpdateId: input.dedupe.providerUpdateId,
-        runtimeBranch: input.runtimeBranch,
-        status: "accepted",
-        ticketId: input.runtimeBranch === "handoff" ? input.ticket.id : undefined,
-        traceId: input.traceId
-      };
-    }
-  };
-}
-
 function resolveWorkerServiceConfig(env: Env): WorkerServiceConfig {
   const redisUrl = requiredEnv(env, "UZMAX_REDIS_URL");
   const queues = parseWorkerQueues(env.UZMAX_WORKER_QUEUES);
   const telegramPersistenceMode = parseTelegramPersistenceMode(
     env.UZMAX_WORKER_TELEGRAM_BOT_PERSISTENCE_MODE
+  );
+  const telegramAnswerMode = parseTelegramAnswerMode(
+    env.UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE
   );
   return {
     connection: { maxRetriesPerRequest: null, url: redisUrl },
@@ -328,14 +269,32 @@ function resolveWorkerServiceConfig(env: Env): WorkerServiceConfig {
     prefix: optionalControlledText(env.UZMAX_WORKER_BULLMQ_PREFIX, "prefix"),
     queues,
     rlsDatabaseUrl: queues.includes("telegram-bot-conversation")
-      ? requiredRlsDatabaseUrl(env, telegramPersistenceMode)
+      ? requiredTelegramRlsDatabaseUrl(env, telegramPersistenceMode, telegramAnswerMode)
       : undefined,
+    telegramAiMemberKey: optionalControlledText(
+      env.UZMAX_WORKER_TELEGRAM_BOT_AI_MEMBER_KEY,
+      "telegramAiMemberKey"
+    ),
+    telegramAnswerMode,
+    telegramBotApiBaseUrl: optionalHttpUrl(env.UZMAX_TELEGRAM_BOT_API_BASE_URL),
     telegramBotConversationQueueName:
       optionalControlledText(
         env.UZMAX_WORKER_TELEGRAM_BOT_CONVERSATION_QUEUE_NAME,
         "telegramBotConversationQueueName"
       ) ?? telegramBotConversationQueueDefaults.queueName,
-    telegramPersistenceMode
+    telegramBotToken: env.UZMAX_TELEGRAM_BOT_TOKEN?.trim(),
+    telegramKbEntryKey: optionalControlledText(
+      env.UZMAX_WORKER_TELEGRAM_BOT_KB_ENTRY_KEY,
+      "telegramKbEntryKey"
+    ),
+    telegramLocale: optionalControlledText(
+      env.UZMAX_WORKER_TELEGRAM_BOT_LOCALE,
+      "telegramLocale"
+    ),
+    telegramPersistenceMode,
+    telegramRequiredCapabilityKey: parseTelegramRequiredCapability(
+      env.UZMAX_WORKER_TELEGRAM_BOT_REQUIRED_CAPABILITY_KEY
+    )
   };
 }
 
@@ -352,19 +311,6 @@ function parseWorkerQueues(value: string | undefined): readonly WorkerKind[] {
       throw new Error("UZMAX_WORKER_QUEUES contains unsupported queue");
     });
   return queues.length === 0 ? ["order-import"] : [...new Set(queues)];
-}
-
-function parseTelegramPersistenceMode(
-  value: string | undefined
-): TelegramPersistenceMode {
-  if (!value?.trim()) return "rls_prisma_gateway";
-  if (value === "rls_prisma_gateway" || value === "telemetry") return value;
-  throw new Error("UZMAX_WORKER_TELEGRAM_BOT_PERSISTENCE_MODE is invalid");
-}
-
-function requiredRlsDatabaseUrl(env: Env, mode: TelegramPersistenceMode) {
-  if (mode === "telemetry") return undefined;
-  return requiredEnv(env, "UZMAX_RLS_DATABASE_URL");
 }
 
 function createTelemetryOnlyOrderImportGateway(

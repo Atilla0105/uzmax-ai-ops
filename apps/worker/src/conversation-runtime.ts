@@ -169,7 +169,11 @@ export async function processTelegramBotConversationJob(
     const reservedDedupe = { ...dedupe, reserved: true };
     try {
       const answer = await options.answerRuntime.answer({
+        channelConnectionId: payload.channelConnectionId,
+        chatExternalRef: payload.chatExternalRef,
+        orgId: payload.orgId,
         providerUpdateId: payload.providerUpdateId,
+        tenantId: payload.tenantId,
         text: requiredTextValue(payload.text, "telegram bot text"),
         traceId: payload.traceId
       });
@@ -244,13 +248,14 @@ export async function processTelegramBotConversationJob(
 }
 
 export function createTelegramBotConversationBullmqProcessor(
-  gateway: TelegramBotConversationPersistenceGateway
+  gateway: TelegramBotConversationPersistenceGateway,
+  options: TelegramBotConversationRuntimeOptions = {}
 ) {
   return (job: RuntimeJob) => {
     if (job.name !== telegramBotConversationQueueDefaults.jobName) {
       throw new Error("telegram bot conversation job name is unsupported");
     }
-    return processTelegramBotConversationJob(job.data, gateway);
+    return processTelegramBotConversationJob(job.data, gateway, options);
   };
 }
 
@@ -259,10 +264,14 @@ export function createTelegramBotConversationBullmqWorker(options: {
   gateway: TelegramBotConversationPersistenceGateway;
   prefix?: string;
   queueName?: string;
+  runtimeOptions?: TelegramBotConversationRuntimeOptions;
 }) {
   return new Worker(
     options.queueName ?? telegramBotConversationQueueDefaults.queueName,
-    createTelegramBotConversationBullmqProcessor(options.gateway),
+    createTelegramBotConversationBullmqProcessor(
+      options.gateway,
+      options.runtimeOptions
+    ),
     { connection: options.connection, prefix: options.prefix }
   );
 }

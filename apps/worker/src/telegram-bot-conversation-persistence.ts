@@ -14,7 +14,10 @@ type PrismaClientPort = {
     strings: TemplateStringsArray,
     ...values: readonly unknown[]
   ): MaybePromise<unknown>;
-  $transaction<T>(action: (tx: PrismaClientPort) => Promise<T>): Promise<T>;
+  $transaction<T>(
+    action: (tx: PrismaClientPort) => Promise<T>,
+    options?: { maxWait?: number; timeout?: number }
+  ): Promise<T>;
   channelConversation: { upsert(input: unknown): MaybePromise<{ id: string }> };
   channelMessage: { create(input: unknown): MaybePromise<unknown> };
   supportTicket: { create(input: unknown): MaybePromise<unknown> };
@@ -31,6 +34,8 @@ type DedupeDraft = RlsTenantContext &
 type RuntimeDedupeResult = Record<"providerUpdateId" | "traceId", string> & {
   status: "deduped" | "reserved";
 };
+
+const TELEGRAM_RUNTIME_TRANSACTION_OPTIONS = { maxWait: 60_000, timeout: 60_000 };
 
 export class PrismaTelegramBotConversationPersistenceGateway implements TelegramBotConversationPersistenceGateway {
   constructor(private readonly prisma: PrismaClientPort) {}
@@ -50,7 +55,7 @@ export class PrismaTelegramBotConversationPersistenceGateway implements Telegram
         status: dedupe.count === 0 ? "deduped" : "reserved",
         traceId: input.traceId
       };
-    });
+    }, TELEGRAM_RUNTIME_TRANSACTION_OPTIONS);
   }
 
   persistAcceptedUpdate(input: RuntimePersistInput): Promise<RuntimeResult> {
@@ -76,7 +81,7 @@ export class PrismaTelegramBotConversationPersistenceGateway implements Telegram
         ticketId: input.runtimeBranch === "handoff" ? input.ticket.id : undefined,
         traceId: input.traceId
       };
-    });
+    }, TELEGRAM_RUNTIME_TRANSACTION_OPTIONS);
   }
 }
 

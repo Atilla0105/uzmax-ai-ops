@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { Queue } from "bullmq";
 import { PrismaClient } from "@prisma/client";
-import ts from "typescript";
+
+import { compileM8ActiveAnswerRuntimeModules } from "./tests/m8-active-answer-worker-smoke-support.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../../..");
@@ -225,108 +226,5 @@ async function waitForLog(event) {
 }
 
 async function compileRuntimeModules() {
-  await mkdir(tempDir, { recursive: true });
-  await writeModule("channels.mjs", readRepoText("packages/channels/src/index.ts"));
-  await writeModule(
-    "handoff.mjs",
-    readRepoText("packages/capabilities/handoff/src/index.ts")
-  );
-  await writeFile(
-    path.join(tempDir, "db.mjs"),
-    `
-      export function createRlsTransactionContext(context) {
-        return {
-          roleSql: 'set local role "uzmax_app_runtime"',
-          settings: [
-            { key: "app.org_id", value: context.orgId },
-            { key: "app.tenant_id", value: context.tenantId }
-          ]
-        };
-      }
-    `
-  );
-  await writeModule(
-    "conversation-runtime.mjs",
-    readRepoText("apps/worker/src/conversation-runtime.ts")
-      .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs")
-      .replaceAll(
-        "../../../packages/capabilities/handoff/src/index.ts",
-        "./handoff.mjs"
-      )
-      .replaceAll("../../../packages/db/src/index.ts", "./db.mjs")
-  );
-  await writeModule(
-    "bot-persistence.mjs",
-    readRepoText("apps/worker/src/telegram-bot-conversation-persistence.ts").replaceAll(
-      "../../../packages/db/src/index.ts",
-      "./db.mjs"
-    )
-  );
-  await writeModule(
-    "bot-answer-runtime.mjs",
-    readRepoText("apps/worker/src/telegram-bot-answer-runtime.ts")
-  );
-  await writeFile(
-    path.join(tempDir, "order-import-bullmq-runtime.mjs"),
-    `
-      export const orderImportBullmqQueueDefaults = { queueName: "unused-order-import" };
-      export function createOrderImportCsvTextBullmqWorker() {
-        throw new Error("order import worker is outside M6B-06b smoke scope");
-      }
-    `
-  );
-  await writeFile(
-    path.join(tempDir, "main.mjs"),
-    `
-      export function runOrderImportCsvTextPersistenceJob() {
-        throw new Error("order import job is outside M6B-06b smoke scope");
-      }
-    `
-  );
-  await writeModule(
-    "worker-service-shell.mjs",
-    readRepoText("apps/worker/src/worker-service-shell.ts")
-      .replaceAll(
-        "./order-import-bullmq-runtime.ts",
-        "./order-import-bullmq-runtime.mjs"
-      )
-      .replaceAll("./conversation-runtime.ts", "./conversation-runtime.mjs")
-      .replaceAll("./telegram-bot-answer-runtime.ts", "./bot-answer-runtime.mjs")
-      .replaceAll("./telegram-bot-conversation-persistence.ts", "./bot-persistence.mjs")
-      .replaceAll("./main.ts", "./main.mjs")
-      .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs")
-  );
-  await writeModule(
-    "telegram-bot.mjs",
-    readRepoText("apps/api/src/telegram-bot.ts").replaceAll(
-      "../../../packages/channels/src/index.ts",
-      "./channels.mjs"
-    )
-  );
-
-  return {
-    api: await import(pathToFileURL(path.join(tempDir, "telegram-bot.mjs")).href),
-    worker: await import(
-      pathToFileURL(path.join(tempDir, "worker-service-shell.mjs")).href
-    )
-  };
-}
-
-async function writeModule(fileName, sourceText) {
-  const compiled = ts.transpileModule(sourceText, {
-    compilerOptions: {
-      emitDecoratorMetadata: false,
-      experimentalDecorators: true,
-      module: ts.ModuleKind.ES2022,
-      target: ts.ScriptTarget.ES2023
-    }
-  });
-  await writeFile(path.join(tempDir, fileName), compiled.outputText);
-}
-
-function readRepoText(relativePath) {
-  return Buffer.from(
-    ts.sys.readFile(path.join(repoRoot, relativePath)) ?? "",
-    "utf8"
-  ).toString();
+  return compileM8ActiveAnswerRuntimeModules({ repoRoot, tempDir });
 }

@@ -268,6 +268,13 @@ jobs:
           UZMAX_RLS_DATABASE_URL: >-
             ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
         run: node packages/db/scripts/run-m6b-webhook-worker-true-db-smoke.mjs
+      - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
+        name: M8 active answer worker true DB smoke
+        env:
+          UZMAX_REDIS_URL: redis://127.0.0.1:6379
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
+        run: node packages/db/scripts/run-m8-active-answer-worker-true-db-smoke.mjs
       - if: always() && steps.path-scope.outputs.run_true_db_smoke == 'true'
         name: Stop M6B webhook worker Redis smoke container
         run: docker rm -f uzmax-m6b-06b-redis || true

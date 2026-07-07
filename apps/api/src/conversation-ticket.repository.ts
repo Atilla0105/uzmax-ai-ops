@@ -328,9 +328,7 @@ function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
-export function readConversationTicketRepositoryRuntimeMode(
-  env: RuntimeEnv
-): RuntimeMode {
+function readConversationTicketRepositoryRuntimeMode(env: RuntimeEnv): RuntimeMode {
   const mode = env.UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE?.trim() || "in_memory";
   if (mode === "prisma_gateway")
     throw new Error("conversation-ticket repository env must use RLS Prisma gateway");

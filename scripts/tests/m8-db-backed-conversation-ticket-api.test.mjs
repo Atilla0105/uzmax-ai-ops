@@ -46,8 +46,10 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
     assert.equal(defaultProvider, memory);
     assert.throws(
       () =>
-        repositoryModule.readConversationTicketRepositoryRuntimeMode({
-          UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE: "prisma_gateway"
+        repositoryModule.createConversationTicketRepositoryProviderFromEnv({
+          env: {
+            UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE: "prisma_gateway"
+          }
         }),
       /RLS Prisma gateway/
     );

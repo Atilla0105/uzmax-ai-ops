@@ -70,11 +70,10 @@ export type ConversationDetail = {
 
 export const conversationFilters = [
   { id: "all", label: "全部" },
-  { id: "unread", label: "未读" },
-  { id: "awaiting", label: "未回" },
   { id: "needs", label: "待人工" },
-  { id: "sla", label: "SLA" },
-  { id: "closed", label: "已解决" }
+  { id: "sla", label: "SLA风险" },
+  { id: "mine", label: "我接管" },
+  { id: "ai", label: "AI处理" }
 ] as const;
 export type ConversationFilterId = (typeof conversationFilters)[number]["id"];
 
@@ -354,26 +353,22 @@ export function matchesConversationFilter(
   row: ConversationRow,
   filter: ConversationFilterId
 ) {
-  if (filter === "unread") return row.unreadCount > 0;
-  if (filter === "awaiting") return row.awaitingReply;
-  if (filter === "needs")
-    return row.status === "pending_handoff" || row.aiState === "suspended";
-  if (filter === "sla") return row.slaRisk;
-  if (filter === "closed") return row.status === "closed";
+  if (filter === "needs") return row.status === "pending_handoff";
+  if (filter === "sla") return row.status === "pending_handoff" || row.slaRisk;
+  if (filter === "mine") return row.status === "handoff";
+  if (filter === "ai") return row.status === "open" && row.aiState !== "suspended";
   return true;
 }
 
 export function countConversationFilters(
   rows: ConversationRow[]
 ): Record<ConversationFilterId, number> {
-  return conversationFilters.reduce(
-    (acc, filter) => ({
-      ...acc,
-      [filter.id]: rows.filter((row) => matchesConversationFilter(row, filter.id))
-        .length
-    }),
-    {} as Record<ConversationFilterId, number>
-  );
+  const counts = {} as Record<ConversationFilterId, number>;
+  for (const filter of conversationFilters)
+    counts[filter.id] = rows.filter((row) =>
+      matchesConversationFilter(row, filter.id)
+    ).length;
+  return counts;
 }
 
 export function isEditableTarget(target: EventTarget | null) {

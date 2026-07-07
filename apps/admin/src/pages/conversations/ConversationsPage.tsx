@@ -109,7 +109,7 @@ function ConversationList({
       <header className="uz-conv-list__head">
         <h2>会话</h2>
         <StatusBadge>
-          {rows.length} / {counts.all}
+          {filter === "all" ? rows.length : `${rows.length} / ${counts.all}`}
         </StatusBadge>
         <span className="uz-conv-list__icons" aria-hidden="true">
           <IconSlot icon={ListFilter} />

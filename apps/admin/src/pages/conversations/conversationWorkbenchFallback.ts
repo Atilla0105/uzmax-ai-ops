@@ -3,10 +3,8 @@ import type {
   ConversationRow,
   MessageRow
 } from "./conversationWorkbenchRuntime";
-
 export const syntheticRuntimeUnavailableReason =
   "runtime-unavailable: conversation-ticket API absent/non-JSON in local preview; showing owner-source-like degraded/mock workbench data, not production metrics.";
-
 const syntheticConversationRowsTemplate: ConversationRow[] = [
   {
     aiState: "suspended",
@@ -137,7 +135,7 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     quoteRef: "护肤入门套装 ¥268",
     slaRisk: true,
     slaText: "08:30",
-    status: "handoff",
+    status: "open",
     subject: "Азиз К.",
     tags: ["价格敏感"],
     tenantId: "",
@@ -182,11 +180,9 @@ const syntheticConversationRowsTemplate: ConversationRow[] = [
     "mock-gulnora-closed|Gulnora T.|Gulnora Temirova|CU-48102657|UZ-20391|Ajoyib! Keyingi xaridingizga 10 000 so‘mlik ...|2小时|乌兹别克语（拉丁）|AI|closed|已解决"
   ])
 ];
-
 function compactRows(seeds: readonly string[]): ConversationRow[] {
   return seeds.map(compactRow);
 }
-
 function compactRow(seed: string): ConversationRow {
   const parts = seed.split("|");
   const status = field(parts, 9, "open") as ConversationRow["status"];
@@ -228,15 +224,12 @@ function compactRow(seed: string): ConversationRow {
     unreadCount: 0
   };
 }
-
 function field(parts: readonly string[], index: number, fallback = "") {
   return parts[index] ?? fallback;
 }
-
 function aiStateFor(status: ConversationRow["status"]) {
   return status === "handoff" || status === "pending_handoff" ? "suspended" : "active";
 }
-
 function tagsFor(label: string) {
   return label ? [label] : [];
 }

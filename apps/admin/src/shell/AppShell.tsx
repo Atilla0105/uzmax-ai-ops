@@ -68,6 +68,7 @@ export function AppShell({
       <aside
         aria-label="Primary navigation"
         className="uz-app-nav"
+        data-nav-state={expanded ? "expanded" : "collapsed"}
         data-testid="app-shell-nav"
       >
         <div className="uz-nav-brand">
@@ -91,8 +92,10 @@ export function AppShell({
           ))}
         </nav>
         <Button
+          aria-expanded={expanded}
           aria-label={navToggle.aria}
           className="uz-nav-collapse"
+          data-testid="app-shell-nav-collapse"
           icon={<IconSlot icon={PanelLeftClose} />}
           onClick={() => setExpanded((current) => !current)}
           variant="ghost"

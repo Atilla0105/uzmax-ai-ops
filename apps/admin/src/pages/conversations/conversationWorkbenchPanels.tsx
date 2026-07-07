@@ -152,25 +152,31 @@ function railHeader(active?: ConversationRow) {
 }
 
 function contextRows(active?: ConversationRow) {
-  const {
-    customerRef = "",
-    journeyStage = "客户上下文待接入",
-    language = "unavailable",
-    orderRef = "—",
-    participantExternalRef = "unavailable",
-    profileRows,
-    quoteRef = "—",
-    ticketRef = "—"
-  } = active ?? {};
-  if (profileRows?.length) return profileRows.map((row) => [row.label, row.value]);
+  return sourceProfileRows(active?.profileRows) ?? operationalContextRows(active);
+}
+
+function sourceProfileRows(profileRows: ConversationRow["profileRows"]) {
+  if (!profileRows?.length) return null;
+  return profileRows.map((row) => [row.label, row.value]);
+}
+
+function operationalContextRows(active?: ConversationRow) {
   return [
-    ["客户ID", customerRef || participantExternalRef],
-    ["语言", language],
-    ["旅程阶段", journeyStage],
-    ["未决工单", ticketRef],
-    ["订单快照", orderRef],
-    ["报价记录", quoteRef]
+    ["客户ID", customerIdentity(active)],
+    ["语言", fieldOr(active?.language, "unavailable")],
+    ["旅程阶段", fieldOr(active?.journeyStage, "客户上下文待接入")],
+    ["未决工单", fieldOr(active?.ticketRef, "—")],
+    ["订单快照", fieldOr(active?.orderRef, "—")],
+    ["报价记录", fieldOr(active?.quoteRef, "—")]
   ];
+}
+
+function customerIdentity(active?: ConversationRow) {
+  return active?.customerRef || active?.participantExternalRef || "unavailable";
+}
+
+function fieldOr(value: string | undefined, fallback: string) {
+  return value || fallback;
 }
 
 function sourceInitial(value: string) {

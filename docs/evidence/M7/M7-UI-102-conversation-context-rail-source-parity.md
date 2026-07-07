@@ -108,7 +108,7 @@ Focused rail assertions confirmed:
 | `git diff --check` | pass |
 | `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node .agents/skills/impeccable/scripts/detect.mjs --json apps/admin/src/pages/conversations/conversationWorkbenchPanels.tsx apps/admin/tests/m7-ui-102-conversation-context-rail-source-parity.spec.ts` | pass, `[]` |
 | `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/vite/bin/vite.js apps/admin --host 127.0.0.1 --port 4175 --strictPort` | pass, dedicated assigned-worktree source server for browser validation. |
-| `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/@playwright/test/cli.js test apps/admin/tests/m7-ui-102-conversation-context-rail-source-parity.spec.ts --config /tmp/uzmax-m7-ui-102-conversation-context-rail-source-parity/playwright-4175.config.cjs --project=desktop-chromium` | pass, 1/1. |
+| `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH" node node_modules/@playwright/test/cli.js test apps/admin/tests/m7-ui-102-conversation-context-rail-source-parity.spec.ts --config /tmp/uzmax-m7-ui-102-conversation-context-rail-source-parity/playwright-4175.config.cjs --project=desktop-chromium` | pass, 2/2. |
 | `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm dlx npm@11.9.0 run typecheck` | pass. |
 | `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm dlx npm@11.9.0 run build:admin` | pass; Vite emitted existing large-chunk warning, build succeeded. |
 | `PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" /Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm dlx npm@11.9.0 run lint` | pass. |
@@ -123,6 +123,7 @@ Code-quality follow-up validation:
 - Fixed Major issue 2: `railHeader()` now ignores the parser sentinel `customer-ref-unavailable` before falling back to valid `customerRef`; a real participant ref still wins.
 - Focused Playwright rerun: `2 passed` for source-profile synthetic coverage and API/non-profileRows regression coverage.
 - Required reruns after the follow-up: `git diff --check` pass; `npm run typecheck` pass; `npm run build:admin` pass with existing Vite large-chunk warning; `npm run jscpd` pass with `Found 0 clones`.
+- Lint follow-up: extracted `sourceProfileRows()`, `operationalContextRows()`, `customerIdentity()` and `fieldOr()` so `contextRows()` stays below ESLint complexity 10 without changing source-profile or API fallback behavior. Required reruns after this lint fix: `npm run lint` pass; `git diff --check` pass; focused M7-UI-102 Playwright pass, `2 passed`; `npm run typecheck` pass.
 
 ## Remaining Differences / Non-Claims
 

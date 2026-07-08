@@ -76,6 +76,13 @@ describe("M8-06 internal live Bot supervisor", () => {
     assert.match(script, /sentOutboundMessages > 0 \|\| readback\.openTickets > 0/);
     assert.match(script, /set local role "uzmax_app_runtime"/);
     assert.match(script, /telegram:chat:/);
+    assert.match(script, /m\.direction = 'inbound'/);
+    assert.match(script, /m\.direction = 'outbound'/);
+    assert.match(script, /m\.delivery_status = 'sent'/);
+    assert.match(script, /t\.status = 'open'/);
+    assert.doesNotMatch(script, /m\.direction = 'INBOUND'/);
+    assert.doesNotMatch(script, /m\.delivery_status = 'SENT'/);
+    assert.doesNotMatch(script, /t\.status = 'OPEN'/);
     assert.match(script, /DB readback timed out/);
   });
 

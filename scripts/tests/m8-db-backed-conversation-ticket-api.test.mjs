@@ -163,7 +163,7 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
     ]);
   });
 
-  it("declares Render API/worker DB-backed dry-run closed-loop config", () => {
+  it("declares Render API/worker DB-backed live closed-loop config", () => {
     assert.match(
       renderConfig,
       /UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE\s*\n\s*value: rls_prisma_gateway/
@@ -175,8 +175,17 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
     );
     assert.match(
       renderConfig,
-      /UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE\s*\n\s*value: dry_run/
+      /UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE\s*\n\s*value: live/
     );
+    assert.match(
+      renderConfig,
+      /UZMAX_WORKER_TELEGRAM_BOT_LLM_PROVIDER\s*\n\s*value: deepseek/
+    );
+    assert.match(
+      renderConfig,
+      /UZMAX_WORKER_DEEPSEEK_MODEL\s*\n\s*value: deepseek-v4-flash/
+    );
+    assert.match(renderConfig, /UZMAXADMIN_DEEPSEEK_KEY\s*\n\s*sync: false/);
     assert.match(
       renderConfig,
       /UZMAX_WORKER_TELEGRAM_BOT_AI_MEMBER_KEY\s*\n\s*value: support_bot/
@@ -192,7 +201,7 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
     assert.match(renderConfig, /UZMAX_TELEGRAM_BOT_TOKEN\s*\n\s*sync: false/);
     assert.doesNotMatch(
       renderConfig,
-      /UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE\s*\n\s*value: live/
+      /UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE\s*\n\s*value: dry_run/
     );
   });
 });

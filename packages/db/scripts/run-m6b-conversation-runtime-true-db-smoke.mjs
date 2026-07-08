@@ -171,6 +171,12 @@ async function importWorkerRuntime(channelsModuleUrl) {
   const handoffUrl = compileTsModuleUrl(
     readRepoText("packages/capabilities/handoff/src/index.ts")
   );
+  const ticketFollowUpUrl = compileTsModuleUrl(
+    readRepoText("apps/worker/src/telegram-bot-ticket-follow-up.ts").replaceAll(
+      "../../../packages/capabilities/handoff/src/index.ts",
+      handoffUrl
+    )
+  );
   const dbUrl = compileTsModuleUrl(`
     export function createRlsTransactionContext(context) {
       return {
@@ -186,6 +192,7 @@ async function importWorkerRuntime(channelsModuleUrl) {
     .replaceAll("../../../packages/channels/src/index.ts", channelsModuleUrl)
     .replaceAll("../../../packages/capabilities/handoff/src/index.ts", handoffUrl)
     .replaceAll("../../../packages/db/src/index.ts", dbUrl)
+    .replaceAll("./telegram-bot-ticket-follow-up.ts", ticketFollowUpUrl)
     .replace('import { Worker, type Job, type QueueOptions } from "bullmq";', "");
   const moduleUrl = compileTsModuleUrl(source);
   const persistenceSource = readRepoText(

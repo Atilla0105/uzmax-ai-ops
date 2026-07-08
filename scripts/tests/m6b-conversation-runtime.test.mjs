@@ -176,11 +176,20 @@ async function importWorkerConversationRuntime(channelsModuleUrl) {
   const handoffUrl = transpileToTempModule(
     "packages/capabilities/handoff/src/index.ts"
   );
+  const ticketFollowUpUrl = moduleUrlFromSource(
+    transpileSource(
+      read("apps/worker/src/telegram-bot-ticket-follow-up.ts").replace(
+        "../../../packages/capabilities/handoff/src/index.ts",
+        handoffUrl
+      )
+    )
+  );
   const dbUrl = transpileToTempModule("packages/db/src/index.ts");
   const source = read("apps/worker/src/conversation-runtime.ts")
     .replace("../../../packages/channels/src/index.ts", channelsModuleUrl)
     .replace("../../../packages/capabilities/handoff/src/index.ts", handoffUrl)
     .replace("../../../packages/db/src/index.ts", dbUrl)
+    .replace("./telegram-bot-ticket-follow-up.ts", ticketFollowUpUrl)
     .replace('import { Worker, type Job, type QueueOptions } from "bullmq";', "");
   const moduleUrl = moduleUrlFromSource(transpileSource(source));
   return { module: await import(moduleUrl), moduleUrl };

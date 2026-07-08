@@ -20,7 +20,7 @@ const STAGE_ID = "99999999-9999-4999-8999-999999999803";
 const runtimeModule = await importActiveRuntime();
 
 describe("M8-03 active answer runtime wiring", () => {
-  it("answers from active AI member and active KB stage card", async () => {
+  it("answers from active AI member and active KB through LLM-composed text", async () => {
     const prisma = fakePrisma();
     const runtime = runtimeModule.createDbBackedTelegramBotAnswerRuntime({
       aiMemberKey: "support_bot",
@@ -33,7 +33,7 @@ describe("M8-03 active answer runtime wiring", () => {
     const result = await runtime.answer(requestFor("setup help"));
 
     assert.equal(result.status, "answered");
-    assert.equal(result.answerText, "Use active KB answer.");
+    assert.equal(result.answerText, "LLM composed active KB answer.");
     assert.equal(prisma.calls.transactions.length, 5);
     assert.deepEqual(prisma.calls.rlsSettings.slice(0, 2), [
       ["app.org_id", ORG_ID],
@@ -41,7 +41,7 @@ describe("M8-03 active answer runtime wiring", () => {
     ]);
   });
 
-  it("fails closed to handoff when active KB misses and LLM cannot answer directly", async () => {
+  it("uses LLM-composed text when active KB misses", async () => {
     const runtime = runtimeModule.createDbBackedTelegramBotAnswerRuntime({
       aiMemberKey: "support_bot",
       kbEntryKey: "setup",
@@ -51,9 +51,11 @@ describe("M8-03 active answer runtime wiring", () => {
     const result = await runtime.answer(requestFor("unknown topic"));
 
     assert.deepEqual(result, {
-      reasonCode: "llm_answer_unavailable",
-      status: "handoff_required",
-      suppressOutbound: true
+      answerText: "LLM composed active KB answer.",
+      followUp: {
+        reasonCode: "kb_stage_not_found"
+      },
+      status: "answered"
     });
   });
 

@@ -48,8 +48,8 @@ try {
   assert.deepEqual(await countVisibleRows(TENANT_A_ID), {
     conversations: 2,
     dedupes: 2,
-    messages: 3,
-    outboundMessages: 1,
+    messages: 4,
+    outboundMessages: 2,
     rawTextMatches: 0,
     tickets: 1
   });
@@ -372,7 +372,7 @@ async function assertApiReadback() {
     details.filter((detail) =>
       detail.messages.some((message) => message.direction === "outbound")
     ).length,
-    1
+    2
   );
   assert.equal(details.filter((detail) => detail.tickets.length === 1).length, 1);
   assert.equal(JSON.stringify(details).includes("setup help"), false);

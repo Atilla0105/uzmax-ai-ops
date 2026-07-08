@@ -44,6 +44,7 @@ export function createAnswerRuntime(overrides = {}) {
       costMicros: 20,
       inputTokenCount: 12,
       latencyMs: 5,
+      outputText: "LLM composed setup answer.",
       outputTokenCount: 9,
       promptHash: HASH,
       status: "succeeded"
@@ -154,7 +155,7 @@ export function createFakeGateway() {
         providerUpdateId: input.dedupe.providerUpdateId,
         runtimeBranch: input.runtimeBranch,
         status: "accepted",
-        ticketId: input.runtimeBranch === "handoff" ? input.ticket.id : undefined,
+        ticketId: input.ticket?.id,
         traceId: input.traceId
       };
     },
@@ -220,7 +221,7 @@ function persistSummary(input) {
           ]
         : [{ content: input.message.content, direction: "INBOUND" }],
     runtimeBranch: input.runtimeBranch,
-    ticket: input.runtimeBranch === "handoff" ? input.ticket : undefined
+    ticket: input.ticket
   };
 }
 
@@ -262,6 +263,10 @@ async function importWorkerConversationRuntime(channelsModuleUrl) {
       "./telegram-bot-answer-runtime.ts",
       moduleUrlForFixture("apps/worker/src/telegram-bot-answer-runtime.ts")
     ],
+    [
+      "./telegram-bot-ticket-follow-up.ts",
+      moduleUrlForFixture("apps/worker/src/telegram-bot-ticket-follow-up.ts")
+    ],
     ['import { Worker, type Job, type QueueOptions } from "bullmq";', ""]
   ];
   let runtimeSource = sourceOf("apps/worker/src/conversation-runtime.ts");
@@ -276,7 +281,28 @@ async function importSource(relativePath) {
 }
 
 export function moduleUrlForFixture(relativePath) {
-  return dataModuleUrl(jsFromTs(sourceOf(relativePath)));
+  return dataModuleUrl(jsFromTs(sourceForFixture(relativePath)));
+}
+
+function sourceForFixture(relativePath) {
+  let source = sourceOf(relativePath);
+  if (relativePath === "packages/llm-gateway/src/index.ts") {
+    source = source.replace(
+      '"./deepseek-provider.ts"',
+      `"${moduleUrlForFixture("packages/llm-gateway/src/deepseek-provider.ts")}"`
+    );
+    source = source.replace(
+      '"./mock-provider.ts"',
+      `"${moduleUrlForFixture("packages/llm-gateway/src/mock-provider.ts")}"`
+    );
+  }
+  if (relativePath !== "packages/capabilities/handoff/src/index.ts") {
+    source = source.replace(
+      "../../../packages/capabilities/handoff/src/index.ts",
+      moduleUrlForFixture("packages/capabilities/handoff/src/index.ts")
+    );
+  }
+  return source;
 }
 
 export function jsFromTs(sourceText) {

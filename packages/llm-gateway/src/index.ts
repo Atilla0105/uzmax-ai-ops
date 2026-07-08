@@ -1,4 +1,6 @@
 export const packageName = "@uzmax/llm-gateway";
+export { createDeepSeekChatProvider } from "./deepseek-provider.ts";
+export { createMockLlmProvider } from "./mock-provider.ts";
 // prettier-ignore
 export const llmGatewayTasks = { distillDaily: "distill_daily", draftReply: "draft_reply", evalJudge: "eval_judge", intentClassify: "intent_classify", journeyImport: "journey_import", kbAnswer: "kb_answer", profileUpdate: "profile_update", speechPostprocess: "speech_postprocess", summarize: "summarize", visionDiag: "vision_diag" } as const;
 // prettier-ignore
@@ -31,7 +33,7 @@ export type LlmRouteConfig = Omit<RouteConfigInput, "evalGate" | "task"> & {
 
 type MetricKey = "costMicros" | "inputTokenCount" | "latencyMs" | "outputTokenCount";
 export type MockProviderResult = Partial<Record<MetricKey, number>> &
-  Partial<Record<"completionHash" | "promptHash", string>> & {
+  Partial<Record<"completionHash" | "outputText" | "promptHash", string>> & {
     status: "failed" | "succeeded" | "timeout";
   };
 
@@ -119,20 +121,6 @@ export function createLlmRouteConfig(input: RouteConfigInput): LlmRouteConfig {
   return route;
 }
 
-export function createMockLlmProvider(input: {
-  modelId: string;
-  providerId: string;
-  result: MockProviderResult;
-}): LlmProviderPort {
-  return {
-    async invoke() {
-      return { ...input.result };
-    },
-    modelId: nonEmptyString(input.modelId, "modelId"),
-    providerId: nonEmptyString(input.providerId, "providerId")
-  };
-}
-
 export async function invokeLlmRoute(input: {
   input: Record<string, unknown>;
   providers: LlmProviderPort[];
@@ -178,6 +166,7 @@ export async function invokeLlmRoute(input: {
         accountingDraft,
         attemptAccountingDrafts,
         attempts,
+        outputText: outputText(result.outputText),
         providerId,
         status
       };
@@ -203,6 +192,7 @@ export async function invokeLlmRoute(input: {
     accountingDraft,
     attemptAccountingDrafts,
     attempts,
+    outputText: undefined,
     providerId: accountingDraft.providerId,
     status: "failed"
   };
@@ -429,4 +419,10 @@ function removeUndefined<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(
     Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)
   ) as T;
+}
+
+function outputText(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const text = value.trim();
+  return text ? text.slice(0, 4096) : undefined;
 }

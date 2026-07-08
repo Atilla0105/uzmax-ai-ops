@@ -171,12 +171,17 @@ async function importTelegramApiSource(channelsModuleUrl) {
 }
 
 async function importWorkerConversationRuntime(channelsModuleUrl) {
+  const handoffModule = await loadModuleFromRepo(
+    "packages/capabilities/handoff/src/index.ts"
+  );
+  const ticketFollowUpModule = await loadModuleFromRepo(
+    "apps/worker/src/telegram-bot-ticket-follow-up.ts",
+    [["../../../packages/capabilities/handoff/src/index.ts", handoffModule.moduleUrl]]
+  );
   return loadModuleFromRepo("apps/worker/src/conversation-runtime.ts", [
     ["../../../packages/channels/src/index.ts", channelsModuleUrl],
-    [
-      "../../../packages/capabilities/handoff/src/index.ts",
-      (await loadModuleFromRepo("packages/capabilities/handoff/src/index.ts")).moduleUrl
-    ],
+    ["../../../packages/capabilities/handoff/src/index.ts", handoffModule.moduleUrl],
+    ["./telegram-bot-ticket-follow-up.ts", ticketFollowUpModule.moduleUrl],
     [
       "../../../packages/db/src/index.ts",
       (await loadModuleFromRepo("packages/db/src/index.ts")).moduleUrl

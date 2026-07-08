@@ -21,7 +21,7 @@ const expectedTaskValues = Object.values(db.llmTasks).sort();
 const safeHash = `sha256:${"a".repeat(64)}`;
 
 describe("M3-02 LLM gateway routing and accounting foundation", () => {
-  it("exports the M3 task and status constants without provider SDK surface", () => {
+  it("exports the M3 task and status constants without env-owned SDK surface", () => {
     assert.deepEqual(Object.values(gateway.llmGatewayTasks).sort(), expectedTaskValues);
     assert.deepEqual(gateway.llmGatewayCallStatuses, {
       failed: "failed",
@@ -35,10 +35,8 @@ describe("M3-02 LLM gateway routing and accounting foundation", () => {
       true
     );
     assert.doesNotMatch(gatewaySource, /from ["']\.\.\/\.\.\/db|@uzmax\/db/);
-    assert.doesNotMatch(
-      gatewaySource,
-      /openai|anthropic|gemini|api[_-]?key|process\.env/i
-    );
+    assert.doesNotMatch(gatewaySource, /from ["'](?:openai|anthropic|gemini)/i);
+    assert.doesNotMatch(gatewaySource, /process\.env/i);
   });
 
   it("validates route config providers, budgets, task, and eval gate metadata", () => {
@@ -394,7 +392,31 @@ function read(relativePath) {
 }
 
 async function importTypescriptSource(relativePath) {
-  const moduleText = ts.transpile(read(relativePath), tsCompilerOptions, relativePath);
+  const moduleText = ts.transpile(
+    sourceForImport(relativePath),
+    tsCompilerOptions,
+    relativePath
+  );
   const moduleHref = Buffer.from(moduleText, "utf8").toString("base64");
   return import(`data:text/javascript;base64,${moduleHref}`);
+}
+
+function sourceForImport(relativePath) {
+  let source = read(relativePath);
+  if (relativePath === "packages/llm-gateway/src/index.ts") {
+    source = source.replace(
+      '"./deepseek-provider.ts"',
+      `"${moduleUrlForImport("packages/llm-gateway/src/deepseek-provider.ts")}"`
+    );
+    source = source.replace(
+      '"./mock-provider.ts"',
+      `"${moduleUrlForImport("packages/llm-gateway/src/mock-provider.ts")}"`
+    );
+  }
+  return source;
+}
+
+function moduleUrlForImport(relativePath) {
+  const moduleText = ts.transpile(read(relativePath), tsCompilerOptions, relativePath);
+  return `data:text/javascript;base64,${Buffer.from(moduleText, "utf8").toString("base64")}`;
 }

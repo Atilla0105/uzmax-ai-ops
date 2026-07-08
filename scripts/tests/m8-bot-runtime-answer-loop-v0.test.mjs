@@ -59,7 +59,7 @@ describe("M8-01 bot runtime answer loop v0", () => {
     assert.equal(result.status, "SENT");
   });
 
-  it("answers synthetic Bot text through KB-first dry-run send", async () => {
+  it("answers synthetic Bot text through LLM-composed KB context", async () => {
     const gateway = createFakeGateway();
     let llmCalls = 0;
     const sendCalls = [];
@@ -79,7 +79,11 @@ describe("M8-01 bot runtime answer loop v0", () => {
         answerRuntime: createAnswerRuntime({
           async invokeLlmRoute() {
             llmCalls += 1;
-            throw new Error("KB hit must not enter LLM route");
+            return {
+              outputText: "LLM composed setup answer.",
+              providerId: "provider_mock",
+              status: "succeeded"
+            };
           }
         }),
         sendPort
@@ -90,7 +94,7 @@ describe("M8-01 bot runtime answer loop v0", () => {
     assert.equal(result.status, "accepted");
     assert.equal(result.runtimeBranch, "answer");
     assert.equal(gateway.calls.reserve.length, 1);
-    assert.equal(llmCalls, 0);
+    assert.equal(llmCalls, 1);
     assert.equal(sendCalls.length, 1);
     assert.equal(persisted.runtimeBranch, "answer");
     assert.equal(persisted.conversationStatus, "OPEN");
@@ -103,8 +107,53 @@ describe("M8-01 bot runtime answer loop v0", () => {
     );
     assert.equal(persisted.messages[1].direction, "OUTBOUND");
     assert.equal(persisted.messages[1].deliveryStatus, "SENT");
-    assert.equal(persisted.messages[1].content.text, "Use the setup card answer.");
+    assert.equal(persisted.messages[1].content.text, "LLM composed setup answer.");
     assert.equal(persisted.ticket, undefined);
+  });
+
+  it("answers KB gaps through LLM and persists a follow-up ticket", async () => {
+    const cases = [
+      {
+        name: "kb not found",
+        payload: payloadFor({ providerUpdateId: "8202", text: "unknown topic" }),
+        runtime: createAnswerRuntime()
+      },
+      {
+        name: "kb ambiguous",
+        payload: payloadFor({ providerUpdateId: "8203", text: "same trigger" }),
+        runtime: createAnswerRuntime({ journey: ambiguousJourney() })
+      }
+    ];
+
+    for (const { name, payload, runtime } of cases) {
+      const gateway = createFakeGateway();
+      const sendCalls = [];
+      const result = await workerRuntime.processTelegramBotConversationJob(
+        payload,
+        gateway,
+        {
+          answerRuntime: runtime,
+          sendPort: {
+            async sendMessage(request) {
+              sendCalls.push(request);
+              return dryRunResult(request);
+            }
+          }
+        }
+      );
+
+      const persisted = gateway.calls.persist[0];
+      assert.equal(result.status, "accepted", name);
+      assert.equal(result.runtimeBranch, "answer", name);
+      assert.equal(result.ticketId, persisted.ticket.id, name);
+      assert.equal(sendCalls.length, 1, name);
+      assert.equal(persisted.runtimeBranch, "answer", name);
+      assert.equal(persisted.conversationStatus, "OPEN", name);
+      assert.equal(persisted.messages.length, 2, name);
+      assert.equal(persisted.messages[1].direction, "OUTBOUND", name);
+      assert.equal(persisted.messages[1].content.text, "LLM composed setup answer.");
+      assert.match(persisted.ticket.summary, /telegram_bot_text_kb_/);
+    }
   });
 
   it("dedupes repeated text updates before answer runtime or send side effects", async () => {
@@ -184,18 +233,6 @@ describe("M8-01 bot runtime answer loop v0", () => {
     const cases = [
       ["missing kb", "missing_kb", createAnswerRuntime({ journey: undefined })],
       [
-        "kb not found",
-        "llm_answer_unavailable",
-        createAnswerRuntime(),
-        payloadFor({ providerUpdateId: "8202", text: "unknown topic" })
-      ],
-      [
-        "kb ambiguous",
-        "kb_stage_ambiguous",
-        createAnswerRuntime({ journey: ambiguousJourney() }),
-        payloadFor({ providerUpdateId: "8203", text: "same trigger" })
-      ],
-      [
         "missing persona",
         "missing_persona",
         createAnswerRuntime({ persona: undefined })
@@ -209,7 +246,16 @@ describe("M8-01 bot runtime answer loop v0", () => {
       [
         "redline suppressed",
         "redline_output_suppressed",
-        createAnswerRuntime({ journey: redlineJourney() })
+        createAnswerRuntime({
+          async invokeLlmRoute() {
+            return {
+              outputText: "This answer exposes internal config.",
+              providerId: "provider_mock",
+              status: "succeeded"
+            };
+          },
+          journey: redlineJourney()
+        })
       ],
       [
         "answer runtime throws",

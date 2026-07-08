@@ -2,10 +2,6 @@ import { randomUUID } from "node:crypto";
 
 import { Worker, type Job, type QueueOptions } from "bullmq";
 
-import {
-  createHumanHandoff,
-  createTicketState
-} from "../../../packages/capabilities/handoff/src/index.ts";
 import type { RlsTenantContext } from "../../../packages/db/src/index.ts";
 import {
   telegramBotConversationQueueDefaults,
@@ -15,6 +11,7 @@ import {
   type TelegramBotOutboundSendResult
 } from "../../../packages/channels/src/index.ts";
 import type { TelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts";
+import { createTelegramBotTicketFollowUp } from "./telegram-bot-ticket-follow-up.ts";
 
 type MaybePromise<T> = T | Promise<T>;
 type RuntimeStatus = "accepted" | "deduped";
@@ -47,6 +44,8 @@ type HandoffPersistInput = BasePersistInput & {
 type AnswerPersistInput = BasePersistInput & {
   outboundMessage: OutboundMessageDraft;
   runtimeBranch: "answer";
+  ticket?: TicketDraft;
+  ticketEvent?: TicketEventDraft;
 };
 
 type ConversationDraft = RlsTenantContext & {
@@ -141,99 +140,15 @@ export async function processTelegramBotConversationJob(
   };
 
   if (canAttemptAnswer(payload, options)) {
-    if (!gateway.reserveProviderUpdate) {
-      return gateway.persistAcceptedUpdate(
-        createHandoffPersistInput({
-          conversation,
-          dedupe,
-          message,
-          payload,
-          reasonCode: "answer_dedupe_reserve_unavailable"
-        })
-      );
-    }
-
-    const reserve = await gateway.reserveProviderUpdate({
-      ...dedupe,
-      traceId: payload.traceId
+    return processAnswerableTextJob({
+      conversation,
+      conversationId,
+      dedupe,
+      gateway,
+      message,
+      options,
+      payload
     });
-    if (reserve.status === "deduped") {
-      return {
-        providerUpdateId: payload.providerUpdateId,
-        runtimeBranch: "answer",
-        status: "deduped",
-        traceId: payload.traceId
-      };
-    }
-
-    const reservedDedupe = { ...dedupe, reserved: true };
-    try {
-      const answer = await options.answerRuntime.answer({
-        channelConnectionId: payload.channelConnectionId,
-        chatExternalRef: payload.chatExternalRef,
-        orgId: payload.orgId,
-        providerUpdateId: payload.providerUpdateId,
-        tenantId: payload.tenantId,
-        text: requiredTextValue(payload.text, "telegram bot text"),
-        traceId: payload.traceId
-      });
-      if (answer.status !== "answered") {
-        return gateway.persistAcceptedUpdate(
-          createHandoffPersistInput({
-            conversation,
-            dedupe: reservedDedupe,
-            message,
-            payload,
-            reasonCode: answer.reasonCode
-          })
-        );
-      }
-
-      const answerTextValue = requiredTextValue(answer.answerText, "answer text").slice(
-        0,
-        4096
-      );
-      const sendResult = await options.sendPort.sendMessage({
-        channelConnectionId: payload.channelConnectionId,
-        chatExternalRef: requiredTextValue(payload.chatExternalRef, "chatExternalRef"),
-        idempotencyKey: createAnswerIdempotencyKey(payload),
-        orgId: payload.orgId,
-        replyToMessageExternalRef: payload.messageExternalRef,
-        tenantId: payload.tenantId,
-        text: answerTextValue,
-        traceId: payload.traceId
-      });
-
-      return gateway.persistAcceptedUpdate({
-        conversation,
-        dedupe: reservedDedupe,
-        message,
-        outboundMessage: {
-          channelConnectionId: payload.channelConnectionId,
-          content: safeOutboundMessageContent(answerTextValue, sendResult),
-          contentKind: "text",
-          conversationId,
-          deliveryStatus: sendResult.status,
-          externalMessageRef: sendResult.providerMessageRef,
-          id: randomUUID(),
-          occurredAt: sendResult.sentAt,
-          orgId: payload.orgId,
-          tenantId: payload.tenantId
-        },
-        runtimeBranch: "answer",
-        traceId: payload.traceId
-      });
-    } catch {
-      return gateway.persistAcceptedUpdate(
-        createHandoffPersistInput({
-          conversation,
-          dedupe: reservedDedupe,
-          message,
-          payload,
-          reasonCode: "answer_runtime_error"
-        })
-      );
-    }
   }
 
   return gateway.persistAcceptedUpdate(
@@ -245,6 +160,139 @@ export async function processTelegramBotConversationJob(
       reasonCode: "requires_operator_review"
     })
   );
+}
+
+async function processAnswerableTextJob(input: {
+  conversation: ConversationDraft;
+  conversationId: string;
+  dedupe: DedupeDraft;
+  gateway: TelegramBotConversationPersistenceGateway;
+  message: MessageDraft;
+  options: Required<TelegramBotConversationRuntimeOptions>;
+  payload: TelegramBotConversationJobPayload;
+}): Promise<RuntimeResult> {
+  if (!input.gateway.reserveProviderUpdate) {
+    return input.gateway.persistAcceptedUpdate(
+      createHandoffPersistInput({
+        ...input,
+        reasonCode: "answer_dedupe_reserve_unavailable"
+      })
+    );
+  }
+
+  const reserve = await input.gateway.reserveProviderUpdate({
+    ...input.dedupe,
+    traceId: input.payload.traceId
+  });
+  if (reserve.status === "deduped") return dedupedAnswerResult(input.payload);
+
+  const reservedDedupe = { ...input.dedupe, reserved: true };
+  try {
+    const answer = await input.options.answerRuntime.answer(
+      answerRequest(input.payload)
+    );
+    if (answer.status !== "answered") {
+      return input.gateway.persistAcceptedUpdate(
+        createHandoffPersistInput({
+          ...input,
+          dedupe: reservedDedupe,
+          reasonCode: answer.reasonCode
+        })
+      );
+    }
+
+    const answerTextValue = requiredTextValue(answer.answerText, "answer text").slice(
+      0,
+      4096
+    );
+    const followUp = createAnswerFollowUp(
+      answer.followUp,
+      input.conversation,
+      input.payload
+    );
+    const sendResult = await input.options.sendPort.sendMessage(
+      sendRequest(input.payload, answerTextValue)
+    );
+
+    return input.gateway.persistAcceptedUpdate({
+      conversation: input.conversation,
+      dedupe: reservedDedupe,
+      message: input.message,
+      outboundMessage: outboundMessageDraft(input, answerTextValue, sendResult),
+      runtimeBranch: "answer",
+      ...(followUp ?? {}),
+      traceId: input.payload.traceId
+    });
+  } catch {
+    return input.gateway.persistAcceptedUpdate(
+      createHandoffPersistInput({
+        ...input,
+        dedupe: reservedDedupe,
+        reasonCode: "answer_runtime_error"
+      })
+    );
+  }
+}
+
+function dedupedAnswerResult(
+  payload: TelegramBotConversationJobPayload
+): RuntimeResult {
+  return {
+    providerUpdateId: payload.providerUpdateId,
+    runtimeBranch: "answer",
+    status: "deduped",
+    traceId: payload.traceId
+  };
+}
+
+function answerRequest(payload: TelegramBotConversationJobPayload) {
+  return {
+    channelConnectionId: payload.channelConnectionId,
+    chatExternalRef: payload.chatExternalRef,
+    orgId: payload.orgId,
+    providerUpdateId: payload.providerUpdateId,
+    tenantId: payload.tenantId,
+    text: requiredTextValue(payload.text, "telegram bot text"),
+    traceId: payload.traceId
+  };
+}
+
+function sendRequest(
+  payload: TelegramBotConversationJobPayload,
+  answerTextValue: string
+) {
+  return {
+    channelConnectionId: payload.channelConnectionId,
+    chatExternalRef: requiredTextValue(payload.chatExternalRef, "chatExternalRef"),
+    idempotencyKey: createAnswerIdempotencyKey(payload),
+    orgId: payload.orgId,
+    replyToMessageExternalRef: payload.messageExternalRef,
+    tenantId: payload.tenantId,
+    text: answerTextValue,
+    traceId: payload.traceId
+  };
+}
+
+function outboundMessageDraft(
+  input: {
+    conversationId: string;
+    payload: TelegramBotConversationJobPayload;
+  },
+  answerTextValue: string,
+  sendResult: TelegramBotOutboundSendResult
+): OutboundMessageDraft {
+  return {
+    channelConnectionId: input.payload.channelConnectionId,
+    content: safeOutboundMessageContent(answerTextValue, sendResult),
+    contentKind: "text",
+    conversationId: input.conversationId,
+    deliveryStatus: sendResult.status,
+    externalMessageRef: sendResult.providerMessageRef,
+    id: randomUUID(),
+    occurredAt: sendResult.sentAt,
+    orgId: input.payload.orgId,
+    tenantId: input.payload.tenantId
+  };
 }
 
 export function createTelegramBotConversationBullmqProcessor(
@@ -283,54 +331,28 @@ function createHandoffPersistInput(input: {
   payload: TelegramBotConversationJobPayload;
   reasonCode: string;
 }): HandoffPersistInput {
-  const ticketId = randomUUID();
-  const systemUserId = "00000000-0000-4000-8000-000000000005";
-  const handoff = createHumanHandoff({
-    conversation: {
-      ...input.conversation,
-      status: "open",
-      unreadCount: 1
-    },
-    reason: `telegram_bot_${input.payload.contentKind}_${safeReasonCode(
-      input.reasonCode
-    )}`,
-    requestedByUserId: systemUserId,
-    slaPolicyRef: "m8-01-bot-runtime-answer-loop-v0"
-  });
-  const ticket = createTicketState({
-    conversationId: input.conversation.id,
-    events: [],
-    id: ticketId,
-    orgId: input.payload.orgId,
-    priority: handoff.ticketDraft.priority,
-    sla: handoff.ticketDraft.sla,
-    status: "open",
-    suggestedAction: handoff.ticketDraft.suggestedAction,
-    summary: handoff.ticketDraft.summary,
-    tenantId: input.payload.tenantId
-  });
-
+  const followUp = createTelegramBotTicketFollowUp(input);
   return {
     conversation: input.conversation,
     dedupe: input.dedupe,
     message: input.message,
     runtimeBranch: "handoff",
-    ticket: {
-      conversationId: input.conversation.id,
-      id: ticket.id,
-      orgId: input.payload.orgId,
-      summary: ticket.summary,
-      tenantId: input.payload.tenantId
-    },
-    ticketEvent: {
-      id: randomUUID(),
-      orgId: input.payload.orgId,
-      tenantId: input.payload.tenantId,
-      ticketId: ticket.id,
-      traceId: input.payload.traceId
-    },
+    ...followUp,
     traceId: input.payload.traceId
   };
+}
+
+function createAnswerFollowUp(
+  followUp: { reasonCode: string } | undefined,
+  conversation: ConversationDraft,
+  payload: TelegramBotConversationJobPayload
+) {
+  if (!followUp) return undefined;
+  return createTelegramBotTicketFollowUp({
+    conversation,
+    payload,
+    reasonCode: followUp.reasonCode
+  });
 }
 
 function canAttemptAnswer(
@@ -378,18 +400,6 @@ function requiredTextValue(value: unknown, label: string): string {
     throw new Error(`${label} is required`);
   }
   return value.trim();
-}
-
-function safeReasonCode(value: unknown): string {
-  const text = typeof value === "string" ? value : "unknown";
-  return (
-    text
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9_:.-]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 96) || "unknown"
-  );
 }
 
 function removeUndefined<T extends Record<string, unknown>>(value: T): T {

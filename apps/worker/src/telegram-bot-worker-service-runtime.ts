@@ -13,6 +13,7 @@ import {
 } from "../../../packages/channels/src/index.ts";
 
 export type TelegramAnswerMode = "disabled" | "dry_run" | "live";
+export type TelegramLlmProviderMode = "deepseek" | "mock";
 export type TelegramPersistenceMode = "rls_prisma_gateway" | "telemetry";
 const telegramRequiredCapabilityKeys = [
   "BUSINESS_DRAFT",
@@ -24,6 +25,9 @@ const telegramRequiredCapabilityKeys = [
 export type TelegramRequiredCapabilityKey =
   (typeof telegramRequiredCapabilityKeys)[number];
 export type TelegramBotWorkerRuntimeConfig = {
+  deepSeekApiKey?: string;
+  deepSeekBaseUrl?: string;
+  deepSeekModelId?: string;
   rlsDatabaseUrl?: string;
   telegramAiMemberKey?: string;
   telegramAnswerMode: TelegramAnswerMode;
@@ -31,6 +35,7 @@ export type TelegramBotWorkerRuntimeConfig = {
   telegramBotToken?: string;
   telegramKbEntryKey?: string;
   telegramLocale?: string;
+  telegramLlmProviderMode: TelegramLlmProviderMode;
   telegramPersistenceMode: TelegramPersistenceMode;
   telegramRequiredCapabilityKey: TelegramRequiredCapabilityKey;
 };
@@ -85,10 +90,14 @@ export function createTelegramBotConversationRuntimeOptions(input: {
         input.config.telegramAiMemberKey,
         "UZMAX_WORKER_TELEGRAM_BOT_AI_MEMBER_KEY"
       ),
+      deepSeekApiKey: input.config.deepSeekApiKey,
+      deepSeekBaseUrl: input.config.deepSeekBaseUrl,
+      deepSeekModelId: input.config.deepSeekModelId,
       kbEntryKey: requiredValue(
         input.config.telegramKbEntryKey,
         "UZMAX_WORKER_TELEGRAM_BOT_KB_ENTRY_KEY"
       ),
+      llmProviderMode: input.config.telegramLlmProviderMode,
       locale: input.config.telegramLocale,
       prisma,
       requiredCapabilityKey: input.config.telegramRequiredCapabilityKey
@@ -109,6 +118,15 @@ export function parseTelegramAnswerMode(value: string | undefined): TelegramAnsw
   if (!value?.trim()) return "disabled";
   if (value === "disabled" || value === "dry_run" || value === "live") return value;
   throw new Error("UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE is invalid");
+}
+
+export function parseTelegramLlmProviderMode(
+  value: string | undefined
+): TelegramLlmProviderMode {
+  if (!value?.trim()) return "mock";
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "mock" || normalized === "deepseek") return normalized;
+  throw new Error("UZMAX_WORKER_TELEGRAM_BOT_LLM_PROVIDER is invalid");
 }
 
 export function parseTelegramRequiredCapability(

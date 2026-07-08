@@ -19,6 +19,7 @@ export type AppShellProps = {
   env?: "production" | "staging" | "local";
   onRouteChange: (route: AdminShellRoute) => void;
   route: AdminShellRoute;
+  runtimeAccess?: ReactNode;
   selectedTenantId: AppShellTenant["id"];
   tenants: readonly [AppShellTenant, ...AppShellTenant[]];
 };
@@ -42,6 +43,7 @@ export function AppShell({
   env = "production",
   onRouteChange,
   route,
+  runtimeAccess,
   selectedTenantId,
   tenants
 }: AppShellProps) {
@@ -191,6 +193,7 @@ export function AppShell({
             </button>
           </div>
         </header>
+        {runtimeAccess}
         <section className="workspace uz-shell-workspace">{children}</section>
       </section>
     </main>

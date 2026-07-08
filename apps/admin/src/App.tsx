@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "@uzmax/ui-tokens/tokens.css";
 import "./styles.css";
+import { AdminRuntimeAccessPanel } from "./AdminRuntimeAccessPanel";
+import { useAdminRuntimeAccess } from "./adminRuntimeAuth";
+import {
+  fallbackAdminRuntimeTenants,
+  readAdminRuntimeConfig
+} from "./adminRuntimeConfig";
 import { PageOutlet } from "./pages/PageOutlet";
 import { getAdminPage, initialAdminPageId, type AdminPageId } from "./pages/registry";
 import { AppShell, type AdminShellRoute } from "./shell/AppShell";
@@ -14,46 +20,11 @@ import { M5ConfirmationQueueShell } from "./M5ConfirmationQueueShell";
 import { M5LogsAnalyticsShell } from "./M5LogsAnalyticsShell";
 import { M5TemplateCenterShell } from "./M5TemplateCenterShell";
 import { releaseGateConsoleState } from "./releaseGateContracts";
-const tenants = [
-  tenant(
-    "tenant-a",
-    "玉珠跨境美妆",
-    "美妆 · 中亚",
-    "healthy",
-    "健康",
-    "aggregate only"
-  ),
-  tenant(
-    "tenant-b",
-    "丝路数码",
-    "3C数码 · 俄语区",
-    "degraded",
-    "降级",
-    "connector degraded"
-  ),
-  tenant(
-    "tenant-c",
-    "天净家居",
-    "家居 · 哈萨克",
-    "attention",
-    "需人工",
-    "manual review"
-  ),
-  tenant("tenant-d", "白桦母婴", "母婴 · 俄语区", "breaker", "熔断", "breaker offline")
-] as const;
-
-function tenant(
-  id: string,
-  name: string,
-  line: string,
-  health: "healthy" | "degraded" | "attention" | "breaker",
-  status: string,
-  risk: string
-) {
-  return { health, id, line, name, risk, status };
-}
 
 export function App() {
+  const runtimeConfig = useMemo(() => readAdminRuntimeConfig(), []);
+  const runtimeAccess = useAdminRuntimeAccess(runtimeConfig);
+  const tenants = runtimeConfig.tenants ?? fallbackAdminRuntimeTenants;
   const [foundationTab, setFoundationTab] = useState("states");
   const [previewToggle, setPreviewToggle] = useState(true);
   const [previewChecked, setPreviewChecked] = useState(true);
@@ -221,8 +192,12 @@ export function App() {
 
   return (
     <AppShell
+      env={runtimeConfig.env}
       onRouteChange={setAdminRoute}
       route={route}
+      runtimeAccess={
+        <AdminRuntimeAccessPanel access={runtimeAccess} config={runtimeConfig} />
+      }
       selectedTenantId={selectedTenant.id}
       tenants={tenants}
     >

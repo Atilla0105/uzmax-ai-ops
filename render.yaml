@@ -52,7 +52,13 @@ services:
       - key: UZMAX_WORKER_TELEGRAM_BOT_PERSISTENCE_MODE
         value: rls_prisma_gateway
       - key: UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE
-        value: dry_run
+        value: live
+      - key: UZMAX_WORKER_TELEGRAM_BOT_LLM_PROVIDER
+        value: deepseek
+      - key: UZMAX_WORKER_DEEPSEEK_MODEL
+        value: deepseek-v4-flash
+      - key: UZMAXADMIN_DEEPSEEK_KEY
+        sync: false
       - key: UZMAX_WORKER_TELEGRAM_BOT_AI_MEMBER_KEY
         value: support_bot
       - key: UZMAX_WORKER_TELEGRAM_BOT_KB_ENTRY_KEY

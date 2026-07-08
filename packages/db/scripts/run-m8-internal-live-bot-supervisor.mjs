@@ -330,22 +330,22 @@ async function readConversationState(
           where m.org_id = c.org_id
             and m.tenant_id = c.tenant_id
             and m.conversation_id = c.id
-            and m.direction = 'INBOUND'
+            and m.direction = 'inbound'
         )::int as "inboundMessages",
         (
           select count(*) from message m
           where m.org_id = c.org_id
             and m.tenant_id = c.tenant_id
             and m.conversation_id = c.id
-            and m.direction = 'OUTBOUND'
-            and m.delivery_status = 'SENT'
+            and m.direction = 'outbound'
+            and m.delivery_status = 'sent'
         )::int as "sentOutboundMessages",
         (
           select count(*) from ticket t
           where t.org_id = c.org_id
             and t.tenant_id = c.tenant_id
             and t.conversation_id = c.id
-            and t.status = 'OPEN'
+            and t.status = 'open'
         )::int as "openTickets"
       from conversation c
       where c.org_id::text = ${orgId}

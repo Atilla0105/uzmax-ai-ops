@@ -14,7 +14,15 @@ export async function compileM8ActiveAnswerRuntimeModules(input) {
   await write("handoff.mjs", read("packages/capabilities/handoff/src/index.ts"));
   await write("kb.mjs", read("packages/capabilities/kb/src/index.ts"));
   await write("engine.mjs", read("packages/engine/src/index.ts"));
-  await write("llm-gateway.mjs", read("packages/llm-gateway/src/index.ts"));
+  await write(
+    "deepseek-provider.mjs",
+    read("packages/llm-gateway/src/deepseek-provider.ts")
+  );
+  await write("mock-provider.mjs", read("packages/llm-gateway/src/mock-provider.ts"));
+  await write(
+    "llm-gateway.mjs",
+    replaceLlmGatewayImports(read("packages/llm-gateway/src/index.ts"))
+  );
   await writeFile(path.join(input.tempDir, "db.mjs"), rlsStubSource());
   await write(
     "bot-answer-runtime.mjs",
@@ -49,6 +57,13 @@ async function writeWorkerModules(tempDir, read, write) {
     replaceConversationImports(read("apps/worker/src/conversation-runtime.ts"))
   );
   await write(
+    "bot-ticket-follow-up.mjs",
+    read("apps/worker/src/telegram-bot-ticket-follow-up.ts").replaceAll(
+      "../../../packages/capabilities/handoff/src/index.ts",
+      "./handoff.mjs"
+    )
+  );
+  await write(
     "bot-persistence.mjs",
     read("apps/worker/src/telegram-bot-conversation-persistence.ts").replaceAll(
       "../../../packages/db/src/index.ts",
@@ -81,12 +96,19 @@ function replaceActiveAnswerImports(source) {
     .replaceAll("./telegram-bot-answer-runtime.ts", "./bot-answer-runtime.mjs");
 }
 
+function replaceLlmGatewayImports(source) {
+  return source
+    .replaceAll("./deepseek-provider.ts", "./deepseek-provider.mjs")
+    .replaceAll("./mock-provider.ts", "./mock-provider.mjs");
+}
+
 function replaceConversationImports(source) {
   return source
     .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs")
     .replaceAll("../../../packages/capabilities/handoff/src/index.ts", "./handoff.mjs")
     .replaceAll("../../../packages/db/src/index.ts", "./db.mjs")
-    .replaceAll("./telegram-bot-answer-runtime.ts", "./bot-answer-runtime.mjs");
+    .replaceAll("./telegram-bot-answer-runtime.ts", "./bot-answer-runtime.mjs")
+    .replaceAll("./telegram-bot-ticket-follow-up.ts", "./bot-ticket-follow-up.mjs");
 }
 
 function replaceWorkerRuntimeImports(source) {

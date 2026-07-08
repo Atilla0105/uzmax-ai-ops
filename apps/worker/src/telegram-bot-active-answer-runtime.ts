@@ -2,9 +2,11 @@ import { answerKbJourneyStage } from "../../../packages/capabilities/kb/src/inde
 import { createRlsTransactionContext } from "../../../packages/db/src/index.ts";
 import { guardRedlineOutput } from "../../../packages/engine/src/index.ts";
 import {
+  createDeepSeekChatProvider,
   createLlmRouteConfig,
   createMockLlmProvider,
   invokeLlmRoute,
+  type LlmProviderPort,
   llmGatewayTasks
 } from "../../../packages/llm-gateway/src/index.ts";
 import {
@@ -23,11 +25,16 @@ type Delegate = {
 };
 type RuntimeInput = {
   aiMemberKey: string;
+  deepSeekApiKey?: string;
+  deepSeekBaseUrl?: string;
+  deepSeekModelId?: string;
   kbEntryKey: string;
+  llmProviderMode?: LlmProviderMode;
   locale?: string;
   prisma: TelegramBotAnswerRuntimePrismaPort;
   requiredCapabilityKey: string;
 };
+type LlmProviderMode = "deepseek" | "mock";
 type HandoffResolution = { reasonCode: string; status: "handoff" };
 type Resolution<T extends object> = (T & { status: "ready" }) | HandoffResolution;
 type RuntimeResolution = Resolution<{ answerRuntime: TelegramBotAnswerRuntime }>;
@@ -47,7 +54,11 @@ export type TelegramBotAnswerRuntimePrismaPort = {
 
 export type DbBackedTelegramBotAnswerRuntimeOptions = {
   aiMemberKey: string;
+  deepSeekApiKey?: string;
+  deepSeekBaseUrl?: string;
+  deepSeekModelId?: string;
   kbEntryKey: string;
+  llmProviderMode?: LlmProviderMode;
   locale?: string;
   prisma: TelegramBotAnswerRuntimePrismaPort;
   requiredCapabilityKey?: string;
@@ -157,10 +168,17 @@ async function resolveKbJourney(
 }
 
 function readyRuntime(
-  input: { locale?: string },
+  input: {
+    deepSeekApiKey?: string;
+    deepSeekBaseUrl?: string;
+    deepSeekModelId?: string;
+    llmProviderMode?: LlmProviderMode;
+    locale?: string;
+  },
   persona: { gateId: string; member: Row; version: Row },
   journey: ReturnType<typeof journeyFromRows>
 ): RuntimeResolution {
+  const provider = answerProvider(input);
   return {
     answerRuntime: createTelegramBotAnswerRuntime({
       answerKbJourneyStage: (input) =>
@@ -170,42 +188,29 @@ function readyRuntime(
       invokeLlmRoute: (input) =>
         invokeLlmRoute(input as Parameters<typeof invokeLlmRoute>[0]),
       journey,
-      llmProviders: [
-        createMockLlmProvider({
-          modelId: "mock-kb-answer",
-          providerId: "provider_mock",
-          result: {
-            completionHash: HASH,
-            costMicros: 0,
-            inputTokenCount: 1,
-            latencyMs: 1,
-            outputTokenCount: 1,
-            promptHash: HASH,
-            status: "succeeded"
-          }
-        })
-      ],
+      llmProviders: [provider],
       llmRoute: createLlmRouteConfig({
-        costMicrosBudget: 1,
+        costMicrosBudget: 1000,
         evalGate: {
           gateRef: `controlled://eval-gate/${persona.gateId}`,
           lastStatus: "passed"
         },
         fallbackProviderRefs: [],
-        inputTokenBudget: 256,
-        outputTokenBudget: 256,
-        primaryProviderRef: "provider_mock",
-        providerRefs: ["provider_mock"],
-        routeRef: "controlled://llm-route/mock-kb-answer",
-        routeVersion: "mock-fail-closed",
+        inputTokenBudget: 2048,
+        outputTokenBudget: 512,
+        primaryProviderRef: provider.providerId,
+        providerRefs: [provider.providerId],
+        routeRef: "controlled://llm-route/m8-llm-composed-bot",
+        routeVersion: "llm-composed-v1",
         task: llmGatewayTasks.kbAnswer,
-        timeoutMs: 50,
-        totalTokenBudget: 512
+        timeoutMs: 15_000,
+        totalTokenBudget: 2560
       }),
       locale: input.locale,
       persona: {
         aiMemberRef: `controlled://ai-member/${persona.member.id}`,
         evalGateStatus: "passed",
+        personaInstruction: text(record(persona.version.metadata).personaInstruction),
         personaVersionRef:
           text(persona.version.personaRef) ??
           `controlled://ai-member-version/${persona.version.id}`
@@ -213,6 +218,36 @@ function readyRuntime(
     }),
     status: "ready"
   };
+}
+
+function answerProvider(input: {
+  deepSeekApiKey?: string;
+  deepSeekBaseUrl?: string;
+  deepSeekModelId?: string;
+  llmProviderMode?: LlmProviderMode;
+}): LlmProviderPort {
+  if (input.llmProviderMode === "deepseek") {
+    return createDeepSeekChatProvider({
+      apiKey: controlledSecret(input.deepSeekApiKey, "UZMAXADMIN_DEEPSEEK_KEY"),
+      baseUrl: input.deepSeekBaseUrl,
+      modelId: input.deepSeekModelId ?? "deepseek-v4-flash",
+      providerId: "provider_deepseek"
+    });
+  }
+  return createMockLlmProvider({
+    modelId: "mock-kb-answer",
+    providerId: "provider_mock",
+    result: {
+      completionHash: HASH,
+      costMicros: 0,
+      inputTokenCount: 1,
+      latencyMs: 1,
+      outputText: "LLM composed active KB answer.",
+      outputTokenCount: 1,
+      promptHash: HASH,
+      status: "succeeded"
+    }
+  });
 }
 
 function journeyFromRows(kbEntry: Row, stages: Row[], locale?: string) {
@@ -322,6 +357,14 @@ function controlledText(value: unknown, label: string) {
   const out = text(value);
   if (!out || !/^[a-z0-9][a-z0-9:._-]{0,120}$/i.test(out)) {
     throw new Error(`${label} must be controlled text`);
+  }
+  return out;
+}
+
+function controlledSecret(value: unknown, label: string) {
+  const out = text(value);
+  if (!out || out.length < 8 || out.length > 256) {
+    throw new Error(`${label} is required`);
   }
   return out;
 }

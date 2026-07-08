@@ -10,6 +10,7 @@ import {
   createTelegramBotConversationRuntimeOptions,
   optionalHttpUrl,
   parseTelegramAnswerMode,
+  parseTelegramLlmProviderMode,
   parseTelegramPersistenceMode,
   parseTelegramRequiredCapability,
   requiredTelegramRlsDatabaseUrl,
@@ -261,8 +262,20 @@ function resolveWorkerServiceConfig(env: Env): WorkerServiceConfig {
   const telegramAnswerMode = parseTelegramAnswerMode(
     env.UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE
   );
+  const telegramLlmProviderMode = parseTelegramLlmProviderMode(
+    env.UZMAX_WORKER_TELEGRAM_BOT_LLM_PROVIDER
+  );
   return {
     connection: { maxRetriesPerRequest: null, url: redisUrl },
+    deepSeekApiKey:
+      telegramLlmProviderMode === "deepseek"
+        ? requiredValue(env.UZMAXADMIN_DEEPSEEK_KEY, "UZMAXADMIN_DEEPSEEK_KEY")
+        : undefined,
+    deepSeekBaseUrl: optionalHttpUrl(env.UZMAX_WORKER_DEEPSEEK_BASE_URL),
+    deepSeekModelId: optionalControlledText(
+      env.UZMAX_WORKER_DEEPSEEK_MODEL,
+      "deepSeekModelId"
+    ),
     orderImportQueueName:
       optionalControlledText(env.UZMAX_WORKER_ORDER_IMPORT_QUEUE_NAME, "queueName") ??
       orderImportBullmqQueueDefaults.queueName,
@@ -291,6 +304,7 @@ function resolveWorkerServiceConfig(env: Env): WorkerServiceConfig {
       env.UZMAX_WORKER_TELEGRAM_BOT_LOCALE,
       "telegramLocale"
     ),
+    telegramLlmProviderMode,
     telegramPersistenceMode,
     telegramRequiredCapabilityKey: parseTelegramRequiredCapability(
       env.UZMAX_WORKER_TELEGRAM_BOT_REQUIRED_CAPABILITY_KEY

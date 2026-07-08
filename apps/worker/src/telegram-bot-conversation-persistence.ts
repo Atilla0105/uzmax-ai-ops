@@ -34,6 +34,22 @@ type DedupeDraft = RlsTenantContext &
 type RuntimeDedupeResult = Record<"providerUpdateId" | "traceId", string> & {
   status: "deduped" | "reserved";
 };
+type TicketPersistInput = RuntimePersistInput & {
+  ticket: {
+    conversationId: string;
+    id: string;
+    orgId: string;
+    summary: string;
+    tenantId: string;
+  };
+  ticketEvent: {
+    id: string;
+    orgId: string;
+    tenantId: string;
+    ticketId: string;
+    traceId: string;
+  };
+};
 
 const TELEGRAM_RUNTIME_TRANSACTION_OPTIONS = { maxWait: 60_000, timeout: 60_000 };
 
@@ -78,7 +94,7 @@ export class PrismaTelegramBotConversationPersistenceGateway implements Telegram
         providerUpdateId: input.dedupe.providerUpdateId,
         runtimeBranch: input.runtimeBranch,
         status: "accepted",
-        ticketId: input.runtimeBranch === "handoff" ? input.ticket.id : undefined,
+        ticketId: input.ticket?.id,
         traceId: input.traceId
       };
     }, TELEGRAM_RUNTIME_TRANSACTION_OPTIONS);
@@ -151,9 +167,10 @@ async function persistConversationRuntime(
   });
   const conversationId = conversation.id as string;
   await tx.channelMessage.create({ data: inboundMessageData(input, conversationId) });
-  if (input.runtimeBranch === "answer")
+  if (input.runtimeBranch === "answer") {
     await persistOutboundMessage(tx, input, conversationId);
-  else await persistTicket(tx, input, conversationId);
+    if (hasTicket(input)) await persistTicket(tx, input, conversationId);
+  } else await persistTicket(tx, input, conversationId);
   await tx.telegramUpdateDedupe.updateMany({
     data: { processedAt: new Date() },
     where: {
@@ -198,7 +215,7 @@ async function persistOutboundMessage(
 
 async function persistTicket(
   tx: PrismaClientPort,
-  input: Extract<RuntimePersistInput, { runtimeBranch: "handoff" }>,
+  input: TicketPersistInput,
   conversationId: string
 ) {
   await tx.supportTicket.create({
@@ -219,4 +236,8 @@ async function persistTicket(
       ticketId: input.ticketEvent.ticketId
     }
   });
+}
+
+function hasTicket(input: RuntimePersistInput): input is TicketPersistInput {
+  return Boolean(input.ticket && input.ticketEvent);
 }

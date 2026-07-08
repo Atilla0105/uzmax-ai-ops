@@ -4,13 +4,14 @@ import type {
   MessageRow,
   RuntimeStatus
 } from "./conversationWorkbenchRuntime";
+import { createAdminRuntimeFetcher } from "../../adminRuntimeConfig";
 
 type ApiFetcher = (
   input: string,
   init?: { body?: string; headers?: Record<string, string>; method?: "GET" | "POST" }
 ) => Promise<{ json(): Promise<unknown>; ok: boolean; status: number }>;
 
-const browserFetcher: ApiFetcher = (input, init) => window.fetch(input, init);
+const browserFetcher: ApiFetcher = createAdminRuntimeFetcher();
 
 class PreviewRuntimeUnavailableError extends Error {
   constructor(message: string) {
@@ -202,7 +203,7 @@ export function createConversationClient(fetcher: ApiFetcher = browserFetcher) {
 }
 
 export function statusForError(error: unknown): RuntimeStatus {
-  return error instanceof Error && error.message.includes("status 403")
+  return error instanceof Error && /status (401|403)/.test(error.message)
     ? "permission"
     : "error";
 }

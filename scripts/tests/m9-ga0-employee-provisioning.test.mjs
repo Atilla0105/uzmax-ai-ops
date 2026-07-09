@@ -122,6 +122,7 @@ test("documents the dispatch-only secret boundary", () => {
   );
 
   assert.match(workflow, /workflow_dispatch/);
+  assert.match(workflow, /node-version: 24/);
   assert.match(workflow, /UZMAX_SUPABASE_SECRET_KEY/);
   assert.match(
     workflow,
@@ -132,6 +133,7 @@ test("documents the dispatch-only secret boundary", () => {
     /\$\{\{ secrets\.UZMAX_RLS_DATABASE_URL \}\}[^\n]*connection_limit/
   );
   assert.match(workflow, /confirm/);
+  assert.match(workflow, /status: `missing-result-json`/);
   assert.match(spec, /does not open GA-0/i);
   assert.match(evidence, /m9_06_employee_account_provisioning_workflow_ready_not_run/);
   assert.match(evidence, /must not print/);

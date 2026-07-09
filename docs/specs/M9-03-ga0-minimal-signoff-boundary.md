@@ -68,6 +68,7 @@ Record the current minimal GA-0 boundary without opening GA-0:
   - `apps/admin/src/releaseGateContracts.ts`
   - `scripts/tests/m6-release-gate-console.test.mjs`
   - `scripts/tests/m9-ga0-minimal-boundary.test.mjs`
+  - `apps/admin/tests/m6-release-gate-console.spec.ts`
   - `docs/evidence/M9/M9-02-admin-vercel-staging-closeout.md`
 
 Read-only anchors:
@@ -87,7 +88,7 @@ Read-only anchors:
 |---|---|---|
 | docs | M9-03 spec, GA0-00 evidence, `docs/release.md`, M9-02 evidence wording | changed docs files <= 4 |
 | source | `apps/admin/src/releaseGateContracts.ts` | changed source files <= 1, new source files = 0, net source LOC <= 40 |
-| test | `scripts/tests/m6-release-gate-console.test.mjs`, `scripts/tests/m9-ga0-minimal-boundary.test.mjs` | changed test files <= 2, new test files <= 1 |
+| test | `scripts/tests/m6-release-gate-console.test.mjs`, `scripts/tests/m9-ga0-minimal-boundary.test.mjs`, `apps/admin/tests/m6-release-gate-console.spec.ts` | changed test files <= 3, new test files <= 1 |
 | generated | none | none |
 | lock | none | no lockfile changes |
 | config | none | no config changes |
@@ -176,8 +177,9 @@ M9-05 must not reuse the M8 supervisor as sufficient closure by itself. The foll
 Required focused validation:
 
 - `node --test scripts/tests/m6-release-gate-console.test.mjs scripts/tests/m9-ga0-minimal-boundary.test.mjs`
-- `node node_modules/prettier/bin/prettier.cjs --check docs/specs/M9-03-ga0-minimal-signoff-boundary.md docs/evidence/GA-0/GA0-00-minimal-boundary.md docs/release.md apps/admin/src/releaseGateContracts.ts scripts/tests/m6-release-gate-console.test.mjs scripts/tests/m9-ga0-minimal-boundary.test.mjs docs/evidence/M9/M9-02-admin-vercel-staging-closeout.md`
+- `node node_modules/@playwright/test/cli.js test apps/admin/tests/m6-release-gate-console.spec.ts`
+- `node node_modules/prettier/bin/prettier.cjs --check docs/specs/M9-03-ga0-minimal-signoff-boundary.md docs/evidence/GA-0/GA0-00-minimal-boundary.md docs/release.md apps/admin/src/releaseGateContracts.ts scripts/tests/m6-release-gate-console.test.mjs scripts/tests/m9-ga0-minimal-boundary.test.mjs apps/admin/tests/m6-release-gate-console.spec.ts docs/evidence/M9/M9-02-admin-vercel-staging-closeout.md`
 - `node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json --pretty false`
-- `node node_modules/eslint/bin/eslint.js apps/admin/src/releaseGateContracts.ts scripts/tests/m6-release-gate-console.test.mjs scripts/tests/m9-ga0-minimal-boundary.test.mjs`
+- `node node_modules/eslint/bin/eslint.js apps/admin/src/releaseGateContracts.ts scripts/tests/m6-release-gate-console.test.mjs scripts/tests/m9-ga0-minimal-boundary.test.mjs apps/admin/tests/m6-release-gate-console.spec.ts`
 - `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M9-03-ga0-minimal-signoff-boundary.md --include-worktree`
 - `git diff --check`

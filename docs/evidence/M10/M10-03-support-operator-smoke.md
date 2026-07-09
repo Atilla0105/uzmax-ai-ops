@@ -1,7 +1,7 @@
 # M10-03 Support Operator Smoke
 
 Spec: `docs/specs/M10-03-support-operator-smoke.md`
-Status: `m10_03_support_operator_smoke_workflow_ready_not_run`
+Status: `m10_03_support_operator_write_smoke_passed_not_release`
 Recorded: 2026-07-09
 Branch: `codex/m10-03-support-operator-smoke`
 Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m10-03-support-operator-smoke`
@@ -15,7 +15,7 @@ M10-03 exists to create the missing support-operator validation lane for the cus
 - M10-02 is the admin runtime truth gate branch that prevents configured runtime from silently falling back to synthetic rows.
 - M10-03 will add the independent support-operator staging smoke for the write-capable customer-service path.
 
-The workflow/script/test implementation is now local-validation ready. No live staging mutation has been run.
+The workflow/script/test implementation is merged to `main` and the live staging synthetic write smoke has now passed. See `docs/evidence/M10/M10-05-live-staging-evidence-sync.md` for the full deploy and run evidence.
 
 ## Implemented Lane
 
@@ -49,7 +49,6 @@ Post-review fixes recorded in this implementation:
 
 This evidence does not approve:
 
-- live mutating staging dispatch;
 - production traffic;
 - 1.0 release;
 - broad real customer traffic;
@@ -58,7 +57,7 @@ This evidence does not approve:
 - Telegram Business automatic reply;
 - formal knowledge write, distill auto-write or confirmation bypass.
 
-The live M10-03 pass remains owner-gated and also depends on M10-01 being merged and deployed to the staging API runtime.
+The live M10-03 pass was owner-authorized in the Codex thread on 2026-07-09 and completed against the controlled staging synthetic scope. It remains non-release evidence only.
 
 ## Required Sanitization
 
@@ -81,9 +80,22 @@ If the workflow provisions the support operator, writes the exact permission fac
 
 - `m10_03_support_operator_write_smoke_passed_not_release`
 
-Until that live workflow run exists, the current status remains:
+The live workflow run now exists and returned this status token through the sanitized artifact.
 
-- `m10_03_support_operator_smoke_workflow_ready_not_run`
+## Live Staging Dispatch Evidence
+
+- Render staging API deployed `main@a6a8990efbf5e5c3542f47cb23395ca90e34fb15` as deploy `dep-d97rhqa8qa3s73f9d5v0`; `/healthz` and `/readyz` returned HTTP 200 after deployment.
+- Vercel admin deployed `main@a6a8990efbf5e5c3542f47cb23395ca90e34fb15` as production deployment `dpl_4RXavkDoG9ZfQiJRqvPfjwVuMBeg`; `https://uzmax-admin.vercel.app/` returned HTTP 200 and Playwright loaded without console/page errors.
+- M10 Support Operator Smoke run `29028244916`, job `86153715073`, completed successfully in `2m4s`.
+- Sanitized artifact `m10-03-support-operator-smoke-result`, artifact id `8202621760`, reported:
+  - `ok=true`
+  - `status=m10_03_support_operator_write_smoke_passed_not_release`
+  - `permissionCount=3`
+  - permissions exactly `tenant:read`, `conversation:read`, `ticket:write`
+  - conversation list HTTP 200
+  - handoff HTTP 201
+  - `claim`, `note`, `close` and `reopen` actions each HTTP 201
+  - cleanup residue `0`
 
 ## Validation Log
 

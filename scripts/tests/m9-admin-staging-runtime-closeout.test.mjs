@@ -22,31 +22,17 @@ const files = {
   knowledgePage: read("apps/admin/src/pages/knowledge/KnowledgePage.tsx")
 };
 
-test("M9-01 declares the staging admin service and API CORS boundary", () => {
-  assert.match(files.render, /name: uzmax-admin-staging/);
-  assert.match(files.render, /runtime: node/);
-  assert.match(files.render, /npm ci --include=dev && npm run build:admin/);
-  assert.match(files.render, /npm --workspace @uzmax\/admin run start/);
-  assert.match(files.render, /VITE_UZMAX_RUNTIME_ENV\s*\n\s*value: staging/);
-  assert.match(
-    files.render,
-    /__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS\s*\n\s*value: uzmax-admin-staging\.onrender\.com/
-  );
+test("M9 staging admin stays on Vercel and Render keeps only API CORS", () => {
+  assert.doesNotMatch(files.render, /name: uzmax-admin-staging/);
+  assert.doesNotMatch(files.render, /uzmax-admin-staging\.onrender\.com/);
   assert.match(
     files.adminPackage,
-    /__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.*uzmax-admin-staging\.onrender\.com/
+    /__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.*uzmax-admin\.vercel\.app/
   );
+  assert.doesNotMatch(files.adminPackage, /uzmax-admin-staging\.onrender\.com/);
   assert.match(
     files.render,
-    /VITE_UZMAX_API_BASE_URL\s*\n\s*value: https:\/\/uzmax-api-staging\.onrender\.com/
-  );
-  assert.match(files.render, /VITE_UZMAX_ORG_ID/);
-  assert.match(files.render, /VITE_UZMAX_TENANT_ID/);
-  assert.match(files.render, /VITE_UZMAX_SUPABASE_URL\s*\n\s*sync: false/);
-  assert.match(files.render, /VITE_UZMAX_SUPABASE_PUBLISHABLE_KEY\s*\n\s*sync: false/);
-  assert.match(
-    files.render,
-    /UZMAX_API_CORS_ORIGINS\s*\n\s*value: https:\/\/uzmax-admin-staging\.onrender\.com,http:\/\/localhost:4173,http:\/\/127\.0\.0\.1:4173/
+    /UZMAX_API_CORS_ORIGINS\s*\n\s*value: https:\/\/uzmax-admin\.vercel\.app,https:\/\/uzmax-admin-muxukk222-7795s-projects\.vercel\.app,https:\/\/uzmax-admin-atilla0105-muxukk222-7795s-projects\.vercel\.app,http:\/\/localhost:4173,http:\/\/127\.0\.0\.1:4173/
   );
 });
 

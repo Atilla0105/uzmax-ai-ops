@@ -33,6 +33,7 @@ type TicketEventType = TicketStatus | "created" | "note_added";
 
 export type TicketEvent = {
   actorUserId: string;
+  id?: string;
   note?: string;
   occurredAt: string;
   reason?: string;

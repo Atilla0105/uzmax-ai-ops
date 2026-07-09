@@ -14,6 +14,7 @@ This document records the current repo release-gate contract. It is not a produc
 | Current M6 no-go closeout | `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
 | Current external-input closure | `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
 | Minimal GA-0 boundary | `docs/evidence/GA-0/GA0-00-minimal-boundary.md` |
+| M9-04 employee admin read evidence | `docs/evidence/M9/M9-04-admin-employee-read-evidence.md` |
 | Admin gate contract | `apps/admin/src/releaseGateContracts.ts` |
 
 ## Current Boundary
@@ -42,6 +43,16 @@ Before GA-0 can be marked opened, all three follow-up records are required: M9-0
 M9-04 is not closable from local environment alone; it requires real employee session evidence through Vercel admin/Supabase, or an explicit owner-input blocker if employee credentials/session evidence is not provided. M9-05 cannot be honestly closed with the current M8 supervisor alone because that path does not prove redline/fuse suppression, zero outbound for a canary or a reason code; a tiny M9-05 follow-up drill script/test is required unless an existing runtime-evidence path can prove those exact facts.
 
 This boundary does not approve production, customer data expansion, customer LLM, Telegram Business automatic reply, formal knowledge write, broad real customer traffic or 1.0 release. 1.0 remains blocked.
+
+## M9-04 Employee Admin Read Evidence
+
+Current status token: `m9_04_owner_input_employee_session_required_not_ga0`.
+
+M9-04 employee admin read evidence is recorded at `docs/evidence/M9/M9-04-admin-employee-read-evidence.md`. The current worker environment has no trusted real employee Supabase access token, email/password pair or session proof, so M9-04 is owner-input blocked and cannot be treated as passed.
+
+The only M9-04 live pass condition is HTTP 200 from the Vercel admin / Render API conversation read path using a real employee session: Vercel admin HTML 2xx, employee Supabase session token, then `GET /conversation-ticket/conversations` with `authorization`, `x-org-id` and `x-tenant-id`. Supabase SQL/admin direct database reads do not count for M9-04.
+
+GA-0 remains locked. M9-05 Bot redline/fuse leave-ticket drill and M9-06 owner signoff/open record are still required. This evidence does not approve production, broad real customer traffic, customer LLM, Telegram Business automatic reply, formal knowledge write or 1.0 release. 1.0 remains blocked.
 
 ## M6-01 Console Contract
 

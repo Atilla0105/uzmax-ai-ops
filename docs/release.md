@@ -15,6 +15,7 @@ This document records the current repo release-gate contract. It is not a produc
 | Current external-input closure | `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
 | Minimal GA-0 boundary | `docs/evidence/GA-0/GA0-00-minimal-boundary.md` |
 | M9-04 employee admin read evidence | `docs/evidence/M9/M9-04-admin-employee-read-evidence.md` |
+| M9-06 employee provisioning smoke | `docs/evidence/M9/M9-06-ga0-employee-provisioning-smoke.md` |
 | Admin gate contract | `apps/admin/src/releaseGateContracts.ts` |
 
 ## Current Boundary
@@ -53,6 +54,18 @@ M9-04 employee admin read evidence is recorded at `docs/evidence/M9/M9-04-admin-
 The only M9-04 live pass condition is HTTP 200 from the Vercel admin / Render API conversation read path using a real employee session: Vercel admin HTML 2xx, employee Supabase session token, then `GET /conversation-ticket/conversations` with `authorization`, `x-org-id` and `x-tenant-id`. Supabase SQL/admin direct database reads do not count for M9-04.
 
 GA-0 remains locked. M9-05 Bot redline/fuse leave-ticket drill and M9-06 owner signoff/open record are still required. This evidence does not approve production, broad real customer traffic, customer LLM, Telegram Business automatic reply, formal knowledge write or 1.0 release. 1.0 remains blocked.
+
+## M9-06 Employee Provisioning Smoke
+
+Current status token: `m9_06_employee_account_provisioning_workflow_ready_not_run`.
+
+M9-06 adds a dispatch-only workflow and script that can create or update one deterministic dev/staging smoke employee, upsert the formal `org_member`, `tenant_member` and `permission_grant` rows for the existing staging synthetic tenant, and run the existing M9-04 employee admin read smoke with a generated in-memory password.
+
+This workflow uses existing masked GitHub secrets and must not print password, service role key, DB URL, raw auth response, customer text or conversation payload. Its sanitized artifact can record only status, hash prefixes and counts.
+
+The workflow has not been dispatched from `main` yet in this evidence file. Until a sanitized live dispatch returns nested M9-04 status `m9_04_employee_admin_read_passed_not_ga0_open`, M9-04 remains not passed. Even if M9-04 passes, the pass token is not a GA-0 open action; M9-06 owner signoff/open record remains required.
+
+GA-0 remains locked. 1.0 remains blocked. G-04/G-06 remain owner-deferred for the minimal Bot-only GA-0 path only, not passed.
 
 ## M6-01 Console Contract
 

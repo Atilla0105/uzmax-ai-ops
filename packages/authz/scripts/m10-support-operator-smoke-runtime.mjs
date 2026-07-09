@@ -36,11 +36,15 @@ const defaults = Object.freeze({
   userId: "90000000-0000-4000-8000-000000001003"
 });
 
+const releaseBoundary = Object.freeze({
+  ga0Opened: false,
+  productionApproved: false,
+  releaseOneApproved: false
+});
+
 export const helpText = `M10-03 support operator staging smoke
-Purpose: create/update one deterministic support operator, grant tenant:read/conversation:read/ticket:write, run synthetic list/handoff/ticket-actions, cleanup, and never print secrets or payloads.
 Usage: node packages/authz/scripts/run-m10-support-operator-smoke.mjs [--help]
 Required env: UZMAX_SUPABASE_URL, UZMAX_SUPABASE_SECRET_KEY, UZMAX_SUPABASE_PUBLISHABLE_KEY, UZMAX_RLS_DATABASE_URL
-Optional env: M10_03_API_BASE_URL, M10_03_SUPPORT_OPERATOR_EMAIL, M10_03_SUPPORT_OPERATOR_USER_ID, M10_03_SUPPORT_OPERATOR_ROLE, M10_03_ORG_ID, M10_03_TENANT_ID
 Boundary: owner-gated synthetic staging only; success is not GA-0, 1.0 or production approval.`;
 
 export async function runM10SupportOperatorSmoke(input = {}) {
@@ -104,27 +108,34 @@ export function formatSupportOperatorResult(result) {
 }
 
 async function createRuntime(input, config) {
+  const clients = await createRuntimeClients(input, config);
   return {
     fetchImpl: input.fetchImpl ?? globalThis.fetch,
     password:
       input.password ?? generatedPassword(input.randomBytes ?? defaultRandomBytes),
-    prisma: input.prisma ?? (await createPrismaClient(config)),
-    shouldDisconnectPrisma: !input.prisma,
-    supabaseAdmin: input.supabaseAdmin ?? (await createSupabaseAdminClient(config))
+    ...clients
   };
 }
 
-async function createSupabaseAdminClient(config) {
-  const { createClient } = await import("@supabase/supabase-js");
-  return createClient(config.supabaseUrl, config.serviceRoleKey, {
+async function createRuntimeClients(input, config) {
+  const [prisma, supabaseAdmin] = await Promise.all([
+    input.prisma ?? loadPrismaClient(config.databaseUrl),
+    input.supabaseAdmin ?? loadSupabaseAdmin(config)
+  ]);
+  return { prisma, shouldDisconnectPrisma: !input.prisma, supabaseAdmin };
+}
+
+async function loadSupabaseAdmin(config) {
+  const module = await import("@supabase/supabase-js");
+  return module.createClient(config.supabaseUrl, config.serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 }
 
-async function createPrismaClient(config) {
-  const { PrismaClient } = await import("@prisma/client");
-  return new PrismaClient({
-    datasources: { db: { url: config.databaseUrl } },
+async function loadPrismaClient(databaseUrl) {
+  const module = await import("@prisma/client");
+  return new module.PrismaClient({
+    datasources: { db: { url: databaseUrl } },
     log: ["error"]
   });
 }
@@ -206,7 +217,7 @@ function publicResult({ access, authUser, config, residue, smoke }) {
       id: authUser.id,
       mode: authUser.mode
     },
-    boundary: releaseBoundary(),
+    boundary: releaseBoundary,
     cleanup: { residue },
     exitCode: ok ? 0 : smoke.exitCode || 1,
     ok,
@@ -229,7 +240,7 @@ function blockedResult(config, error) {
       id: config.userId,
       mode: "unknown"
     },
-    boundary: releaseBoundary(),
+    boundary: releaseBoundary,
     cleanup: { residue: "unknown" },
     exitCode: 4,
     ok: false,
@@ -251,20 +262,9 @@ function operatorScope(config, access = {}) {
   };
 }
 
-function releaseBoundary() {
-  return {
-    ga0Opened: false,
-    productionApproved: false,
-    releaseOneApproved: false
-  };
-}
-
 function publicSmoke(smoke) {
   const safe = { ...smoke };
-  delete safe.accessToken;
-  delete safe.password;
-  delete safe.payload;
-  delete safe.token;
+  for (const key of ["accessToken", "password", "payload", "token"]) delete safe[key];
   return safe;
 }
 
@@ -280,18 +280,20 @@ async function ensureNoSupabaseError(label, result) {
 }
 
 function requiredEnv(env, name) {
-  const value = envText(env[name]);
-  if (!value) throw new Error(`${name} is required`);
-  return value;
+  return requireText(env[name], `${name} is required`);
 }
 
 function requiredDatabaseUrlEnv(env, name) {
-  const value = requiredEnv(env, name);
-  if (!isPostgresUrl(value)) throw new Error(`${name} must be a postgres URL`);
-  return value;
+  const databaseUrl = requiredEnv(env, name);
+  assertPostgresUrl(databaseUrl, name);
+  return databaseUrl;
 }
 
-function isPostgresUrl(value) {
+function assertPostgresUrl(value, name) {
+  if (!hasPostgresProtocol(value)) throw new Error(`${name} must be a postgres URL`);
+}
+
+function hasPostgresProtocol(value) {
   try {
     return ["postgres:", "postgresql:"].includes(new URL(value).protocol);
   } catch {
@@ -301,6 +303,12 @@ function isPostgresUrl(value) {
 
 function generatedPassword(randomBytes = defaultRandomBytes) {
   return `${randomBytes(30).toString("base64url")}Aa1!`;
+}
+
+function requireText(value, message) {
+  const textValue = envText(value);
+  if (!textValue) throw new Error(message);
+  return textValue;
 }
 
 function envText(value) {

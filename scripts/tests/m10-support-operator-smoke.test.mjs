@@ -272,33 +272,31 @@ test("documents dispatch-only workflow, exact permissions and live boundary", ()
 function fakeSupabaseAdmin({ errorMessage, mode }) {
   const calls = [];
   const userId = "90000000-0000-4000-8000-000000001003";
+  const userData = (id) => ({ data: { user: { id } }, error: null });
+  const missingUser = { data: { user: null }, error: { message: "User not found" } };
+  const lookupFailure = {
+    data: { user: null },
+    error: { message: errorMessage ?? "service unavailable" }
+  };
+  const admin = {
+    async createUser(attributes) {
+      calls.push({ attributes, method: "createUser" });
+      return userData(attributes.id);
+    },
+    async getUserById(id) {
+      calls.push({ id, method: "getUserById" });
+      if (mode === "lookup-error") return lookupFailure;
+      if (mode === "existing") return userData(userId);
+      return missingUser;
+    },
+    async updateUserById(id, attributes) {
+      calls.push({ attributes, id, method: "updateUserById" });
+      return userData(id);
+    }
+  };
   return {
     calls,
-    auth: {
-      admin: {
-        async createUser(attributes) {
-          calls.push({ attributes, method: "createUser" });
-          return { data: { user: { id: attributes.id } }, error: null };
-        },
-        async getUserById(id) {
-          calls.push({ id, method: "getUserById" });
-          if (mode === "lookup-error") {
-            return {
-              data: { user: null },
-              error: { message: errorMessage ?? "service unavailable" }
-            };
-          }
-          if (mode === "existing") {
-            return { data: { user: { id: userId } }, error: null };
-          }
-          return { data: { user: null }, error: { message: "User not found" } };
-        },
-        async updateUserById(id, attributes) {
-          calls.push({ attributes, id, method: "updateUserById" });
-          return { data: { user: { id } }, error: null };
-        }
-      }
-    }
+    auth: { admin }
   };
 }
 

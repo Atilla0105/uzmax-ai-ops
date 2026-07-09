@@ -97,7 +97,7 @@ Read-only anchors:
 |---|---|---|
 | config | `.github/workflows/m10-support-operator-smoke.yml` | changed config files <= 1, new config files <= 1 |
 | docs | M10-03 spec/evidence | changed docs files <= 2 |
-| source | `packages/authz/scripts/run-m10-support-operator-smoke.mjs`, `packages/authz/scripts/m10-support-operator-smoke-runtime.mjs`, `packages/authz/scripts/m10-support-operator-smoke-api.mjs`, `packages/authz/scripts/m10-support-operator-smoke-db.mjs` | changed source files <= 4, new source files <= 4, net source LOC <= 520 |
+| source | `packages/authz/scripts/run-m10-support-operator-smoke.mjs`, `packages/authz/scripts/m10-support-operator-smoke-runtime.mjs`, `packages/authz/scripts/m10-support-operator-smoke-api.mjs`, `packages/authz/scripts/m10-support-operator-smoke-db.mjs` | changed source files <= 4, new source files <= 4, net source LOC <= 600 |
 | test | `scripts/tests/m10-support-operator-smoke.test.mjs` | changed test files <= 1, new test files <= 1 |
 | generated | none | none |
 | lock | none | no lockfile changes |

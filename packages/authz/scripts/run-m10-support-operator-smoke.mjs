@@ -15,14 +15,11 @@ import {
   safeMessage
 } from "./m10-support-operator-smoke-runtime.mjs";
 
-function parseArgs(argv) {
-  if (argv.includes("--help") || argv.includes("-h")) return { help: true };
-  if (argv.length > 0) throw new Error("unsupported argument");
-  return { help: false };
-}
-
-function errorMessage(error) {
-  return error instanceof Error && error.message ? error.message : "unknown error";
+function readCliMode(argv) {
+  const [first, ...rest] = argv;
+  if (!first) return "run";
+  if ((first === "--help" || first === "-h") && rest.length === 0) return "help";
+  throw new Error("unsupported argument");
 }
 
 function isMainModule() {
@@ -31,15 +28,17 @@ function isMainModule() {
 
 if (isMainModule()) {
   try {
-    const args = parseArgs(process.argv.slice(2));
-    if (args.help) console.log(helpText.trimEnd());
+    const mode = readCliMode(process.argv.slice(2));
+    if (mode === "help") console.log(helpText.trimEnd());
     else {
       const result = await runM10SupportOperatorSmoke();
       console.log(formatSupportOperatorResult(result));
       process.exitCode = result.exitCode;
     }
   } catch (error) {
-    console.error(safeMessage(errorMessage(error)));
+    const message =
+      error instanceof Error && error.message ? error.message : "unknown error";
+    console.error(safeMessage(message));
     process.exitCode = 1;
   }
 }

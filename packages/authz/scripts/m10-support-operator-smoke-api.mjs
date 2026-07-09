@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 
 export const okStatus = "m10_03_support_operator_write_smoke_passed_not_release";
 export const blockedStatus = "m10_03_support_operator_write_smoke_blocked_not_release";
+const authzBlockerStatus = "m10_03_support_operator_authz_blocker_not_release";
+const runtimeBlockerStatus = "m10_03_support_operator_runtime_blocker_not_release";
 
 export async function runApiSmoke(fetchImpl, config, password) {
   if (typeof fetchImpl !== "function") {
@@ -148,21 +150,13 @@ function jsonHeaders(config, accessToken) {
 }
 
 function authzBlocker(stageName, httpStatus) {
-  return blocker(
-    "authz_blocker",
-    stageName,
-    "m10_03_support_operator_authz_blocker_not_release",
-    { httpStatus }
-  );
+  return blocker("authz_blocker", stageName, authzBlockerStatus, { httpStatus });
 }
 
 export function runtimeBlocker(stageName, message) {
-  return blocker(
-    "runtime_blocker",
-    stageName,
-    "m10_03_support_operator_runtime_blocker_not_release",
-    { message: safeMessage(message) }
-  );
+  return blocker("runtime_blocker", stageName, runtimeBlockerStatus, {
+    message: safeMessage(message)
+  });
 }
 
 function blocker(category, stageName, status, extra) {

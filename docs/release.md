@@ -1,6 +1,6 @@
 # Release Gate Boundary
 
-This document records the current repo release-gate contract. It is not a production launch runbook and does not approve GA-0, production traffic, real customer/order data, customer LLM, external SaaS onboarding or 1.0 release.
+This document records the current repo release-gate contract. It is not a production launch runbook and does not approve production traffic, broad real customer/order data, customer LLM, external SaaS onboarding or 1.0 release. Minimal Bot-only GA-0 signoff is recorded separately at `docs/evidence/GA-0/GA0-01-minimal-bot-signoff.md`.
 
 ## Source Of Truth
 
@@ -14,18 +14,16 @@ This document records the current repo release-gate contract. It is not a produc
 | Current M6 no-go closeout | `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
 | Current external-input closure | `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
 | Minimal GA-0 boundary | `docs/evidence/GA-0/GA0-00-minimal-boundary.md` |
+| Minimal Bot-only GA-0 signoff | `docs/evidence/GA-0/GA0-01-minimal-bot-signoff.md` |
 | M9-04 employee admin read evidence | `docs/evidence/M9/M9-04-admin-employee-read-evidence.md` |
 | M9-06 employee provisioning smoke | `docs/evidence/M9/M9-06-ga0-employee-provisioning-smoke.md` |
 | Admin gate contract | `apps/admin/src/releaseGateContracts.ts` |
 
 ## Current Boundary
 
-GA-0 remains locked. The admin console may show current gate state and evidence links, but it must not expose an enabled open action until:
+Minimal Bot-only GA-0 signoff is recorded for controlled internal/staging use. This signoff is narrow and does not approve production, broad real customer traffic, customer LLM, Telegram Business automatic reply, formal knowledge write or 1.0.
 
-- GA-0 checklist is green;
-- required release-hardening drills are closed or explicitly no-go;
-- audit write path is implemented and verified;
-- project owner explicitly opens GA-0.
+The admin console may show current gate state and evidence links, but any broader release/open action must remain disabled until its audit write path, checklist and owner approval are explicitly implemented and verified.
 
 1.0 remains blocked until all P0 acceptance items pass and P1/P2 handling matches the acceptance matrix.
 
@@ -35,37 +33,50 @@ M6 is closed as an evidence/runtime-hardening package. This closeout is not a GA
 
 Current status token: `ga0_minimal_bot_only_boundary_recorded_ai_quality_deferred_not_open`.
 
-GA-0 remains locked. The minimal Bot-only GA-0 signoff path is now selected for controlled internal/staging use, but this is only a boundary record and not the final GA-0 open action.
+This M9-03 record selected the minimal Bot-only GA-0 signoff path for controlled internal/staging use. It was a boundary record only at the time; GA0-01/M9-07 is now the final minimal Bot-only signoff record.
 
 The project owner approved deferring G-04/G-06 for this minimal Bot-only GA-0 path only. G-04/G-06 are deferred not passed, and the deferral does not count as 1.0 acceptance or full release approval.
 
-Before GA-0 can be marked opened, all three follow-up records are required: M9-04 employee admin read evidence, M9-05 Bot redline/fuse leave-ticket drill and M9-06 owner signoff/open record.
+The three M9 follow-up records are now present for the minimal Bot-only GA-0 signoff package: M9-04 employee admin read evidence, M9-05 Bot redline/fuse leave-ticket drill and GA0-01/M9-07 owner signoff record.
 
-M9-04 is not closable from local environment alone; it requires real employee session evidence through Vercel admin/Supabase, or an explicit owner-input blocker if employee credentials/session evidence is not provided. M9-05 cannot be honestly closed with the current M8 supervisor alone because that path does not prove redline/fuse suppression, zero outbound for a canary or a reason code; a tiny M9-05 follow-up drill script/test is required unless an existing runtime-evidence path can prove those exact facts.
+The M9-03 follow-up gaps are now closed for the minimal Bot-only package: M9-04 has live employee session evidence through Vercel admin/Supabase, and M9-05 has the deterministic redline/fuse canary proof for suppression, zero outbound and reason code.
 
 This boundary does not approve production, customer data expansion, customer LLM, Telegram Business automatic reply, formal knowledge write, broad real customer traffic or 1.0 release. 1.0 remains blocked.
 
 ## M9-04 Employee Admin Read Evidence
 
-Current status token: `m9_04_owner_input_employee_session_required_not_ga0`.
+Current status token: `m9_04_employee_admin_read_passed_not_ga0_open`.
 
-M9-04 employee admin read evidence is recorded at `docs/evidence/M9/M9-04-admin-employee-read-evidence.md`. The current worker environment has no trusted real employee Supabase access token, email/password pair or session proof, so M9-04 is owner-input blocked and cannot be treated as passed.
+M9-04 employee admin read evidence is recorded at `docs/evidence/M9/M9-04-admin-employee-read-evidence.md`. The previous owner-input blocker was superseded by M9-06 workflow run `29006898466`, which used the created smoke employee session and returned HTTP 200 from the Render conversation read path.
 
 The only M9-04 live pass condition is HTTP 200 from the Vercel admin / Render API conversation read path using a real employee session: Vercel admin HTML 2xx, employee Supabase session token, then `GET /conversation-ticket/conversations` with `authorization`, `x-org-id` and `x-tenant-id`. Supabase SQL/admin direct database reads do not count for M9-04.
 
-GA-0 remains locked. M9-05 Bot redline/fuse leave-ticket drill and M9-06 owner signoff/open record are still required. This evidence does not approve production, broad real customer traffic, customer LLM, Telegram Business automatic reply, formal knowledge write or 1.0 release. 1.0 remains blocked.
+This evidence supports the minimal Bot-only GA-0 signoff package only. It does not approve production, broad real customer traffic, customer LLM, Telegram Business automatic reply, formal knowledge write or 1.0 release. 1.0 remains blocked.
 
 ## M9-06 Employee Provisioning Smoke
 
-Current status token: `m9_06_employee_account_provisioning_workflow_ready_not_run`.
+Current status token: `m9_06_employee_account_provisioned_m9_04_live_passed_not_ga0_open`.
 
 M9-06 adds a dispatch-only workflow and script that can create or update one deterministic dev/staging smoke employee, upsert the formal `org_member`, `tenant_member` and `permission_grant` rows for the existing staging synthetic tenant, and run the existing M9-04 employee admin read smoke with a generated in-memory password.
 
 This workflow uses existing masked GitHub secrets and must not print password, service role key, DB URL, raw auth response, customer text or conversation payload. Its sanitized artifact can record only status, hash prefixes and counts.
 
-The workflow has not been dispatched from `main` yet in this evidence file. Until a sanitized live dispatch returns nested M9-04 status `m9_04_employee_admin_read_passed_not_ga0_open`, M9-04 remains not passed. Even if M9-04 passes, the pass token is not a GA-0 open action; M9-06 owner signoff/open record remains required.
+Workflow run `29006898466` passed from `main` after PR #288 switched the workflow to Node 24. It returned nested M9-04 status `m9_04_employee_admin_read_passed_not_ga0_open`, conversation HTTP status `200` and conversation count `2`. The superseded run `29005953274` failed before provisioning under Node 20 and is not the controlling evidence.
 
-GA-0 remains locked. 1.0 remains blocked. G-04/G-06 remain owner-deferred for the minimal Bot-only GA-0 path only, not passed.
+The pass token is evidence for the minimal Bot-only GA-0 signoff package only. 1.0 remains blocked. G-04/G-06 remain owner-deferred for the minimal Bot-only GA-0 path only, not passed.
+
+## M9-07 Minimal Bot-Only GA-0 Signoff
+
+Current status token: `ga0_minimal_bot_only_signoff_recorded_not_1_0`.
+
+`docs/evidence/GA-0/GA0-01-minimal-bot-signoff.md` records the minimal Bot-only GA-0 signoff package for controlled internal/staging use. It combines:
+
+- M9-04 employee admin read pass through M9-06 workflow run `29006898466`;
+- M9-05 redline/fuse canary proof with zero outbound and `redline_output_suppressed`;
+- M9-06 smoke employee provisioning and sanitized artifact evidence;
+- owner direction in the Codex thread to complete the minimal GA-0 signoff path and skip G-04/G-06 for this path only.
+
+This signoff does not approve 1.0, production traffic, broad real customer traffic, customer LLM/provider use, Telegram Business automatic reply, formal knowledge write, distill auto-write or confirmation bypass.
 
 ## M6-01 Console Contract
 
@@ -103,7 +114,7 @@ The M6B runtime rollup records the current post-M6 bring-up state:
 
 This rollup does not approve GA-0, production deployment, real Telegram traffic, outbound Bot sending, backup/restore execution, real customer/order data, customer LLM/provider use, P1/P2 risk classification or 1.0 release.
 
-M6B-11 records the historical closeout boundary. M6B-17 updates the current truth: LAY-19, LAY-23, LAY-24 and LAY-30 are Done from live staging/test evidence, so the external-input blocker class is cleared. GA-0 remains locked until the project owner explicitly opens it and any remaining non-external release conditions are closed.
+M6B-11 records the historical closeout boundary. M6B-17 updated the external-input truth at that time: LAY-19, LAY-23, LAY-24 and LAY-30 are Done from live staging/test evidence, so the external-input blocker class was cleared. Current minimal Bot-only signoff truth is now recorded in GA0-01; broader production/1.0 release conditions remain blocked.
 
 M6B-12a and M6B-12b are follow-up unblocking slices for LAY-30: M6B-12a wires the RLS-backed access-context provider, and M6B-12b adds Prisma generation to Render Node service build commands after staging deploy `dep-d8voptlaeets73daij5g` failed on ungenerated `@prisma/client`. LAY-30 is now Done with live `/readyz` 200 plus synthetic authz proof recorded outside git; these slices still do not open GA-0.
 
@@ -207,7 +218,7 @@ This record does not approve GA-0, production deployment, real customer/order da
 
 ## Not Approved
 
-- GA-0 is not open.
+- Full/broader GA-0 beyond the minimal Bot-only controlled internal/staging signoff scope is not open.
 - Production readiness is not approved.
 - Real customer traffic or order data.
 - Customer LLM or real provider calls.

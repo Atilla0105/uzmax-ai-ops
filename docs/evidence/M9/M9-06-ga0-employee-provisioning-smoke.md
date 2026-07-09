@@ -1,18 +1,18 @@
 # M9-06 GA-0 Employee Provisioning Smoke
 
 Spec: `docs/specs/M9-06-ga0-employee-provisioning-smoke.md`
-Status: `m9_06_employee_account_provisioning_workflow_ready_not_run`
+Status: `m9_06_employee_account_provisioned_m9_04_live_passed_not_ga0_open`
 Recorded: 2026-07-09
-Branch: `codex/m9-06-employee-provisioning`
-Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m9-06-employee-provisioning`
+Branch: `main`
+Workflow: `M9 GA-0 Employee Smoke`
 
 ## Current Truth
 
-This evidence adds the controlled workflow and script needed to create or update one dev/staging smoke employee and run the M9-04 employee admin read smoke through Supabase/Vercel/Render.
+This evidence records the controlled workflow and script that created one dev/staging smoke employee and ran the M9-04 employee admin read smoke through Supabase/Vercel/Render.
 
-The workflow has not been dispatched from `main` yet in this evidence file. Therefore this record does not claim M9-04 pass and does not open GA-0.
+The controlling live dispatch is workflow run `29006898466`. It passed and returned nested M9-04 status `m9_04_employee_admin_read_passed_not_ga0_open`.
 
-GA-0 remains locked. 1.0 remains blocked.
+This evidence closes M9-04 and M9-06 inputs for the minimal Bot-only GA-0 signoff package. It does not approve 1.0, production, broad real customer traffic, customer LLM, Telegram Business automatic reply or formal knowledge write.
 
 ## Provisioning Boundary
 
@@ -60,25 +60,35 @@ The nested M9-04 status is:
 
 - `m9_04_employee_admin_read_passed_not_ga0_open`
 
-These tokens still do not open GA-0 by themselves. A separate owner signoff/open record remains required before GA-0 can be marked open.
+These tokens do not approve 1.0 or production by themselves. The separate minimal Bot-only owner signoff record is now `docs/evidence/GA-0/GA0-01-minimal-bot-signoff.md`.
 
 ## Current Status
 
 Current status token:
 
-- `m9_06_employee_account_provisioning_workflow_ready_not_run`
+- `m9_06_employee_account_provisioned_m9_04_live_passed_not_ga0_open`
 
-Reason:
+Result:
 
-- The script, tests and workflow are present in this branch.
-- The workflow must be merged to `main` before manual dispatch.
-- No live dispatch result is recorded yet.
+- Workflow run `29006898466` completed with conclusion `success`.
+- Job `86080558072` completed with conclusion `success`.
+- Head SHA was `735934b6b8b15cda4b1aaf80996a18af4895ea5d`.
+- The smoke employee user id was `90000000-0000-4000-8000-000000000906`.
+- The workflow created the smoke employee in this run.
+- Formal provisioning wrote `org_member`, `tenant_member` and `permission_grant`.
+- Permission count was `2`.
+- Nested M9-04 status was `m9_04_employee_admin_read_passed_not_ga0_open`.
+- Conversation HTTP status was `200`.
+- Conversation count was `2`.
+
+Superseded run:
+
+- Workflow run `29005953274` failed before provisioning because the workflow used Node 20. PR #288 switched the workflow to Node 24. Run `29006898466` is the controlling evidence.
 
 ## Boundary
 
 This evidence does not approve:
 
-- GA-0 open.
 - 1.0 release.
 - Production traffic.
 - Broad real customer traffic.
@@ -101,6 +111,7 @@ Required before PR merge:
 
 Required after PR merge:
 
-- Dispatch `M9 GA-0 Employee Smoke` with `confirm=M9-06`.
-- Inspect sanitized status and artifact.
-- If the nested M9-04 smoke passes, record the result as M9-04 pass evidence and proceed only to the owner signoff/open record. If it fails, keep GA-0 locked and record the exact blocker.
+- `M9 GA-0 Employee Smoke` was dispatched with `confirm=M9-06`.
+- Run `29006898466` passed.
+- The downloaded artifact was parsed locally.
+- Sanitized JSON shape check passed: no password key, service role key, database URL, access token, refresh token, raw response, customer text or conversation payload was present.

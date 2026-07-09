@@ -1,16 +1,18 @@
 # M9-04 Admin Employee Read Evidence
 
 Spec: `docs/specs/M9-04-admin-employee-read-evidence.md`
-Status: `m9_04_owner_input_employee_session_required_not_ga0`
+Status: `m9_04_employee_admin_read_passed_not_ga0_open`
 Recorded: 2026-07-09
 Branch: `codex/m9-04-admin-employee-read-evidence`
 Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m9-04-admin-employee-read-evidence`
 
 ## Current Truth
 
-M9-04 is blocked on owner-provided employee Supabase session evidence. This environment has no known real employee Supabase access token, email/password pair or session proof. Therefore this evidence does not close the employee admin read path.
+M9-04 is now closed by the M9-06 employee provisioning workflow. The workflow created the deterministic smoke employee, upserted formal org/tenant membership and permission facts, obtained an employee Supabase password-session token in memory, and read the Render staging conversation list through the Vercel admin / Render API path.
 
-GA-0 remains locked. 1.0 remains blocked.
+The pass condition was HTTP 200 from `GET https://uzmax-api-staging.onrender.com/conversation-ticket/conversations` with an employee bearer token plus `x-org-id` and `x-tenant-id`.
+
+This evidence closes M9-04 only. It does not approve 1.0, production, broad real customer traffic, customer LLM, Telegram Business automatic reply or formal knowledge write.
 
 ## Required Success Path
 
@@ -21,23 +23,54 @@ M9-04 can pass only when `scripts/run-m9-admin-employee-read-smoke.mjs --live` p
 3. `GET https://uzmax-api-staging.onrender.com/conversation-ticket/conversations` returns HTTP 200 with the employee bearer token plus `x-org-id` and `x-tenant-id`.
 4. Output records only status, token hash prefix and item counts. It does not print the token, password, raw auth response, customer text, secret values or conversation payloads.
 
-The M9-04 pass token, if the live path returns HTTP 200, is `m9_04_employee_admin_read_passed_not_ga0_open`. Even that pass token does not open GA-0 by itself; M9-05 and M9-06 remain required.
+The M9-04 pass token is `m9_04_employee_admin_read_passed_not_ga0_open`. At M9-04 creation time this token did not open GA-0 by itself because M9-05 and M9-06 still remained. Those follow-up records are now closed for the minimal Bot-only package and aggregated in GA0-01.
 
-## Current Blocker
+## Superseded Blocker
 
-Current status token: `m9_04_owner_input_employee_session_required_not_ga0`.
+Previous status token: `m9_04_owner_input_employee_session_required_not_ga0`.
 
-Reason:
+Previous reason:
 
 - No trusted `UZMAX_ADMIN_EMPLOYEE_ACCESS_TOKEN` is available in this worker environment.
 - No trusted `UZMAX_ADMIN_EMPLOYEE_EMAIL` plus `UZMAX_ADMIN_EMPLOYEE_PASSWORD` pair is available in this worker environment.
 - The slice is explicitly forbidden from substituting Supabase SQL/admin direct database reads for employee-session admin/API read evidence.
 
+This blocker was superseded on 2026-07-09 by M9-06 workflow run `29006898466`, after the project owner authorized creating the smoke employee account.
+
+## Superseding Live Smoke Result
+
+Workflow:
+
+- `M9 GA-0 Employee Smoke`
+
+Run:
+
+- `29006898466`
+
+Job:
+
+- `86080558072`
+
+Head SHA:
+
+- `735934b6b8b15cda4b1aaf80996a18af4895ea5d`
+
+Result:
+
+- Workflow conclusion: `success`
+- M9-06 status: `m9_06_employee_account_provisioned_m9_04_live_passed_not_ga0_open`
+- Nested M9-04 status: `m9_04_employee_admin_read_passed_not_ga0_open`
+- Category: `pass`
+- Conversation HTTP status: `200`
+- Conversation count: `2`
+- Token source: `supabase-password`
+- Token evidence: hash prefix only, no token value
+- Sanitized artifact: no password key, service role key, database URL, access token, refresh token, raw auth response, customer text or conversation payload
+
 ## Boundary
 
 This evidence does not approve:
 
-- GA-0 open.
 - 1.0 release.
 - Production traffic.
 - Broad real customer traffic.
@@ -46,7 +79,7 @@ This evidence does not approve:
 - Telegram Business automatic reply.
 - Formal knowledge write, distill auto-write or confirmation bypass.
 
-## Live Smoke Result
+## Original Local Smoke Result
 
 Command:
 
@@ -61,7 +94,7 @@ Result:
 - Missing input: `UZMAX_ADMIN_EMPLOYEE_ACCESS_TOKEN or UZMAX_ADMIN_EMPLOYEE_EMAIL/UZMAX_ADMIN_EMPLOYEE_PASSWORD`
 - Network calls: none; the script fails closed before admin, Supabase or API fetch when employee auth input is absent.
 
-This is not a validation failure for this worker environment. It is the expected current M9-04 truth unless the owner provides a real employee session.
+This was not a validation failure for that worker environment. It is retained as historical evidence that the standalone M9-04 script failed closed before owner authorization and employee provisioning existed.
 
 ## Validation
 

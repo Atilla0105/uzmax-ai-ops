@@ -50,23 +50,23 @@ test("M9-03 spec and GA0-00 evidence exist with minimal-boundary tokens", () => 
 
 test("release docs keep GA-0 locked with deferral and follow-up requirements", () => {
   assert.match(contents.release, /GA-0 remains locked/);
-  assert.match(contents.release, /minimal Bot-only GA-0 signoff path is now selected/);
+  assert.match(contents.release, /Minimal Bot-only GA-0 signoff is recorded/);
   assert.match(contents.release, /controlled internal\/staging use/);
   assert.match(contents.release, /G-04\/G-06 are deferred not passed/);
   assert.match(contents.release, /does not count as 1\.0 acceptance/);
   assert.match(contents.release, /M9-04 employee admin read evidence/);
   assert.match(contents.release, /M9-05 Bot redline\/fuse leave-ticket drill/);
-  assert.match(contents.release, /M9-06 owner signoff\/open record/);
-  assert.match(contents.release, /M9-04 is not closable from local environment alone/);
+  assert.match(contents.release, /GA0-01\/M9-07 owner signoff record/);
+  assert.match(contents.release, /M9-04 has live employee session evidence/);
   assert.match(
     contents.release,
-    /real employee session evidence through Vercel admin\/Supabase/
+    /live employee session evidence through Vercel admin\/Supabase/
   );
   assert.match(
     contents.release,
-    /M9-05 cannot be honestly closed with the current M8 supervisor alone/
+    /M9-05 has the deterministic redline\/fuse canary proof/
   );
-  assert.match(contents.release, /zero outbound for a canary/);
+  assert.match(contents.release, /zero outbound and reason code/);
   assert.match(contents.release, /1\.0 remains blocked/);
 });
 

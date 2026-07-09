@@ -135,7 +135,10 @@ test("documents the dispatch-only secret boundary", () => {
   assert.match(workflow, /confirm/);
   assert.match(workflow, /status: `missing-result-json`/);
   assert.match(spec, /does not open GA-0/i);
-  assert.match(evidence, /m9_06_employee_account_provisioning_workflow_ready_not_run/);
+  assert.match(
+    evidence,
+    /m9_06_employee_account_provisioned_m9_04_live_passed_not_ga0_open/
+  );
   assert.match(evidence, /must not print/);
   assert.doesNotMatch(
     evidence,

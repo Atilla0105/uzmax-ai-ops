@@ -23,6 +23,8 @@ This document records the current repo release-gate contract. It is not a produc
 
 Minimal Bot-only GA-0 signoff is recorded for controlled internal/staging use. This signoff is narrow and does not approve production, broad real customer traffic, customer LLM, Telegram Business automatic reply, formal knowledge write or 1.0.
 
+GA-0 remains locked for any scope beyond the minimal Bot-only controlled internal/staging signoff, and any broader release/open action still requires owner approval and verified evidence.
+
 The admin console may show current gate state and evidence links, but any broader release/open action must remain disabled until its audit write path, checklist and owner approval are explicitly implemented and verified.
 
 1.0 remains blocked until all P0 acceptance items pass and P1/P2 handling matches the acceptance matrix.

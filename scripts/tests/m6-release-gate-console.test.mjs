@@ -16,25 +16,38 @@ const files = {
 };
 const releaseContracts = await tsModule("apps/admin/src/releaseGateContracts.ts");
 
-test("release gate contract reflects M6 entry without stale milestone state", () => {
+test("release gate contract reflects current M9-03 boundary while preserving M6 closure", () => {
   const state = releaseContracts.releaseGateConsoleState;
   assert.equal(state.ga0Action.disabled, true);
-  assert.match(state.summary, /M5 evidence is owner accepted/);
-  assert.match(
-    state.summary,
-    /M6 is closed as an evidence\/runtime-hardening no-go package/
-  );
-  assert.match(state.summary, /external-input blockers are cleared/);
-  assert.match(state.summary, /GA-0 and 1\.0 remain locked/);
+  assert.match(state.summary, /Minimal Bot-only GA-0 signoff path/);
+  assert.match(state.summary, /controlled internal\/staging use/);
+  assert.match(state.summary, /G-04\/G-06 are owner-deferred/);
+  assert.match(state.summary, /not passed/);
+  assert.match(state.summary, /GA-0 action and 1\.0 remain locked/);
+  assert.doesNotMatch(state.summary, /GA-0 opened|1\.0 approved|production-ready/i);
   assert.doesNotMatch(state.summary, /M6 release hardening is in progress/);
 
   const gates = new Map(state.rows.map((row) => [row.gate, row]));
   assert.equal(getGate(gates, "M1").state, "Accepted");
   assert.equal(getGate(gates, "M5").owner, "accepted for milestone evidence");
   assert.equal(getGate(gates, "M6").state, "Closed");
-  assert.match(getGate(gates, "M6").blocker, /GA-0 remains locked/);
+  assert.match(
+    getGate(gates, "M6").blocker,
+    /GA-0 remains locked; remaining non-external release conditions/
+  );
   assert.match(getGate(gates, "M6").source, /M6B-17 external-input rollup/);
-  assert.match(getGate(gates, "GA-0").blocker, /L-01 checklist not green/);
+  assert.equal(getGate(gates, "GA-0").state, "Locked");
+  assert.match(getGate(gates, "GA-0").owner, /minimal Bot-only path selected/);
+  assert.match(getGate(gates, "GA-0").owner, /G-04\/G-06 deferred not passed/);
+  assert.match(getGate(gates, "GA-0").blocker, /M9-04 employee admin read/);
+  assert.match(
+    getGate(gates, "GA-0").blocker,
+    /M9-05 Bot redline\/fuse leave-ticket drill/
+  );
+  assert.match(getGate(gates, "GA-0").blocker, /M9-06 owner open record required/);
+  assert.match(getGate(gates, "GA-0").source, /M9-03 boundary/);
+  assert.match(getGate(gates, "GA-0").source, /L-01\/L-02/);
+  assert.equal(getGate(gates, "1.0").state, "Blocked");
   assert.match(getGate(gates, "1.0").blocker, /P0\/P1\/P2 rollup/);
 
   for (const gate of ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "GA-0", "1.0"]) {

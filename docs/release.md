@@ -13,6 +13,7 @@ This document records the current repo release-gate contract. It is not a produc
 | Current M6B runtime rollup | `docs/evidence/M6B/M6B-09-ga0-runtime-evidence-rollup.md` |
 | Current M6 no-go closeout | `docs/evidence/M6B/M6B-11-m6-no-go-closeout.md` |
 | Current external-input closure | `docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md` |
+| Minimal GA-0 boundary | `docs/evidence/GA-0/GA0-00-minimal-boundary.md` |
 | Admin gate contract | `apps/admin/src/releaseGateContracts.ts` |
 
 ## Current Boundary
@@ -27,6 +28,20 @@ GA-0 remains locked. The admin console may show current gate state and evidence 
 1.0 remains blocked until all P0 acceptance items pass and P1/P2 handling matches the acceptance matrix.
 
 M6 is closed as an evidence/runtime-hardening package. This closeout is not a GA-0 open decision and not a 1.0 readiness decision. LAY-19, LAY-23, LAY-24 and LAY-30 are now Done from staging/test-only evidence; this clears the external-input blocker class, but it does not by itself open GA-0.
+
+## M9-03 Minimal GA-0 Boundary
+
+Current status token: `ga0_minimal_bot_only_boundary_recorded_ai_quality_deferred_not_open`.
+
+GA-0 remains locked. The minimal Bot-only GA-0 signoff path is now selected for controlled internal/staging use, but this is only a boundary record and not the final GA-0 open action.
+
+The project owner approved deferring G-04/G-06 for this minimal Bot-only GA-0 path only. G-04/G-06 are deferred not passed, and the deferral does not count as 1.0 acceptance or full release approval.
+
+Before GA-0 can be marked opened, all three follow-up records are required: M9-04 employee admin read evidence, M9-05 Bot redline/fuse leave-ticket drill and M9-06 owner signoff/open record.
+
+M9-04 is not closable from local environment alone; it requires real employee session evidence through Vercel admin/Supabase, or an explicit owner-input blocker if employee credentials/session evidence is not provided. M9-05 cannot be honestly closed with the current M8 supervisor alone because that path does not prove redline/fuse suppression, zero outbound for a canary or a reason code; a tiny M9-05 follow-up drill script/test is required unless an existing runtime-evidence path can prove those exact facts.
+
+This boundary does not approve production, customer data expansion, customer LLM, Telegram Business automatic reply, formal knowledge write, broad real customer traffic or 1.0 release. 1.0 remains blocked.
 
 ## M6-01 Console Contract
 

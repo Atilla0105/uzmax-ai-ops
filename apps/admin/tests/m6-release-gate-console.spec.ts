@@ -1,16 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { openLegacyEvidence } from "./helpers/openLegacyEvidence";
 
-test("renders the M6-01 evidence-driven release gate console", async ({ page }) => {
+test("renders the current release gate console while preserving M6 closure", async ({
+  page
+}) => {
   await openLegacyEvidence(page);
 
   const release = page.getByTestId("release-readiness");
-  await expect(release).toContainText("M5 evidence is owner accepted");
   await expect(release).toContainText(
-    "M6 is closed as an evidence/runtime-hardening no-go package"
+    "Minimal Bot-only GA-0 signoff path is in progress"
   );
-  await expect(release).toContainText("external-input blockers are cleared");
-  await expect(release).toContainText("GA-0 and 1.0 remain locked");
+  await expect(release).toContainText("G-04/G-06 are owner-deferred");
+  await expect(release).toContainText("not passed");
+  await expect(release).toContainText("GA-0 action and 1.0 remain locked");
 
   await expect(page.getByTestId("release-gate-M1")).toContainText("Accepted");
   await expect(page.getByTestId("release-gate-M5")).toContainText(
@@ -21,7 +23,19 @@ test("renders the M6-01 evidence-driven release gate console", async ({ page }) 
     "GA-0 remains locked"
   );
   await expect(page.getByTestId("release-gate-GA-0")).toContainText(
-    "L-01 checklist not green"
+    "M9-04 employee admin read"
+  );
+  await expect(page.getByTestId("release-gate-GA-0")).toContainText(
+    "M9-05 Bot redline/fuse leave-ticket drill"
+  );
+  await expect(page.getByTestId("release-gate-GA-0")).toContainText(
+    "M9-06 owner open record"
+  );
+  await expect(page.getByTestId("release-gate-GA-0")).toContainText(
+    "minimal Bot-only path selected"
+  );
+  await expect(page.getByTestId("release-gate-GA-0")).toContainText(
+    "deferred not passed"
   );
   await expect(page.getByTestId("release-gate-1.0")).toContainText(
     "Full P0/P1/P2 rollup not closed"
@@ -35,10 +49,15 @@ test("renders the M6-01 evidence-driven release gate console", async ({ page }) 
     "href",
     "docs/evidence/M6B/M6B-17-ga0-external-blocker-rollup.md"
   );
+  await expect(
+    release.getByRole("link", { name: "GA-0 minimal boundary" })
+  ).toHaveAttribute("href", "docs/evidence/GA-0/GA0-00-minimal-boundary.md");
 
   await expect(release).not.toContainText("M6 release hardening is in progress");
   await expect(release).not.toContainText("M1-05 open");
   await expect(release).not.toContainText("Owner: pending");
+  await expect(release).not.toContainText("GA-0 opened");
+  await expect(release).not.toContainText("1.0 release approved");
   await expect(
     page.getByRole("button", { name: "GA-0 open action locked" })
   ).toBeDisabled();

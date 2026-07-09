@@ -17,7 +17,7 @@ export const releaseGateConsoleState = {
     label: "GA-0 open action locked"
   },
   summary:
-    "M5 evidence is owner accepted for milestone progress; M6 is closed as an evidence/runtime-hardening no-go package; external-input blockers are cleared; GA-0 and 1.0 remain locked.",
+    "Minimal Bot-only GA-0 signoff path is in progress for controlled internal/staging use; G-04/G-06 are owner-deferred for this path only, not passed; GA-0 action and 1.0 remain locked.",
   rows: [
     {
       blocker: "none",
@@ -84,12 +84,13 @@ export const releaseGateConsoleState = {
       state: "Closed"
     },
     {
-      blocker: "L-01 checklist not green; owner has not opened GA-0",
-      evidenceHref: "docs/evidence/M6/M6-00-m5-signoff-and-m6-readiness-pack.md",
-      evidenceLabel: "GA-0 blockers",
+      blocker:
+        "GA-0 remains locked; M9-04 employee admin read, M9-05 Bot redline/fuse leave-ticket drill and M9-06 owner open record required",
+      evidenceHref: "docs/evidence/GA-0/GA0-00-minimal-boundary.md",
+      evidenceLabel: "GA-0 minimal boundary",
       gate: "GA-0",
-      owner: "not approved",
-      source: "Acceptance matrix L-01",
+      owner: "minimal Bot-only path selected; G-04/G-06 deferred not passed",
+      source: "M9-03 boundary, acceptance matrix L-01/L-02",
       state: "Locked"
     },
     {

@@ -95,7 +95,8 @@ Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex/m
 
 ## PR And Cleanup Evidence
 
-- Pending PR/CI/merge.
+- PR #283 merged to `main` at commit `fe4f27d3014bcb10855ece8ee29106c262f41b59`.
+- CI `checks` succeeded before merge on 2026-07-09.
 
 ## Remaining Boundary
 

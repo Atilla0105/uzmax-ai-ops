@@ -56,6 +56,8 @@ Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/codex-m
 - `scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs`
   - Fake Prisma now supports the mutation delegates needed by the DB repository.
   - Added service-level DB-mode coverage for handoff creation, tenant-B denial, claim/lock/note/close/reopen persistence and event-id dedupe.
+- `scripts/tests/m8-conversation-ticket-api-fixture.mjs`
+  - Extracted the fake Prisma fixture and shared test constants so the M8 test remains under the project `max-lines` guard after Prettier formatting.
 - `packages/db/scripts/run-m10-conversation-ticket-actions-true-db-smoke.mjs`
   - Added disabled-by-env true DB smoke wrapper.
 - `packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs`
@@ -107,13 +109,21 @@ NODE_OPTIONS="--experimental-loader=/tmp/uzmax-root-node-modules-loader.mjs" PAT
 
 Result: pass, `tests=13`, `pass=13`, `fail=0`.
 
+Targeted lint:
+
+```bash
+node node_modules/eslint/bin/eslint.js eslint.config.mjs apps/api/src/conversation-ticket.db-mappers.ts apps/api/src/conversation-ticket.repository.ts packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs scripts/tests/m10-conversation-ticket-actions-true-db-smoke.test.mjs scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs scripts/tests/m8-conversation-ticket-api-fixture.mjs
+```
+
+Result: pass after the M8 fixture extraction and repository interface tightening.
+
 Guard:
 
 ```bash
 NODE_OPTIONS="--experimental-loader=/tmp/uzmax-root-node-modules-loader.mjs" PATH="/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/atilla/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M10-01-conversation-ticket-db-writes.md --include-worktree
 ```
 
-Result: pass. Output included expected local-branch notice `no pull requests found for branch "codex/m10-01-conversation-ticket-db-writes"` and summary `changedFiles=9`, categories `source=4`, `test=3`, `docs=2`, source `netLoc=156`.
+Result: pass. Summary: `changedFiles=10`, categories `source=4`, `test=4`, `docs=2`, source `netLoc=156`.
 
 Whitespace:
 

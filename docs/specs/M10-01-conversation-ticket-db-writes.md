@@ -50,13 +50,14 @@ Acceptance target:
 - `packages/capabilities/handoff/src/index.ts`
 - `packages/db/scripts/run-m10-conversation-ticket-actions-true-db-smoke.mjs`
 - `packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs`
+- `scripts/tests/m8-conversation-ticket-api-fixture.mjs`
 - `scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs`
 - `scripts/tests/m10-conversation-ticket-actions-true-db-smoke.test.mjs`
 
 ## Change Budget
 
 - Source/scripts: up to 5 changed/new source or smoke-runner files, net source LOC target <= 600.
-- Tests: up to 2 changed/new test files, no assertion weakening/deletion.
+- Tests: up to 4 changed/new test/helper files, no assertion weakening/deletion.
 - Docs/evidence: this spec plus one M10 evidence file.
 - Generated, migration, schema, package/lock, admin UI, worker, cron, CI/config: none.
 - Exceptions: none.

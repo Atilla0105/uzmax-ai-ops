@@ -7,9 +7,13 @@ import { runM10ConversationTicketActionsTrueDbSmoke } from "../../packages/db/sc
 
 const repoRoot = process.cwd();
 const source = {
-  smoke: read("packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs"),
+  smoke: read(
+    "packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs"
+  ),
   spec: read("docs/specs/M10-01-conversation-ticket-db-writes.md"),
-  wrapper: read("packages/db/scripts/run-m10-conversation-ticket-actions-true-db-smoke.mjs")
+  wrapper: read(
+    "packages/db/scripts/run-m10-conversation-ticket-actions-true-db-smoke.mjs"
+  )
 };
 
 describe("M10-01 conversation-ticket true DB smoke", () => {

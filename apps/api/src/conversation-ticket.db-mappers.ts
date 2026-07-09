@@ -104,9 +104,7 @@ export function toTicket(row: DbRow, eventRows: readonly DbRow[]): TicketState {
   }) as TicketState;
 }
 
-export function toConversationUpdateData(
-  conversation: HandoffConversation
-): DbRow {
+export function toConversationUpdateData(conversation: HandoffConversation): DbRow {
   return clean({
     lastMessageAt: conversation.lastMessageAt
       ? dateFromIso(conversation.lastMessageAt, "conversation lastMessageAt")

@@ -28,14 +28,8 @@ export async function runM10ConversationTicketActionsTrueDbSmoke() {
         prismaClient: prisma
       });
     const service = new api.service.ConversationTicketService(repository);
-    const tenantA = accessContext(TENANT_A_ID, [
-      "conversation:read",
-      "ticket:write"
-    ]);
-    const tenantB = accessContext(TENANT_B_ID, [
-      "conversation:read",
-      "ticket:write"
-    ]);
+    const tenantA = accessContext(TENANT_A_ID, ["conversation:read", "ticket:write"]);
+    const tenantB = accessContext(TENANT_B_ID, ["conversation:read", "ticket:write"]);
 
     await assert.rejects(
       () =>

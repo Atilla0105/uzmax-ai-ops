@@ -34,6 +34,11 @@ type RuntimeEnv = Partial<
 >;
 type RuntimeMode = "in_memory" | "rls_prisma_gateway";
 type RlsScope = { orgId: string; tenantId: string };
+type MaybeConversation = MaybePromise<HandoffConversation | undefined>;
+type MaybeConversations = MaybePromise<HandoffConversation[]>;
+type MaybeMessages = MaybePromise<ConversationMessage[]>;
+type MaybeTicket = MaybePromise<TicketState | undefined>;
+type MaybeTickets = MaybePromise<TicketState[]>;
 type PrismaDelegate = {
   findFirst(input: unknown): DbOperation<unknown>;
   findMany(input: unknown): DbOperation<unknown>;
@@ -68,23 +73,14 @@ export type ConversationTicketRepositoryPort = {
   getConversation(
     accessContext: AccessContext,
     conversationId: string
-  ): MaybePromise<HandoffConversation | undefined>;
-  getTicket(
-    accessContext: AccessContext,
-    ticketId: string
-  ): MaybePromise<TicketState | undefined>;
+  ): MaybeConversation;
+  getTicket(accessContext: AccessContext, ticketId: string): MaybeTicket;
   listConversations(
     accessContext: AccessContext,
     filters: ConversationListFilters
-  ): MaybePromise<HandoffConversation[]>;
-  listMessages(
-    accessContext: AccessContext,
-    conversationId: string
-  ): MaybePromise<ConversationMessage[]>;
-  listTickets(
-    accessContext: AccessContext,
-    conversationId: string
-  ): MaybePromise<TicketState[]>;
+  ): MaybeConversations;
+  listMessages(accessContext: AccessContext, conversationId: string): MaybeMessages;
+  listTickets(accessContext: AccessContext, conversationId: string): MaybeTickets;
   saveConversation(
     conversation: HandoffConversation
   ): MaybePromise<HandoffConversation>;
@@ -379,11 +375,7 @@ function scopeFromEntity(entity: { orgId: string; tenantId: string }): RlsScope 
   return { orgId: entity.orgId, tenantId: entity.tenantId };
 }
 
-function compoundScopeWhere(entity: {
-  id: string;
-  orgId: string;
-  tenantId: string;
-}) {
+function compoundScopeWhere(entity: { id: string; orgId: string; tenantId: string }) {
   return {
     id_orgId_tenantId: {
       id: entity.id,

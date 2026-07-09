@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { URL } from "node:url";
 
 import {
   SUPPORT_OPERATOR_PERMISSIONS,
@@ -49,16 +50,10 @@ test("provisions independent support operator and runs scoped write smoke", asyn
   });
 
   assert.equal(result.ok, true);
-  assert.equal(
-    result.status,
-    "m10_03_support_operator_write_smoke_passed_not_release"
-  );
+  assert.equal(result.status, "m10_03_support_operator_write_smoke_passed_not_release");
   assert.deepEqual(result.operatorScope.permissions, SUPPORT_OPERATOR_PERMISSIONS);
   assert.equal(result.operatorScope.permissionCount, 3);
-  assert.notEqual(
-    result.operatorScope.userId,
-    "90000000-0000-4000-8000-000000000906"
-  );
+  assert.notEqual(result.operatorScope.userId, "90000000-0000-4000-8000-000000000906");
 
   const permissionInserts = prisma.calls.filter(
     (call) =>
@@ -85,10 +80,7 @@ test("provisions independent support operator and runs scoped write smoke", asyn
   );
   for (const call of fetchCalls.slice(1)) {
     assert.equal(call.headers["x-org-id"], "11111111-1111-4111-8111-111111111604");
-    assert.equal(
-      call.headers["x-tenant-id"],
-      "22222222-2222-4222-8222-222222222604"
-    );
+    assert.equal(call.headers["x-tenant-id"], "22222222-2222-4222-8222-222222222604");
     assert.equal(call.headers.authorization, "Bearer support-access-token-secret");
   }
 
@@ -126,15 +118,22 @@ test("returns sanitized blocked result for auth and DB provisioning failures", a
     password: "Do-not-print-this-support-password-Aa1!",
     prisma: fakePrisma(),
     supabaseAdmin: fakeSupabaseAdmin({
-      errorMessage: "service-role-secret postgres://controlled.example raw auth response",
+      errorMessage:
+        "service-role-secret postgres://controlled.example raw auth response",
       mode: "lookup-error"
     })
   });
   assert.equal(authFailure.ok, false);
-  assert.equal(authFailure.status, "m10_03_support_operator_write_smoke_blocked_not_release");
+  assert.equal(
+    authFailure.status,
+    "m10_03_support_operator_write_smoke_blocked_not_release"
+  );
   assert.equal(authFailure.smoke.stage, "auth-provision");
   assert.equal(authFailure.smoke.message, "auth-provision failed");
-  assert.doesNotMatch(formatSupportOperatorResult(authFailure), /service-role-secret|postgres:\/\/controlled|raw auth response/);
+  assert.doesNotMatch(
+    formatSupportOperatorResult(authFailure),
+    /service-role-secret|postgres:\/\/controlled|raw auth response/
+  );
 
   const dbFailure = await runM10SupportOperatorSmoke({
     env: requiredEnv,
@@ -241,10 +240,7 @@ test("documents dispatch-only workflow, exact permissions and live boundary", ()
     ".github/workflows/m10-support-operator-smoke.yml",
     "utf8"
   );
-  const spec = readFileSync(
-    "docs/specs/M10-03-support-operator-smoke.md",
-    "utf8"
-  );
+  const spec = readFileSync("docs/specs/M10-03-support-operator-smoke.md", "utf8");
   const evidence = readFileSync(
     "docs/evidence/M10/M10-03-support-operator-smoke.md",
     "utf8"
@@ -255,7 +251,10 @@ test("documents dispatch-only workflow, exact permissions and live boundary", ()
   assert.match(workflow, /node-version: 24/);
   assert.match(workflow, /npm ci/);
   assert.match(workflow, /npm run -w @uzmax\/db prisma:generate/);
-  assert.match(workflow, /UZMAX_RLS_DATABASE_URL: \$\{\{ secrets\.UZMAX_RLS_DATABASE_URL \}\}/);
+  assert.match(
+    workflow,
+    /UZMAX_RLS_DATABASE_URL: \$\{\{ secrets\.UZMAX_RLS_DATABASE_URL \}\}/
+  );
   assert.match(workflow, /m10-03-support-operator-smoke-result/);
   assert.match(workflow, /sanitized/i);
   assert.doesNotMatch(workflow, /M9_06_PERMISSIONS|uzmax-ga0-employee-smoke/);

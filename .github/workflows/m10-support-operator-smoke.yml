@@ -5,7 +5,8 @@ on:
     inputs:
       confirm:
         description:
-          Type M10-03 to create/update the support operator and run synthetic staging write smoke.
+          Type M10-03 to create/update the support operator and run synthetic staging
+          write smoke.
         required: true
         type: string
 

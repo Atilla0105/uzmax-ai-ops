@@ -21,6 +21,7 @@ The workflow/script/test implementation is now local-validation ready. No live s
 
 - Workflow: `.github/workflows/m10-support-operator-smoke.yml`
 - Script: `packages/authz/scripts/run-m10-support-operator-smoke.mjs`
+- Runtime helpers: `packages/authz/scripts/m10-support-operator-smoke-runtime.mjs`, `packages/authz/scripts/m10-support-operator-smoke-api.mjs`, `packages/authz/scripts/m10-support-operator-smoke-db.mjs`
 - Tests: `scripts/tests/m10-support-operator-smoke.test.mjs`
 
 The lane provisions a deterministic support operator distinct from M9-06, writes exact permission grants for `tenant:read`, `conversation:read` and `ticket:write`, seeds one synthetic conversation, runs the conversation-ticket list/handoff/action HTTP path, then cleans the synthetic conversation/ticket rows and reports residue.
@@ -91,9 +92,12 @@ Until that live workflow run exists, the current status remains:
   - Coverage: missing env fails before provisioning, query-only DB URL fails before provisioning, exact three permission grants, M9 identity reuse rejection, fake Supabase token/list/handoff/action HTTP sequence with scoped headers, sanitized result output, structured blocked results for Auth/DB failures, lowercase DB enum seed, scoped cleanup/residue predicates including ticket rows, seed-failure cleanup, unsupported CLI argument redaction and workflow/spec/evidence static constraints.
 - `node packages/authz/scripts/run-m10-support-operator-smoke.mjs --help`
   - Result: pass; help prints without requiring secrets, DB, Supabase or API network.
+- `node node_modules/eslint/bin/eslint.js eslint.config.mjs packages/authz/scripts/run-m10-support-operator-smoke.mjs packages/authz/scripts/m10-support-operator-smoke-runtime.mjs packages/authz/scripts/m10-support-operator-smoke-api.mjs packages/authz/scripts/m10-support-operator-smoke-db.mjs scripts/tests/m10-support-operator-smoke.test.mjs`
+  - Result: pass.
+  - File-length proof: script entry `45` lines, runtime helper `308` lines, API helper `228` lines, DB helper `34` lines.
 - `node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M10-03-support-operator-smoke.md --include-worktree`
   - Result: pass.
-  - Shape: changed files `5`; categories `config=1`, `docs=2`, `source=1`, `test=1`; source net LOC `396`.
+  - Shape: changed files `8`; categories `config=1`, `docs=2`, `source=4`, `test=1`; source net LOC `397`.
 - `git diff --check main...HEAD`
   - Result: pass.
 - `git diff --check`

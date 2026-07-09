@@ -1,0 +1,73 @@
+name: M9 GA-0 Employee Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description:
+          Type M9-06 to create/update the smoke employee and run M9-04 live evidence.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  employee-smoke:
+    if: inputs.confirm == 'M9-06'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: 20
+      - run: npm ci
+      - run: npm run -w @uzmax/db prisma:generate
+      - name: Provision smoke employee and run M9-04
+        shell: bash
+        env:
+          M9_06_ADMIN_URL: https://uzmax-admin.vercel.app
+          M9_06_API_BASE_URL: https://uzmax-api-staging.onrender.com
+          M9_06_EMPLOYEE_EMAIL: uzmax-ga0-employee-smoke@example.invalid
+          M9_06_EMPLOYEE_ROLE: owner_operator
+          M9_06_EMPLOYEE_USER_ID: 90000000-0000-4000-8000-000000000906
+          M9_06_ORG_ID: 11111111-1111-4111-8111-111111111604
+          M9_06_PERMISSIONS: tenant:read,conversation:read
+          M9_06_TENANT_ID: 22222222-2222-4222-8222-222222222604
+          UZMAX_RLS_DATABASE_URL: ${{ secrets.UZMAX_RLS_DATABASE_URL }}
+          UZMAX_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.UZMAX_SUPABASE_PUBLISHABLE_KEY }}
+          UZMAX_SUPABASE_SECRET_KEY: ${{ secrets.UZMAX_SUPABASE_SECRET_KEY }}
+          UZMAX_SUPABASE_URL: https://enyocaykcgcfcswycujg.supabase.co
+        run: |
+          set -euo pipefail
+          node packages/authz/scripts/run-m9-ga0-employee-provisioning.mjs | tee m9-06-result.json
+      - name: Summarize sanitized result
+        if: always() && hashFiles('m9-06-result.json') != ''
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const result = JSON.parse(fs.readFileSync("m9-06-result.json", "utf8"));
+          const lines = [
+            "## M9-06 Employee Smoke",
+            "",
+            `status: \`${result.status}\``,
+            `ok: \`${result.ok}\``,
+            `smoke: \`${result.smoke?.status ?? "missing"}\``,
+            `conversationCount: \`${result.smoke?.conversationCount ?? "n/a"}\``,
+            "",
+            "This summary is sanitized: no password, service role key, DB URL, raw auth response or customer text is printed."
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('m9-06-result.json') != ''
+        with:
+          if-no-files-found: ignore
+          name: m9-06-employee-smoke-result
+          path: m9-06-result.json

@@ -104,18 +104,24 @@ test("manual token path skips Supabase auth and reads conversation API", async (
   assert.doesNotMatch(printed, /manual-access-token-secret/);
 });
 
-test("docs keep GA-0 locked and record M9-04 owner-input blocker", () => {
-  for (const doc of [files.spec, files.evidence, files.release]) {
-    assert.match(doc, /m9_04_owner_input_employee_session_required_not_ga0/);
-    assert.match(doc, /GA-0 remains locked/);
-    assert.match(doc, /1\.0 remains blocked|1\.0 remains blocked/i);
-    assert.match(doc, /employee Supabase|employee session|employee auth/i);
-    assert.match(doc, /owner-input blocker|owner-provided employee-session/i);
-    assert.doesNotMatch(doc, /m9_04_employee_admin_read_passed_not_ga0_open.*current/i);
-    assert.doesNotMatch(doc, /\b1\.0 (?:approved|ready|released)\b/i);
-  }
+test("docs keep M9-04 live evidence narrow and GA-0 broader scope locked", () => {
+  assert.match(files.spec, /m9_04_owner_input_employee_session_required_not_ga0/);
+  assert.match(files.spec, /GA-0 remains locked/);
+  assert.match(files.spec, /owner-input blocker/);
+  assert.match(files.spec, /employee auth|employee session/i);
 
+  assert.match(files.evidence, /m9_04_employee_admin_read_passed_not_ga0_open/);
+  assert.match(files.evidence, /Superseded Blocker/);
+  assert.match(files.evidence, /m9_04_owner_input_employee_session_required_not_ga0/);
+  assert.match(files.evidence, /M9-04 is now closed by the M9-06/);
+  assert.match(files.evidence, /does not approve:\n\n- 1\.0 release/);
+
+  assert.match(files.release, /GA-0 remains locked/);
   assert.match(files.release, /M9-04 employee admin read evidence/);
+  assert.match(files.release, /previous owner-input blocker was superseded/);
+  assert.match(files.release, /m9_04_employee_admin_read_passed_not_ga0_open/);
+  assert.match(files.release, /1\.0 remains blocked/);
+  assert.doesNotMatch(files.release, /\b1\.0 (?:approved|ready|released)\b/i);
   assert.match(
     files.release,
     /docs\/evidence\/M9\/M9-04-admin-employee-read-evidence\.md/

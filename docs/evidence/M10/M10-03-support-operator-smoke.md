@@ -94,12 +94,12 @@ Until that live workflow run exists, the current status remains:
   - Result: pass; help prints without requiring secrets, DB, Supabase or API network.
 - `node node_modules/eslint/bin/eslint.js eslint.config.mjs packages/authz/scripts/run-m10-support-operator-smoke.mjs packages/authz/scripts/m10-support-operator-smoke-runtime.mjs packages/authz/scripts/m10-support-operator-smoke-api.mjs packages/authz/scripts/m10-support-operator-smoke-db.mjs scripts/tests/m10-support-operator-smoke.test.mjs`
   - Result: pass.
-  - File-length proof: script entry `45` lines, runtime helper `308` lines, API helper `228` lines, DB helper `34` lines.
+  - File-length proof: script entry `36` lines, runtime helper `301` lines, API helper `222` lines, DB helper `34` lines.
 - `node node_modules/jscpd/run-jscpd.js apps packages scripts --config jscpd.config.json --workers 1 --no-tips`
   - Result: pass after reshaping M10-03 runtime/CLI/test helper code away from existing M9 smoke script clones.
 - `node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M10-03-support-operator-smoke.md --include-worktree`
   - Result: pass.
-  - Shape: changed files `8`; categories `config=1`, `docs=2`, `source=4`, `test=1`; source net LOC `600`.
+  - Shape: changed files `8`; categories `config=1`, `docs=2`, `source=4`, `test=1`; source net LOC `593`.
 - `git diff --check main...HEAD`
   - Result: pass.
 - `git diff --check`

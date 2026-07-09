@@ -15,22 +15,14 @@ import {
   safeMessage
 } from "./m10-support-operator-smoke-runtime.mjs";
 
-function readCliMode(argv) {
-  const [first, ...rest] = argv;
-  if (!first) return "run";
-  if ((first === "--help" || first === "-h") && rest.length === 0) return "help";
-  throw new Error("unsupported argument");
-}
-
-function isMainModule() {
-  return process.argv[1] === fileURLToPath(import.meta.url);
-}
-
-if (isMainModule()) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    const mode = readCliMode(process.argv.slice(2));
-    if (mode === "help") console.log(helpText.trimEnd());
-    else {
+    const args = process.argv.slice(2);
+    if (args.length === 1 && ["--help", "-h"].includes(args[0])) {
+      console.log(helpText.trimEnd());
+    } else if (args.length > 0) {
+      throw new Error("unsupported argument");
+    } else {
       const result = await runM10SupportOperatorSmoke();
       console.log(formatSupportOperatorResult(result));
       process.exitCode = result.exitCode;

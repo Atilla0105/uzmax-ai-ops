@@ -108,12 +108,11 @@ export function formatSupportOperatorResult(result) {
 }
 
 async function createRuntime(input, config) {
-  const clients = await createRuntimeClients(input, config);
   return {
     fetchImpl: input.fetchImpl ?? globalThis.fetch,
     password:
       input.password ?? generatedPassword(input.randomBytes ?? defaultRandomBytes),
-    ...clients
+    ...(await createRuntimeClients(input, config))
   };
 }
 
@@ -200,12 +199,9 @@ async function stage(name, run) {
 }
 
 function stagedError(name, error) {
-  if (error && typeof error === "object") {
-    error.stage = error.stage ?? name;
-    return error;
-  }
-  const wrapped = new Error("stage failed");
-  wrapped.stage = name;
+  const wrapped =
+    error && typeof error === "object" ? error : new Error("stage failed");
+  wrapped.stage = wrapped.stage ?? name;
   return wrapped;
 }
 
@@ -234,21 +230,13 @@ function publicResult({ access, authUser, config, residue, smoke }) {
 
 function blockedResult(config, error) {
   const stageName = error?.stage ?? "runtime";
-  return {
-    authUser: {
-      emailHashPrefix: hashPrefix(config.email),
-      id: config.userId,
-      mode: "unknown"
-    },
-    boundary: releaseBoundary,
-    cleanup: { residue: "unknown" },
-    exitCode: 4,
-    ok: false,
-    operatorScope: operatorScope(config),
-    provisioning: { permissionCount: config.permissions.length },
-    smoke: runtimeBlocker(stageName, `${stageName} failed`),
-    status: blockedStatus
-  };
+  return publicResult({
+    access: {},
+    authUser: { id: config.userId, mode: "unknown" },
+    config,
+    residue: "unknown",
+    smoke: runtimeBlocker(stageName, `${stageName} failed`)
+  });
 }
 
 function operatorScope(config, access = {}) {
@@ -290,15 +278,12 @@ function requiredDatabaseUrlEnv(env, name) {
 }
 
 function assertPostgresUrl(value, name) {
-  if (!hasPostgresProtocol(value)) throw new Error(`${name} must be a postgres URL`);
-}
-
-function hasPostgresProtocol(value) {
   try {
-    return ["postgres:", "postgresql:"].includes(new URL(value).protocol);
+    if (["postgres:", "postgresql:"].includes(new URL(value).protocol)) return;
   } catch {
-    return false;
+    // handled by the fail-closed error below
   }
+  throw new Error(`${name} must be a postgres URL`);
 }
 
 function generatedPassword(randomBytes = defaultRandomBytes) {

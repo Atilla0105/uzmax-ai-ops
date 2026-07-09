@@ -1,36 +1,60 @@
-import {
-  useMemo,
-  useState,
-  type Dispatch,
-  type FormEvent,
-  type MouseEvent,
-  type SetStateAction
-} from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "../../primitives";
+import { PageState } from "../../patterns";
 import {
   inTab,
-  nowHM,
   tabCounts,
-  ticketCloseStatus,
   ticketFallbackMeta,
+  ticketPageStyles,
   ticketRecords,
   type TicketRecord,
   type TicketTabId
 } from "./ticketFallback";
+import {
+  firstNonEmptyTicketTab,
+  runtimeTicketLabel,
+  ticketStateMessage,
+  ticketStateTitle,
+  useTicketRuntime,
+  type TicketCloseDraft
+} from "./ticketRuntime";
+import {
+  handleTicketChange,
+  handleTicketClick,
+  handleTicketInput,
+  makeLocalTicketActions,
+  type TicketInteractionContext
+} from "./ticketLocalActions";
 import { renderTicketPage } from "./TicketHtml";
 
-const me = "韩雪";
 const initialTicket = ticketRecords[0] as TicketRecord;
-type CloseDraft = { id: string; note: string; result: string } | null;
+type CloseDraft = TicketCloseDraft;
 type Patch = (id: string, fn: (ticket: TicketRecord) => TicketRecord) => void;
+type TicketRuntime = ReturnType<typeof useTicketRuntime>;
 
 export function TicketsPage({ selectedTenantId }: { selectedTenantId: string }) {
-  const [records, setRecords] = useState<TicketRecord[]>(ticketRecords);
+  const runtime = useTicketRuntime(selectedTenantId);
+  const { records, setRecords } = runtime;
   const [tab, setTab] = useState<TicketTabId>("sla");
   const [activeId, setActiveId] = useState(initialTicket.id);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [closeDraft, setCloseDraft] = useState<CloseDraft>(null);
+
+  useEffect(() => {
+    setActiveId((current) =>
+      records.some((ticket) => ticket.id === current) ? current : records[0]?.id || ""
+    );
+  }, [records]);
+
   const counts = useMemo(() => tabCounts(records), [records]);
   const filtered = records.filter((ticket) => inTab(ticket, tab));
+
+  useEffect(() => {
+    if (!runtime.strictRuntime || records.length === 0 || filtered.length > 0) return;
+    const nextTab = firstNonEmptyTicketTab(records);
+    if (nextTab) setTab(nextTab);
+  }, [filtered.length, records, runtime.strictRuntime]);
+
   const active =
     records.find((ticket) => ticket.id === activeId) ??
     filtered[0] ??
@@ -41,7 +65,7 @@ export function TicketsPage({ selectedTenantId }: { selectedTenantId: string }) 
     setRecords((current) =>
       current.map((ticket) => (ticket.id === id ? fn(ticket) : ticket))
     );
-  const actions = makeActions(
+  const actions = makeLocalTicketActions(
     active,
     closeDraft,
     noteDrafts,
@@ -49,45 +73,26 @@ export function TicketsPage({ selectedTenantId }: { selectedTenantId: string }) 
     setCloseDraft,
     setNoteDrafts
   );
-
-  function onClick(event: MouseEvent<HTMLElement>) {
-    const target = event.target as HTMLElement;
-    const command = target.closest<HTMLElement>("[data-ticket-command]");
-    if (!command) return;
-    const { closeResult, rowId, tabId, ticketCommand } = command.dataset;
-    if (tabId) setTab(tabId as TicketTabId);
-    if (rowId) setActiveId(rowId);
-    if (closeResult) setCloseDraft({ id: active.id, note: "", result: closeResult });
-    if (ticketCommand === "claim") actions.claim();
-    if (ticketCommand === "add-note") actions.addNote();
-    if (ticketCommand === "confirm-close") actions.close();
-    if (ticketCommand === "cancel-close") setCloseDraft(null);
-  }
-
-  function onInput(event: FormEvent<HTMLElement>) {
-    const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-    if (target.dataset.noteFor) {
-      setNoteDrafts((drafts) => ({
-        ...drafts,
-        [target.dataset.noteFor ?? ""]: target.value
-      }));
-    }
-    if (target.dataset.ticketCommand === "close-note" && scopedCloseDraft) {
-      setCloseDraft({ ...scopedCloseDraft, note: target.value });
-    }
-    if (target.dataset.ticketCommand === "transfer") actions.reassign(target.value);
-  }
-
-  function onChange(event: FormEvent<HTMLElement>) {
-    const target = event.target as HTMLSelectElement;
-    if (target.dataset.ticketCommand === "transfer") actions.reassign(target.value);
-  }
+  const interaction: TicketInteractionContext = {
+    actions,
+    active,
+    closeDraft,
+    noteDrafts,
+    runtime,
+    scopedCloseDraft,
+    setActiveId,
+    setCloseDraft,
+    setNoteDrafts,
+    setTab
+  };
+  const stateView = renderTicketRuntimeState(runtime, selectedTenantId);
+  if (stateView) return stateView;
 
   return (
     <section
       className="uz-ticket-page"
-      data-runtime-source={ticketFallbackMeta.source}
-      data-runtime-state="degraded"
+      data-runtime-source={ticketRuntimeSource(runtime)}
+      data-runtime-state={ticketRuntimeState(runtime)}
       data-tenant-id={selectedTenantId}
       data-testid="m7-ticket-page"
       dangerouslySetInnerHTML={{
@@ -97,74 +102,63 @@ export function TicketsPage({ selectedTenantId }: { selectedTenantId: string }) 
           counts,
           tab,
           noteDrafts[active.id] ?? "",
-          scopedCloseDraft
+          scopedCloseDraft,
+          ticketRenderOptions(runtime, records.length)
         )
       }}
-      onChange={onChange}
-      onClick={onClick}
-      onInput={onInput}
+      onChange={(event) => handleTicketChange(event, interaction)}
+      onClick={(event) => handleTicketClick(event, interaction)}
+      onInput={(event) => handleTicketInput(event, interaction)}
     />
   );
 }
 
-function makeActions(
-  active: TicketRecord,
-  closeDraft: CloseDraft,
-  noteDrafts: Record<string, string>,
-  patch: Patch,
-  setCloseDraft: (draft: CloseDraft) => void,
-  setNoteDrafts: Dispatch<SetStateAction<Record<string, string>>>
-) {
-  const append = (ticket: TicketRecord, text: string, dot: "ai" | "ok" = "ai") => [
-    ...ticket.timeline,
-    { dot, text, time: nowHM(), who: me }
-  ];
+function renderTicketRuntimeState(runtime: TicketRuntime, selectedTenantId: string) {
+  if (!runtime.strictRuntime || runtime.runtimeStatus === "ready") return null;
+  return (
+    <section
+      className="uz-ticket-page uz-ticket-page-state"
+      data-runtime-source="api"
+      data-runtime-state={runtime.runtimeStatus}
+      data-tenant-id={selectedTenantId}
+      data-testid="m7-ticket-page"
+    >
+      <style>{ticketPageStyles}</style>
+      <PageState
+        action={ticketStateAction(runtime)}
+        data-testid={`m7-ticket-${runtime.runtimeStatus}`}
+        kind={runtime.runtimeStatus}
+        message={ticketStateMessage(runtime.runtimeStatus, runtime.lastError)}
+        title={ticketStateTitle(runtime.runtimeStatus)}
+      />
+    </section>
+  );
+}
+
+function ticketStateAction(runtime: TicketRuntime) {
+  if (runtime.runtimeStatus !== "error" && runtime.runtimeStatus !== "permission") {
+    return undefined;
+  }
+  return (
+    <Button onClick={() => void runtime.loadRuntimeTickets()} variant="secondary">
+      重试
+    </Button>
+  );
+}
+
+function ticketRuntimeSource(runtime: TicketRuntime) {
+  return runtime.strictRuntime ? "api" : ticketFallbackMeta.source;
+}
+
+function ticketRuntimeState(runtime: TicketRuntime) {
+  return runtime.strictRuntime ? runtime.runtimeStatus : "degraded";
+}
+
+function ticketRenderOptions(runtime: TicketRuntime, count: number) {
   return {
-    addNote: () => {
-      const text = (noteDrafts[active.id] ?? "").trim();
-      if (!text) return;
-      patch(active.id, (ticket) => ({
-        ...ticket,
-        notes: [...ticket.notes, { text, time: nowHM(), who: me }]
-      }));
-      setNoteDrafts((drafts) => ({ ...drafts, [active.id]: "" }));
-    },
-    claim: () =>
-      patch(active.id, (ticket) => ({
-        ...ticket,
-        assignee: me,
-        status: ticket.status === "待处理" ? "处理中" : ticket.status,
-        tabs: [
-          ...new Set(ticket.tabs.filter((item) => item !== "unclaimed").concat("mine"))
-        ],
-        timeline: append(ticket, `${me} 认领工单`)
-      })),
-    close: () => {
-      if (!closeDraft?.note.trim()) return;
-      patch(closeDraft.id, (ticket) => ({
-        ...ticket,
-        closeNote: closeDraft.note,
-        closeResult: closeDraft.result,
-        status: ticketCloseStatus[closeDraft.result] ?? "已关闭",
-        tabs: [],
-        timeline: append(ticket, `工单关闭 · ${closeDraft.result}`, "ok")
-      }));
-      setCloseDraft(null);
-    },
-    reassign: (to: string) => {
-      if (!to) return;
-      patch(active.id, (ticket) => ({
-        ...ticket,
-        assignee: to,
-        tabs: [
-          ...new Set(
-            ticket.tabs
-              .filter((item) => item !== "unclaimed")
-              .concat(to === me ? ["mine"] : [])
-          )
-        ],
-        timeline: append(ticket, `转派给 ${to}`)
-      }));
-    }
+    runtimeLabel: runtime.strictRuntime
+      ? runtimeTicketLabel(count, runtime.lastError)
+      : ticketFallbackMeta.reason,
+    transferDisabled: runtime.strictRuntime
   };
 }

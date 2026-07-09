@@ -30,12 +30,6 @@ type AppShellNavGroupProps = {
   onSelect: (id: AdminPageId) => void;
 };
 
-const navBadges: Partial<Record<AdminPageId, string>> = {
-  "tenant.conversations": "7",
-  "tenant.queue": "9",
-  "tenant.tickets": "3"
-};
-
 const groupNavConfig = [
   { label: "总览", pages: ["group.overview", "group.modelRisk"] },
   {
@@ -102,7 +96,6 @@ function createNavGroups(
 
 function createNavEntry(page: AdminNavigationPage): NavEntry {
   return {
-    badge: navBadges[page.id],
     icon: appShellIcons[page.id],
     id: page.id,
     label: page.label,

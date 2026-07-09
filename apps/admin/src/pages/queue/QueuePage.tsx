@@ -11,13 +11,8 @@ import {
   queueStats,
   reasonRef
 } from "./QueueCard";
-import {
-  QueueStats,
-  QueueStyles,
-  renderQueueState,
-  useQueueRuntime,
-  type SubmitAction
-} from "./QueueSupport";
+import { QueueStats, QueueStyles, type SubmitAction } from "./QueueSupport";
+import { renderQueueState, useQueueRuntime } from "./QueueRuntime";
 import { QueueBlockModal, QueueEditPanel } from "./QueueOverlays";
 import { type DisplayQueueItem } from "./queueFallback";
 
@@ -39,8 +34,8 @@ function canShortcut(
   return Boolean(item && !editingId && !blockId && item.status === "pending");
 }
 
-export function QueuePage() {
-  const queue = useQueueRuntime();
+export function QueuePage({ selectedTenantId }: { selectedTenantId: string }) {
+  const queue = useQueueRuntime(selectedTenantId);
   const toast = useToast();
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -147,7 +142,7 @@ export function QueuePage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   });
 
-  const state = renderQueueState(queue.status);
+  const state = renderQueueState(queue.status, queue.lastError, queue.reload);
   const isDegraded = queue.mode === "degraded";
 
   return (
@@ -181,30 +176,32 @@ export function QueuePage() {
       >
         {isDegraded
           ? `API unavailable/empty/error -> mock/degraded visible structure; read-only; runtime unavailable. ${queue.lastError}`
-          : "蒸馏健康摘要和人工恢复每日频率缺少已批准 API 合约；运行时决策仍使用现有 API client。"}
+          : queue.lastError ||
+            "蒸馏健康摘要和人工恢复每日频率缺少已批准 API 合约；运行时决策仍使用现有 API client。"}
       </DegradedBar>
       <div className="uz-queue-body">
-        {state ?? (
-          <div className="uz-queue-flow" data-testid="m7-queue-flow">
-            {queue.items.map((item, index) => (
-              <QueueCard
-                focused={index === focusedIndex}
-                item={item}
-                key={item.id}
-                onApprove={() => void decide(item, "approve")}
-                onBlock={() => {
-                  setBlockId(item.id);
-                  setBlockReason("");
-                }}
-                onDiscard={() => void decide(item, "discard")}
-                onEdit={() => startEdit(item)}
-                onFocus={() => setFocusedIndex(index)}
-                readOnly={!queue.canWrite}
-                submitting={queue.submittingId === item.id}
-              />
-            ))}
-          </div>
-        )}
+        {state ??
+          (queue.items.length === 0 ? null : (
+            <div className="uz-queue-flow" data-testid="m7-queue-flow">
+              {queue.items.map((item, index) => (
+                <QueueCard
+                  focused={index === focusedIndex}
+                  item={item}
+                  key={item.id}
+                  onApprove={() => void decide(item, "approve")}
+                  onBlock={() => {
+                    setBlockId(item.id);
+                    setBlockReason("");
+                  }}
+                  onDiscard={() => void decide(item, "discard")}
+                  onEdit={() => startEdit(item)}
+                  onFocus={() => setFocusedIndex(index)}
+                  readOnly={!queue.canWrite}
+                  submitting={queue.submittingId === item.id}
+                />
+              ))}
+            </div>
+          ))}
       </div>
       <QueueEditPanel
         canWrite={queue.canWrite && controlledRefPattern.test(editRef)}

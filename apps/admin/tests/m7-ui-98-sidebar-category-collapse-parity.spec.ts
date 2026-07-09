@@ -229,7 +229,7 @@ function expectExpandedMetrics(
   expect(metrics.categoryLabels).toEqual(expected.map((group) => group.label));
   expect(metrics.navItemLabels).toEqual(expected.flatMap((group) => [...group.items]));
   expect(metrics.labelsPresent).toBe(true);
-  expect(metrics.badgesPresent).toBe(expected === tenantNav);
+  expect(metrics.badgesPresent).toBe(false);
   expectIconMetrics(metrics, expected.flatMap((group) => group.items).length);
 }
 

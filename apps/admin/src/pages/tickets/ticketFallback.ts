@@ -226,6 +226,7 @@ export function tabCounts(records: readonly TicketRecord[]) {
 }
 
 export function inTab(ticket: TicketRecord, tab: TicketTabId) {
+  if (ticket.tabs.includes(tab)) return true;
   if (tab === "unclaimed") return ticket.assignee === "未认领";
   if (tab === "mine") return ticket.assignee === "韩雪" && !ticket.closeResult;
   if (tab === "sla") return ticket.sla.includes("01:") || ticket.sla.includes("04:");

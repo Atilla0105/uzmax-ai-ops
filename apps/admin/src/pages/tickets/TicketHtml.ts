@@ -9,6 +9,10 @@ import {
 } from "./ticketFallback";
 
 type CloseDraft = { id: string; note: string; result: string } | null;
+type RenderOptions = {
+  runtimeLabel?: string;
+  transferDisabled?: boolean;
+};
 
 export function renderTicketPage(
   filtered: TicketRecord[],
@@ -16,9 +20,10 @@ export function renderTicketPage(
   counts: Record<TicketTabId, number>,
   tab: TicketTabId,
   noteDraft: string,
-  closeDraft: CloseDraft
+  closeDraft: CloseDraft,
+  options: RenderOptions = {}
 ) {
-  return `<style>${ticketPageStyles}</style>${ticketList(filtered, active.id, counts, tab)}${ticketDetail(active, noteDraft, closeDraft)}`;
+  return `<style>${ticketPageStyles}</style>${ticketList(filtered, active.id, counts, tab)}${ticketDetail(active, noteDraft, closeDraft, options)}`;
 }
 
 function ticketList(
@@ -30,9 +35,14 @@ function ticketList(
   return `<aside class="uz-ticket-list" data-testid="m7-ticket-list"><header class="uz-ticket-list__head"><h2>工单</h2><span class="uz-ticket-list__count">${esc(ticketFallbackMeta.label)}</span></header><nav aria-label="Ticket tabs" class="uz-ticket-tabs">${ticketTabs.map((item) => tabButton(item, counts, tab)).join("")}</nav><div class="uz-ticket-rows">${filtered.map((ticket) => row(ticket, ticket.id === activeId)).join("")}</div></aside>`;
 }
 
-function ticketDetail(active: TicketRecord, noteDraft: string, closeDraft: CloseDraft) {
+function ticketDetail(
+  active: TicketRecord,
+  noteDraft: string,
+  closeDraft: CloseDraft,
+  options: RenderOptions
+) {
   const closed = Boolean(active.closeResult);
-  return `<section class="uz-ticket-detail" data-testid="m7-ticket-detail"><header class="uz-ticket-detail__head"><div class="uz-ticket-detail__meta"><strong class="uz-ticket-mono">${esc(active.id)}</strong>${badge(closed ? "ok" : "danger", active.status)}${badge("warn", `SLA ${active.sla}`)}${ticketActions(active)}</div><div class="uz-ticket-detail__title">${esc(active.title)}</div></header><div class="uz-ticket-runtime" data-testid="m7-ticket-runtime-note"><span>${esc(ticketFallbackMeta.reason)}</span></div><div class="uz-ticket-body"><main class="uz-ticket-main">${card("摘要", `<p>${esc(active.summary)}</p>`)}${card("AI 建议处理", `<p>${esc(active.suggestion)}</p>`, "uz-ticket-ai", `<span class="uz-icon-slot" aria-hidden="true">AI</span>`)}${snippet(active)}${quotes(active)}${timeline(active)}${notes(active, noteDraft)}</main>${side(active, closeDraft)}</div></section>`;
+  return `<section class="uz-ticket-detail" data-testid="m7-ticket-detail"><header class="uz-ticket-detail__head"><div class="uz-ticket-detail__meta"><strong class="uz-ticket-mono">${esc(active.id)}</strong>${badge(closed ? "ok" : "danger", active.status)}${badge("warn", `SLA ${active.sla}`)}${ticketActions(active, options)}</div><div class="uz-ticket-detail__title">${esc(active.title)}</div></header><div class="uz-ticket-runtime" data-testid="m7-ticket-runtime-note"><span>${esc(options.runtimeLabel ?? ticketFallbackMeta.reason)}</span></div><div class="uz-ticket-body"><main class="uz-ticket-main">${card("摘要", `<p>${esc(active.summary)}</p>`)}${card("AI 建议处理", `<p>${esc(active.suggestion)}</p>`, "uz-ticket-ai", `<span class="uz-icon-slot" aria-hidden="true">AI</span>`)}${snippet(active)}${quotes(active)}${timeline(active)}${notes(active, noteDraft)}</main>${side(active, closeDraft)}</div></section>`;
 }
 
 function tabButton(
@@ -48,9 +58,11 @@ function row(ticket: TicketRecord, active: boolean) {
   return `<button aria-pressed="${active}" class="uz-ticket-row tone-${ticket.tone} ${active ? "is-active" : ""}" data-ticket-command data-row-id="${esc(ticket.id)}" data-testid="m7-ticket-row-${esc(ticket.id)}" type="button"><span aria-hidden="true" class="uz-ticket-row__rail"></span><span class="uz-ticket-row__top"><strong>${esc(ticket.id)}</strong>${badge(priorityTone(ticket.priority), ticket.priority)}<span class="mono uz-ticket-row__sla">${esc(ticket.sla)}</span></span><span class="uz-ticket-row__title">${esc(ticket.title)}</span><span class="uz-ticket-row__meta"><span>${esc(ticket.customer)}</span><span>·</span><span>${esc(ticket.channel)}</span><span>${esc(ticket.assignee)}</span></span></button>`;
 }
 
-function ticketActions(active: TicketRecord) {
+function ticketActions(active: TicketRecord, options: RenderOptions) {
   const claimed = active.assignee !== "未认领";
-  return `<div class="uz-ticket-actions"><button class="uz-button uz-button--${claimed ? "secondary" : "primary"} uz-ticket-claim" data-ticket-command="claim" data-testid="m7-ticket-claim" ${claimed ? "disabled" : ""} type="button"><span>${claimed ? `已认领 · ${esc(active.assignee)}` : "认领"}</span></button><select aria-label="转派给" class="uz-ticket-select" data-ticket-command="transfer" data-testid="m7-ticket-transfer" value=""><option value="">转派给…</option>${ticketTeamMembers.map((member) => `<option value="${esc(member)}">${esc(member)}</option>`).join("")}</select></div>`;
+  const transferDisabled = options.transferDisabled ? "disabled" : "";
+  const transferLabel = options.transferDisabled ? "转派未接入" : "转派给…";
+  return `<div class="uz-ticket-actions"><button class="uz-button uz-button--${claimed ? "secondary" : "primary"} uz-ticket-claim" data-ticket-command="claim" data-testid="m7-ticket-claim" ${claimed ? "disabled" : ""} type="button"><span>${claimed ? `已认领 · ${esc(active.assignee)}` : "认领"}</span></button><select aria-label="转派给" class="uz-ticket-select" data-ticket-command="transfer" data-testid="m7-ticket-transfer" value="" ${transferDisabled}><option value="">${transferLabel}</option>${ticketTeamMembers.map((member) => `<option value="${esc(member)}">${esc(member)}</option>`).join("")}</select></div>`;
 }
 
 function side(active: TicketRecord, closeDraft: CloseDraft) {

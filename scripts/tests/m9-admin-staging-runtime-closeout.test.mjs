@@ -80,10 +80,13 @@ test("admin access panel supports Supabase sign-in and manual token fallback", (
 });
 
 test("conversation workbench uses runtime fetcher and fails closed on auth errors", () => {
-  assert.match(files.conversationClient, /createAdminRuntimeFetcher/);
+  const conversationRuntime = read(
+    "apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts"
+  );
+  assert.match(conversationRuntime, /createAdminRuntimeFetcher/);
   assert.match(
-    files.conversationClient,
-    /const browserFetcher: ApiFetcher = createAdminRuntimeFetcher\(\)/
+    conversationRuntime,
+    /createAdminRuntimeFetcher\(config, \{ selectedTenantId \}\)/
   );
   assert.match(files.conversationClient, /status \(401\|403\)/);
   assert.doesNotMatch(files.conversationClient, /window\.fetch\(input, init\)/);

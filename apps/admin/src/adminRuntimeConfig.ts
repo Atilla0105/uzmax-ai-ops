@@ -14,6 +14,7 @@ export type AdminRuntimeConfig = {
   apiBaseUrl: string;
   env: RuntimeEnv;
   orgId: string;
+  strictRuntime: boolean;
   supabasePublishableKey: string;
   supabaseUrl: string;
   tenants?: readonly [AdminRuntimeTenant, ...AdminRuntimeTenant[]];
@@ -23,6 +24,10 @@ export type AdminRuntimeFetchInit = {
   body?: BodyInit | null;
   headers?: HeadersInit;
   method?: string;
+};
+
+export type AdminRuntimeFetcherOptions = {
+  selectedTenantId?: string;
 };
 
 const accessTokenStorageKey = "uzmax.admin.runtime.accessToken";
@@ -57,24 +62,30 @@ export const fallbackAdminRuntimeTenants = [
 
 export function readAdminRuntimeConfig(): AdminRuntimeConfig {
   const env = import.meta.env;
+  const apiBaseUrl = normalizeApiBaseUrl(env.VITE_UZMAX_API_BASE_URL);
   return {
-    apiBaseUrl: normalizeApiBaseUrl(env.VITE_UZMAX_API_BASE_URL),
+    apiBaseUrl,
     env: runtimeEnv(env.VITE_UZMAX_RUNTIME_ENV),
     orgId: envText(env.VITE_UZMAX_ORG_ID),
+    strictRuntime: Boolean(apiBaseUrl) || envFlag(env.VITE_UZMAX_RUNTIME_STRICT),
     supabasePublishableKey: envText(env.VITE_UZMAX_SUPABASE_PUBLISHABLE_KEY),
     supabaseUrl: normalizeApiBaseUrl(env.VITE_UZMAX_SUPABASE_URL),
     tenants: runtimeTenants(env)
   };
 }
 
-export function createAdminRuntimeFetcher(config = readAdminRuntimeConfig()) {
+export function createAdminRuntimeFetcher(
+  config = readAdminRuntimeConfig(),
+  options: AdminRuntimeFetcherOptions = {}
+) {
   return (input: string, init: AdminRuntimeFetchInit = {}) => {
     const path = normalizeRuntimePath(input);
     const headers = new Headers(init.headers);
+    const tenantId = runtimeTenantHeader(config, options.selectedTenantId);
     const accessToken = readStoredAccessToken();
     if (accessToken) headers.set("authorization", `Bearer ${accessToken}`);
     if (config.orgId) headers.set("x-org-id", config.orgId);
-    if (config.tenants?.[0]?.id) headers.set("x-tenant-id", config.tenants[0].id);
+    if (tenantId) headers.set("x-tenant-id", tenantId);
     return window.fetch(`${config.apiBaseUrl}${path}`, {
       ...init,
       headers
@@ -122,6 +133,23 @@ function runtimeTenants(env: ImportMetaEnv) {
   ] as const satisfies readonly [AdminRuntimeTenant, ...AdminRuntimeTenant[]];
 }
 
+function runtimeTenantHeader(
+  config: AdminRuntimeConfig,
+  selectedTenantId: string | undefined
+) {
+  const tenantId = envText(selectedTenantId);
+  if (!config.strictRuntime) return tenantId;
+  if (!tenantId)
+    throw new Error("admin runtime selected tenant is required in strict runtime");
+  if (!config.tenants?.length)
+    throw new Error("admin runtime tenant configuration is required in strict runtime");
+  if (!config.tenants.some((tenant) => tenant.id === tenantId))
+    throw new Error(
+      `admin runtime selected tenant ${tenantId} is not configured for strict runtime`
+    );
+  return tenantId;
+}
+
 function tenant(
   id: string,
   name: string,
@@ -139,6 +167,10 @@ function normalizeApiBaseUrl(value: string | undefined) {
 
 function envText(value: string | undefined) {
   return value?.trim() ?? "";
+}
+
+function envFlag(value: string | undefined) {
+  return envText(value).toLowerCase() === "true";
 }
 
 function normalizeRuntimePath(input: string) {

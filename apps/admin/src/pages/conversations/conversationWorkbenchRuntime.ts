@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createAdminRuntimeFetcher,
+  readAdminRuntimeConfig
+} from "../../adminRuntimeConfig";
 import * as fallback from "./conversationWorkbenchFallback";
 import * as handoff from "./conversationWorkbenchHandoff";
 import {
@@ -81,7 +85,14 @@ function errorMessage(error: unknown) {
 }
 
 export function useConversationWorkbenchRuntime(selectedTenantId: string) {
-  const client = useMemo(() => createConversationClient(), []);
+  const config = useMemo(() => readAdminRuntimeConfig(), []);
+  const client = useMemo(
+    () =>
+      createConversationClient(
+        createAdminRuntimeFetcher(config, { selectedTenantId })
+      ),
+    [config, selectedTenantId]
+  );
   const [activeId, setActiveId] = useState("");
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
@@ -127,7 +138,7 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
       setStatus(ordered.length === 0 ? "empty" : "ready");
     } catch (error) {
       if (requestId !== listRequestIdRef.current) return;
-      if (canUseSyntheticFallback(error)) {
+      if (canUseSyntheticFallback(error, config)) {
         const fallbackRows = fallback.syntheticConversationRows(selectedTenantId);
         const fallbackActiveId =
           fallback.firstSyntheticConversationId(selectedTenantId);
@@ -148,7 +159,7 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
       setActiveId("");
       setStatus(statusForError(error));
     }
-  }, [client, selectedTenantId]);
+  }, [client, config, selectedTenantId]);
 
   useEffect(() => {
     handoffRequestIdRef.current += 1;

@@ -21,6 +21,14 @@ The workbench must:
 4. Send `x-tenant-id` from the currently selected tenant instead of `config.tenants[0]`.
 5. Avoid a module-level conversation fetcher that is locked to initial config or tenant.
 
+## AI Agent Responsibilities
+
+- Implementation agent owns only the files in the touch list and must keep root/main read-only except for coordination checks.
+- Implementation agent must preserve the no-API local synthetic fallback while making configured/strict runtime fail closed.
+- Spec compliance reviewer must verify preflight ordering, touch-list containment, strict runtime acceptance, incident recording and no backend/schema/package/CI drift.
+- Code quality reviewer must check React/runtime behavior, tenant-header correctness, fallback behavior and residual test gaps before this slice is marked merge-ready.
+- Coordinator must run final root/main and assigned-worktree status checks and report unmerged branch state before moving to the next slice.
+
 ## Source Of Truth
 
 - `AGENTS.md`
@@ -64,15 +72,12 @@ The workbench must:
 
   - `docs/specs/M10-02-admin-conversation-runtime-truth-gate.md`
   - `docs/evidence/M10/M10-02-admin-conversation-runtime-truth-gate.md`
+  - `docs/incidents/INC-2026-07-09-m10-02-root-preflight-docs.md`
   - `apps/admin/src/adminRuntimeConfig.ts`
   - `apps/admin/src/pages/conversations/conversationWorkbenchClient.ts`
   - `apps/admin/src/pages/conversations/conversationWorkbenchRuntime.ts`
   - `scripts/tests/m10-admin-conversation-runtime-truth-gate.test.mjs`
   - `scripts/tests/m9-admin-staging-runtime-closeout.test.mjs`
-
-Optional, only if small and valuable:
-
-- `apps/admin/tests/m10-admin-conversation-runtime-truth-gate.spec.ts`
 
 Read-only anchors:
 
@@ -83,8 +88,8 @@ Read-only anchors:
 ## Change Budget
 
 - Source: changed source files <= 3, new source files <= 0, net source LOC target <= 180.
-- Test: one focused Node test file, optional small Playwright spec only if dependency/runtime setup is cheap.
-- Docs/evidence: this spec plus one M10 evidence file.
+- Test: one focused Node test file; existing Playwright tests are read-only validation anchors only.
+- Docs/evidence: this spec, one M10 evidence file and one incident record if required by `docs/incidents/README.md`.
 - Config/lock/generated/backend/CI: none.
 - Exceptions: none.
 
@@ -120,6 +125,7 @@ Read-only anchors:
 | preflight current branch | `codex/m10-02-admin-conversation-runtime-truth-gate` |
 | isolation check | `.git/worktrees/codex-m10-02-admin-conversation-runtime-truth-gate` with common git dir at root repo `.git` |
 | root/main checkout | forbidden for edits; not used for source edits |
+| incident record | `docs/incidents/INC-2026-07-09-m10-02-root-preflight-docs.md` records the root/main preflight docs write-boundary incident required by `docs/incidents/README.md`. |
 
 ## Validation
 
@@ -131,4 +137,4 @@ Required focused validation:
 
 Optional browser validation:
 
-- Focused M10 Playwright or relevant M7 conversation fallback tests if local dependency/runtime setup is available without broad churn.
+- Existing M7 conversation fallback tests if local dependency/runtime setup is available without broad churn.

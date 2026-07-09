@@ -104,6 +104,56 @@ export function toTicket(row: DbRow, eventRows: readonly DbRow[]): TicketState {
   }) as TicketState;
 }
 
+export function toConversationUpdateData(
+  conversation: HandoffConversation
+): DbRow {
+  return clean({
+    lastMessageAt: conversation.lastMessageAt
+      ? dateFromIso(conversation.lastMessageAt, "conversation lastMessageAt")
+      : undefined,
+    status: toDbEnum(conversation.status),
+    unreadCount: conversation.unreadCount
+  });
+}
+
+export function toTicketCreateData(ticket: TicketState): DbRow {
+  return {
+    ...toTicketUpdateData(ticket),
+    conversationId: ticket.conversationId,
+    id: ticket.id,
+    orgId: ticket.orgId,
+    tenantId: ticket.tenantId
+  };
+}
+
+export function toTicketUpdateData(ticket: TicketState): DbRow {
+  return {
+    assignedUserId: nullableText(ticket.assignedUserId),
+    closedAt: nullableDate(ticket.closedAt, "ticket closedAt"),
+    lockedByUserId: nullableText(ticket.lockedByUserId),
+    priority: ticket.priority,
+    slaDueAt: nullableDate(ticket.sla.dueAt, "ticket sla dueAt"),
+    status: toDbEnum(ticket.status),
+    summary: ticket.summary
+  };
+}
+
+export function toTicketEventCreateData(
+  ticket: TicketState,
+  event: TicketEvent
+): DbRow {
+  return clean({
+    actorUserId: nullableText(event.actorUserId),
+    eventType: toDbEnum(event.type),
+    id: event.id,
+    occurredAt: dateFromIso(event.occurredAt, "ticket event occurredAt"),
+    orgId: ticket.orgId,
+    payload: ticketEventPayload(ticket, event),
+    tenantId: ticket.tenantId,
+    ticketId: ticket.id
+  });
+}
+
 export function rowArray(value: unknown, name: string): DbRow[] {
   if (!Array.isArray(value)) throw new Error(`${name} must be an array`);
   return value.map((item) => record(item, name));
@@ -148,11 +198,21 @@ function toTicketEvent(row: DbRow): TicketEvent {
   const payload = recordOrEmpty(row.payload);
   return clean({
     actorUserId: text(row.actorUserId) ?? systemActorUserId,
+    id: requiredText(row.id, "ticket event id"),
     note: text(payload.note) ?? text(payload.comment),
     occurredAt: requiredIso(row.occurredAt, "ticket event occurredAt"),
     reason: text(payload.reason),
     type: ticketEventType(row.eventType)
   }) as TicketEvent;
+}
+
+function ticketEventPayload(ticket: TicketState, event: TicketEvent): DbRow {
+  return clean({
+    destination: event.type === "closed" ? ticket.closeDestination : undefined,
+    note: event.note,
+    reason: event.reason,
+    result: event.type === "closed" ? ticket.closeResult : undefined
+  });
 }
 
 function recordOrEmpty(value: unknown): DbRow {
@@ -180,6 +240,24 @@ function requiredIso(value: unknown, name: string): string {
   const out = iso(value);
   if (!out) throw new Error(`${name} is required`);
   return out;
+}
+
+function dateFromIso(value: string, name: string): Date {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new Error(`${name} is invalid`);
+  return date;
+}
+
+function nullableDate(value: string | undefined, name: string): Date | null {
+  return value ? dateFromIso(value, name) : null;
+}
+
+function nullableText(value: string | undefined): string | null {
+  return text(value) ?? null;
+}
+
+function toDbEnum(value: string): string {
+  return value.toUpperCase();
 }
 
 function conversationStatus(value: unknown): HandoffConversation["status"] {

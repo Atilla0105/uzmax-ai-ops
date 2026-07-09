@@ -13,8 +13,12 @@ import {
   requiredText,
   rowArray,
   toConversation,
+  toConversationUpdateData,
   toMessage,
   toTicket,
+  toTicketCreateData,
+  toTicketEventCreateData,
+  toTicketUpdateData,
   type DbRow
 } from "./conversation-ticket.db-mappers.ts";
 import type {
@@ -34,6 +38,15 @@ type PrismaDelegate = {
   findFirst(input: unknown): DbOperation<unknown>;
   findMany(input: unknown): DbOperation<unknown>;
 };
+type PrismaUpdateDelegate = PrismaDelegate & {
+  update(input: unknown): DbOperation<unknown>;
+};
+type PrismaUpsertDelegate = PrismaDelegate & {
+  upsert(input: unknown): DbOperation<unknown>;
+};
+type PrismaTicketEventDelegate = Pick<PrismaDelegate, "findMany"> & {
+  create(input: unknown): DbOperation<unknown>;
+};
 
 type ConversationTicketPrismaClientPort = {
   $executeRawUnsafe(sql: string): DbOperation;
@@ -41,10 +54,10 @@ type ConversationTicketPrismaClientPort = {
   $transaction<T extends readonly DbOperation[]>(
     operations: T
   ): Promise<{ [K in keyof T]: Awaited<T[K]> }>;
-  channelConversation: PrismaDelegate;
+  channelConversation: PrismaUpdateDelegate;
   channelMessage: Pick<PrismaDelegate, "findMany">;
-  supportTicket: PrismaDelegate;
-  supportTicketEvent: Pick<PrismaDelegate, "findMany">;
+  supportTicket: PrismaUpsertDelegate;
+  supportTicketEvent: PrismaTicketEventDelegate;
 };
 type ConversationTicketRlsTransactionRunner = <T>(input: {
   map?(rows: readonly unknown[]): T;
@@ -211,12 +224,49 @@ class RlsPrismaConversationTicketRepository implements ConversationTicketReposit
     });
   }
 
-  saveConversation(): never {
-    throw new Error("conversation-ticket DB repository is read-only in M8-02");
+  saveConversation(conversation: HandoffConversation): Promise<HandoffConversation> {
+    const scope = scopeFromEntity(conversation);
+    return this.transaction({
+      map: ([row]) => toConversation(record(row, "conversation row")),
+      ops: (prisma) => [
+        prisma.channelConversation.update({
+          data: toConversationUpdateData(conversation),
+          where: compoundScopeWhere(conversation)
+        })
+      ],
+      scope
+    });
   }
 
-  saveTicket(): never {
-    throw new Error("conversation-ticket DB repository is read-only in M8-02");
+  saveTicket(ticket: TicketState): Promise<TicketState> {
+    const scope = scopeFromEntity(ticket);
+    const newEvents = ticket.events.filter((event) => !event.id);
+    return this.transaction({
+      map: (rows) => {
+        const eventRows = rows[rows.length - 1];
+        return toTicket(
+          record(rows[0], "ticket row"),
+          rowArray(eventRows, "ticket event rows").sort(compareTicketEventRows)
+        );
+      },
+      ops: (prisma) => [
+        prisma.supportTicket.upsert({
+          create: toTicketCreateData(ticket),
+          update: toTicketUpdateData(ticket),
+          where: compoundScopeWhere(ticket)
+        }),
+        ...newEvents.map((event) =>
+          prisma.supportTicketEvent.create({
+            data: toTicketEventCreateData(ticket, event)
+          })
+        ),
+        prisma.supportTicketEvent.findMany({
+          orderBy: { occurredAt: "asc" },
+          where: { ...scope, ticketId: ticket.id }
+        })
+      ],
+      scope
+    });
   }
 
   async getTicket(
@@ -323,6 +373,24 @@ async function createDefaultConversationTicketPrismaClient(
 
 function scopeFromAccessContext(accessContext: AccessContext): RlsScope {
   return { orgId: accessContext.orgId, tenantId: accessContext.selectedTenantId };
+}
+
+function scopeFromEntity(entity: { orgId: string; tenantId: string }): RlsScope {
+  return { orgId: entity.orgId, tenantId: entity.tenantId };
+}
+
+function compoundScopeWhere(entity: {
+  id: string;
+  orgId: string;
+  tenantId: string;
+}) {
+  return {
+    id_orgId_tenantId: {
+      id: entity.id,
+      orgId: entity.orgId,
+      tenantId: entity.tenantId
+    }
+  };
 }
 
 function scoped<T extends { orgId: string; tenantId: string }>(

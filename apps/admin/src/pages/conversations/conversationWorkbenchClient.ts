@@ -4,14 +4,12 @@ import type {
   MessageRow,
   RuntimeStatus
 } from "./conversationWorkbenchRuntime";
-import { createAdminRuntimeFetcher } from "../../adminRuntimeConfig";
+import type { AdminRuntimeConfig } from "../../adminRuntimeConfig";
 
 type ApiFetcher = (
   input: string,
   init?: { body?: string; headers?: Record<string, string>; method?: "GET" | "POST" }
 ) => Promise<{ json(): Promise<unknown>; ok: boolean; status: number }>;
-
-const browserFetcher: ApiFetcher = createAdminRuntimeFetcher();
 
 class PreviewRuntimeUnavailableError extends Error {
   constructor(message: string) {
@@ -166,7 +164,7 @@ async function readJson(
   return payload;
 }
 
-export function createConversationClient(fetcher: ApiFetcher = browserFetcher) {
+export function createConversationClient(fetcher: ApiFetcher) {
   return {
     async detail(conversationId: string): Promise<ConversationDetail> {
       const payload = await readJson(
@@ -208,7 +206,8 @@ export function statusForError(error: unknown): RuntimeStatus {
     : "error";
 }
 
-export function canUseSyntheticFallback(error: unknown) {
+export function canUseSyntheticFallback(error: unknown, config: AdminRuntimeConfig) {
+  if (config.strictRuntime) return false;
   if (error instanceof PreviewRuntimeUnavailableError) return true;
   return (
     error instanceof TypeError &&

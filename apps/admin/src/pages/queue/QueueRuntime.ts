@@ -77,7 +77,7 @@ export function useQueueRuntime(selectedTenantId: string) {
       }
     } catch (error) {
       const message = errorMessage(error);
-      const reason = message.includes("status 403") ? "permission" : "error";
+      const reason = /status (401|403)/.test(message) ? "permission" : "error";
       if (!config.strictRuntime) {
         useSyntheticQueueFallback(reason, message);
         return;
@@ -156,12 +156,15 @@ function queueStateCopy(status: QueueLoadStatus, lastError: string) {
 }
 
 const queueStateCopies = {
-  empty: ["确认队列为空", "当前租户没有待确认候选；严格 runtime 不填充 mock 队列。"],
-  error: ["确认队列读取失败", "确认队列 API 暂不可用；严格 runtime 不填充 mock 队列。"],
+  empty: ["确认队列为空", "当前租户没有待确认候选；严格 runtime 不填充本地预览队列。"],
+  error: [
+    "确认队列读取失败",
+    "确认队列 API 暂不可用；严格 runtime 不填充本地预览队列。"
+  ],
   loading: ["确认队列加载中", "正在读取确认队列运行时。"],
   permission: [
     "没有确认队列权限",
-    "当前会话没有确认队列权限；严格 runtime 不展示 mock 队列。"
+    "当前会话没有确认队列权限；严格 runtime 不展示本地预览队列。"
   ],
   ready: ["确认队列", ""]
 } satisfies Record<QueueLoadStatus, readonly [string, string]>;

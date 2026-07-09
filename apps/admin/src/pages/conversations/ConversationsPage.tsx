@@ -70,9 +70,10 @@ export function ConversationsPage({ selectedTenantId }: { selectedTenantId: stri
           active={active}
           disabled={!runtime.canRequestHandoff}
           disabledReason={runtime.handoffDisabledReason}
-          degradedReason={runtime.degradedReason}
           handoffPending={runtime.handoffPending}
           requestHandoff={() => void runtime.requestHandoff()}
+          runtimeReason={runtime.degradedReason}
+          showSyntheticDisclosure={runtime.runtimeSource === "synthetic"}
         />
         {runtime.status === "ready" ? (
           <>

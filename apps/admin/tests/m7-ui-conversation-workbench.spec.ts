@@ -4,6 +4,7 @@ import {
   conversationDegraded as degraded,
   conversationRail as rail,
   conversationRow as row,
+  conversationRuntimeStatus as runtimeStatus,
   conversationTakeover as takeover
 } from "./conversationWorkbenchLocators";
 
@@ -42,8 +43,10 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
     "data-runtime-state",
     "ready"
   );
-  await expect(degraded(page)).toContainText("degraded");
-  await expect(degraded(page)).toHaveAttribute("title", /SLA policyRef/);
+  await expect(degraded(page)).toHaveCount(0);
+  await expect(runtimeStatus(page)).toContainText("runtime API status");
+  await expect(runtimeStatus(page)).toHaveAttribute("title", /SLA policyRef/);
+  await expect(runtimeStatus(page)).not.toContainText(/synthetic\/degraded|只读预览/);
   await expect(takeover(page)).toBeDisabled();
   await expect(page.getByTestId("m7-conversation-query-degraded")).toHaveCount(0);
   await expect(page.getByTestId("m7-conversation-search-disabled")).toHaveCount(0);
@@ -89,7 +92,7 @@ test("requires actionable takeover status with runtime policy", async ({ page })
   await routeConversationReady(page, { slaPolicyRef: "tenant-b-sla-policy" });
   await openConversations(page);
   await expect(takeover(page)).toBeDisabled();
-  await expect(degraded(page)).toHaveAttribute("title", /等待人工接管\/分配/);
+  await expect(runtimeStatus(page)).toHaveAttribute("title", /等待人工接管\/分配/);
   await page.keyboard.press("t");
   expect(handoffTargets).toEqual([]);
 
@@ -102,13 +105,13 @@ test("requires actionable takeover status with runtime policy", async ({ page })
   await row(page, "conv-closed").click();
   await expect(composer(page)).toHaveValue(/ORD-REF-20429/);
   await expect(takeover(page)).toBeDisabled();
-  await expect(degraded(page)).toHaveAttribute("title", /已解决会话不可重复接管/);
+  await expect(runtimeStatus(page)).toHaveAttribute("title", /已解决会话不可重复接管/);
   await page.keyboard.press("t");
 
   await row(page, "conv-human").click();
   await expect(composer(page)).toHaveValue(/ORD-REF-20425/);
   await expect(takeover(page)).toBeDisabled();
-  await expect(degraded(page)).toHaveAttribute("title", /会话已由人工接管/);
+  await expect(runtimeStatus(page)).toHaveAttribute("title", /会话已由人工接管/);
   await page.keyboard.press("t");
   expect(handoffTargets).toEqual(["conv-calm"]);
 });
@@ -139,14 +142,11 @@ test("posts takeover only when runtime SLA policy exists", async ({ page }) => {
   await row(page, "conv-ai").click();
   await page.unroute("**/conversation-ticket/conversations/*/handoff");
   await page.route("**/conversation-ticket/conversations/*/handoff", async (route) => {
-    await route.fulfill({
-      json: { error: "handoff-runtime-missing" },
-      status: 500
-    });
+    await route.fulfill({ json: { error: "handoff-runtime-missing" }, status: 500 });
   });
   await expect(takeover(page)).toBeEnabled();
   await takeover(page).click();
-  await expect(degraded(page)).toHaveAttribute("title", /status 500/);
+  await expect(runtimeStatus(page)).toHaveAttribute("title", /status 500/);
 });
 
 test("ignores stale handoff response detail", async ({ page }) => {
@@ -203,7 +203,7 @@ test("rejects handoff responses from another tenant", async ({ page }) => {
   await row(page, "conv-calm").click();
   await takeover(page).click();
   await expect.poll(() => handoffTargets).toEqual(["conv-calm"]);
-  await expect(degraded(page)).toHaveAttribute(
+  await expect(runtimeStatus(page)).toHaveAttribute(
     "title",
     /handoff response did not match selected tenant tenant-b/
   );
@@ -225,7 +225,7 @@ test("keeps selected target safe when detail fails", async ({ page }) => {
   await expect(takeover(page)).toBeDisabled();
   await page.keyboard.press("t");
   expect(handoffs).toHaveLength(0);
-  await expect(degraded(page)).toHaveAttribute("title", /status 500/);
+  await expect(runtimeStatus(page)).toHaveAttribute("title", /status 500/);
 });
 
 test("keeps mobile fallback within 320px without mixed group nav", async ({ page }) => {

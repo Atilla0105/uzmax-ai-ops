@@ -117,6 +117,16 @@ node node_modules/eslint/bin/eslint.js eslint.config.mjs apps/api/src/conversati
 
 Result: pass after the M8 fixture extraction and repository interface tightening.
 
+Typecheck:
+
+```bash
+node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json
+```
+
+Result: pass using the temporary one-level worktree `node_modules` symlink to the
+root dependency install; no package, lockfile or generated client files were
+edited.
+
 Guard:
 
 ```bash

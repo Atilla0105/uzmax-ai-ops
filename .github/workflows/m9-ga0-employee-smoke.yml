@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           cache: npm
-          node-version: 20
+          node-version: 24
       - run: npm ci
       - run: npm run -w @uzmax/db prisma:generate
       - name: Provision smoke employee and run M9-04
@@ -52,7 +52,15 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require("node:fs");
-          const result = JSON.parse(fs.readFileSync("m9-06-result.json", "utf8"));
+          const rawResult = fs.readFileSync("m9-06-result.json", "utf8").trim();
+          if (!rawResult) {
+            fs.appendFileSync(
+              process.env.GITHUB_STEP_SUMMARY,
+              "## M9-06 Employee Smoke\n\nstatus: `missing-result-json`\nok: `false`\n"
+            );
+            process.exit(0);
+          }
+          const result = JSON.parse(rawResult);
           const lines = [
             "## M9-06 Employee Smoke",
             "",

@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  createAdminRuntimeFetcher,
-  readAdminRuntimeConfig
-} from "../../adminRuntimeConfig";
+import * as adminRuntime from "../../adminRuntimeConfig";
 import * as fallback from "./conversationWorkbenchFallback";
 import * as handoff from "./conversationWorkbenchHandoff";
-import {
-  canUseSyntheticFallback,
-  createConversationClient,
-  statusForError
-} from "./conversationWorkbenchClient";
+import * as clientRuntime from "./conversationWorkbenchClient";
+
+const { createAdminRuntimeFetcher, readAdminRuntimeConfig } = adminRuntime;
+const { canUseSyntheticFallback, createConversationClient, statusForError } =
+  clientRuntime;
 
 export type RuntimeStatus = "empty" | "error" | "loading" | "permission" | "ready";
 type RuntimeSource = "api" | "synthetic";
@@ -88,9 +85,7 @@ export function useConversationWorkbenchRuntime(selectedTenantId: string) {
   const config = useMemo(() => readAdminRuntimeConfig(), []);
   const client = useMemo(
     () =>
-      createConversationClient(
-        createAdminRuntimeFetcher(config, { selectedTenantId })
-      ),
+      createConversationClient(createAdminRuntimeFetcher(config, { selectedTenantId })),
     [config, selectedTenantId]
   );
   const [activeId, setActiveId] = useState("");
@@ -412,26 +407,22 @@ export function matchesConversationFilter(
 export function countConversationFilters(
   rows: ConversationRow[]
 ): Record<ConversationFilterId, number> {
-  const counts = {} as Record<ConversationFilterId, number>;
-  for (const filter of conversationFilters)
-    counts[filter.id] = rows.filter((row) =>
-      matchesConversationFilter(row, filter.id)
-    ).length;
-  return counts;
+  return Object.fromEntries(
+    conversationFilters.map(({ id }) => [
+      id,
+      rows.filter((row) => matchesConversationFilter(row, id)).length
+    ])
+  ) as Record<ConversationFilterId, number>;
 }
 
 export function isEditableTarget(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    ["input", "select", "textarea"].includes(target.tagName.toLowerCase())
-  );
+  if (!(target instanceof HTMLElement)) return false;
+  return ["input", "select", "textarea"].includes(target.tagName.toLowerCase());
 }
 
 export function contentText(message: MessageRow) {
-  return text(
-    message.content.text,
-    text(message.content.preview, "[unsupported content]")
-  );
+  const preview = text(message.content.preview, "[unsupported content]");
+  return text(message.content.text, preview);
 }
 
 export function displayName(conversation: ConversationRow) {

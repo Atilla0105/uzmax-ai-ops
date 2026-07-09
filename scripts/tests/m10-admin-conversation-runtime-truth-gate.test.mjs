@@ -50,7 +50,10 @@ test("admin runtime fetcher uses the selected tenant and fails closed in strict 
     /export function createAdminRuntimeFetcher\([\s\S]*options: AdminRuntimeFetcherOptions = \{\}[\s\S]*\) \{/
   );
   assert.match(files.adminConfig, /selectedTenantId\?: string/);
-  assert.match(files.adminConfig, /runtimeTenantHeader\(config, options\.selectedTenantId\)/);
+  assert.match(
+    files.adminConfig,
+    /runtimeTenantHeader\(config, options\.selectedTenantId\)/
+  );
   assert.match(files.adminConfig, /headers\.set\("x-tenant-id", tenantId\)/);
   assert.doesNotMatch(
     files.adminConfig,
@@ -91,7 +94,10 @@ test("admin runtime fetcher behavior sends selected tenant and fails closed", as
       { selectedTenantId: "tenant-b" }
     );
     await fetcher("/conversation-ticket/conversations");
-    assert.equal(calls[0].url, "https://api.example.test/conversation-ticket/conversations");
+    assert.equal(
+      calls[0].url,
+      "https://api.example.test/conversation-ticket/conversations"
+    );
     assert.equal(calls[0].headers.get("x-org-id"), "org-123");
     assert.equal(calls[0].headers.get("x-tenant-id"), "tenant-b");
     assert.equal(calls[0].headers.get("authorization"), "Bearer runtime-token");
@@ -127,10 +133,7 @@ test("admin runtime fetcher behavior sends selected tenant and fails closed", as
 
 test("conversation client no longer captures a module-level browser fetcher", () => {
   assert.doesNotMatch(files.conversationClient, /const browserFetcher/);
-  assert.doesNotMatch(
-    files.conversationClient,
-    /createAdminRuntimeFetcher\(\)/
-  );
+  assert.doesNotMatch(files.conversationClient, /createAdminRuntimeFetcher\(\)/);
   assert.match(
     files.conversationClient,
     /export function createConversationClient\(fetcher: ApiFetcher\)/

@@ -15,7 +15,23 @@ M10-03 exists to create the missing support-operator validation lane for the cus
 - M10-02 is the admin runtime truth gate branch that prevents configured runtime from silently falling back to synthetic rows.
 - M10-03 will add the independent support-operator staging smoke for the write-capable customer-service path.
 
-This evidence is preflight-only at creation time. No source, workflow or test implementation has been added yet, and no live staging mutation has been run.
+The workflow/script/test implementation is now local-validation ready. No live staging mutation has been run.
+
+## Implemented Lane
+
+- Workflow: `.github/workflows/m10-support-operator-smoke.yml`
+- Script: `packages/authz/scripts/run-m10-support-operator-smoke.mjs`
+- Tests: `scripts/tests/m10-support-operator-smoke.test.mjs`
+
+The lane provisions a deterministic support operator distinct from M9-06, writes exact permission grants for `tenant:read`, `conversation:read` and `ticket:write`, seeds one synthetic conversation, runs the conversation-ticket list/handoff/action HTTP path, then cleans the synthetic conversation/ticket rows and reports residue.
+
+Post-review fixes recorded in this implementation:
+
+- Supabase/Auth, DB access-fact, synthetic seed/smoke and residue stages now return sanitized blocked JSON instead of throwing raw provider/DB errors.
+- Synthetic conversation seed uses the Postgres enum label `open`.
+- Synthetic cleanup and residue checks are scoped by deterministic fixture id plus org, tenant and controlled ref/metadata predicates, including ticket and ticket-event cleanup through the controlled conversation ref.
+- Seed failure is wrapped in the same cleanup `finally` as the HTTP smoke.
+- Unsupported CLI arguments are not echoed back, so accidental secret-like argv values are not printed.
 
 ## Start Audit
 
@@ -70,4 +86,19 @@ Until that live workflow run exists, the current status remains:
 
 ## Validation Log
 
-Pending implementation.
+- `node --test scripts/tests/m10-support-operator-smoke.test.mjs`
+  - Result: pass, 10/10 tests.
+  - Coverage: missing env fails before provisioning, query-only DB URL fails before provisioning, exact three permission grants, M9 identity reuse rejection, fake Supabase token/list/handoff/action HTTP sequence with scoped headers, sanitized result output, structured blocked results for Auth/DB failures, lowercase DB enum seed, scoped cleanup/residue predicates including ticket rows, seed-failure cleanup, unsupported CLI argument redaction and workflow/spec/evidence static constraints.
+- `node packages/authz/scripts/run-m10-support-operator-smoke.mjs --help`
+  - Result: pass; help prints without requiring secrets, DB, Supabase or API network.
+- `node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M10-03-support-operator-smoke.md --include-worktree`
+  - Result: pass.
+  - Shape: changed files `5`; categories `config=1`, `docs=2`, `source=1`, `test=1`; source net LOC `396`.
+- `git diff --check main...HEAD`
+  - Result: pass.
+- `git diff --check`
+  - Result: pass.
+
+Not run:
+
+- Live workflow dispatch. This remains owner-gated and depends on M10-01 backend writes being merged and deployed to the staging API.

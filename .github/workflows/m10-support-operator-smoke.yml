@@ -1,0 +1,85 @@
+name: M10 Support Operator Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description:
+          Type M10-03 to create/update the support operator and run synthetic staging
+          write smoke.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  support-operator-smoke:
+    if: inputs.confirm == 'M10-03'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: 24
+      - run: npm ci
+      - run: npm run -w @uzmax/db prisma:generate
+      - name: Provision support operator and run M10-03
+        shell: bash
+        env:
+          M10_03_API_BASE_URL: https://uzmax-api-staging.onrender.com
+          M10_03_ORG_ID: 11111111-1111-4111-8111-111111111604
+          M10_03_SUPPORT_OPERATOR_EMAIL: uzmax-support-operator-smoke@example.invalid
+          M10_03_SUPPORT_OPERATOR_ROLE: support_operator
+          M10_03_SUPPORT_OPERATOR_USER_ID: 90000000-0000-4000-8000-000000001003
+          M10_03_TENANT_ID: 22222222-2222-4222-8222-222222222604
+          UZMAX_RLS_DATABASE_URL: ${{ secrets.UZMAX_RLS_DATABASE_URL }}
+          UZMAX_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.UZMAX_SUPABASE_PUBLISHABLE_KEY }}
+          UZMAX_SUPABASE_SECRET_KEY: ${{ secrets.UZMAX_SUPABASE_SECRET_KEY }}
+          UZMAX_SUPABASE_URL: https://enyocaykcgcfcswycujg.supabase.co
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${UZMAX_RLS_DATABASE_URL}"
+          echo "::add-mask::${UZMAX_SUPABASE_PUBLISHABLE_KEY}"
+          echo "::add-mask::${UZMAX_SUPABASE_SECRET_KEY}"
+          node packages/authz/scripts/run-m10-support-operator-smoke.mjs | tee m10-03-result.json
+      - name: Summarize sanitized result
+        if: always() && hashFiles('m10-03-result.json') != ''
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const rawResult = fs.readFileSync("m10-03-result.json", "utf8").trim();
+          if (!rawResult) {
+            fs.appendFileSync(
+              process.env.GITHUB_STEP_SUMMARY,
+              "## M10-03 Support Operator Smoke\n\nstatus: `missing-result-json`\nok: `false`\n"
+            );
+            process.exit(0);
+          }
+          const result = JSON.parse(rawResult);
+          const lines = [
+            "## M10-03 Support Operator Smoke",
+            "",
+            `status: \`${result.status}\``,
+            `ok: \`${result.ok}\``,
+            `smoke: \`${result.smoke?.status ?? "missing"}\``,
+            `permissionCount: \`${result.operatorScope?.permissionCount ?? "n/a"}\``,
+            `actionCount: \`${result.smoke?.actionCount ?? "n/a"}\``,
+            `residue: \`${result.cleanup?.residue ?? "n/a"}\``,
+            "",
+            "This summary is sanitized: no password, token, service role key, DB URL, raw auth response, customer text or conversation payload is printed."
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('m10-03-result.json') != ''
+        with:
+          if-no-files-found: ignore
+          name: m10-03-support-operator-smoke-result
+          path: m10-03-result.json

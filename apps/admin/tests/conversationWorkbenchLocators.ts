@@ -6,6 +6,9 @@ export const conversationComposer = (page: Page) =>
 export const conversationDegraded = (page: Page) =>
   page.getByTestId("m7-conversation-degraded");
 
+export const conversationRuntimeStatus = (page: Page) =>
+  page.getByTestId("m10-conversation-runtime-status");
+
 export const conversationRail = (page: Page) =>
   page.getByTestId("m7-conversation-context-rail");
 

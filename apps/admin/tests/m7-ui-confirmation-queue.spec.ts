@@ -21,8 +21,9 @@ test("renders tenant.queue as the M7 confirmation queue page", async ({ page }) 
   await expect(page.getByTestId("m7-queue-stats")).toContainText("今日候选");
   await expect(page.getByTestId("m7-queue-stats")).toContainText("runtime 2");
   await expect(page.getByTestId("m7-queue-stats")).not.toContainText("mock 6 / 5");
-  await expect(page.getByTestId("m7-queue-degraded")).toContainText(
-    "缺少已批准 API 合约"
+  await expect(page.getByTestId("m7-queue-degraded")).toHaveCount(0);
+  await expect(page.getByTestId("m10-queue-runtime-source")).toContainText(
+    "runtime API source /confirmation-queue/items?status=pending"
   );
   await expect(page.getByTestId("m7-queue-card-m7-normal")).toContainText(
     "controlled://m7-ui-10/candidate/m7-normal"

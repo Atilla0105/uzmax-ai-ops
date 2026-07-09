@@ -15,16 +15,18 @@ export function ThreadHeader({
   active,
   disabled,
   disabledReason,
-  degradedReason,
   handoffPending,
-  requestHandoff
+  requestHandoff,
+  runtimeReason,
+  showSyntheticDisclosure
 }: {
   active?: Runtime.ConversationRow;
   disabled: boolean;
   disabledReason: string;
-  degradedReason: string;
   handoffPending: boolean;
   requestHandoff: () => void;
+  runtimeReason: string;
+  showSyntheticDisclosure: boolean;
 }) {
   return (
     <header className="uz-conv-thread__head">
@@ -43,14 +45,24 @@ export function ThreadHeader({
           {badge.label}
         </StatusBadge>
       ))}
-      <span
-        className="uz-conv-sr-only"
-        data-testid="m7-conversation-degraded"
-        title={degradedReason}
-      >
-        synthetic/degraded/not-production 只读预览 {degradedReason}{" "}
-        发送、人工作业外发、客户聚合和 WS 实时同步保持禁用。
-      </span>
+      {showSyntheticDisclosure ? (
+        <span
+          className="uz-conv-sr-only"
+          data-testid="m7-conversation-degraded"
+          title={runtimeReason}
+        >
+          synthetic/degraded/not-production 只读预览 {runtimeReason}{" "}
+          发送、人工作业外发、客户聚合和 WS 实时同步保持禁用。
+        </span>
+      ) : (
+        <span
+          className="uz-conv-sr-only"
+          data-testid="m10-conversation-runtime-status"
+          title={runtimeReason}
+        >
+          runtime API status {runtimeReason}
+        </span>
+      )}
       <div className="uz-conv-actions">
         <Button
           className="uz-conv-takeover"

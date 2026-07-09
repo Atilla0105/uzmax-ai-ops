@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Keyboard } from "lucide-react";
+import { Keyboard, Server } from "lucide-react";
 import { Button, IconSlot, Kbd, StatusBadge } from "../../primitives";
 import { DegradedBar, ToastHost, useToast } from "../../patterns";
 import {
@@ -162,23 +162,34 @@ export function QueuePage({ selectedTenantId }: { selectedTenantId: string }) {
           {isDegraded ? "mock/degraded read-only" : "runtime API"}
         </StatusBadge>
       </div>
-      <DegradedBar
-        action={
-          <div className="uz-queue-banner-actions">
-            <Button disabled variant="secondary">
-              查看原因 · read-only
-            </Button>
-            <Button disabled>恢复每日 · runtime unavailable</Button>
-          </div>
-        }
-        className="uz-queue-banner"
-        data-testid="m7-queue-degraded"
-      >
-        {isDegraded
-          ? `API unavailable/empty/error -> mock/degraded visible structure; read-only; runtime unavailable. ${queue.lastError}`
-          : queue.lastError ||
-            "蒸馏健康摘要和人工恢复每日频率缺少已批准 API 合约；运行时决策仍使用现有 API client。"}
-      </DegradedBar>
+      {isDegraded ? (
+        <DegradedBar
+          action={
+            <div className="uz-queue-banner-actions">
+              <Button disabled variant="secondary">
+                查看原因 · read-only
+              </Button>
+              <Button disabled>恢复每日 · runtime unavailable</Button>
+            </div>
+          }
+          className="uz-queue-banner"
+          data-testid="m7-queue-degraded"
+        >
+          {`API unavailable/empty/error -> mock/degraded visible structure; read-only; runtime unavailable. ${queue.lastError}`}
+        </DegradedBar>
+      ) : (
+        <div
+          className="uz-queue-runtime-source"
+          data-runtime-status={queue.status}
+          data-testid="m10-queue-runtime-source"
+          role="status"
+        >
+          <IconSlot icon={Server} />
+          <span>
+            {runtimeSourceCopy(queue.status, queue.lastError, selectedTenantId)}
+          </span>
+        </div>
+      )}
       <div className="uz-queue-body">
         {state ??
           (queue.items.length === 0 ? null : (
@@ -224,4 +235,13 @@ export function QueuePage({ selectedTenantId }: { selectedTenantId: string }) {
       <ToastHost toasts={toast.toasts} />
     </section>
   );
+}
+
+function runtimeSourceCopy(
+  status: string,
+  lastError: string,
+  selectedTenantId: string
+) {
+  const detail = lastError && status !== "loading" ? ` · detail: ${lastError}` : "";
+  return `runtime API source /confirmation-queue/items?status=pending · tenant ${selectedTenantId} · state ${status}${detail}`;
 }

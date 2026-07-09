@@ -101,7 +101,9 @@ const implementedPageRenderers: Partial<Record<AdminPageId, ImplementedPageRende
     "tenant.orders": ({ selectedTenantId }) => ({
       content: <OrdersPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
     }),
-    "tenant.queue": () => ({ content: <QueuePage /> }),
+    "tenant.queue": ({ selectedTenantId }) => ({
+      content: <QueuePage key={selectedTenantId} selectedTenantId={selectedTenantId} />
+    }),
     "tenant.team": ({ selectedTenantId }) => ({
       content: <TeamPage key={selectedTenantId} selectedTenantId={selectedTenantId} />
     }),

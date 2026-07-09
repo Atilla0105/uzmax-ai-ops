@@ -40,7 +40,7 @@ test("renders tenant.conversations as the M7 conversation workbench", async ({
   await expect(page.getByTestId("m7-conversation-context-rail")).toBeVisible();
   await expect(page.getByTestId("m7-conversation-workbench-page")).toHaveAttribute(
     "data-runtime-state",
-    "degraded"
+    "ready"
   );
   await expect(degraded(page)).toContainText("degraded");
   await expect(degraded(page)).toHaveAttribute("title", /SLA policyRef/);

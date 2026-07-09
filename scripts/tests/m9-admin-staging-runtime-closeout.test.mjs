@@ -18,6 +18,7 @@ const files = {
   shell: read("apps/admin/src/shell/AppShell.tsx"),
   shellCss: read("apps/admin/src/shell/AppShell.css"),
   spec: read("docs/specs/M9-01-admin-staging-runtime-closeout.md"),
+  supportRuntimeSpec: read("docs/specs/M10-06-support-runtime-ui-truth.md"),
   ticketPage: read("apps/admin/src/pages/tickets/TicketsPage.tsx"),
   knowledgePage: read("apps/admin/src/pages/knowledge/KnowledgePage.tsx")
 };
@@ -92,11 +93,20 @@ test("conversation workbench uses runtime fetcher and fails closed on auth error
   assert.doesNotMatch(files.conversationClient, /window\.fetch\(input, init\)/);
 });
 
-test("ticket and knowledge surfaces remain explicitly degraded until real APIs close", () => {
+test("ticket runtime truth supersedes old degraded closure while knowledge remains explicitly degraded", () => {
   assert.match(
     files.spec,
     /Ticket\/knowledge pages remain visibly degraded\/read-only/
   );
-  assert.match(files.ticketPage, /data-runtime-state="degraded"/);
+  assert.match(files.supportRuntimeSpec, /Wire `tenant\.tickets` to existing approved/);
+  assert.match(files.ticketPage, /useTicketRuntime\(selectedTenantId\)/);
+  assert.match(
+    files.ticketPage,
+    /renderTicketRuntimeState\(runtime, selectedTenantId\)/
+  );
+  assert.match(
+    files.ticketPage,
+    /data-runtime-state=\{ticketRuntimeState\(runtime\)\}/
+  );
   assert.match(files.knowledgePage, /data-runtime-state="degraded"/);
 });

@@ -235,7 +235,7 @@ test("unsupported CLI arguments are not echoed back", () => {
   assert.doesNotMatch(result.stderr, /Do-not-print-this-cli-secret-token/);
 });
 
-test("documents dispatch-only workflow, exact permissions and live boundary", () => {
+test("documents dispatch workflow, exact permissions and live pass boundary", () => {
   const workflow = readFileSync(
     ".github/workflows/m10-support-operator-smoke.yml",
     "utf8"
@@ -261,7 +261,8 @@ test("documents dispatch-only workflow, exact permissions and live boundary", ()
   assert.doesNotMatch(workflow, /90000000-0000-4000-8000-000000000906/);
   assert.match(spec, /tenant:read`, `conversation:read` and `ticket:write/);
   assert.match(spec, /M10-01 must be merged and deployed/);
-  assert.match(evidence, /m10_03_support_operator_smoke_workflow_ready_not_run/);
+  assert.match(evidence, /m10_03_support_operator_write_smoke_passed_not_release/);
+  assert.match(evidence, /M10-05-live-staging-evidence-sync/);
   assert.match(evidence, /must not print/);
   assert.doesNotMatch(
     evidence,

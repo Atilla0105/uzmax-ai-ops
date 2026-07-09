@@ -48,7 +48,11 @@ export function ConversationsPage({ selectedTenantId }: { selectedTenantId: stri
     <section
       className="uz-page-conversations"
       data-runtime-source={runtime.runtimeSource}
-      data-runtime-state={runtime.status === "ready" ? "degraded" : runtime.status}
+      data-runtime-state={
+        runtime.status === "ready" && runtime.runtimeSource === "synthetic"
+          ? "degraded"
+          : runtime.status
+      }
       data-tenant-id={selectedTenantId}
       data-testid="m7-conversation-workbench-page"
     >

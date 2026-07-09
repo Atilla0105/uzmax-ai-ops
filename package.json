@@ -37,6 +37,7 @@
     "size": "npm run build:admin && size-limit",
     "smoke:m8-internal-live-bot": "node packages/db/scripts/run-m8-internal-live-bot-supervisor.mjs",
     "smoke:m8-internal-bot-loop": "node packages/db/scripts/run-m8-internal-bot-loop-smoke.mjs",
+    "smoke:m9-bot-redline-fuse-leave-ticket": "node packages/db/scripts/run-m9-bot-redline-fuse-leave-ticket-drill.mjs",
     "test": "node --test scripts/tests/*.test.mjs",
     "typecheck": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json"
   },

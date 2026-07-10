@@ -105,6 +105,7 @@ Worktree:
 | source/test budget | pass | 8 source files including 2 new, net source +596 <= 600; 7 test/support files including 2 new; config 1; docs 2; all bounded files <= 400 nonblank lines |
 | local true DB | not run | `UZMAX_RLS_DATABASE_URL` is absent locally; no PostgreSQL pass is claimed |
 | no-DB sanitizer | pass | exit 1 and exactly `m11-worker-ownership-fence-true-db-smoke-failed`, with no raw cause, path or stack |
+| CI attempts 1-2 metadata preflight | failed before true DB | run `29125525284`, attempts 1-2, read the original pull-request event snapshot where the spec path still contained Markdown backticks; the live PR body was corrected, but a rerun preserves the old event payload, so this evidence commit creates a fresh `synchronize` event |
 | CI true DB | pending | new step is after M11 atomic takeover and before Redis smokes; latest-SHA CI required before merge |
 | pre-implementation spec compliance reviews | pass after fail/corrections | ownership matrix, retry recovery, cancellation scope/parity, budgets and both follow-up race orders accepted before source |
 | final implementation spec compliance review | pass | second independent review found no blocker/major and confirmed all pass conditions plus net source +596 |

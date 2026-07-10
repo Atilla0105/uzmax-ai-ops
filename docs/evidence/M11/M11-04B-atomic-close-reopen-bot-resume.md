@@ -62,8 +62,10 @@ Worktree:
   validation and never falls back to an older valid-looking ticket.
 - The legacy ticket-only capability close/reopen path fails closed; the API
   atomic planner is the only lifecycle writer.
-- One new outbound-fence helper is justified by the existing atomic writer's
-  383-nonblank-line ceiling; it cannot own lifecycle decisions.
+- Two private helpers are justified by measured line gates: lifecycle-state
+  holds only pure planning behind the existing atomic-state public facade, and
+  outbound-fence holds writer queue locks/cancellation. Neither is a parallel
+  repository/runtime/provider path.
 
 ## Read-only Pre-reviews
 
@@ -102,6 +104,22 @@ Worktree:
   extract outbound fencing before growing the writer, and keep the new true-DB
   runner data-driven.
 
+## Implementation Budget Recheck
+
+- Source implementation began only after both corrected reviews returned GO;
+  no source commit has been created.
+- The first incomplete in-file lifecycle draft caused ESLint to report
+  `File has too many lines (520). Maximum allowed is 400` plus planner
+  complexity 13/16, before replay/audit helpers were complete.
+- This invalidates only the earlier one-helper file-placement estimate, not the
+  approved behavior/schema/owner contract. Compressing the matrix was rejected
+  because it would reduce reviewability.
+- Work paused at the failed budget gate. The spec now authorizes a second pure
+  lifecycle-state helper behind the existing atomic-state facade, raises source
+  changed/new limits from 11/1 to 12/2, keeps net source <=600 and forbids a
+  third helper. Existing WIP source remains uncommitted until this narrow
+  amendment receives state/security and test/budget re-review.
+
 ## Validation Record
 
 | Gate | Result | Evidence |
@@ -113,7 +131,8 @@ Worktree:
 | corrected spec freeze | pass | docs-only commit `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`; no source edit |
 | independent corrected spec review | pass | state/security/RLS reviewer returned `GO source`; no blocker/major |
 | independent test-plan review | pass | test/true-DB reviewer returned `GO source`; no blocker/major |
-| implementation | pending | no source edit started |
+| implementation placement amendment | pending re-review | measured incomplete planner at ESLint 520/complexity 13-16; behavior contract unchanged; source WIP uncommitted |
+| implementation | in progress, paused | initial source WIP exists only in assigned worktree; no source commit/runtime claim |
 | local gates | pending | no implementation claim |
 | true DB/CI | pending | no runtime claim |
 
@@ -123,8 +142,10 @@ M11-04B still has no schema, migration, worker-source or owner-input blocker.
 The initial freeze correctly separated close/reopen/resume but was not safe
 enough to implement. Corrected freeze `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`
 addresses every recorded blocker/major, and both independent reviewers returned
-`GO source`. Source implementation may now begin within the frozen budgets;
-this is not a runtime, staging, production or completion claim.
+`GO source`. Implementation then proved the one-helper placement estimate could
+not satisfy the repository line gate. Behavior work is paused pending re-review
+of the narrow 12/2 two-helper amendment; this is not a runtime, staging,
+production or completion claim.
 
 M11-05 and later Value-0 slices remain serially blocked until M11-04B
 implementation, true-DB/CI evidence, merge and branch/worktree cleanup complete.

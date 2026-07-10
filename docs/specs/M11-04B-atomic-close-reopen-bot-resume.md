@@ -105,8 +105,11 @@ completed.
 ## AI Agent Responsibilities
 
 - Work only in the assigned worktree/branch; root/main remains coordination-only.
-- Keep `conversation-ticket.atomic-state.ts` the single lifecycle planner for
-  in-memory and Prisma behavior; controller/UI may not recreate the matrix.
+- Keep one lifecycle-planner module boundary for in-memory and Prisma behavior:
+  `conversation-ticket.atomic-state.ts` is the only public facade and delegates
+  close/reopen/resume/readiness only to its private
+  `conversation-ticket.lifecycle-state.ts` helper. Controller/service/
+  repository/writer/UI may not import that helper or recreate the matrix.
 - Reuse the M11-03B/M11-04A conversation-first lock order and fixed
   `{ maxWait: 60_000, timeout: 60_000 }` transaction bounds.
 - Keep external Telegram/LLM calls outside DB transactions. M11-04B resume itself
@@ -153,15 +156,22 @@ completed.
 The schema already has `CLOSED`, `REOPENED`, `STATUS_CHANGED`, ticket-event JSON
 payload, `closedAt` and `audit_log`; no migration is authorized.
 
-`conversation-ticket.atomic-writes.ts` is already 383 nonblank lines. One new
-source file is authorized:
+Implementation preflight after corrected `GO source` measured the first
+incomplete in-file lifecycle draft at 520 ESLint-counted lines with complexity
+13/16, before replay/audit helpers were complete. Compressing it below 400 would
+hide the state matrix. Two new source files are therefore authorized:
+
+- `conversation-ticket.lifecycle-state.ts` contains only the pure
+  close/reopen/resume/readiness planner and private validation helpers. It is
+  imported/re-exported only by the existing atomic-state facade, has no DB,
+  network, repository or side effect, and is not a parallel runtime path;
 
 - `conversation-ticket.outbound-fence.ts` extracts/refines the existing exact
   generating-AI cancellation and adds the all-origin `OUTBOUND/QUEUED` lock/read
   used by resume.
 
-It remains a helper consumed by the existing atomic writer, not a second state
-machine, repository, queue or provider adapter.
+The outbound helper remains consumed by the existing atomic writer, not a
+second state machine, repository, queue or provider adapter.
 
 ## 触碰模块/文件
 
@@ -171,6 +181,7 @@ machine, repository, queue or provider adapter.
 - `apps/api/scripts/runtime-compiler.mjs`
 - `apps/api/src/conversation-ticket.atomic-state.ts`
 - `apps/api/src/conversation-ticket.atomic-writes.ts`
+- `apps/api/src/conversation-ticket.lifecycle-state.ts`
 - `apps/api/src/conversation-ticket.outbound-fence.ts`
 - `apps/api/src/conversation-ticket.controller.ts`
 - `apps/api/src/conversation-ticket.db-mappers.ts`
@@ -205,8 +216,9 @@ machine, repository, queue or provider adapter.
 
 ## Change Budget
 
-- Source: changed source files <= 11, net source LOC <= 600, new source files <= 1.
-- New source: only the outbound-fence extraction/refinement above. Every
+- Source: changed source files <= 12, net source LOC <= 600, new source files <= 2.
+- New source: only the private lifecycle-state and outbound-fence helpers above.
+  Every
   touched/new TypeScript runtime source must pass the repository ESLint
   `max-lines <= 400` rule as configured with blank/comment skipping;
   React/Nest ceilings still apply.
@@ -215,14 +227,16 @@ machine, repository, queue or provider adapter.
   may receive only the module registration/import rewrite required for the new
   outbound helper and canonical audit mapper, must finish at <= baseline + 15
   nonblank lines, and remains counted in source/net totals. No unrelated
-  refactor, reorder, formatter churn or second new source file is authorized.
+  refactor, reorder, formatter churn or third new source file is authorized.
 - Test/support: changed files <= 9, new files <= 2; no deletion, skip/only,
   weakened assertion, broad mock or snapshot expansion.
 - Config: one CI workflow edit.
 - Docs: this spec and one evidence record.
 - Schema/migration/generated/lock/deploy/provider adapter: none.
 - Exceptions: only the measured existing-baseline compiler allowance above; no
-  source-size, test-weakening or external-dependency exception.
+  source-size, test-weakening or external-dependency exception. The second
+  helper is a measured split within the default AGENTS source/new-file budget,
+  not a large-change exception.
 
 ## HTTP And Permission Contract
 
@@ -679,10 +693,11 @@ not race evidence.
 1. Commit this spec/evidence before source edits.
 2. Run independent spec-compliance and test-plan pre-review; correct every
    blocker/major before implementation.
-3. Extract the existing generating-intent cancellation into the authorized
+3. Extract the pure lifecycle planner behind the existing atomic-state facade,
+   then extract generating-intent cancellation into the authorized
    outbound-fence helper and add the queued-outbound resume gate.
-4. Extend the single planner/types/controller/service/repository with close,
-   reopen, resume and permission-aware readiness.
+4. Extend that single public planner boundary plus types/controller/service/
+   repository with close, reopen, resume and permission-aware readiness.
 5. Extend the canonical audit event enum, then persist/read back conversation,
    ticket, truthful request-bound events and verified resume audit in the same
    transaction; preserve in-memory/Prisma parity.
@@ -714,9 +729,9 @@ not race evidence.
 ## Failure Branches
 
 - Any schema/RLS-policy requirement -> stop and open a globally serial DB spec.
-- If source exceeds 600, touched/new file budget, TypeScript 400-line ceiling or
-  the explicit compiler baseline+15 allowance -> narrow or split serially; no
-  silent exception.
+- If source exceeds 600, the revised 12/2 touched/new file budget, TypeScript
+  400-line ceiling or the explicit compiler baseline+15 allowance -> narrow or
+  split serially; no silent exception or third helper.
 - If `audit_log` cannot be inserted in the same RLS transaction -> keep resume
   blocked; a post-commit best-effort audit is not accepted.
 - If true DB cannot prove both worker race orders, reopen-vs-resume, RLS and

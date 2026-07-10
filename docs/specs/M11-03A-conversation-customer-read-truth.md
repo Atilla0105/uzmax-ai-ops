@@ -49,7 +49,7 @@ conversation detail:
 - `UZMAX智能运营系统-技术架构-v1.1.md`
 - `docs/adr/ADR-003-llm-data-processing.md`
 - merged M11-02 identity uniqueness/profile normalization
-- the reviewed M11-03 state/read contract preserved in this branch history
+- the reviewed M11-03B handoff contract preserved in the durable appendix below
 
 ## AI Agent Responsibilities
 

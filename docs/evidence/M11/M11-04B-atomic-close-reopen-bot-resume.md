@@ -125,6 +125,9 @@ Worktree:
   and rewrites for both helpers plus the audit mapper and freezes a measured
   ceiling of baseline 581 + 25 nonblank lines; unrelated compiler churn remains
   forbidden.
+- Compiler correction commit:
+  `781a1db9d88cdd4440004d030f0d80c18bd74395`; both independent reviewers
+  returned `GO resume source` with no remaining blocker/major.
 
 ## Validation Record
 
@@ -137,8 +140,8 @@ Worktree:
 | corrected spec freeze | pass | docs-only commit `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`; no source edit |
 | independent corrected spec review | pass | state/security/RLS reviewer returned `GO source`; no blocker/major |
 | independent test-plan review | pass | test/true-DB reviewer returned `GO source`; no blocker/major |
-| implementation placement amendment | pending re-review | measured incomplete planner at ESLint 520/complexity 13-16; behavior contract unchanged; source WIP uncommitted |
-| implementation | in progress, paused | initial source WIP exists only in assigned worktree; no source commit/runtime claim |
+| implementation placement amendment | pass | two-helper/single-facade amendment plus compiler correction `781a1db9`; both reviewers returned GO |
+| implementation | in progress | source WIP exists only in assigned worktree; no source commit/runtime claim |
 | local gates | pending | no implementation claim |
 | true DB/CI | pending | no runtime claim |
 
@@ -149,9 +152,9 @@ The initial freeze correctly separated close/reopen/resume but was not safe
 enough to implement. Corrected freeze `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`
 addresses every recorded blocker/major, and both independent reviewers returned
 `GO source`. Implementation then proved the one-helper placement estimate could
-not satisfy the repository line gate. Behavior work is paused pending re-review
-of the narrow 12/2 two-helper amendment; this is not a runtime, staging,
-production or completion claim.
+not satisfy the repository line gate. The narrow 12/2 two-helper amendment and
+compiler correction are now independently accepted, so source work may resume;
+this is not a runtime, staging, production or completion claim.
 
 M11-05 and later Value-0 slices remain serially blocked until M11-04B
 implementation, true-DB/CI evidence, merge and branch/worktree cleanup complete.

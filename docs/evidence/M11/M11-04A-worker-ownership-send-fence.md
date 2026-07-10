@@ -1,6 +1,6 @@
 # M11-04A Worker Ownership And Send Fence Evidence
 
-Status: `implementation_complete__local_green__ci_true_db_pending`
+Status: `implementation_and_source_equivalent_ci_complete`
 Spec: `docs/specs/M11-04A-worker-ownership-send-fence.md`
 Base: `da5e808b9bac377252acd953c9ca2d7335ba67c2`
 Branch: `codex/m11-04a-worker-fence`
@@ -105,18 +105,20 @@ Worktree:
 | source/test budget | pass | 8 source files including 2 new, net source +596 <= 600; 7 test/support files including 2 new; config 1; docs 2; all bounded files <= 400 nonblank lines |
 | local true DB | not run | `UZMAX_RLS_DATABASE_URL` is absent locally; no PostgreSQL pass is claimed |
 | no-DB sanitizer | pass | exit 1 and exactly `m11-worker-ownership-fence-true-db-smoke-failed`, with no raw cause, path or stack |
-| CI attempts 1-2 metadata preflight | failed before true DB | run `29125525284`, attempts 1-2, read the original pull-request event snapshot where the spec path still contained Markdown backticks; the live PR body was corrected, but a rerun preserves the old event payload, so this evidence commit creates a fresh `synchronize` event |
-| CI true DB | pending | new step is after M11 atomic takeover and before Redis smokes; latest-SHA CI required before merge |
+| CI attempts 1-2 metadata preflight | failed before true DB | run `29125525284`, attempts 1-2, read the original pull-request event snapshot where the spec path still contained Markdown backticks; the live PR body was corrected, but a rerun preserves the old event payload, so evidence commit `6911a04` created a fresh `synchronize` event |
+| CI true DB | pass | source-equivalent SHA `6911a0409697a1b5b015efb7ff129bd71603e1da`; run `29125779354`, job `86470939643`, completed in 24m28s with the new worker ownership fence step plus every prior PostgreSQL/RLS integration step green |
 | pre-implementation spec compliance reviews | pass after fail/corrections | ownership matrix, retry recovery, cancellation scope/parity, budgets and both follow-up race orders accepted before source |
 | final implementation spec compliance review | pass | second independent review found no blocker/major and confirmed all pass conditions plus net source +596 |
 | code quality/security/RLS review | pass | second independent review confirmed once-latch, late ack refinement, lock order, enum/compound scope and network-outside-transaction semantics |
-| final verification/CI review | local GO | no blocker/major; commit/PR allowed, merge remains blocked on latest-SHA true-DB CI |
+| final verification/CI review | GO | no blocker/major; source-equivalent latest-SHA CI, true DB, full Node tests and builds are green |
 
 ## Current Conclusion
 
-M11-04A implementation and all locally available gates are complete. Local
-evidence is GO for commit and PR, not for merge: no local database credential is
-present, so the real PostgreSQL/RLS race runner must pass on the PR's latest SHA.
+M11-04A implementation and its production-shaped verification are complete. The
+real PostgreSQL/RLS race runner passed on source-equivalent SHA
+`6911a0409697a1b5b015efb7ff129bd71603e1da` together with every prior database,
+full-test and build gate. Any successor that only updates this evidence remains
+subject to the repository's latest-SHA CI requirement before merge.
 
 One nonblocking observability improvement remains outside this ownership slice:
 terminal `RuntimeResult` values do not consistently preserve every optional
@@ -124,6 +126,6 @@ conversation/message/outbound ID. No current consumer or M11-04A safety contract
 depends on those optional fields; a later narrow compatibility slice may restore
 them without reopening this ownership/send fence.
 
-M11-04B and all later Value-0 slices remain serially blocked until M11-04A latest-
-SHA CI is green, this evidence records that run, the PR merges and the branch/
-worktree are cleaned.
+M11-04B and all later Value-0 slices remain serially blocked until this evidence-
+only successor passes latest-SHA CI, the PR merges and the branch/worktree are
+cleaned.

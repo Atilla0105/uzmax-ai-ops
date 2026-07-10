@@ -24,11 +24,67 @@ export type ConversationMessage = Record<
 > & {
   content: Record<string, unknown>;
   contentKind: "callback" | "image" | "system" | "text" | "unsupported" | "voice";
+  deliveryStatus: "cancelled" | "failed" | "queued" | "received" | "sent";
   direction: "inbound" | "internal" | "outbound";
+  externalMessageRef?: string;
 };
+
+export const value0SupportSlaPolicyRef = "value0-staging-support-default-v1";
+
+export type ConversationOperatorState = {
+  activeTicketId?: string;
+  mode: "awaiting_operator" | "bot" | "closed" | "conflict" | "human";
+  ownership: "conflict" | "none" | "other" | "self" | "unassigned";
+};
+
+type CustomerRead = {
+  id: string;
+  preferredLanguage?: string;
+  status: "active" | "archived";
+};
+type CustomerIdentityRead = {
+  customerId: string;
+  externalSubjectRef: string;
+  firstSeenAt: string;
+  id: string;
+  lastSeenAt?: string;
+  provider: string;
+  status: "active" | "archived" | "merged";
+};
+type CustomerProfileRead = {
+  displayName?: string;
+  firstName?: string;
+  languageCode?: string;
+  lastName?: string;
+  username?: string;
+};
+type ContextWithIdentity = {
+  customer?: CustomerRead;
+  identity: CustomerIdentityRead;
+  profile?: CustomerProfileRead;
+};
+
+export type ConversationCustomerContext =
+  | {
+      state: "identity_ambiguous" | "identity_link_mismatch" | "identity_missing";
+    }
+  | (ContextWithIdentity & {
+      state:
+        | "customer_archived"
+        | "customer_missing"
+        | "identity_archived"
+        | "identity_merged"
+        | "linked";
+    });
+
+type ConversationCustomerContextSeed = Record<
+  "conversationId" | "orgId" | "tenantId",
+  string
+> & { context: ConversationCustomerContext };
 
 export type ConversationTicketSeed = {
   conversations?: readonly HandoffConversation[];
+  customerContexts?: readonly ConversationCustomerContextSeed[];
   messages?: readonly ConversationMessage[];
   tickets?: readonly TicketState[];
 };

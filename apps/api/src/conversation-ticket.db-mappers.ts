@@ -3,16 +3,17 @@ import type {
   TicketEvent,
   TicketState
 } from "../../../packages/capabilities/handoff/src/index.ts";
+import type { AccessContext } from "../../../packages/authz/src/index.ts";
 
 import type {
   ConversationListFilters,
   ConversationMessage
 } from "./conversation-ticket.types.ts";
+import { value0SupportSlaPolicyRef } from "./conversation-ticket.types.ts";
 
 export type DbRow = Record<string, unknown>;
 
 const systemActorUserId = "00000000-0000-4000-8000-000000000005";
-const ticketPolicyRef = "conversation-ticket-db-readback";
 const ticketSuggestedAction =
   "Review conversation context and respond from approved data.";
 
@@ -39,8 +40,7 @@ export function toConversation(row: DbRow): HandoffConversation {
   const status = conversationStatus(row.status);
   const unreadCount = integer(row.unreadCount, "conversation unreadCount", 0);
   return clean({
-    aiState:
-      status === "handoff" || status === "pending_handoff" ? "suspended" : "active",
+    aiState: status === "open" ? "active" : "suspended",
     awaitingReply: unreadCount > 0 && status !== "closed",
     channelConnectionId: requiredText(
       row.channelConnectionId,
@@ -69,7 +69,11 @@ export function toMessage(row: DbRow): ConversationMessage {
     content: recordOrEmpty(row.content),
     contentKind: messageContentKind(row.contentKind),
     conversationId: requiredText(row.conversationId, "message conversationId"),
+    deliveryStatus: messageDeliveryStatus(row.deliveryStatus),
     direction: messageDirection(row.direction),
+    ...(text(row.externalMessageRef)
+      ? { externalMessageRef: text(row.externalMessageRef)?.slice(0, 256) }
+      : {}),
     id: requiredText(row.id, "message id"),
     occurredAt: requiredIso(row.occurredAt, "message occurredAt"),
     orgId: requiredText(row.orgId, "message orgId"),
@@ -94,7 +98,7 @@ export function toTicket(row: DbRow, eventRows: readonly DbRow[]): TicketState {
     priority: integer(row.priority, "ticket priority", 3),
     sla: clean({
       dueAt: iso(row.slaDueAt),
-      policyRef: ticketPolicyRef,
+      policyRef: value0SupportSlaPolicyRef,
       source: "config_placeholder"
     }),
     status: ticketStatus(row.status),
@@ -186,6 +190,52 @@ export function compareTicketEventRows(left: DbRow, right: DbRow): number {
   );
 }
 
+export function scopeFromAccessContext(accessContext: AccessContext) {
+  return { orgId: accessContext.orgId, tenantId: accessContext.selectedTenantId };
+}
+
+export function scopeFromEntity(entity: { orgId: string; tenantId: string }) {
+  return { orgId: entity.orgId, tenantId: entity.tenantId };
+}
+
+export function compoundScopeWhere(entity: {
+  id: string;
+  orgId: string;
+  tenantId: string;
+}) {
+  return {
+    id_orgId_tenantId: {
+      id: entity.id,
+      orgId: entity.orgId,
+      tenantId: entity.tenantId
+    }
+  };
+}
+
+export function scoped<T extends { orgId: string; tenantId: string }>(
+  items: readonly T[],
+  context: AccessContext
+) {
+  return items.filter(
+    (item) => item.orgId === context.orgId && item.tenantId === context.selectedTenantId
+  );
+}
+
+export function cloneValue<T>(value: T): T {
+  return structuredClone(value);
+}
+
+export function upsertById<T extends { id: string }>(
+  items: readonly T[],
+  item: T
+): T[] {
+  return items.some((candidate) => candidate.id === item.id)
+    ? items.map((candidate) =>
+        candidate.id === item.id ? cloneValue(item) : candidate
+      )
+    : [...items, cloneValue(item)];
+}
+
 function priority(conversation: HandoffConversation): number {
   if (conversation.status === "pending_handoff") return 0;
   if (conversation.slaRisk) return 1;
@@ -269,6 +319,13 @@ function messageContentKind(value: unknown): ConversationMessage["contentKind"] 
     value,
     ["callback", "image", "system", "text", "unsupported", "voice"],
     "contentKind"
+  );
+}
+function messageDeliveryStatus(value: unknown): ConversationMessage["deliveryStatus"] {
+  return enumValue(
+    value,
+    ["cancelled", "failed", "queued", "received", "sent"],
+    "message deliveryStatus"
   );
 }
 function ticketStatus(value: unknown): TicketState["status"] {

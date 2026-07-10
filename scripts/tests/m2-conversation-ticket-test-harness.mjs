@@ -41,6 +41,9 @@ export async function createConversationTicketHarness(prefix) {
   };
   const handoff = await importSource("packages/capabilities/handoff/src/index.ts");
   const authz = await importSource("packages/authz/src/index.ts");
+  const telegramInbound = await importSource(
+    "packages/channels/src/telegram-bot-inbound-contract.ts"
+  );
   const nestCommon = createNestCommonStub(writeTempModule);
   const accessContext = writeTempModule(
     "access-context-stub.mjs",
@@ -57,6 +60,7 @@ export async function createConversationTicketHarness(prefix) {
         authz,
         handoff,
         nestCommon,
+        telegramInbound,
         writeTempModule
       })
   };
@@ -89,7 +93,9 @@ export function message(id, conversationId, tenantId, direction) {
     content: { text: "bounded internal message" },
     contentKind: "text",
     conversationId,
+    deliveryStatus: "received",
     direction,
+    externalMessageRef: `telegram:message:${id}`,
     id,
     occurredAt: NOW,
     orgId: ORG_ID,
@@ -138,19 +144,30 @@ async function importConversationTicketApiSource(context) {
     "@nestjs/common": context.nestCommon
   });
   const dbMappersModuleUrl = writeSource(context, "conversation-ticket.db-mappers", {
+    "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+    "./conversation-ticket.types.ts": typesModuleUrl
+  });
+  const ownershipModuleUrl = writeSource(context, "conversation-ticket.ownership", {
+    "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
+    "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+    "../../../packages/channels/src/telegram-bot-inbound-contract.ts":
+      context.telegramInbound.moduleUrl,
+    "./conversation-ticket.db-mappers.ts": dbMappersModuleUrl,
     "./conversation-ticket.types.ts": typesModuleUrl
   });
   const repositoryModuleUrl = writeSource(context, "conversation-ticket.repository", {
     "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
     "./conversation-ticket.db-mappers.ts": dbMappersModuleUrl,
+    "./conversation-ticket.ownership.ts": ownershipModuleUrl,
     "./conversation-ticket.types.ts": typesModuleUrl
   });
   const serviceModuleUrl = writeSource(context, "conversation-ticket.service", {
     "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
     "./conversation-ticket.errors.ts": errorsModuleUrl,
+    "./conversation-ticket.ownership.ts": ownershipModuleUrl,
     "./conversation-ticket.repository.ts": repositoryModuleUrl,
     "./conversation-ticket.types.ts": typesModuleUrl,
     "@nestjs/common": context.nestCommon

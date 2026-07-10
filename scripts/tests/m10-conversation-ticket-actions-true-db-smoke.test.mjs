@@ -7,6 +7,8 @@ import { runM10ConversationTicketActionsTrueDbSmoke } from "../../packages/db/sc
 
 const repoRoot = process.cwd();
 const source = {
+  ci: read(".github/workflows/ci.yml"),
+  readSpec: read("docs/specs/M11-03A-conversation-customer-read-truth.md"),
   smoke: read(
     "packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs"
   ),
@@ -25,16 +27,27 @@ describe("M10-01 conversation-ticket true DB smoke", () => {
     assert.match(source.smoke, /type: "note"/);
     assert.match(source.smoke, /type: "close"/);
     assert.match(source.smoke, /type: "reopen"/);
+    assert.match(source.smoke, /customerIdentity\.create/);
+    assert.match(source.smoke, /getConversationDetail/);
+    assert.match(source.smoke, /blocked_pending_m11_03b/);
+    assert.match(source.smoke, /conversation-ticket-true-db-smoke-failed/);
     assert.match(source.smoke, /residue=0/);
     assert.doesNotMatch(source.smoke, /console\.log\([^)]*databaseUrl/);
     assert.doesNotMatch(source.smoke, /console\.log\([^)]*TOKEN/);
+    assert.doesNotMatch(source.smoke, /cleanup failed:.*error\.message/);
     assert.match(source.spec, /M10-01 Conversation Ticket DB Writes/);
+    assert.match(source.readSpec, /M11-03A Conversation Customer Read Truth/);
+    assert.match(source.ci, /M11 conversation\/customer read true DB smoke/);
+    assert.match(
+      source.ci,
+      /node packages\/db\/scripts\/run-m10-conversation-ticket-actions-true-db-smoke\.mjs/
+    );
 
     const previous = process.env.UZMAX_RLS_DATABASE_URL;
     delete process.env.UZMAX_RLS_DATABASE_URL;
     await assert.rejects(
       () => runM10ConversationTicketActionsTrueDbSmoke(),
-      /UZMAX_RLS_DATABASE_URL is required/
+      /conversation-ticket-true-db-smoke-failed/
     );
     restoreEnv("UZMAX_RLS_DATABASE_URL", previous);
   });

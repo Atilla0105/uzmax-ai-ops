@@ -101,6 +101,9 @@ jobs:
               apps/api/*|apps/api/**|apps/worker/*|apps/worker/**|packages/db/*|packages/db/**|scripts/tests/m4-order-import-*|scripts/tests/m4-customer-asset-*|package.json|package-lock.json)
                 true_db_smoke_changed=true
                 ;;
+              .github/workflows/ci.yml)
+                true_db_smoke_changed=true
+                ;;
             esac
 
             case "$file" in
@@ -249,6 +252,13 @@ jobs:
           UZMAX_RLS_DATABASE_URL: >-
             ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
         run: node packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs
+      - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
+        name: M11 conversation/customer read true DB smoke
+        env:
+          UZMAX_RLS_DATABASE_URL: >-
+            ${{ secrets.UZMAX_RLS_DATABASE_URL }}&connection_limit=4&pool_timeout=60
+        run:
+          node packages/db/scripts/run-m10-conversation-ticket-actions-true-db-smoke.mjs
       - if: steps.path-scope.outputs.run_true_db_smoke == 'true'
         name: Start M6B webhook worker Redis smoke container
         run: |

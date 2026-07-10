@@ -355,12 +355,30 @@ function conversationTicketModules() {
     [
       "apps/api/src/conversation-ticket.db-mappers.ts",
       "conversation-ticket.db-mappers.mjs",
-      { ...handoff, ...types }
+      { ...authz, ...handoff, ...types }
+    ],
+    [
+      "apps/api/src/conversation-ticket.ownership.ts",
+      "conversation-ticket.ownership.mjs",
+      {
+        ...authz,
+        ...dbMappers,
+        ...handoff,
+        "../../../packages/channels/src/telegram-bot-inbound-contract.ts":
+          "./telegram-bot-inbound-contract.mjs",
+        ...types
+      }
     ],
     [
       "apps/api/src/conversation-ticket.repository.ts",
       "conversation-ticket.repository.mjs",
-      { ...authz, ...dbMappers, ...handoff, ...types }
+      {
+        ...authz,
+        ...dbMappers,
+        ...handoff,
+        "./conversation-ticket.ownership.ts": "./conversation-ticket.ownership.mjs",
+        ...types
+      }
     ],
     [
       "apps/api/src/conversation-ticket.service.ts",
@@ -369,6 +387,7 @@ function conversationTicketModules() {
         ...authz,
         ...handoff,
         "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        "./conversation-ticket.ownership.ts": "./conversation-ticket.ownership.mjs",
         "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",
         ...types
       }

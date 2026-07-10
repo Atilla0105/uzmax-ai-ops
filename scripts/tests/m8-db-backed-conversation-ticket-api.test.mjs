@@ -136,10 +136,16 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
       messages.map((message) => message.direction),
       ["inbound", "outbound"]
     );
+    assert.deepEqual(
+      messages.map((message) => message.deliveryStatus),
+      ["received", "sent"]
+    );
+    assert.match(messages[0].externalMessageRef, /^telegram:message:/);
     assert.equal(messages[0].content.textLength, 12);
     assert.equal(tickets[0].id, TICKET_ID);
     assert.equal(tickets[0].status, "open");
     assert.equal(tickets[0].sla.dueAt, "2026-06-17T01:05:00.000Z");
+    assert.equal(tickets[0].sla.policyRef, "value0-staging-support-default-v1");
     assert.deepEqual(
       tickets[0].events.map((event) => event.type),
       ["created", "note_added"]

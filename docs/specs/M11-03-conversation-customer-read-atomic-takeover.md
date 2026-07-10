@@ -114,17 +114,23 @@ Read-only anchors:
 Each message adds:
 
 - `deliveryStatus`: `received | queued | sent | failed | cancelled`;
-- optional bounded `externalMessageRef`.
+- optional `externalMessageRef`, trimmed and projected to at most 256 characters on
+  read. Stored over-length/untrusted values are truncated in the response, never
+  echoed to logs, and are not rewritten by this read path.
 
 The existing bounded business `content` remains readable only through this authorized tenant-scoped response. Neither content nor provider reference may be copied to logs/evidence.
 
 ### Customer context
 
-The response adds one discriminated `customerContext` object. It is either a linked read model or one of the explicit states `identity_missing`, `identity_ambiguous`, `identity_link_mismatch`, `identity_archived`, `identity_merged`, `customer_missing`, or `customer_archived`.
+The response always adds exactly one discriminated `customerContext` object:
+
+- `{ state: "identity_missing" | "identity_ambiguous" | "identity_link_mismatch" }` with no customer/profile fields; or
+- `{ state: "linked" | "identity_archived" | "identity_merged" | "customer_missing" | "customer_archived", identity: {...}, customer?: {...}, profile?: {...} }` using only the whitelist below.
 
 The linked read model may expose only:
 
-- customer ID/status and bounded manual `preferredLanguage`;
+- customer ID/status and manual `preferredLanguage`, trimmed and projected to at
+  most 64 characters on read;
 - identity ID/status/provider/external subject/first seen/last seen;
 - normalized `firstName`, `lastName`, derived `displayName`, `username` and `languageCode`.
 
@@ -138,7 +144,15 @@ The repository must:
 6. deliberately not require identity `channelConnectionId` to equal the conversation connection, because M11-02's canonical identity key is provider + subject and its stored connection may move to the latest Bot connection;
 7. fail closed if the provider/link/customer relation is missing, duplicated or inconsistent.
 
-Stored profile metadata is untrusted read input. Map only its known camelCase fields back through the existing `normalizeTelegramBotParticipantProfile` helper so M11-02's 128/128/64/16/256 boundaries and derived display name are reused. Never return raw identity/customer metadata or unknown profile keys. Manual customer language wins over Telegram language only in the derived display field and must be bounded; it is never overwritten on read.
+Stored profile metadata is untrusted read input. Build the exact adapter
+`{ first_name: profile.firstName, last_name: profile.lastName, username: profile.username, language_code: profile.languageCode }`
+from known camelCase keys and pass that object through the existing
+`normalizeTelegramBotParticipantProfile` helper. This reuses M11-02's
+128/128/64/16/256 boundaries and re-derives display name instead of trusting the
+stored value. Never pass raw metadata to the helper and never return raw
+identity/customer metadata or unknown profile keys. Manual `preferredLanguage`
+and Telegram `languageCode` remain separate response fields; neither overwrites
+the other and this slice defines no synthetic display-language field.
 
 Archived/merged identity and archived/missing customer states remain visible as truth but are not presented as active. A missing context is not synthesized from `displayLabelRef` or participant ref.
 
@@ -151,13 +165,45 @@ The response adds:
 - `operatorState.ownership = none | unassigned | self | other | conflict`;
 - optional active ticket ID and `canTakeover`.
 
-Only `CLOSED` tickets are inactive. More than one active ticket is `conflict`. Assigned and locked users must either both be absent or be the same actor; mixed or contradictory states are `conflict`. A closed conversation with an active ticket, a handoff conversation without one active owned ticket, or any other impossible combination is `conflict`, not auto-repaired. Closed conversation `aiState` is `suspended`.
+Only `CLOSED` tickets are inactive. More than one active ticket is `conflict`.
+The valid active ticket matrices are exact:
 
-Client `slaPolicyRef`, actor, lock owner and timestamp fields are ignored. New/reused tickets keep their stored `slaDueAt` or null; this slice does not claim a formal response-time promise and the LLM never computes SLA.
+- `OPEN`: no assigned user and no lock owner;
+- `CLAIMED` or `REOPENED`: assigned user present and lock owner absent;
+- `LOCKED` or `ESCALATED`: assigned user and lock owner are the same user.
+
+A lock without assignment, two different users, or any status/ownership
+combination outside that matrix is `conflict`. A closed conversation with an
+active ticket, a handoff conversation without one valid owned active ticket, or
+any other impossible combination is also `conflict`, not auto-repaired. Closed
+conversation `aiState` is `suspended`.
+
+`ownership` is `none` when there is no active ticket, `unassigned` for valid
+unowned `OPEN`, `self`/`other` by comparing the valid assigned user to
+`AccessContext.userId`, and `conflict` for every invalid matrix. `canTakeover`
+is true only when the access context contains `ticket:write` and a takeover
+would make a state transition: an `OPEN`/`PENDING_HANDOFF` conversation with no
+active ticket or one valid unowned `OPEN` ticket, or a valid same-actor
+`CLAIMED`/`REOPENED` ticket that can advance to `LOCKED`. It is false for a
+reader without `ticket:write`, another operator, an already-owned `LOCKED`
+ticket, closed state or conflict.
+
+Client `slaPolicyRef`, actor, lock owner and timestamp fields are ignored. The
+top-level detail and every returned ticket use the same server constant
+`value0-staging-support-default-v1`; the existing ticket SLA `source` remains
+`config_placeholder` to state explicitly that this is a Value-0 server selector,
+not a formal SLA. New/reused tickets keep their stored `slaDueAt` or null; this
+slice does not claim a formal response-time promise and the LLM never computes
+SLA.
 
 ## Atomic Takeover Contract
 
-`POST /conversation-ticket/conversations/:conversationId/handoff` requires both `conversation:read` and `ticket:write`. The authenticated `AccessContext.userId` is the only actor. The request contributes only a bounded reason; server time and UUIDs are generated internally.
+`POST /conversation-ticket/conversations/:conversationId/handoff` requires both
+`conversation:read` and `ticket:write`. The authenticated
+`AccessContext.userId` is the only actor. The request contributes only `reason`:
+trim it, reject empty input, and reject more than 500 characters with a 400
+validation error rather than truncating it. Server time and UUIDs are generated
+internally.
 
 The RLS Prisma production path uses one interactive transaction and this fixed order:
 
@@ -165,15 +211,36 @@ The RLS Prisma production path uses one interactive transaction and this fixed o
 2. select the scoped conversation `FOR UPDATE`; missing/wrong tenant is the same 404;
 3. select every non-closed ticket for that conversation in stable ID order `FOR UPDATE`;
 4. reject closed conversation, more than one active ticket, contradictory ticket state or another operator ownership with 409 and zero writes;
-5. reuse one unassigned active ticket or create one when none exists;
+5. reuse one valid unassigned `OPEN` ticket, advance a valid same-actor `CLAIMED`/`REOPENED` ticket, or create one when none exists;
 6. set ticket status `LOCKED`, `assignedUserId` and `lockedByUserId` to the authenticated actor;
 7. set conversation status `HANDOFF`;
 8. write only the required `CREATED`, `CLAIMED` and `LOCKED` ticket events in the same transaction;
 9. read back the committed-shape conversation/ticket/operator state before returning.
 
-For a new ticket, write `CREATED`, `CLAIMED`, `LOCKED`. For a reused unassigned ticket, write only missing ownership transitions. Event payload may contain the bounded reason and state-transition metadata but no message content, profile or raw request. If the same actor repeats after a committed takeover, return the same ticket with `takeoverResult=already_owned` and write no event. Concurrent same-actor calls produce one active ticket and one event sequence. Concurrent different actors produce one success and one 409; the loser cannot overwrite the owner.
+For a new ticket, write `CREATED`, `CLAIMED`, `LOCKED`. For a reused unassigned
+ticket, write only `CLAIMED`, `LOCKED`; for a valid same-actor assigned-only
+ticket, write only `LOCKED`. The events use monotonic server timestamps derived
+from one base instant (`base`, `base + 1ms`, `base + 2ms` as applicable) so DB
+readback cannot reorder semantic transitions by random UUID. Event payload may
+contain the bounded reason and state-transition metadata but no message content,
+profile or raw request. If the same actor repeats after a committed takeover,
+return the same ticket with `takeoverResult=already_owned` and write no event.
+Concurrent same-actor calls produce one active ticket and one event sequence.
+Concurrent different actors produce one success and one 409; the loser cannot
+overwrite the owner.
 
-The existing `/tickets/:ticketId/actions` mutation must enter the same conversation-first lock order and re-read current ticket state inside the transaction before applying the domain action. Client actor/time remain ignored. This prevents a claim/lock/note/close/reopen request that read before takeover from saving a stale ticket afterward. M11-04 still owns the cross-row close/reopen conversation state machine; until then, those actions remain fail-closed/inconsistent-state visible and cannot resume Bot handling.
+The existing `/tickets/:ticketId/actions` mutation first performs only a scoped,
+unlocked lookup/join to obtain the ticket's immutable `conversationId`; it then
+locks the conversation, locks and re-reads the ticket, and only then applies the
+domain action. It must never lock the ticket before the conversation. Client
+actor/time remain ignored. This prevents a claim/lock/note request that read
+before takeover from saving a stale ticket afterward, and true-DB validation
+must include takeover racing legacy claim. `close` and `reopen` are deliberately
+rejected with opaque 409 after scoped row/lock validation and zero writes until
+M11-04 supplies the atomic cross-row close/reopen/resume state machine. The M10
+smoke must replace its previous successful close/reopen expectation with this
+stronger fail-closed assertion; this is an intentional safety-contract change,
+not test weakening.
 
 ## Error Contract
 
@@ -191,7 +258,15 @@ Cross-tenant and absent rows remain `conversation_not_found`/`ticket_not_found` 
 - Add one explicit CI step that runs `node packages/db/scripts/run-m10-conversation-ticket-actions-true-db-smoke.mjs` after the M6B DB-only smoke and before Redis worker smokes.
 - Add `.github/workflows/ci.yml` to the true-DB path classifier so a workflow-only edit cannot skip the new gate.
 - The helper may extract reusable synthetic seed/cleanup utilities to the listed test-support file if needed to stay below the 400-line file limit.
-- CI output uses a stable pass token only and never prints message content, profile, identity refs or DB URL.
+- The in-memory repository implements the same takeover outcomes; it may not
+  retain the old sequential handoff semantics.
+- The fake Prisma transaction uses transaction-local snapshots with commit and
+  rollback plus a real mutex/barrier; eager `Promise.all` is not accepted as
+  concurrency evidence.
+- The true-DB helper catches assertion/runtime failures at its exported boundary
+  and throws/logs only a stable sanitized failure token. Assertions must avoid
+  embedding read models. CI output never prints message content, profile,
+  identity refs or DB URL.
 
 ## Implementation Steps
 
@@ -215,6 +290,11 @@ Cross-tenant and absent rows remain `conversation_not_found`/`ticket_not_found` 
 - Same-actor serial/concurrent retry is idempotent; different actors yield exactly one winner and one opaque 409.
 - Multiple active tickets, closed conversation, contradictory ownership and wrong tenant are zero-write failures.
 - Existing ticket action cannot stale-overwrite a concurrent takeover.
+- Valid `CLAIMED`/`REOPENED` and `LOCKED`/`ESCALATED` ownership matrices remain
+  readable, while invalid mixed ownership is conflict; close/reopen are opaque
+  409 with zero mutation until M11-04.
+- Takeover events read back in deterministic semantic order from monotonic
+  timestamps.
 - Tenant B sees zero tenant A conversation/message/customer/identity/ticket/event rows.
 - True-DB cleanup leaves residue=0 and CI explicitly executes the runner.
 - No test weakening, schema/migration/lock/deploy changes or plaintext/profile leakage.

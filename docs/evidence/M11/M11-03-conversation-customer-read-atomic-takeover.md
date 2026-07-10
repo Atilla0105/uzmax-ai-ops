@@ -26,6 +26,22 @@ M11-03 owns only the authorized conversation/customer detail read and atomic ope
 - Add one focused ownership module because the existing repository is already above the ordinary file-length limit.
 - Do not call the broad customer-asset service, add a second DB runner or change schema/migrations.
 
+## Pre-Implementation Contract Review
+
+An independent pre-review found and closed three contract blockers before the
+transaction implementation continued:
+
+- legitimate `CLAIMED`/`LOCKED` ownership now has an exact state matrix;
+- close/reopen is explicitly 409/zero-write until M11-04 instead of creating a
+  conversation/ticket state the read model would call impossible;
+- takeover audit events use monotonic timestamps instead of equal-time random-ID
+  ordering.
+
+The review also fixed exact read/write bounds, the camelCase-to-Telegram profile
+adapter, one server SLA policy value, permission-aware `canTakeover`, executable
+ticket-action lock order, fake rollback/mutex requirements and sanitized CI
+failure output.
+
 ## Validation Record
 
 | Gate | Result | Evidence |

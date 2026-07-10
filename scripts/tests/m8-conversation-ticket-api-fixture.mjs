@@ -18,6 +18,7 @@ const NOW = "2026-06-17T00:00:00.000Z";
 
 export function fakePrisma() {
   let generatedEventCount = 0;
+  const transactionMutex = createMutex();
   const fake = {
     conversations: [
       conversationRow({
@@ -118,6 +119,7 @@ export function fakePrisma() {
         tenantId: TENANT_A
       }
     ],
+    failNextEventCreate: false,
     tickets: [
       {
         assignedUserId: null,
@@ -139,22 +141,112 @@ export function fakePrisma() {
     generatedEventCount += 1;
     return `generated-event-${generatedEventCount}`;
   };
-  Object.assign(fake, {
-    $executeRawUnsafe: async (sql) => ({ kind: "role", sql }),
-    $queryRaw: async (_strings, key, value) => ({ key, kind: "set_config", value }),
-    $transaction: async (operations) => {
-      const result = await Promise.all(operations);
-      fake.transactions.push(result);
-      return result;
-    },
-    channelConnection: delegate(fake.channelConnections),
-    channelConversation: delegate(fake.conversations),
-    channelMessage: delegate(fake.messages),
-    customerIdentity: delegate(fake.customerIdentities),
-    supportTicket: delegate(fake.tickets),
-    supportTicketEvent: delegate(fake.events, { nextId: nextEventId })
+  Object.assign(fake, prismaSurface(fake, nextEventId), {
+    $transaction: async (operationsOrAction) => {
+      if (typeof operationsOrAction !== "function") {
+        const result = await Promise.all(operationsOrAction);
+        fake.transactions.push(result);
+        return result;
+      }
+      return transactionMutex(async () => {
+        const state = cloneState(fake);
+        const log = [];
+        try {
+          const result = await operationsOrAction(
+            prismaSurface(state, nextEventId, log)
+          );
+          commitState(fake, state);
+          fake.transactions.push(log);
+          return result;
+        } catch (error) {
+          if (!state.failNextEventCreate) fake.failNextEventCreate = false;
+          fake.transactions.push(log);
+          throw error;
+        }
+      });
+    }
   });
   return fake;
+}
+
+function prismaSurface(state, nextEventId, log) {
+  return {
+    $executeRawUnsafe: async (sql) => record(log, { kind: "role", sql }),
+    $queryRaw: async (strings, ...values) => queryRaw(state, strings, values, log),
+    channelConnection: delegate(state.channelConnections),
+    channelConversation: delegate(state.conversations),
+    channelMessage: delegate(state.messages),
+    customerIdentity: delegate(state.customerIdentities),
+    supportTicket: delegate(state.tickets),
+    supportTicketEvent: delegate(state.events, {
+      failCreate: () => {
+        if (!state.failNextEventCreate) return false;
+        state.failNextEventCreate = false;
+        return true;
+      },
+      nextId: nextEventId
+    })
+  };
+}
+
+function queryRaw(state, strings, values, log) {
+  const sql = strings.join("?").replaceAll(/\s+/g, " ").trim().toLowerCase();
+  if (sql.includes("set_config")) {
+    return record(log, {
+      key: values[0],
+      kind: "set_config",
+      value: values[1]
+    });
+  }
+  if (sql.includes("from conversation")) {
+    const [id, orgId, tenantId] = values;
+    const rows = state.conversations
+      .filter(
+        (row) => row.id === id && row.orgId === orgId && row.tenantId === tenantId
+      )
+      .map(({ id: rowId }) => ({ id: rowId }));
+    record(log, { ids: rows.map((row) => row.id), kind: "conversation_lock" });
+    return rows;
+  }
+  if (sql.includes("from ticket")) {
+    const [conversationId, orgId, tenantId] = values;
+    const rows = state.tickets
+      .filter(
+        (row) =>
+          row.conversationId === conversationId &&
+          row.orgId === orgId &&
+          row.tenantId === tenantId &&
+          row.status !== "CLOSED"
+      )
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .map(({ id }) => ({ id }));
+    record(log, { ids: rows.map((row) => row.id), kind: "ticket_lock" });
+    return rows;
+  }
+  throw new Error("unsupported fake raw query");
+}
+
+function record(log, value) {
+  log?.push(value);
+  return value;
+}
+
+function cloneState(fake) {
+  return {
+    channelConnections: globalThis.structuredClone(fake.channelConnections),
+    conversations: globalThis.structuredClone(fake.conversations),
+    customerIdentities: globalThis.structuredClone(fake.customerIdentities),
+    events: globalThis.structuredClone(fake.events),
+    failNextEventCreate: fake.failNextEventCreate,
+    messages: globalThis.structuredClone(fake.messages),
+    tickets: globalThis.structuredClone(fake.tickets)
+  };
+}
+
+function commitState(fake, state) {
+  for (const [key, rows] of Object.entries(state)) {
+    if (Array.isArray(rows)) fake[key].splice(0, fake[key].length, ...rows);
+  }
 }
 
 function conversationRow(patch) {
@@ -203,6 +295,7 @@ function messageRow(patch) {
 function delegate(rows, options = {}) {
   return {
     create: async ({ data }) => {
+      if (options.failCreate?.()) throw new Error("synthetic event write failure");
       const row = { ...data, id: data.id ?? options.nextId?.() };
       rows.push(row);
       return row;
@@ -246,6 +339,7 @@ function matchesWhere(row, where) {
       );
     }
     if (isRecord(value) && Array.isArray(value.in)) return value.in.includes(row[key]);
+    if (isRecord(value) && "not" in value) return row[key] !== value.not;
     return row[key] === value;
   });
 }
@@ -266,6 +360,23 @@ function sortableValue(value) {
 
 function isRecord(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function createMutex() {
+  let tail = Promise.resolve();
+  return async (action) => {
+    const previous = tail;
+    let release;
+    tail = new Promise((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      return await action();
+    } finally {
+      release();
+    }
+  };
 }
 
 export function contextFor(selectedTenantId, permissions = ["conversation:read"]) {
@@ -303,11 +414,4 @@ export function renderConfigPatterns() {
     /UZMAX_WORKER_TELEGRAM_BOT_KB_ENTRY_KEY\s*\n\s*value: setup/,
     /UZMAX_WORKER_TELEGRAM_BOT_REQUIRED_CAPABILITY_KEY\s*\n\s*value: TUTORIAL/
   ];
-}
-
-export function futureActionTimes() {
-  const base = Date.now() + 60_000;
-  return Array.from({ length: 6 }, (_, index) =>
-    new Date(base + index * 60_000).toISOString()
-  );
 }

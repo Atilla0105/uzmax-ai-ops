@@ -62,15 +62,21 @@ describe("M11-03A conversation customer read truth", () => {
       "tickets"
     ]);
     assert.equal(detail.slaPolicyRef, "value0-staging-support-default-v1");
-    assert.equal(detail.takeoverReadiness, "blocked_pending_m11_03b");
+    assert.equal(detail.takeoverReadiness, "permission_blocked");
     assert.equal("slaPolicyRef" in detail.conversation, false);
     assert.equal("takeoverReadiness" in detail.conversation, false);
     assert.deepEqual(detail.operatorState, {
       activeTicketId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      canTakeover: false,
       mode: "awaiting_operator",
       ownership: "unassigned"
     });
-    assert.equal("canTakeover" in detail.operatorState, false);
+    const permittedDetail = await service.getConversationDetail(
+      contextFor(TENANT_A, ["conversation:read", "ticket:write"]),
+      CONVERSATION_A_HANDOFF
+    );
+    assert.equal(permittedDetail.takeoverReadiness, "atomic_ready");
+    assert.equal(permittedDetail.operatorState.canTakeover, true);
     assert.equal(detail.messages[0].deliveryStatus, "received");
     assert.equal(detail.messages[0].externalMessageRef.length, 256);
     assert.equal(detail.customerContext.state, "linked");

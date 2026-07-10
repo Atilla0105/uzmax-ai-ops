@@ -1,6 +1,6 @@
 # M11-03B Atomic Takeover And Ticket Actions Evidence
 
-Status: `implementation_paused__two_source_shape_review_pending`
+Status: `implementation_validated_locally__true_db_ci_pending`
 Spec: `docs/specs/M11-03B-atomic-takeover-ticket-actions.md`
 Base: `ebdb05c31ded16e160729ae4050249bdcd46baa1`
 Branch: `codex/m11-03b-atomic-takeover`
@@ -55,6 +55,35 @@ was addressed in the spec:
   runtime transaction adapters. Total source remains capped at 600, with 8
   changed/2 new source files and no exception.
 
+## Implemented Contract Evidence
+
+- One data-driven planner now owns takeover eligibility, takeover transitions,
+  allowed legacy ticket actions, server UUID events, bounded business text and
+  monotonic server time. Read readiness calls the same takeover decision.
+- In-memory writes use one async mutex around cloned snapshot, validation and
+  commit. Prisma writes use one interactive RLS transaction with role/scope
+  setup, scoped conversation lock, stable active-ticket locks, validation,
+  writes and readback before commit.
+- Repository/service `saveConversation` and `saveTicket` seams were removed.
+  Takeover and ticket actions can no longer compose separate public saves.
+- The HTTP layer accepts only bounded `reason`, `note` and known action types;
+  actor, SLA, owner, lock and time remain server-owned. Root detail readiness is
+  permission-aware while the current admin remains blocked on its legacy nested
+  signal.
+- Fake Prisma now supports serialized interactive callbacks and rollback. A
+  synthetic event-write failure proves the preceding ticket update does not
+  commit, and its one-shot fault flag is consumed without committing business
+  rows. Focused barrier races prove same/different actor takeover and both
+  takeover-versus-claim variants without duplicate tickets or ownership
+  overwrite.
+- The existing M10/M11 read runner now asserts atomic takeover semantics and
+  close/reopen fail-closed behavior. A separate self-invoking sanitized true-DB
+  runner and CI step cover real PostgreSQL races, RLS isolation and cleanup.
+- Final source shape is 8 changed source files, 2 new source files and net
+  source LOC 591; both new modules and the repository remain under the 400
+  nonblank-line ceiling. Test/support is 9 files with 2 new files. There are no
+  schema, migration, generated, lock, deploy or provider changes.
+
 ## Validation Record
 
 | Gate | Result | Evidence |
@@ -64,15 +93,22 @@ was addressed in the spec:
 | first spec compliance pre-review | fail then fixed | budget, race, path parsing and global-claim findings addressed before source |
 | second spec compliance pre-review | pass | all prior blocker/major/minor findings closed; no new issue |
 | two-source shape pre-review | pass after minor fix | 8 source / 2 new, 9 test-support / 2 new, no exception; stale evidence wording removed |
-| focused atomic/matrix/race tests | pending | two-source implementation in progress; tests not run |
-| true-DB race/RLS/residue | pending | runner not wired |
-| full static/test/build | pending | implementation in progress |
-| final spec compliance review | pending | before quality review |
-| code quality/security/RLS review | pending | after compliance |
+| focused atomic/matrix/race tests | pass | exact matrices, server fields, zero-write failures, rollback and four barrier race classes pass |
+| full repository tests | pass | 565 tests passed, 0 failed |
+| format/type/lint | pass | Prettier, TypeScript and full ESLint pass; new files remain within line/complexity limits |
+| architecture/quality static gates | pass | dependency-cruiser, jscpd, knip, forbidden-terms and repository guards pass |
+| build | pass | API, worker, cron TypeScript builds and admin Vite production build pass |
+| source/test budget | pass | 8 source / 2 new / net 591; 9 test-support / 2 new; no exception |
+| local true-DB race/RLS/residue | not run | `UZMAX_RLS_DATABASE_URL` is absent locally; no DB claim is made |
+| final implementation spec compliance review | pass | no implementation blocker/major/minor; stale evidence and RLS anchor corrected here |
+| code quality/security/RLS review | pass | no blocker/major/minor; the only test-fake fault-flag finding was fixed and spot-checked |
+| CodeRabbit | pass with transparent rerun boundary | complete review found no production issue; an independent review's only fake minor was fixed; latest remote rerun was rate-limited, so no fresh zero-issue claim is made |
 | PR latest-SHA CI | pending | PR not opened |
 
 ## Current Conclusion
 
-M11-03B has a bounded decision-complete contract and an in-progress two-source
-implementation, but no passing implementation evidence yet. M11-03 overall,
-worker ownership, aligned staging, production, GA and 1.0 remain open.
+M11-03B is locally implementation-complete and reviewable. It is not mergeable
+until the controlled PR CI runs both the existing M11 read smoke and the new
+true-PostgreSQL atomic race/RLS/residue smoke on the latest SHA. M11-03 overall
+also remains open until this slice merges. Worker ownership/send fencing,
+explicit Bot resume, aligned staging, production, GA and 1.0 remain open.

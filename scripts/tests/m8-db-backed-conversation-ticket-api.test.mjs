@@ -17,7 +17,6 @@ import {
   USER_A,
   contextFor,
   fakePrisma,
-  futureActionTimes,
   ids,
   renderConfigPatterns,
   ticketEventTypes
@@ -128,7 +127,7 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
       CONVERSATION_A_HANDOFF
     );
     const tickets = await repository.listTickets(accessContext, CONVERSATION_A_HANDOFF);
-    const ticket = await repository.getTicket(accessContext, TICKET_ID);
+    const ticket = tickets.find((item) => item.id === TICKET_ID);
 
     assert.equal(conversation?.participantExternalRef, "telegram:user:handoff");
     assert.deepEqual(ids(messages), [MESSAGE_INBOUND, MESSAGE_OUTBOUND]);
@@ -179,95 +178,120 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
     const handoff = await service.createHandoffTicket(accessContext, {
       conversationId: CONVERSATION_A_OPEN,
       reason: "customer asked for a human",
-      slaPolicyRef: "sla-policy:tenant-default"
+      slaPolicyRef: "client value must be ignored"
     });
     const handoffTicketId = handoff.ticket.id;
 
-    assert.equal(handoff.conversation.status, "pending_handoff");
+    assert.equal(handoff.result, "created");
+    assert.equal(handoff.conversation.status, "handoff");
     assert.equal(handoff.conversation.aiState, "suspended");
+    assert.equal(handoff.ticket.status, "locked");
+    assert.equal(handoff.ticket.assignedUserId, USER_A);
+    assert.equal(handoff.ticket.lockedByUserId, USER_A);
+    assert.equal(handoff.ticket.sla.policyRef, "value0-staging-support-default-v1");
     assert.equal(
       fake.conversations.find((row) => row.id === CONVERSATION_A_OPEN).status,
-      "PENDING_HANDOFF"
+      "HANDOFF"
     );
     assert.equal(
       fake.tickets.find((row) => row.id === handoffTicketId).conversationId,
       CONVERSATION_A_OPEN
     );
-    assert.deepEqual(ticketEventTypes(fake, handoffTicketId), ["CREATED"]);
-    const [claimAt, lockAt, noteAt, closeAt, reopenAt, wrongTenantAt] =
-      futureActionTimes();
+    assert.deepEqual(ticketEventTypes(fake, handoffTicketId), [
+      "CREATED",
+      "CLAIMED",
+      "LOCKED"
+    ]);
+    assert.deepEqual(
+      fake.transactions[0].slice(0, 5).map((entry) => entry.kind),
+      ["role", "set_config", "set_config", "conversation_lock", "ticket_lock"]
+    );
+
+    const retry = await service.createHandoffTicket(accessContext, {
+      conversationId: CONVERSATION_A_OPEN,
+      reason: "same actor retry"
+    });
+    assert.equal(retry.result, "already_owned");
+    assert.equal(retry.ticket.id, handoffTicketId);
+    assert.equal(
+      fake.tickets.filter((row) => row.conversationId === CONVERSATION_A_OPEN).length,
+      1
+    );
+    assert.deepEqual(ticketEventTypes(fake, handoffTicketId), [
+      "CREATED",
+      "CLAIMED",
+      "LOCKED"
+    ]);
+
+    const spoofedAt = new Date(Date.now() + 60_000).toISOString();
     await assert.rejects(
       () =>
         service.createHandoffTicket(
           contextFor(TENANT_B, ["conversation:read", "ticket:write"]),
           {
             conversationId: CONVERSATION_A_OPEN,
-            reason: "wrong tenant should not write",
-            slaPolicyRef: "sla-policy:tenant-default"
+            reason: "wrong tenant should not write"
           }
         ),
       /conversation not found/
     );
 
+    fake.failNextEventCreate = true;
+    const beforeRollback = globalThis.structuredClone(
+      fake.tickets.find((row) => row.id === handoffTicketId)
+    );
+    const beforeEventCount = fake.events.length;
+    await assert.rejects(
+      () =>
+        service.applyTicketAction(accessContext, {
+          note: "must roll back with the synthetic event failure",
+          ticketId: handoffTicketId,
+          type: "note"
+        }),
+      /synthetic event write failure/
+    );
+    assert.equal(fake.failNextEventCreate, false);
+    assert.deepEqual(
+      fake.tickets.find((row) => row.id === handoffTicketId),
+      beforeRollback
+    );
+    assert.equal(fake.events.length, beforeEventCount);
+
     let result = await service.applyTicketAction(accessContext, {
-      now: claimAt,
-      ticketId: handoffTicketId,
-      type: "claim"
-    });
-    assert.equal(result.ticket.status, "claimed");
-    assert.equal(result.ticket.assignedUserId, USER_A);
-
-    result = await service.applyTicketAction(accessContext, {
-      now: lockAt,
-      ticketId: handoffTicketId,
-      type: "lock"
-    });
-    assert.equal(result.ticket.status, "locked");
-    assert.equal(result.ticket.lockedByUserId, USER_A);
-
-    result = await service.applyTicketAction(accessContext, {
-      note: "Checked the synthetic conversation fragment.",
-      now: noteAt,
+      actorUserId: "client actor must be ignored",
+      note: "  Checked the synthetic conversation fragment.  ",
+      now: spoofedAt,
       ticketId: handoffTicketId,
       type: "note"
     });
-    assert.equal(
-      result.ticket.events.some((event) => event.type === "note_added"),
-      true
-    );
+    const note = result.ticket.events.at(-1);
+    assert.equal(note.type, "note_added");
+    assert.equal(note.note, "Checked the synthetic conversation fragment.");
+    assert.equal(note.actorUserId, USER_A);
+    assert.notEqual(note.occurredAt, spoofedAt);
 
     result = await service.applyTicketAction(accessContext, {
-      destination: "handled_in_admin",
-      now: closeAt,
-      result: "resolved",
+      reason: "needs senior support",
       ticketId: handoffTicketId,
-      type: "close"
+      type: "escalate"
     });
-    assert.equal(result.ticket.status, "closed");
-    assert.equal(result.ticket.closedAt, closeAt);
-    assert.equal(result.ticket.lockedByUserId, undefined);
-    assert.deepEqual(
-      fake.events.find(
-        (row) => row.ticketId === handoffTicketId && row.eventType === "CLOSED"
-      ).payload,
-      { destination: "handled_in_admin", result: "resolved" }
+    assert.equal(result.ticket.status, "escalated");
+    const beforeBlockedEvents = fake.events.length;
+    await assert.rejects(
+      () =>
+        service.applyTicketAction(accessContext, {
+          ticketId: handoffTicketId,
+          type: "close"
+        }),
+      /support state conflict/
     );
-
-    result = await service.applyTicketAction(accessContext, {
-      now: reopenAt,
-      reason: "customer replied again",
-      ticketId: handoffTicketId,
-      type: "reopen"
-    });
-    assert.equal(result.ticket.status, "reopened");
-    assert.equal(result.ticket.closedAt, undefined);
+    assert.equal(fake.events.length, beforeBlockedEvents);
     assert.deepEqual(ticketEventTypes(fake, handoffTicketId), [
       "CREATED",
       "CLAIMED",
       "LOCKED",
       "NOTE_ADDED",
-      "CLOSED",
-      "REOPENED"
+      "ESCALATED"
     ]);
     assert.equal(
       new Set(result.ticket.events.map((event) => event.id)).size,
@@ -277,9 +301,8 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
     await assert.rejects(
       () =>
         service.applyTicketAction(contextFor(TENANT_B, ["ticket:write"]), {
-          now: wrongTenantAt,
           ticketId: handoffTicketId,
-          type: "claim"
+          type: "close"
         }),
       /ticket not found/
     );

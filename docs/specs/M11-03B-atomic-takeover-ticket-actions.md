@@ -124,9 +124,9 @@ bypass.
 - `apps/api/src/conversation-ticket.types.ts`
 - `scripts/tests/m2-conversation-ticket-api-contract.test.mjs`
 - `scripts/tests/m2-conversation-ticket-api-http-hardening.test.mjs`
+- `scripts/tests/m2-conversation-ticket-test-harness.mjs`
 - `scripts/tests/m8-conversation-ticket-api-fixture.mjs`
 - `scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs`
-- `scripts/tests/m10-conversation-ticket-actions-true-db-smoke.test.mjs`
 - `scripts/tests/m11-conversation-customer-read.test.mjs`
 - `scripts/tests/m11-atomic-takeover.test.mjs`
 - `packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs`
@@ -138,7 +138,7 @@ bypass.
 - `apps/api/src/conversation-ticket.ownership.ts`
 - `packages/capabilities/handoff/src/index.ts`
 - `packages/db/prisma/schema.prisma`
-- `packages/db/migrations/0001_rls_foundation.sql`
+- `packages/db/migrations/0003_channel_conversation_ticket_foundation.sql`
 - `apps/admin/src/pages/conversations/conversationWorkbenchHandoff.ts`
 
 ## Change Budget

@@ -148,6 +148,27 @@ async function importConversationTicketApiSource(context) {
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
     "./conversation-ticket.types.ts": typesModuleUrl
   });
+  const atomicStateModuleUrl = writeSource(
+    context,
+    "conversation-ticket.atomic-state",
+    {
+      "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+      "./conversation-ticket.errors.ts": errorsModuleUrl,
+      "./conversation-ticket.types.ts": typesModuleUrl
+    }
+  );
+  const atomicWritesModuleUrl = writeSource(
+    context,
+    "conversation-ticket.atomic-writes",
+    {
+      "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
+      "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+      "./conversation-ticket.atomic-state.ts": atomicStateModuleUrl,
+      "./conversation-ticket.db-mappers.ts": dbMappersModuleUrl,
+      "./conversation-ticket.errors.ts": errorsModuleUrl,
+      "./conversation-ticket.types.ts": typesModuleUrl
+    }
+  );
   const ownershipModuleUrl = writeSource(context, "conversation-ticket.ownership", {
     "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
@@ -159,6 +180,7 @@ async function importConversationTicketApiSource(context) {
   const repositoryModuleUrl = writeSource(context, "conversation-ticket.repository", {
     "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+    "./conversation-ticket.atomic-writes.ts": atomicWritesModuleUrl,
     "./conversation-ticket.db-mappers.ts": dbMappersModuleUrl,
     "./conversation-ticket.ownership.ts": ownershipModuleUrl,
     "./conversation-ticket.types.ts": typesModuleUrl
@@ -166,6 +188,7 @@ async function importConversationTicketApiSource(context) {
   const serviceModuleUrl = writeSource(context, "conversation-ticket.service", {
     "../../../packages/authz/src/index.ts": context.authz.moduleUrl,
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+    "./conversation-ticket.atomic-state.ts": atomicStateModuleUrl,
     "./conversation-ticket.errors.ts": errorsModuleUrl,
     "./conversation-ticket.ownership.ts": ownershipModuleUrl,
     "./conversation-ticket.repository.ts": repositoryModuleUrl,

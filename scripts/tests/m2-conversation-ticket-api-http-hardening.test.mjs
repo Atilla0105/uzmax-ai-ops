@@ -56,7 +56,7 @@ describe("M2-07 conversation ticket API HTTP hardening", () => {
           { type: "lock" }
         ),
       409,
-      /ticket is locked by another user/
+      /support state conflict/
     );
     await assertRejectsHttp(
       () =>
@@ -71,7 +71,7 @@ describe("M2-07 conversation ticket API HTTP hardening", () => {
           }
         ),
       409,
-      /ticket is locked by another user/
+      /support state conflict/
     );
     await assertRejectsHttp(
       () => controller.createHandoffTicket(request, CONVERSATION_A_OPEN, {}),
@@ -184,14 +184,18 @@ describe("M2-07 conversation ticket API HTTP hardening", () => {
       );
     }
     const barrel = read("apps/api/src/conversation-ticket.ts");
+    const errors = read("apps/api/src/conversation-ticket.errors.ts");
     assert.doesNotMatch(barrel, /class ConversationTicketService/);
     assert.doesNotMatch(barrel, /class InMemoryConversationTicketRepository/);
     assert.doesNotMatch(barrel, /class ConversationTicketController/);
+    assert.match(errors, /support state conflict/);
+    assert.doesNotMatch(errors, /ticket is locked by another user/);
   });
 });
 
 function lockedTicket() {
   return handoff.module.createTicketState({
+    assignedUserId: USER_A,
     conversationId: CONVERSATION_A_OPEN,
     events: [],
     id: TICKET_ID,

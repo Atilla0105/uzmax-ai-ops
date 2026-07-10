@@ -11,6 +11,7 @@ import { TicketDomainError } from "../../../packages/capabilities/handoff/src/in
 export type ConversationTicketApiErrorCode =
   | "conversation_not_found"
   | "missing_access_context"
+  | "state_conflict"
   | "ticket_not_found"
   | "validation_error";
 
@@ -44,6 +45,10 @@ export function validationError(message: string): ConversationTicketApiError {
   return new ConversationTicketApiError("validation_error", message);
 }
 
+export function stateConflict(): ConversationTicketApiError {
+  return new ConversationTicketApiError("state_conflict", "support state conflict");
+}
+
 export function missingAccessContext(): ConversationTicketApiError {
   return new ConversationTicketApiError(
     "missing_access_context",
@@ -60,6 +65,9 @@ export function toConversationTicketHttpException(error: unknown): unknown {
     }
     if (error.code === "missing_access_context") {
       return new ForbiddenException(error.message);
+    }
+    if (error.code === "state_conflict") {
+      return new ConflictException(error.message);
     }
     return new BadRequestException(error.message);
   }

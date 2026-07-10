@@ -9,24 +9,23 @@ import {
   compareConversationPriority,
   compareOccurredAt,
   compareTicketEventRows,
-  compoundScopeWhere,
   matchesConversationFilters,
   record,
   requiredText,
   rowArray,
   scopeFromAccessContext,
-  scopeFromEntity,
   scoped,
   toConversation,
-  toConversationUpdateData,
   toMessage,
   toTicket,
-  toTicketCreateData,
-  toTicketEventCreateData,
-  toTicketUpdateData,
-  upsertById,
   type DbRow
 } from "./conversation-ticket.db-mappers.ts";
+import {
+  createInMemoryAtomicWriter,
+  createPrismaAtomicWriter,
+  type AtomicPrismaPort,
+  type AtomicWriter
+} from "./conversation-ticket.atomic-writes.ts";
 import {
   readCustomerContext,
   type RlsReadRunner
@@ -35,7 +34,10 @@ import type {
   ConversationCustomerContext,
   ConversationListFilters,
   ConversationMessage,
-  ConversationTicketSeed
+  ConversationTicketSeed,
+  TakeoverInput,
+  TakeoverResult,
+  TicketActionInput
 } from "./conversation-ticket.types.ts";
 
 type MaybePromise<T> = T | Promise<T>;
@@ -48,43 +50,30 @@ type RlsScope = { orgId: string; tenantId: string };
 type MaybeConversation = MaybePromise<HandoffConversation | undefined>;
 type MaybeConversations = MaybePromise<HandoffConversation[]>;
 type MaybeMessages = MaybePromise<ConversationMessage[]>;
-type MaybeTicket = MaybePromise<TicketState | undefined>;
 type MaybeTickets = MaybePromise<TicketState[]>;
 type PrismaDelegate = {
   findFirst(input: unknown): DbOperation<unknown>;
   findMany(input: unknown): DbOperation<unknown>;
 };
-type PrismaUpdateDelegate = PrismaDelegate & {
-  update(input: unknown): DbOperation<unknown>;
-};
-type PrismaUpsertDelegate = PrismaDelegate & {
-  upsert(input: unknown): DbOperation<unknown>;
-};
-type PrismaTicketEventDelegate = Pick<PrismaDelegate, "findMany"> & {
-  create(input: unknown): DbOperation<unknown>;
-};
-
-type ConversationTicketPrismaClientPort = {
-  $executeRawUnsafe(sql: string): DbOperation;
-  $queryRaw(...args: readonly unknown[]): DbOperation;
+type ConversationTicketPrismaClientPort = AtomicPrismaPort & {
   $transaction<T extends readonly DbOperation[]>(
     operations: T
   ): Promise<{ [K in keyof T]: Awaited<T[K]> }>;
   channelConnection: Pick<PrismaDelegate, "findFirst">;
-  channelConversation: PrismaUpdateDelegate;
   channelMessage: Pick<PrismaDelegate, "findMany">;
   customerIdentity: Pick<PrismaDelegate, "findMany">;
-  supportTicket: PrismaUpsertDelegate;
-  supportTicketEvent: PrismaTicketEventDelegate;
 };
 type ConversationTicketRlsTransactionRunner =
   RlsReadRunner<ConversationTicketPrismaClientPort>;
 export type ConversationTicketRepositoryPort = {
+  applyTicketAction(
+    accessContext: AccessContext,
+    input: TicketActionInput
+  ): MaybePromise<TicketState>;
   getConversation(
     accessContext: AccessContext,
     conversationId: string
   ): MaybeConversation;
-  getTicket(accessContext: AccessContext, ticketId: string): MaybeTicket;
   listConversations(
     accessContext: AccessContext,
     filters: ConversationListFilters
@@ -95,10 +84,10 @@ export type ConversationTicketRepositoryPort = {
   ): MaybePromise<ConversationCustomerContext>;
   listMessages(accessContext: AccessContext, conversationId: string): MaybeMessages;
   listTickets(accessContext: AccessContext, conversationId: string): MaybeTickets;
-  saveConversation(
-    conversation: HandoffConversation
-  ): MaybePromise<HandoffConversation>;
-  saveTicket(ticket: TicketState): MaybePromise<TicketState>;
+  takeoverConversation(
+    accessContext: AccessContext,
+    input: TakeoverInput
+  ): MaybePromise<TakeoverResult>;
 };
 export type ConversationTicketRepositoryProviderInput = {
   env?: RuntimeEnv;
@@ -108,7 +97,6 @@ export type ConversationTicketRepositoryProviderInput = {
   prismaClientFactory?: (
     databaseUrl: string
   ) => MaybePromise<ConversationTicketPrismaClientPort>;
-  rlsTransactionRunner?: ConversationTicketRlsTransactionRunner;
 };
 
 export const CONVERSATION_TICKET_REPOSITORY = Symbol("CONVERSATION_TICKET_REPOSITORY");
@@ -121,6 +109,7 @@ const runtimeRoleSql = 'set local role "uzmax_app_runtime"';
 const rlsSettings = { orgId: "app.org_id", tenantId: "app.tenant_id" } as const;
 
 export class InMemoryConversationTicketRepository implements ConversationTicketRepositoryPort {
+  private readonly atomicWriter: AtomicWriter;
   private conversations: HandoffConversation[];
   private customerContexts: NonNullable<ConversationTicketSeed["customerContexts"]>;
   private messages: ConversationMessage[];
@@ -131,6 +120,16 @@ export class InMemoryConversationTicketRepository implements ConversationTicketR
     this.customerContexts = [...(seed.customerContexts ?? [])];
     this.messages = [...(seed.messages ?? [])];
     this.tickets = [...(seed.tickets ?? [])];
+    this.atomicWriter = createInMemoryAtomicWriter({
+      commit: (state) => {
+        this.conversations = state.conversations;
+        this.tickets = state.tickets;
+      },
+      snapshot: () => ({
+        conversations: this.conversations,
+        tickets: this.tickets
+      })
+    });
   }
 
   listConversations(accessContext: AccessContext, filters: ConversationListFilters) {
@@ -173,28 +172,22 @@ export class InMemoryConversationTicketRepository implements ConversationTicketR
       .map(clone);
   }
 
-  saveConversation(conversation: HandoffConversation) {
-    this.conversations = upsertById(this.conversations, conversation);
-    return clone(conversation);
+  applyTicketAction(accessContext: AccessContext, input: TicketActionInput) {
+    return this.atomicWriter.applyTicketAction(accessContext, input);
   }
 
-  saveTicket(ticket: TicketState) {
-    this.tickets = upsertById(this.tickets, ticket);
-    return clone(ticket);
-  }
-
-  getTicket(accessContext: AccessContext, ticketId: string) {
-    return clone(
-      scoped(this.tickets, accessContext).find((ticket) => ticket.id === ticketId)
-    );
+  takeoverConversation(accessContext: AccessContext, input: TakeoverInput) {
+    return this.atomicWriter.takeoverConversation(accessContext, input);
   }
 }
 
 class RlsPrismaConversationTicketRepository implements ConversationTicketRepositoryPort {
+  private readonly atomicWriter: AtomicWriter;
   private readonly transaction: ConversationTicketRlsTransactionRunner;
 
-  constructor(transaction: ConversationTicketRlsTransactionRunner) {
-    this.transaction = transaction;
+  constructor(prisma: ConversationTicketPrismaClientPort) {
+    this.atomicWriter = createPrismaAtomicWriter(prisma);
+    this.transaction = createConversationTicketRlsTransactionRunner(prisma);
   }
 
   listConversations(
@@ -255,67 +248,6 @@ class RlsPrismaConversationTicketRepository implements ConversationTicketReposit
     });
   }
 
-  saveConversation(conversation: HandoffConversation): Promise<HandoffConversation> {
-    const scope = scopeFromEntity(conversation);
-    return this.transaction({
-      map: ([row]) => toConversation(record(row, "conversation row")),
-      ops: (prisma) => [
-        prisma.channelConversation.update({
-          data: toConversationUpdateData(conversation),
-          where: compoundScopeWhere(conversation)
-        })
-      ],
-      scope
-    });
-  }
-
-  saveTicket(ticket: TicketState): Promise<TicketState> {
-    const scope = scopeFromEntity(ticket);
-    const newEvents = ticket.events.filter((event) => !event.id);
-    return this.transaction({
-      map: (rows) => {
-        const eventRows = rows[rows.length - 1];
-        return toTicket(
-          record(rows[0], "ticket row"),
-          rowArray(eventRows, "ticket event rows").sort(compareTicketEventRows)
-        );
-      },
-      ops: (prisma) => [
-        prisma.supportTicket.upsert({
-          create: toTicketCreateData(ticket),
-          update: toTicketUpdateData(ticket),
-          where: compoundScopeWhere(ticket)
-        }),
-        ...newEvents.map((event) =>
-          prisma.supportTicketEvent.create({
-            data: toTicketEventCreateData(ticket, event)
-          })
-        ),
-        prisma.supportTicketEvent.findMany({
-          orderBy: { occurredAt: "asc" },
-          where: { ...scope, ticketId: ticket.id }
-        })
-      ],
-      scope
-    });
-  }
-
-  async getTicket(
-    accessContext: AccessContext,
-    ticketId: string
-  ): Promise<TicketState | undefined> {
-    const scope = scopeFromAccessContext(accessContext);
-    const ticket = await this.transaction({
-      map: ([row]) => (row ? record(row, "ticket row") : undefined),
-      ops: (prisma) => [
-        prisma.supportTicket.findFirst({ where: { ...scope, id: ticketId } })
-      ],
-      scope
-    });
-    if (!ticket) return undefined;
-    return toTicket(ticket, await this.listTicketEvents(scope, [ticketId]));
-  }
-
   async listTickets(
     accessContext: AccessContext,
     conversationId: string
@@ -336,6 +268,14 @@ class RlsPrismaConversationTicketRepository implements ConversationTicketReposit
       tickets.map((ticket) => requiredText(ticket.id, "ticket id"))
     );
     return tickets.map((ticket) => toTicket(ticket, events));
+  }
+
+  applyTicketAction(accessContext: AccessContext, input: TicketActionInput) {
+    return this.atomicWriter.applyTicketAction(accessContext, input);
+  }
+
+  takeoverConversation(accessContext: AccessContext, input: TakeoverInput) {
+    return this.atomicWriter.takeoverConversation(accessContext, input);
   }
 
   private listTicketEvents(
@@ -365,21 +305,12 @@ export function createConversationTicketRepositoryProviderFromEnv(
     return input.inMemoryRepository ?? new InMemoryConversationTicketRepository();
   if (mode !== conversationTicketRepositoryRuntimeModes.rlsPrismaGateway)
     throw new Error(`unsupported conversation-ticket repository mode: ${mode}`);
-  if (input.rlsTransactionRunner)
-    return new RlsPrismaConversationTicketRepository(input.rlsTransactionRunner);
   if (input.prismaClient)
-    return new RlsPrismaConversationTicketRepository(
-      createConversationTicketRlsTransactionRunner(input.prismaClient)
-    );
+    return new RlsPrismaConversationTicketRepository(input.prismaClient);
   return createPrismaClientFromEnv(
     input.env ?? process.env,
     input.prismaClientFactory
-  ).then(
-    (prisma) =>
-      new RlsPrismaConversationTicketRepository(
-        createConversationTicketRlsTransactionRunner(prisma)
-      )
-  );
+  ).then((prisma) => new RlsPrismaConversationTicketRepository(prisma));
 }
 
 async function createPrismaClientFromEnv(

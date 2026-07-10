@@ -12,7 +12,22 @@ export const TENANT_ID = "22222222-2222-4222-8222-222222222801";
 export const CHANNEL_ID = "44444444-4444-4444-8444-444444444801";
 
 export const channels = await importChannelsSource();
-export const workerRuntime = await importWorkerConversationRuntime(channels.moduleUrl);
+const importedWorkerRuntime = await importWorkerConversationRuntime(
+  channels.moduleUrl,
+  channels.inboundModuleUrl
+);
+export const workerRuntime = {
+  ...importedWorkerRuntime,
+  processTelegramBotConversationJob(payload, gateway, options = {}) {
+    return importedWorkerRuntime.processTelegramBotConversationJob(payload, gateway, {
+      admissionPolicy: {
+        allowedChatExternalRefs: new Set(["telegram:chat:7801"]),
+        allowedParticipantExternalRefs: new Set(["telegram:user:8801"])
+      },
+      ...options
+    });
+  }
+};
 
 const answerRuntime = await importSource(
   "apps/worker/src/telegram-bot-answer-runtime.ts"
@@ -123,6 +138,7 @@ export function payloadFor({
     traceId: `trace:m8-${providerUpdateId}`,
     update: {
       chatExternalRef: "telegram:chat:7801",
+      chatType: "private",
       contentKind,
       fileIds,
       messageExternalRef: `telegram:message:${providerUpdateId}`,
@@ -244,13 +260,24 @@ function dedupeKey(input) {
 }
 
 async function importChannelsSource() {
-  const moduleUrl = moduleUrlForFixture("packages/channels/src/index.ts");
-  return { module: await import(moduleUrl), moduleUrl };
+  const inboundModuleUrl = moduleUrlForFixture(
+    "packages/channels/src/telegram-bot-inbound-contract.ts"
+  );
+  const source = sourceOf("packages/channels/src/index.ts").replaceAll(
+    "./telegram-bot-inbound-contract.ts",
+    inboundModuleUrl
+  );
+  const moduleUrl = dataModuleUrl(jsFromTs(source));
+  return { inboundModuleUrl, module: await import(moduleUrl), moduleUrl };
 }
 
-async function importWorkerConversationRuntime(channelsModuleUrl) {
+async function importWorkerConversationRuntime(channelsModuleUrl, inboundModuleUrl) {
   const replacements = [
     ["../../../packages/channels/src/index.ts", channelsModuleUrl],
+    [
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      inboundModuleUrl
+    ],
     [
       "../../../packages/capabilities/handoff/src/index.ts",
       moduleUrlForFixture("packages/capabilities/handoff/src/index.ts")

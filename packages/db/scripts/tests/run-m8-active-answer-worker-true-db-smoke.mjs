@@ -2,13 +2,15 @@ import assert from "node:assert/strict";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { Queue } from "bullmq";
 import { PrismaClient } from "@prisma/client";
 
-import { compileApiRuntime } from "../../../../apps/api/scripts/runtime-compiler.mjs";
-import { compileM8ActiveAnswerRuntimeModules } from "./m8-active-answer-worker-smoke-support.mjs";
+import {
+  assertM8ActiveAnswerApiReadback as assertApiReadback,
+  compileM8ActiveAnswerRuntimeModules
+} from "./m8-active-answer-worker-smoke-support.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../../../..");
@@ -47,21 +49,32 @@ try {
 
   assert.deepEqual(await countVisibleRows(TENANT_A_ID), {
     conversations: 2,
+    customerIdentities: 1,
+    customers: 1,
     dedupes: 2,
     messages: 4,
     outboundMessages: 2,
-    rawTextMatches: 0,
+    readableTextMatches: 2,
     tickets: 1
   });
   assert.deepEqual(await countVisibleRows(TENANT_B_ID), {
     conversations: 0,
+    customerIdentities: 0,
+    customers: 0,
     dedupes: 0,
     messages: 0,
     outboundMessages: 0,
-    rawTextMatches: 0,
+    readableTextMatches: 0,
     tickets: 0
   });
-  await assertApiReadback();
+  await assertApiReadback({
+    orgId: ORG_ID,
+    outDir: path.join(tempDir, "api-readback"),
+    prisma,
+    rlsDatabaseUrl,
+    tenantId: TENANT_A_ID,
+    userId: USER_ID
+  });
 
   await service.close("true-db-smoke");
   service = undefined;
@@ -123,6 +136,8 @@ function workerEnv() {
   return {
     UZMAX_REDIS_URL: redisUrl,
     UZMAX_RLS_DATABASE_URL: rlsDatabaseUrl,
+    UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "telegram:chat:7803,telegram:chat:7804",
+    UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS: "telegram:user:8603",
     UZMAX_WORKER_QUEUES: "telegram-bot-conversation",
     UZMAX_WORKER_TELEGRAM_BOT_AI_MEMBER_KEY: "support_bot",
     UZMAX_WORKER_TELEGRAM_BOT_ANSWER_MODE: "dry_run",
@@ -136,6 +151,8 @@ function telegramEnv() {
   return {
     TELEGRAM_BOT_WEBHOOK_SECRET: SECRET,
     UZMAX_REDIS_URL: redisUrl,
+    UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "telegram:chat:7803,telegram:chat:7804",
+    UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS: "telegram:user:8603",
     UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID: CHANNEL_CONNECTION_ID,
     UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE: "bullmq",
     UZMAX_TELEGRAM_BOT_ORG_ID: ORG_ID,
@@ -146,7 +163,7 @@ function telegramEnv() {
 function syntheticTelegramUpdate(updateId, messageId, chatId, text) {
   return {
     message: {
-      chat: { id: chatId },
+      chat: { id: chatId, type: "private" },
       date: 1782475200,
       from: { id: 8603 },
       message_id: messageId,
@@ -318,6 +335,8 @@ async function countVisibleRows(tenantId) {
     prisma.$queryRaw`
       select
         (select count(*) from conversation where org_id::text = ${ORG_ID})::int as conversations,
+        (select count(*) from customer where org_id::text = ${ORG_ID})::int as customers,
+        (select count(*) from customer_identity where org_id::text = ${ORG_ID})::int as "customerIdentities",
         (select count(*) from message where org_id::text = ${ORG_ID})::int as messages,
         (select count(*) from message where org_id::text = ${ORG_ID} and direction = 'outbound')::int as "outboundMessages",
         (select count(*) from ticket where org_id::text = ${ORG_ID})::int as tickets,
@@ -325,69 +344,22 @@ async function countVisibleRows(tenantId) {
         (
           select count(*) from message where org_id::text = ${ORG_ID}
             and (content::text like '%setup help%' or content::text like '%unknown%')
-        )::int as "rawTextMatches"
+        )::int as "readableTextMatches"
     `
   ]);
   const row = results.at(-1)?.[0] ?? {};
   return Object.fromEntries(
     [
       "conversations",
+      "customerIdentities",
+      "customers",
       "dedupes",
       "messages",
       "outboundMessages",
-      "rawTextMatches",
+      "readableTextMatches",
       "tickets"
     ].map((key) => [key, Number(row[key] ?? -1)])
   );
-}
-
-async function assertApiReadback() {
-  const outDir = await compileApiRuntime({
-    outDir: path.join(repoRoot, "node_modules/.cache/uzmax-api-runtime-m8-03")
-  });
-  const repoModule = await import(
-    pathToFileURL(path.join(outDir, "conversation-ticket.repository.mjs")).href
-  );
-  const serviceModule = await import(
-    pathToFileURL(path.join(outDir, "conversation-ticket.service.mjs")).href
-  );
-  const repository = await repoModule.createConversationTicketRepositoryProviderFromEnv(
-    {
-      env: {
-        UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE: "rls_prisma_gateway",
-        UZMAX_RLS_DATABASE_URL: rlsDatabaseUrl
-      },
-      prismaClient: prisma
-    }
-  );
-  const service = new serviceModule.ConversationTicketService(repository);
-  const list = await service.listConversations(accessContext(), {});
-  assert.equal(list.items.length, 2);
-  const details = await Promise.all(
-    list.items.map((conversation) =>
-      service.getConversationDetail(accessContext(), conversation.id)
-    )
-  );
-  assert.equal(
-    details.filter((detail) =>
-      detail.messages.some((message) => message.direction === "outbound")
-    ).length,
-    2
-  );
-  assert.equal(details.filter((detail) => detail.tickets.length === 1).length, 1);
-  assert.equal(JSON.stringify(details).includes("setup help"), false);
-  assert.equal(JSON.stringify(details).includes("unknown"), false);
-}
-
-function accessContext() {
-  return {
-    membershipVersion: 1,
-    orgId: ORG_ID,
-    permissions: ["conversation:read"],
-    selectedTenantId: TENANT_A_ID,
-    tenantIds: [TENANT_A_ID],
-    userId: USER_ID
-  };
 }
 
 async function syntheticResidueCount() {

@@ -11,7 +11,10 @@ const repoRoot = process.cwd();
 const tmpRoot = mkdtempSync(path.join(tmpdir(), "uzmax-m2-02-"));
 
 const channels = await importChannelsSource();
-const telegramApi = await importTelegramApiSource(channels.moduleUrl);
+const telegramApi = await importTelegramApiSource(
+  channels.moduleUrl,
+  channels.inboundModuleUrl
+);
 const contracts = read("docs/contracts/README.md");
 const appModule = read("apps/api/src/app.module.ts");
 const telegramApiSource = read("apps/api/src/telegram-bot.ts");
@@ -20,9 +23,16 @@ describe("M2-02 Telegram Bot ingress baseline", () => {
   it("normalizes bounded Bot update fields and defers unsupported or Business updates", () => {
     const textUpdate = channels.module.normalizeTelegramBotUpdate({
       message: {
-        chat: { id: 7001, type: "private", username: "not-retained" },
+        chat: { id: 7001, type: "private", username: "chat-not-retained" },
         date: 1781654400,
-        from: { id: 8001, username: "not-retained" },
+        from: {
+          arbitrary_profile_field: "not-retained",
+          first_name: "Ada",
+          id: 8001,
+          language_code: "en",
+          last_name: "Lovelace",
+          username: "u".repeat(80)
+        },
         message_id: 9001,
         text: "hello",
         raw_surprise: "must-not-leak"
@@ -33,15 +43,25 @@ describe("M2-02 Telegram Bot ingress baseline", () => {
     assert.deepEqual(textUpdate, {
       contentKind: "text",
       chatExternalRef: "telegram:chat:7001",
+      chatType: "private",
       messageExternalRef: "telegram:message:9001",
       occurredAt: "2026-06-17T00:00:00.000Z",
       participantExternalRef: "telegram:user:8001",
+      participantProfile: {
+        displayName: "Ada Lovelace",
+        firstName: "Ada",
+        languageCode: "en",
+        lastName: "Lovelace",
+        username: "u".repeat(64)
+      },
       provider: "telegram_bot",
       providerUpdateId: "1001",
       text: "hello",
       updateKind: "message"
     });
     assert.equal(JSON.stringify(textUpdate).includes("raw_surprise"), false);
+    assert.equal(JSON.stringify(textUpdate).includes("chat-not-retained"), false);
+    assert.equal(JSON.stringify(textUpdate).includes("arbitrary_profile_field"), false);
 
     const photoUpdate = channels.module.normalizeTelegramBotUpdate({
       message: {
@@ -60,17 +80,17 @@ describe("M2-02 Telegram Bot ingress baseline", () => {
         chat: { id: 7003 },
         from: { id: 8003 },
         message_id: 9003,
-        voice: { file_id: "voice-file" }
+        voice: { file_id: `voice-${"f".repeat(300)}` }
       },
       update_id: 1003
     });
     assert.equal(voiceUpdate.contentKind, "voice");
-    assert.deepEqual(voiceUpdate.fileIds, ["voice-file"]);
+    assert.equal(voiceUpdate.fileIds[0].length, 256);
 
     const callbackUpdate = channels.module.normalizeTelegramBotUpdate({
       callback_query: {
         data: "confirm:123",
-        from: { id: 8004 },
+        from: { first_name: "Grace", id: 8004 },
         id: "callback-id",
         message: { chat: { id: 7004 }, message_id: 9004 }
       },
@@ -79,6 +99,10 @@ describe("M2-02 Telegram Bot ingress baseline", () => {
     assert.equal(callbackUpdate.updateKind, "callback_query");
     assert.equal(callbackUpdate.contentKind, "callback");
     assert.equal(callbackUpdate.callbackData, "confirm:123");
+    assert.deepEqual(callbackUpdate.participantProfile, {
+      displayName: "Grace",
+      firstName: "Grace"
+    });
 
     const businessUpdate = channels.module.normalizeTelegramBotUpdate({
       business_message: { message_id: 9005 },
@@ -96,6 +120,39 @@ describe("M2-02 Telegram Bot ingress baseline", () => {
       unsupportedUpdate.unsupportedReason,
       "unsupported_update_type:my_chat_member"
     );
+  });
+
+  it("parses canonical approved chat refs without echoing malformed input", () => {
+    assert.deepEqual(
+      [
+        ...channels.module.parseTelegramBotAllowedChatExternalRefs(
+          "telegram:chat:7001, telegram:chat:-7002"
+        )
+      ],
+      ["telegram:chat:7001", "telegram:chat:-7002"]
+    );
+    assert.deepEqual(
+      [
+        ...channels.module.parseTelegramBotAllowedParticipantExternalRefs(
+          "telegram:user:8001, telegram:user:8002"
+        )
+      ],
+      ["telegram:user:8001", "telegram:user:8002"]
+    );
+    assert.throws(
+      () => channels.module.parseTelegramBotAllowedChatExternalRefs(""),
+      /allowlist is required/
+    );
+    let failure;
+    try {
+      channels.module.parseTelegramBotAllowedChatExternalRefs(
+        "telegram:chat:7001,synthetic-malformed-ref"
+      );
+    } catch (error) {
+      failure = error;
+    }
+    assert.match(failure?.message ?? "", /allowlist is invalid/);
+    assert.equal((failure?.message ?? "").includes("synthetic-malformed-ref"), false);
   });
 
   it("accepts, dedupes, and safely ignores unsupported updates through the queue port", async () => {
@@ -200,15 +257,24 @@ describe("M2-02 Telegram Bot ingress baseline", () => {
 });
 
 async function importChannelsSource() {
-  const moduleUrl = transpileToTempModule("packages/channels/src/index.ts");
-  return { module: await import(moduleUrl), moduleUrl };
+  const inboundModuleUrl = transpileToTempModule(
+    "packages/channels/src/telegram-bot-inbound-contract.ts"
+  );
+  const source = read("packages/channels/src/index.ts").replaceAll(
+    "./telegram-bot-inbound-contract.ts",
+    inboundModuleUrl
+  );
+  const moduleUrl = writeTempModule("channels-index.mjs", transpileSource(source));
+  return { inboundModuleUrl, module: await import(moduleUrl), moduleUrl };
 }
 
-async function importTelegramApiSource(channelsModuleUrl) {
-  const source = read("apps/api/src/telegram-bot.ts").replace(
-    "../../../packages/channels/src/index.ts",
-    channelsModuleUrl
-  );
+async function importTelegramApiSource(channelsModuleUrl, inboundModuleUrl) {
+  const source = read("apps/api/src/telegram-bot.ts")
+    .replace("../../../packages/channels/src/index.ts", channelsModuleUrl)
+    .replace(
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      inboundModuleUrl
+    );
   const moduleUrl = writeTempModule("telegram-bot.mjs", transpileSource(source));
   return { module: await import(moduleUrl), moduleUrl };
 }

@@ -1,8 +1,58 @@
+import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import ts from "typescript";
+
+import { compileApiRuntime } from "../../../../apps/api/scripts/runtime-compiler.mjs";
+
+export async function assertM8ActiveAnswerApiReadback(input) {
+  const outDir = await compileApiRuntime({ outDir: input.outDir });
+  const repoModule = await import(
+    pathToFileURL(path.join(outDir, "conversation-ticket.repository.mjs")).href
+  );
+  const serviceModule = await import(
+    pathToFileURL(path.join(outDir, "conversation-ticket.service.mjs")).href
+  );
+  const repository = await repoModule.createConversationTicketRepositoryProviderFromEnv(
+    {
+      env: {
+        UZMAX_CONVERSATION_TICKET_REPOSITORY_MODE: "rls_prisma_gateway",
+        UZMAX_RLS_DATABASE_URL: input.rlsDatabaseUrl
+      },
+      prismaClient: input.prisma
+    }
+  );
+  const service = new serviceModule.ConversationTicketService(repository);
+  const list = await service.listConversations(readbackAccessContext(input), {});
+  assert.equal(list.items.length, 2);
+  const details = await Promise.all(
+    list.items.map((conversation) =>
+      service.getConversationDetail(readbackAccessContext(input), conversation.id)
+    )
+  );
+  assert.equal(
+    details.filter((detail) =>
+      detail.messages.some((message) => message.direction === "outbound")
+    ).length,
+    2
+  );
+  assert.equal(details.filter((detail) => detail.tickets.length === 1).length, 1);
+  assert.equal(JSON.stringify(details).includes("setup help"), true);
+  assert.equal(JSON.stringify(details).includes("unknown"), true);
+}
+
+function readbackAccessContext(input) {
+  return {
+    membershipVersion: 1,
+    orgId: input.orgId,
+    permissions: ["conversation:read"],
+    selectedTenantId: input.tenantId,
+    tenantIds: [input.tenantId],
+    userId: input.userId
+  };
+}
 
 export async function compileM8ActiveAnswerRuntimeModules(input) {
   await mkdir(input.tempDir, { recursive: true });
@@ -10,7 +60,17 @@ export async function compileM8ActiveAnswerRuntimeModules(input) {
     writeModule(input.tempDir, fileName, sourceText);
   const read = (relativePath) => readRepoText(input.repoRoot, relativePath);
 
-  await write("channels.mjs", read("packages/channels/src/index.ts"));
+  await write(
+    "telegram-bot-inbound-contract.mjs",
+    read("packages/channels/src/telegram-bot-inbound-contract.ts")
+  );
+  await write(
+    "channels.mjs",
+    read("packages/channels/src/index.ts").replaceAll(
+      "./telegram-bot-inbound-contract.ts",
+      "./telegram-bot-inbound-contract.mjs"
+    )
+  );
   await write("handoff.mjs", read("packages/capabilities/handoff/src/index.ts"));
   await write("kb.mjs", read("packages/capabilities/kb/src/index.ts"));
   await write("engine.mjs", read("packages/engine/src/index.ts"));
@@ -37,14 +97,25 @@ export async function compileM8ActiveAnswerRuntimeModules(input) {
   await writeWorkerModules(input.tempDir, read, write);
   await write(
     "telegram-bot.mjs",
-    read("apps/api/src/telegram-bot.ts").replaceAll(
-      "../../../packages/channels/src/index.ts",
-      "./channels.mjs"
-    )
+    read("apps/api/src/telegram-bot.ts")
+      .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs")
+      .replaceAll(
+        "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+        "./telegram-bot-inbound-contract.mjs"
+      )
   );
 
   return {
     api: await import(pathToFileURL(path.join(input.tempDir, "telegram-bot.mjs")).href),
+    channels: await import(
+      pathToFileURL(path.join(input.tempDir, "channels.mjs")).href
+    ),
+    conversationRuntime: await import(
+      pathToFileURL(path.join(input.tempDir, "conversation-runtime.mjs")).href
+    ),
+    persistence: await import(
+      pathToFileURL(path.join(input.tempDir, "bot-persistence.mjs")).href
+    ),
     worker: await import(
       pathToFileURL(path.join(input.tempDir, "worker-service-shell.mjs")).href
     )
@@ -105,6 +176,10 @@ function replaceLlmGatewayImports(source) {
 function replaceConversationImports(source) {
   return source
     .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs")
+    .replaceAll(
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      "./telegram-bot-inbound-contract.mjs"
+    )
     .replaceAll("../../../packages/capabilities/handoff/src/index.ts", "./handoff.mjs")
     .replaceAll("../../../packages/db/src/index.ts", "./db.mjs")
     .replaceAll("./telegram-bot-answer-runtime.ts", "./bot-answer-runtime.mjs")
@@ -132,7 +207,11 @@ function replaceWorkerShellImports(source) {
       "./telegram-bot-worker-service-runtime.mjs"
     )
     .replaceAll("./main.ts", "./main.mjs")
-    .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs");
+    .replaceAll("../../../packages/channels/src/index.ts", "./channels.mjs")
+    .replaceAll(
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      "./telegram-bot-inbound-contract.mjs"
+    );
 }
 
 async function writeModule(tempDir, fileName, sourceText) {

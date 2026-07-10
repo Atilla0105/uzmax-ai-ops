@@ -23,6 +23,10 @@ import {
   type OrderImportWorkerPersistenceGateway
 } from "./main.ts";
 import { telegramBotConversationQueueDefaults } from "../../../packages/channels/src/index.ts";
+import {
+  parseTelegramBotAllowedChatExternalRefs,
+  parseTelegramBotAllowedParticipantExternalRefs
+} from "../../../packages/channels/src/telegram-bot-inbound-contract.ts";
 
 export { createTelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts";
 type Env = Record<string, string | undefined>;
@@ -233,23 +237,26 @@ function attachTelegramBotConversationLogs(
     log({
       attemptsMade: job.attemptsMade,
       event: "worker.telegram_bot.completed",
-      jobId: job.id,
       queueName,
       result: resultRecord(result),
       service: "worker"
     });
   });
-  worker.on("failed", (job, error) => {
+  worker.on("failed", () => {
     log({
-      error: error.message,
+      errorCode: "telegram_bot_job_failed",
       event: "worker.telegram_bot.failed",
-      jobId: job?.id,
       queueName,
       service: "worker"
     });
   });
-  worker.on("error", (error) => {
-    log({ error: error.message, event: "worker.error", queueName, service: "worker" });
+  worker.on("error", () => {
+    log({
+      errorCode: "telegram_bot_worker_error",
+      event: "worker.error",
+      queueName,
+      service: "worker"
+    });
   });
 }
 
@@ -288,6 +295,16 @@ function resolveWorkerServiceConfig(env: Env): WorkerServiceConfig {
       env.UZMAX_WORKER_TELEGRAM_BOT_AI_MEMBER_KEY,
       "telegramAiMemberKey"
     ),
+    telegramAllowedChatExternalRefs: queues.includes("telegram-bot-conversation")
+      ? parseTelegramBotAllowedChatExternalRefs(
+          env.UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS
+        )
+      : new Set<string>(),
+    telegramAllowedParticipantExternalRefs: queues.includes("telegram-bot-conversation")
+      ? parseTelegramBotAllowedParticipantExternalRefs(
+          env.UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS
+        )
+      : new Set<string>(),
     telegramAnswerMode,
     telegramBotApiBaseUrl: optionalHttpUrl(env.UZMAX_TELEGRAM_BOT_API_BASE_URL),
     telegramBotConversationQueueName:

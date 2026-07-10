@@ -101,14 +101,76 @@ describe("M8-01 bot runtime answer loop v0", () => {
     assert.equal(persisted.messages.length, 2);
     assert.equal(persisted.messages[0].direction, "INBOUND");
     assert.equal(persisted.messages[0].content.textLength, 10);
-    assert.equal(
-      JSON.stringify(persisted.messages[0].content).includes("setup help"),
-      false
-    );
+    assert.equal(persisted.messages[0].content.text, "setup help");
     assert.equal(persisted.messages[1].direction, "OUTBOUND");
     assert.equal(persisted.messages[1].deliveryStatus, "SENT");
     assert.equal(persisted.messages[1].content.text, "LLM composed setup answer.");
     assert.equal(persisted.ticket, undefined);
+  });
+
+  it("rejects unapproved or non-private injected jobs before business side effects", async () => {
+    const cases = [
+      { chatExternalRef: "telegram:chat:7999", providerUpdateId: "reject-chat" },
+      {
+        participantExternalRef: "telegram:user:8999",
+        providerUpdateId: "reject-participant"
+      },
+      { chatType: "group", providerUpdateId: "reject-group" }
+    ];
+    for (const input of cases) {
+      const gateway = createFakeGateway();
+      let answerCalls = 0;
+      const sendCalls = [];
+      const result = await workerRuntime.processTelegramBotConversationJob(
+        { ...payloadFor({ providerUpdateId: input.providerUpdateId }), ...input },
+        gateway,
+        {
+          admissionPolicy: {
+            allowedChatExternalRefs: new Set(["telegram:chat:7801"]),
+            allowedParticipantExternalRefs: new Set(["telegram:user:8801"])
+          },
+          answerRuntime: {
+            async answer() {
+              answerCalls += 1;
+              return { answerText: "must not happen", status: "answered" };
+            }
+          },
+          sendPort: {
+            async sendMessage(request) {
+              sendCalls.push(request);
+              return dryRunResult(request);
+            }
+          }
+        }
+      );
+      assert.equal(result.status, "rejected");
+      assert.equal(gateway.calls.reserve.length, 0);
+      assert.equal(gateway.calls.persist.length, 0);
+      assert.equal(answerCalls, 0);
+      assert.equal(sendCalls.length, 0);
+    }
+  });
+
+  it("rejects untrusted injected-job telemetry refs and dates before persistence", async () => {
+    const invalidFields = [
+      { traceId: "raw secret text" },
+      { providerUpdateId: "raw secret text" },
+      { updateKind: "injected" },
+      { occurredAt: "not-a-date" }
+    ];
+    for (const [index, invalid] of invalidFields.entries()) {
+      const gateway = createFakeGateway();
+      await assert.rejects(
+        () =>
+          workerRuntime.processTelegramBotConversationJob(
+            { ...payloadFor({ providerUpdateId: `83${index}0` }), ...invalid },
+            gateway
+          ),
+        /telegram bot conversation job/
+      );
+      assert.equal(gateway.calls.reserve.length, 0);
+      assert.equal(gateway.calls.persist.length, 0);
+    }
   });
 
   it("answers KB gaps through LLM and persists a follow-up ticket", async () => {

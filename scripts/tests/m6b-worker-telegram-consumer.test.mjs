@@ -12,6 +12,8 @@ describe("M6B-06b Telegram worker consumer", () => {
   it("starts the Telegram Bot conversation worker only through explicit queue config", () => {
     assert.match(workerShell, /UZMAX_WORKER_QUEUES/);
     assert.match(workerShell, /telegram-bot-conversation/);
+    assert.match(workerShell, /UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS/);
+    assert.match(workerShell, /UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS/);
     assert.match(workerShell, /createTelegramBotConversationBullmqWorker/);
     assert.match(workerShell, /telegramBotConversationQueueDefaults\.queueName/);
     assert.match(workerShell, /return \["order-import"\]/);
@@ -22,7 +24,17 @@ describe("M6B-06b Telegram worker consumer", () => {
     assert.match(workerRuntime, /rls_prisma_gateway/);
     assert.match(workerRuntime, /UZMAX_RLS_DATABASE_URL/);
     assert.match(workerRuntime, /createTelemetryOnlyTelegramBotConversationGateway/);
+    assert.match(workerRuntime, /admissionPolicy/);
     assert.match(workerShell, /worker\.telegram_bot\.completed/);
+    assert.match(workerShell, /telegram_bot_job_failed/);
+    const telegramLogStart = workerShell.indexOf(
+      "function attachTelegramBotConversationLogs"
+    );
+    const telegramLogEnd = workerShell.indexOf("function resolveWorkerServiceConfig");
+    assert.ok(telegramLogStart >= 0);
+    assert.ok(telegramLogEnd > telegramLogStart);
+    const telegramLogSection = workerShell.slice(telegramLogStart, telegramLogEnd);
+    assert.equal(telegramLogSection.includes("error.message"), false);
   });
 
   it("declares runtime dependency and CI true DB smoke coverage", () => {

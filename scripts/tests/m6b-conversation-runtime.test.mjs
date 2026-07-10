@@ -8,8 +8,14 @@ import ts from "typescript";
 const repoRoot = process.cwd();
 
 const channels = await importChannelsSource();
-const telegramApi = await importTelegramApiSource(channels.moduleUrl);
-const workerRuntime = await importWorkerConversationRuntime(channels.moduleUrl);
+const telegramApi = await importTelegramApiSource(
+  channels.moduleUrl,
+  channels.inboundModuleUrl
+);
+const workerRuntime = await importWorkerConversationRuntime(
+  channels.moduleUrl,
+  channels.inboundModuleUrl
+);
 const appModule = read("apps/api/src/app.module.ts");
 const spec = read("docs/specs/M6B-05a-conversation-runtime-build.md");
 
@@ -63,19 +69,72 @@ describe("M6B-05a conversation runtime", () => {
       },
       name: "telegram-bot-conversation"
     };
+    const bullmqEnv = {
+      UZMAX_REDIS_URL: "redis://127.0.0.1:6379",
+      UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID: "44444444-4444-4444-8444-444444444405",
+      UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE: "bullmq",
+      UZMAX_TELEGRAM_BOT_ORG_ID: "11111111-1111-4111-8111-111111111405",
+      UZMAX_TELEGRAM_BOT_TENANT_ID: "22222222-2222-4222-8222-222222222405"
+    };
+    assert.throws(
+      () =>
+        telegramApi.module.createTelegramBotIngressQueueProviderFromEnv({
+          env: bullmqEnv,
+          queue
+        }),
+      /approved chat allowlist is required/
+    );
+    assert.throws(
+      () =>
+        telegramApi.module.createTelegramBotIngressQueueProviderFromEnv({
+          env: {
+            ...bullmqEnv,
+            UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "telegram:chat:7001"
+          },
+          queue
+        }),
+      /approved participant allowlist is required/
+    );
+    let malformedFailure;
+    try {
+      telegramApi.module.createTelegramBotIngressQueueProviderFromEnv({
+        env: {
+          ...bullmqEnv,
+          UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "synthetic-malformed-ref"
+        },
+        queue
+      });
+    } catch (error) {
+      malformedFailure = error;
+    }
+    assert.match(malformedFailure?.message ?? "", /allowlist is invalid/);
+    assert.equal(
+      (malformedFailure?.message ?? "").includes("synthetic-malformed-ref"),
+      false
+    );
     const bullmq = telegramApi.module.createTelegramBotIngressQueueProviderFromEnv({
       env: {
-        UZMAX_REDIS_URL: "redis://127.0.0.1:6379",
-        UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID:
-          "44444444-4444-4444-8444-444444444405",
-        UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE: "bullmq",
-        UZMAX_TELEGRAM_BOT_ORG_ID: "11111111-1111-4111-8111-111111111405",
-        UZMAX_TELEGRAM_BOT_TENANT_ID: "22222222-2222-4222-8222-222222222405"
+        ...bullmqEnv,
+        UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "telegram:chat:7001",
+        UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS: "telegram:user:8001"
       },
       queue
     });
+    const rejected = await bullmq.enqueue({
+      chatExternalRef: "telegram:chat:7999",
+      chatType: "private",
+      contentKind: "text",
+      participantExternalRef: "telegram:user:8001",
+      provider: "telegram_bot",
+      providerUpdateId: "4999",
+      text: "synthetic rejected request",
+      updateKind: "message"
+    });
+    assert.equal(rejected.status, "rejected");
+    assert.equal(added.length, 0);
     const result = await bullmq.enqueue({
       chatExternalRef: "telegram:chat:7001",
+      chatType: "private",
       contentKind: "text",
       messageExternalRef: "telegram:message:9001",
       participantExternalRef: "telegram:user:8001",
@@ -93,6 +152,24 @@ describe("M6B-05a conversation runtime", () => {
     );
     assert.equal(added[0][2].jobId.endsWith("__5001"), true);
     assert.equal(added[0][2].jobId.includes(":"), false);
+
+    const core = new telegramApi.module.TelegramBotWebhookCore({
+      queue: bullmq,
+      secretToken: "synthetic-secret"
+    });
+    const headers = {
+      [telegramApi.module.TELEGRAM_BOT_SECRET_HEADER]: "synthetic-secret"
+    };
+    const admitted = await core.handleWebhook({
+      body: telegramUpdateForChat(7001),
+      headers
+    });
+    const opaqueRejected = await core.handleWebhook({
+      body: telegramUpdateForChat(7999),
+      headers
+    });
+    assert.deepEqual(opaqueRejected, admitted);
+    assert.equal(added.length, 2);
   });
 
   it("worker processor turns one accepted Bot update into controlled persistence input", async () => {
@@ -110,6 +187,10 @@ describe("M6B-05a conversation runtime", () => {
         };
       }
     };
+    assert.throws(
+      () => workerRuntime.module.createTelegramBotConversationBullmqProcessor(gateway),
+      /inbound admission policy is required/
+    );
     const payload = channels.module.createTelegramBotConversationJobPayload({
       channelConnectionId: "44444444-4444-4444-8444-444444444405",
       enqueuedAt: "2026-06-26T09:00:00.000Z",
@@ -118,6 +199,7 @@ describe("M6B-05a conversation runtime", () => {
       traceId: "trace:m6b-05a",
       update: {
         chatExternalRef: "telegram:chat:7001",
+        chatType: "private",
         contentKind: "text",
         messageExternalRef: "telegram:message:9001",
         participantExternalRef: "telegram:user:8001",
@@ -130,16 +212,19 @@ describe("M6B-05a conversation runtime", () => {
 
     const result = await workerRuntime.module.processTelegramBotConversationJob(
       payload,
-      gateway
+      gateway,
+      admissionPolicy()
     );
 
     assert.equal(result.status, "accepted");
     assert.equal(calls.length, 1);
     assert.equal(calls[0].message.content.textLength, 37);
     assert.equal(
-      JSON.stringify(calls[0].message.content).includes("synthetic text"),
-      false
+      calls[0].message.content.text,
+      "synthetic text must not be stored raw"
     );
+    assert.equal(calls[0].customerIdentity.externalSubjectRef, "telegram:user:8001");
+    assert.equal(calls[0].customerIdentity.identityKind, "channel_subject");
     assert.equal(calls[0].ticket.summary.includes("telegram_bot_text"), true);
   });
 
@@ -156,13 +241,24 @@ describe("M6B-05a conversation runtime", () => {
 });
 
 async function importChannelsSource() {
-  const moduleUrl = transpileToTempModule("packages/channels/src/index.ts");
-  return { module: await import(moduleUrl), moduleUrl };
+  const inboundModuleUrl = transpileToTempModule(
+    "packages/channels/src/telegram-bot-inbound-contract.ts"
+  );
+  const source = read("packages/channels/src/index.ts").replaceAll(
+    "./telegram-bot-inbound-contract.ts",
+    inboundModuleUrl
+  );
+  const moduleUrl = moduleUrlFromSource(transpileSource(source));
+  return { inboundModuleUrl, module: await import(moduleUrl), moduleUrl };
 }
 
-async function importTelegramApiSource(channelsModuleUrl) {
+async function importTelegramApiSource(channelsModuleUrl, inboundModuleUrl) {
   const source = read("apps/api/src/telegram-bot.ts")
     .replace("../../../packages/channels/src/index.ts", channelsModuleUrl)
+    .replace(
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      inboundModuleUrl
+    )
     .replace('import { Queue, type QueueOptions } from "bullmq";', "")
     .replace(
       /new Queue\(telegramBotConversationQueueDefaults\.queueName,\s*\{[\s\S]*?\n\s*\}\),/,
@@ -172,7 +268,7 @@ async function importTelegramApiSource(channelsModuleUrl) {
   return { module: await import(moduleUrl), moduleUrl };
 }
 
-async function importWorkerConversationRuntime(channelsModuleUrl) {
+async function importWorkerConversationRuntime(channelsModuleUrl, inboundModuleUrl) {
   const handoffUrl = transpileToTempModule(
     "packages/capabilities/handoff/src/index.ts"
   );
@@ -187,12 +283,37 @@ async function importWorkerConversationRuntime(channelsModuleUrl) {
   const dbUrl = transpileToTempModule("packages/db/src/index.ts");
   const source = read("apps/worker/src/conversation-runtime.ts")
     .replace("../../../packages/channels/src/index.ts", channelsModuleUrl)
+    .replace(
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      inboundModuleUrl
+    )
     .replace("../../../packages/capabilities/handoff/src/index.ts", handoffUrl)
     .replace("../../../packages/db/src/index.ts", dbUrl)
     .replace("./telegram-bot-ticket-follow-up.ts", ticketFollowUpUrl)
     .replace('import { Worker, type Job, type QueueOptions } from "bullmq";', "");
   const moduleUrl = moduleUrlFromSource(transpileSource(source));
   return { module: await import(moduleUrl), moduleUrl };
+}
+
+function telegramUpdateForChat(chatId) {
+  return {
+    message: {
+      chat: { id: chatId, type: "private" },
+      from: { id: 8001 },
+      message_id: 9101,
+      text: "synthetic opaque acknowledgement request"
+    },
+    update_id: 6101
+  };
+}
+
+function admissionPolicy() {
+  return {
+    admissionPolicy: {
+      allowedChatExternalRefs: new Set(["telegram:chat:7001"]),
+      allowedParticipantExternalRefs: new Set(["telegram:user:8001"])
+    }
+  };
 }
 
 function transpileToTempModule(relativePath) {

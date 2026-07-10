@@ -206,7 +206,6 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
       fake.transactions[0].slice(0, 5).map((entry) => entry.kind),
       ["role", "set_config", "set_config", "conversation_lock", "ticket_lock"]
     );
-
     const retry = await service.createHandoffTicket(accessContext, {
       conversationId: CONVERSATION_A_OPEN,
       reason: "same actor retry"
@@ -297,6 +296,10 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
       new Set(result.ticket.events.map((event) => event.id)).size,
       result.ticket.events.length
     );
+    assert.ok(fake.transactionOptions.length >= 5);
+    for (const options of fake.transactionOptions) {
+      assert.deepEqual(options, { maxWait: 60_000, timeout: 60_000 });
+    }
 
     await assert.rejects(
       () =>

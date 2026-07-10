@@ -135,6 +135,7 @@ export function fakePrisma() {
         tenantId: TENANT_A
       }
     ],
+    transactionOptions: [],
     transactions: []
   };
   const nextEventId = () => {
@@ -142,12 +143,13 @@ export function fakePrisma() {
     return `generated-event-${generatedEventCount}`;
   };
   Object.assign(fake, prismaSurface(fake, nextEventId), {
-    $transaction: async (operationsOrAction) => {
+    $transaction: async (operationsOrAction, options) => {
       if (typeof operationsOrAction !== "function") {
         const result = await Promise.all(operationsOrAction);
         fake.transactions.push(result);
         return result;
       }
+      fake.transactionOptions.push(options);
       return transactionMutex(async () => {
         const state = cloneState(fake);
         const log = [];

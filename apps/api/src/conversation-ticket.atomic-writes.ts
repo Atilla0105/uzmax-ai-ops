@@ -56,7 +56,8 @@ type AtomicPrismaTransaction = {
 
 export type AtomicPrismaPort = AtomicPrismaTransaction & {
   $transaction<T>(
-    action: (transaction: AtomicPrismaTransaction) => Promise<T>
+    action: (transaction: AtomicPrismaTransaction) => Promise<T>,
+    options: { maxWait: number; timeout: number }
   ): Promise<T>;
 };
 
@@ -85,6 +86,7 @@ type MutationInput = TakeoverInput | TicketActionInput;
 
 const runtimeRoleSql = 'set local role "uzmax_app_runtime"';
 const rlsKeys = { orgId: "app.org_id", tenantId: "app.tenant_id" } as const;
+const atomicTransactionOptions = { maxWait: 60_000, timeout: 60_000 } as const;
 
 export function createInMemoryAtomicWriter(store: MemoryStore): AtomicWriter {
   const mutex = createMutex();
@@ -97,13 +99,15 @@ export function createInMemoryAtomicWriter(store: MemoryStore): AtomicWriter {
 }
 
 export function createPrismaAtomicWriter(prisma: AtomicPrismaPort): AtomicWriter {
+  const mutate = (context: AccessContext, input: MutationInput) =>
+    prisma.$transaction(
+      (tx) => prismaMutation(tx, context, input),
+      atomicTransactionOptions
+    );
   return {
-    applyTicketAction: async (context, input) =>
-      (await prisma.$transaction((tx) => prismaMutation(tx, context, input))).ticket,
+    applyTicketAction: async (context, input) => (await mutate(context, input)).ticket,
     takeoverConversation: async (context, input) =>
-      takeoverResult(
-        await prisma.$transaction((tx) => prismaMutation(tx, context, input))
-      )
+      takeoverResult(await mutate(context, input))
   };
 }
 

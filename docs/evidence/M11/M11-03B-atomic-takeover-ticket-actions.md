@@ -1,6 +1,6 @@
 # M11-03B Atomic Takeover And Ticket Actions Evidence
 
-Status: `ci_failed__transaction_limits_fix_pending`
+Status: `implementation_fixed_locally__latest_sha_ci_pending`
 Spec: `docs/specs/M11-03B-atomic-takeover-ticket-actions.md`
 Base: `ebdb05c31ded16e160729ae4050249bdcd46baa1`
 Branch: `codex/m11-03b-atomic-takeover`
@@ -80,24 +80,30 @@ was addressed in the spec:
   close/reopen fail-closed behavior. A separate self-invoking sanitized true-DB
   runner and CI step cover real PostgreSQL races, RLS isolation and cleanup.
 - Final source shape is 8 changed source files, 2 new source files and net
-  source LOC 591; both new modules and the repository remain under the 400
+  source LOC 595; both new modules and the repository remain under the 400
   nonblank-line ceiling. Test/support is 9 files with 2 new files. There are no
   schema, migration, generated, lock, deploy or provider changes.
 
-## First CI Failure And Root Cause
+## First CI Failure And Highest-Confidence Diagnosis
 
 - PR #302 run `29111103410` on SHA `529e87bac3058dc934e0e7c90cddf5cb35bc14ef`
   failed in the existing M11 conversation/customer read true-DB smoke before
   the new atomic race smoke could run.
+- That runner emitted only its generic sanitized failure token, so the first run
+  did not preserve a failing stage or raw Prisma code. The diagnosis below is
+  based on the code path, Prisma defaults and the accepted pooler evidence, not
+  a claimed P2028 log line.
 - The first atomic writer used Prisma interactive transactions without explicit
   options, so it inherited the 2-second `maxWait` and 5-second transaction
   defaults on the Supabase transaction-pooler path.
 - ADR-001 records that default interactive path as unsafe, while the M8 worker
   already proves the bounded `{ maxWait: 60_000, timeout: 60_000 }` contract on
-  the same controlled true-DB lane. M11-03B now adopts that timing only for its
-  two lock-driven atomic entrypoints; batch reads remain unchanged.
-- No rerun is being used to hide the failure. The production writer and a
-  sanitized fixed-stage diagnostic must be corrected before the next CI run.
+  the same controlled true-DB lane in run `28884405625` / job `85680739303`.
+  M11-03B now adopts that timing only for its two lock-driven atomic
+  entrypoints; batch reads remain unchanged.
+- No rerun is being used to hide the failure. The production writer now passes
+  the bounded options, its fake asserts them, and the legacy runner emits only
+  an allowlisted fixed-stage diagnostic before the unchanged generic failure.
 
 ## Validation Record
 
@@ -113,18 +119,19 @@ was addressed in the spec:
 | format/type/lint | pass | Prettier, TypeScript and full ESLint pass; new files remain within line/complexity limits |
 | architecture/quality static gates | pass | dependency-cruiser, jscpd, knip, forbidden-terms and repository guards pass |
 | build | pass | API, worker, cron TypeScript builds and admin Vite production build pass |
-| source/test budget | pass | 8 source / 2 new / net 591; 9 test-support / 2 new; no exception |
+| source/test budget | pass | 8 source / 2 new / net 595; 9 test-support / 2 new; no exception |
 | local true-DB race/RLS/residue | not run | `UZMAX_RLS_DATABASE_URL` is absent locally; no DB claim is made |
 | final implementation spec compliance review | pass | no implementation blocker/major/minor; stale evidence and RLS anchor corrected here |
 | code quality/security/RLS review | pass | no blocker/major/minor; the only test-fake fault-flag finding was fixed and spot-checked |
 | CodeRabbit | pass with transparent rerun boundary | complete review found no production issue; an independent review's only fake minor was fixed; latest remote rerun was rate-limited, so no fresh zero-issue claim is made |
-| PR latest-SHA CI | fail then fix pending | PR #302 run 29111103410 failed before the new atomic smoke; bounded transaction options are pending |
+| PR latest-SHA CI | fail then latest-SHA pending | PR #302 run 29111103410 failed before the new atomic smoke; bounded production fix is locally validated |
 
 ## Current Conclusion
 
 M11-03B remains open after a real transaction-pooler failure on its first PR
-run. It is not mergeable until the bounded production transaction options are
-implemented and controlled latest-SHA CI passes both the existing M11 read
-smoke and the new true-PostgreSQL atomic race/RLS/residue smoke. M11-03 overall
-also remains open until this slice merges. Worker ownership/send fencing,
-explicit Bot resume, aligned staging, production, GA and 1.0 remain open.
+run. The bounded production transaction fix is locally validated, but the slice
+is not mergeable until controlled latest-SHA CI passes both the existing M11
+read smoke and the new true-PostgreSQL atomic race/RLS/residue smoke. M11-03
+overall also remains open until this slice merges. Worker ownership/send
+fencing, explicit Bot resume, aligned staging, production, GA and 1.0 remain
+open.

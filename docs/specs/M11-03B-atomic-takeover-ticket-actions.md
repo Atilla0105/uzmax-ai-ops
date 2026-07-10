@@ -95,6 +95,11 @@ the same fence.
 - focused fake Prisma: `m8-conversation-ticket-api-fixture.mjs`;
 - existing read/action true-DB helper:
   `run-m10-conversation-ticket-actions-true-db-smoke.mjs`.
+- accepted pooler default and interactive failure evidence:
+  `docs/adr/ADR-001-rls-prisma-pool.md`;
+- bounded interactive timing precedent:
+  `docs/evidence/M8/M8-03-runtime-active-answer-wiring.md` and its successful
+  true-DB run `28884405625` / job `85680739303`.
 
 ADR-001 keeps Prisma batch transactions as the repository default because the
 Supabase transaction pooler can reject interactive transactions at Prisma's

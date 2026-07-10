@@ -18,14 +18,18 @@ const PARTICIPANT_REF = "telegram:user:9901";
 const READ_TEXT = "controlled-m11-03a-read";
 
 export async function runM10ConversationTicketActionsTrueDbSmoke() {
+  let failureStage = "bootstrap";
   try {
-    await runConversationTicketTrueDbSmoke();
+    await runConversationTicketTrueDbSmoke((stage) => {
+      failureStage = stage;
+    });
   } catch {
+    console.error(`conversation-ticket-true-db-smoke-diagnostic:${failureStage}`);
     throw new Error("conversation-ticket-true-db-smoke-failed");
   }
 }
 
-async function runConversationTicketTrueDbSmoke() {
+async function runConversationTicketTrueDbSmoke(markStage) {
   const databaseUrl = readRlsDatabaseUrl();
   const prisma = await createSmokePrismaClient(databaseUrl);
 
@@ -45,6 +49,7 @@ async function runConversationTicketTrueDbSmoke() {
     const tenantA = accessContext(TENANT_A_ID, ["conversation:read", "ticket:write"]);
     const tenantB = accessContext(TENANT_B_ID, ["conversation:read", "ticket:write"]);
 
+    markStage("read_contract");
     const initialDetail = await service.getConversationDetail(tenantA, CONVERSATION_ID);
     assert.equal(initialDetail.slaPolicyRef, "value0-staging-support-default-v1");
     assert.equal(initialDetail.takeoverReadiness, "atomic_ready");
@@ -60,6 +65,7 @@ async function runConversationTicketTrueDbSmoke() {
     assert.equal(initialDetail.messages[0].externalMessageRef.length, 256);
     assert.equal(initialDetail.operatorState.canTakeover, true);
 
+    markStage("wrong_tenant");
     await assert.rejects(
       () =>
         service.createHandoffTicket(tenantB, {
@@ -68,6 +74,7 @@ async function runConversationTicketTrueDbSmoke() {
         }),
       /conversation not found/
     );
+    markStage("takeover_create");
     const handoff = await service.createHandoffTicket(tenantA, {
       conversationId: CONVERSATION_ID,
       reason: "controlled handoff request"
@@ -81,6 +88,7 @@ async function runConversationTicketTrueDbSmoke() {
       handoff.ticket.events.map((event) => event.type),
       ["created", "claimed", "locked"]
     );
+    markStage("ticket_actions");
     const retry = await service.createHandoffTicket(tenantA, {
       conversationId: CONVERSATION_ID,
       reason: "controlled same actor retry"
@@ -116,6 +124,7 @@ async function runConversationTicketTrueDbSmoke() {
       /support state conflict/
     );
 
+    markStage("isolation");
     const detail = await service.getConversationDetail(tenantA, CONVERSATION_ID);
     assert.equal(detail.tickets[0].id, ticketId);
     assert.equal(detail.tickets[0].events.length, 5);
@@ -132,6 +141,7 @@ async function runConversationTicketTrueDbSmoke() {
       /ticket not found/
     );
 
+    markStage("rls_counts");
     assert.deepEqual(await countVisibleRows(prisma, TENANT_A_ID), {
       conversations: 1,
       customers: 1,
@@ -148,6 +158,7 @@ async function runConversationTicketTrueDbSmoke() {
       messages: 0,
       tickets: 0
     });
+    markStage("cleanup");
     await cleanupSyntheticRows(prisma);
     assert.equal(await syntheticResidueCount(prisma), 0);
     console.log(

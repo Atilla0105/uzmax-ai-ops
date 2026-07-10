@@ -96,11 +96,18 @@ the same fence.
 - existing read/action true-DB helper:
   `run-m10-conversation-ticket-actions-true-db-smoke.mjs`.
 
-One new `conversation-ticket.atomic-writes.ts` is authorized because the existing
-repository is already 430 physical lines/at its nonblank lint ceiling. It owns
-the single transition planner, in-memory mutex mutation and interactive Prisma
-mutation helpers. The old public `saveConversation`/`saveTicket` seams must be
-removed so they cannot remain a bypass.
+Two new source files are authorized because the existing repository is already
+430 physical lines/at its nonblank lint ceiling, while the stopped one-file
+shape reached 642 nonblank lines:
+
+- `conversation-ticket.atomic-state.ts` owns the single transition/event planner
+  and eligibility;
+- `conversation-ticket.atomic-writes.ts` owns the in-memory mutex and interactive
+  Prisma transaction adapters that execute that planner.
+
+Neither file may exceed the 400-line lint limit. The old public
+`saveConversation`/`saveTicket` seams must be removed so they cannot remain a
+bypass.
 
 ## 触碰模块/文件
 
@@ -108,6 +115,7 @@ removed so they cannot remain a bypass.
 - `docs/evidence/M11/M11-03B-atomic-takeover-ticket-actions.md`
 - `.github/workflows/ci.yml`
 - `apps/api/scripts/runtime-compiler.mjs`
+- `apps/api/src/conversation-ticket.atomic-state.ts`
 - `apps/api/src/conversation-ticket.atomic-writes.ts`
 - `apps/api/src/conversation-ticket.controller.ts`
 - `apps/api/src/conversation-ticket.errors.ts`
@@ -135,9 +143,10 @@ removed so they cannot remain a bypass.
 
 ## Change Budget
 
-- Source: changed source files <= 7, net source LOC <= 600, new source files <= 1.
-- New source: one atomic-write module; repository growth is offset by removing
-  the old non-atomic save seams and must remain within lint limits.
+- Source: changed source files <= 8, net source LOC <= 600, new source files <= 2.
+- New source: one pure state planner and one atomic runtime writer; repository
+  growth is offset by removing the old non-atomic save seams. Each new file and
+  the repository must remain within lint limits.
 - Test/support: changed files <= 9, new test/support files <= 2; no deleted
   tests, skip/only, weakened assertion, broad mock or snapshot expansion.
 - Config: one CI workflow edit.
@@ -296,7 +305,8 @@ Invalid action type or invalid text is 400; wrong tenant/missing ticket is opaqu
 ## Implementation Steps
 
 1. Commit this spec/evidence before source edits.
-2. Implement the single transition planner and in-memory/Prisma atomic writers.
+2. Implement the single transition/event planner, then the in-memory/Prisma
+   atomic writers that consume it.
 3. Replace service/repository non-atomic save seams and tighten controller/error
    mapping plus permission-aware read readiness.
 4. Upgrade fake Prisma mutex/rollback behavior and focused matrices/races.
@@ -328,7 +338,7 @@ Invalid action type or invalid text is 400; wrong tenant/missing ticket is opaqu
 - If the existing Prisma client cannot support interactive transactions with
   scoped role/settings -> keep M11-03B open and create an ADR-backed runtime
   path; never fall back to batch/read-then-save writes.
-- If source exceeds 600 or the new module exceeds lint limits -> stop, narrow
+- If source exceeds 600 or either new module exceeds lint limits -> stop, narrow
   the implementation surface or open a serial source sub-spec; test splitting
   is not a source-budget remedy and no silent exception is allowed.
 - If true DB cannot prove races/residue -> keep the slice open; local mutex tests

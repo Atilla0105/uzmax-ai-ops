@@ -1,6 +1,6 @@
 # M11-03B Atomic Takeover And Ticket Actions Evidence
 
-Status: `spec_frozen__pre_review_passed__implementation_not_started`
+Status: `implementation_paused__two_source_shape_review_pending`
 Spec: `docs/specs/M11-03B-atomic-takeover-ticket-actions.md`
 Base: `ebdb05c31ded16e160729ae4050249bdcd46baa1`
 Branch: `codex/m11-03b-atomic-takeover`
@@ -24,8 +24,9 @@ Worktree:
 
 - Current handoff performs read -> separate conversation save -> separate ticket
   save; current actions perform read -> separate ticket save.
-- Repository physical length is already 430 lines; a compact atomic-write module
-  is the only authorized new source file and old save bypasses must be removed.
+- Repository physical length is already 430 lines; the authorized pure planner
+  plus runtime writer keep atomic responsibilities out of that capped file, and
+  old save bypasses must be removed.
 - Current fake Prisma uses eager batch `Promise.all` and has no interactive
   transaction rollback/mutex proof.
 - Current M10 true-DB helper encodes the pre-M11 close/reopen behavior and must be
@@ -44,6 +45,16 @@ was addressed in the spec:
 - defined permission-before-state readiness precedence, non-authoritative read
   hints and same-interactive-transaction ticket lookup/locking.
 
+## Source Shape Stop
+
+- The first one-file atomic source shape stopped before repository/service/test
+  wiring at 642 nonblank lines, above the 400-line lint ceiling.
+- No source commit, budget exception, schema/deploy/external mutation or test
+  weakening occurred.
+- The spec now separates the single pure transition/event planner from the two
+  runtime transaction adapters. Total source remains capped at 600, with 8
+  changed/2 new source files and no exception.
+
 ## Validation Record
 
 | Gate | Result | Evidence |
@@ -52,15 +63,16 @@ was addressed in the spec:
 | existing implementation search | pass | one replacement seam; new source rationale recorded |
 | first spec compliance pre-review | fail then fixed | budget, race, path parsing and global-claim findings addressed before source |
 | second spec compliance pre-review | pass | all prior blocker/major/minor findings closed; no new issue |
-| focused atomic/matrix/race tests | pending | implementation not started |
-| true-DB race/RLS/residue | pending | implementation not started |
-| full static/test/build | pending | implementation not started |
+| two-source shape pre-review | pass after minor fix | 8 source / 2 new, 9 test-support / 2 new, no exception; stale evidence wording removed |
+| focused atomic/matrix/race tests | pending | two-source implementation in progress; tests not run |
+| true-DB race/RLS/residue | pending | runner not wired |
+| full static/test/build | pending | implementation in progress |
 | final spec compliance review | pending | before quality review |
 | code quality/security/RLS review | pending | after compliance |
 | PR latest-SHA CI | pending | PR not opened |
 
 ## Current Conclusion
 
-M11-03B has a bounded decision-complete contract but no implementation evidence
-yet. M11-03 overall, worker ownership, aligned staging, production, GA and 1.0
-remain open.
+M11-03B has a bounded decision-complete contract and an in-progress two-source
+implementation, but no passing implementation evidence yet. M11-03 overall,
+worker ownership, aligned staging, production, GA and 1.0 remain open.

@@ -2,7 +2,7 @@ import {
   type TelegramBotConversationPersistenceGateway,
   type TelegramBotConversationRuntimeOptions
 } from "./conversation-runtime.ts";
-import { PrismaTelegramBotConversationPersistenceGateway } from "./telegram-bot-conversation-persistence.ts";
+import { PrismaTelegramBotConversationPersistenceGateway } from "./telegram-bot-conversation.atomic-writes.ts";
 import {
   createDbBackedTelegramBotAnswerRuntime,
   type TelegramBotAnswerRuntimePrismaPort

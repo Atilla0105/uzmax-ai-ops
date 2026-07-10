@@ -1,116 +1,34 @@
-import { randomUUID } from "node:crypto";
-
 import { Worker, type Job, type QueueOptions } from "bullmq";
-
-import type { RlsTenantContext } from "../../../packages/db/src/index.ts";
 import {
   telegramBotConversationQueueDefaults,
-  type TelegramBotConversationJobPayload,
-  type TelegramBotOutboundDeliveryStatus,
-  type TelegramBotOutboundSendPort,
-  type TelegramBotOutboundSendResult
+  type TelegramBotConversationJobPayload
 } from "../../../packages/channels/src/index.ts";
 import {
   assertTelegramBotInboundPayload,
-  createTelegramBotCustomerIdentityDraft,
-  createTelegramBotInboundMessageContent,
-  isTelegramBotInboundAllowed,
-  type TelegramBotCustomerIdentityDraft,
-  type TelegramBotInboundAdmissionPolicy
+  isTelegramBotInboundAllowed
 } from "../../../packages/channels/src/telegram-bot-inbound-contract.ts";
-import type { TelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts";
-import { createTelegramBotTicketFollowUp } from "./telegram-bot-ticket-follow-up.ts";
-
-type MaybePromise<T> = T | Promise<T>;
-type RuntimeStatus = "accepted" | "deduped" | "rejected";
-type RuntimeBranch = "answer" | "handoff";
-type RuntimeIds = Partial<
-  Record<"conversationId" | "messageId" | "outboundMessageId" | "ticketId", string>
->;
-export type RuntimeResult = RuntimeIds &
-  Record<"providerUpdateId" | "traceId", string> & {
-    runtimeBranch?: RuntimeBranch;
-    status: RuntimeStatus;
-  };
-type RuntimeDedupeResult = Record<"providerUpdateId" | "traceId", string> & {
-  status: "deduped" | "reserved";
-};
-
-export type RuntimePersistInput = AnswerPersistInput | HandoffPersistInput;
-type BasePersistInput = {
-  conversation: ConversationDraft;
-  customerIdentity?: TelegramBotCustomerIdentityDraft;
-  dedupe: DedupeDraft;
-  message: MessageDraft;
-  runtimeBranch: RuntimeBranch;
-  traceId: string;
-};
-type HandoffPersistInput = BasePersistInput & {
-  runtimeBranch: "handoff";
-  ticket: TicketDraft;
-  ticketEvent: TicketEventDraft;
-};
-type AnswerPersistInput = BasePersistInput & {
-  outboundMessage: OutboundMessageDraft;
-  runtimeBranch: "answer";
-  ticket?: TicketDraft;
-  ticketEvent?: TicketEventDraft;
-};
-
-type ConversationDraft = RlsTenantContext & {
-  channelConnectionId: string;
-  externalConversationRef: string;
-  id: string;
-  lastMessageAt: string;
-  participantExternalRef: string;
-};
-type MessageDraft = RlsTenantContext & {
-  channelConnectionId: string;
-  content: Record<string, unknown>;
-  contentKind: TelegramBotConversationJobPayload["contentKind"];
-  conversationId: string;
-  externalMessageRef?: string;
-  id: string;
-  occurredAt: string;
-};
-type OutboundMessageDraft = RlsTenantContext & {
-  channelConnectionId: string;
-  content: Record<string, unknown>;
-  contentKind: "text";
-  conversationId: string;
-  deliveryStatus: TelegramBotOutboundDeliveryStatus;
-  externalMessageRef?: string;
-  id: string;
-  occurredAt: string;
-};
-type TicketDraft = RlsTenantContext &
-  Record<"conversationId" | "id" | "summary", string>;
-type TicketEventDraft = RlsTenantContext &
-  Record<"id" | "ticketId" | "traceId", string>;
-export type DedupeDraft = RlsTenantContext &
-  Record<"channelConnectionId" | "providerUpdateId" | "updateKind", string> & {
-    reserved?: boolean;
-  };
-
-export type TelegramBotConversationPersistenceGateway = {
-  persistAcceptedUpdate(input: RuntimePersistInput): MaybePromise<RuntimeResult>;
-  reserveProviderUpdate?(
-    input: DedupeDraft & { traceId: string }
-  ): MaybePromise<RuntimeDedupeResult>;
-};
-
-export type TelegramBotConversationRuntimeOptions = {
-  admissionPolicy?: TelegramBotInboundAdmissionPolicy;
-  answerRuntime?: TelegramBotAnswerRuntime;
-  sendPort?: TelegramBotOutboundSendPort;
-};
-
+import {
+  processAdmittedTelegramBotConversationJob,
+  type DedupeDraft,
+  type FinalizePreparedAnswerInput,
+  type PreparationResult,
+  type RuntimePersistInput,
+  type RuntimeResult,
+  type TelegramBotConversationPersistenceGateway,
+  type TelegramBotConversationRuntimeOptions
+} from "./telegram-bot-conversation.flow.ts";
+type ConversationRow = Record<string, unknown>;
+type ConversationDisposition = "bot" | "closed" | "operator";
+type DispositionResolver = (
+  ticket: ConversationRow | undefined,
+  allowPendingWithoutTicket: boolean
+) => ConversationDisposition | undefined;
+export type * from "./telegram-bot-conversation.flow.ts";
 type RuntimeJob = Job<
   TelegramBotConversationJobPayload,
   RuntimeResult,
   typeof telegramBotConversationQueueDefaults.jobName
 >;
-
 export async function processTelegramBotConversationJob(
   payload: TelegramBotConversationJobPayload,
   gateway: TelegramBotConversationPersistenceGateway,
@@ -118,202 +36,13 @@ export async function processTelegramBotConversationJob(
 ): Promise<RuntimeResult> {
   assertTelegramBotInboundPayload(payload);
   if (!isTelegramBotInboundAllowed(payload, options.admissionPolicy)) {
-    return rejectedResult(payload);
+    return {
+      providerUpdateId: payload.providerUpdateId,
+      status: "rejected",
+      traceId: payload.traceId
+    };
   }
-  const occurredAt = payload.occurredAt ?? payload.enqueuedAt;
-  const conversationId = randomUUID();
-  const messageId = randomUUID();
-  const conversation = {
-    channelConnectionId: payload.channelConnectionId,
-    externalConversationRef:
-      payload.chatExternalRef ?? `telegram:update:${payload.providerUpdateId}`,
-    id: conversationId,
-    lastMessageAt: occurredAt,
-    orgId: payload.orgId,
-    participantExternalRef: payload.participantExternalRef ?? "telegram:user:unknown",
-    tenantId: payload.tenantId
-  };
-  const dedupe = {
-    channelConnectionId: payload.channelConnectionId,
-    orgId: payload.orgId,
-    providerUpdateId: payload.providerUpdateId,
-    tenantId: payload.tenantId,
-    updateKind: payload.updateKind
-  };
-  const customerIdentity = createTelegramBotCustomerIdentityDraft(payload);
-  const message = {
-    channelConnectionId: payload.channelConnectionId,
-    content: createTelegramBotInboundMessageContent(payload),
-    contentKind: payload.contentKind,
-    conversationId,
-    externalMessageRef: payload.messageExternalRef,
-    id: messageId,
-    occurredAt,
-    orgId: payload.orgId,
-    tenantId: payload.tenantId
-  };
-
-  if (canAttemptAnswer(payload, options)) {
-    return processAnswerableTextJob({
-      conversation,
-      conversationId,
-      customerIdentity,
-      dedupe,
-      gateway,
-      message,
-      options,
-      payload
-    });
-  }
-
-  return gateway.persistAcceptedUpdate(
-    createHandoffPersistInput({
-      conversation,
-      customerIdentity,
-      dedupe,
-      message,
-      payload,
-      reasonCode: "requires_operator_review"
-    })
-  );
-}
-
-async function processAnswerableTextJob(input: {
-  conversation: ConversationDraft;
-  conversationId: string;
-  customerIdentity?: TelegramBotCustomerIdentityDraft;
-  dedupe: DedupeDraft;
-  gateway: TelegramBotConversationPersistenceGateway;
-  message: MessageDraft;
-  options: TelegramBotConversationRuntimeOptions & {
-    answerRuntime: TelegramBotAnswerRuntime;
-    sendPort: TelegramBotOutboundSendPort;
-  };
-  payload: TelegramBotConversationJobPayload;
-}): Promise<RuntimeResult> {
-  if (!input.gateway.reserveProviderUpdate) {
-    return input.gateway.persistAcceptedUpdate(
-      createHandoffPersistInput({
-        ...input,
-        reasonCode: "answer_dedupe_reserve_unavailable"
-      })
-    );
-  }
-
-  const reserve = await input.gateway.reserveProviderUpdate({
-    ...input.dedupe,
-    traceId: input.payload.traceId
-  });
-  if (reserve.status === "deduped") return dedupedAnswerResult(input.payload);
-
-  const reservedDedupe = { ...input.dedupe, reserved: true };
-  try {
-    const answer = await input.options.answerRuntime.answer(
-      answerRequest(input.payload)
-    );
-    if (answer.status !== "answered") {
-      return input.gateway.persistAcceptedUpdate(
-        createHandoffPersistInput({
-          ...input,
-          dedupe: reservedDedupe,
-          reasonCode: answer.reasonCode
-        })
-      );
-    }
-
-    const answerTextValue = requiredTextValue(answer.answerText, "answer text").slice(
-      0,
-      4096
-    );
-    const followUp = createAnswerFollowUp(
-      answer.followUp,
-      input.conversation,
-      input.payload
-    );
-    const sendResult = await input.options.sendPort.sendMessage(
-      sendRequest(input.payload, answerTextValue)
-    );
-
-    return input.gateway.persistAcceptedUpdate({
-      conversation: input.conversation,
-      customerIdentity: input.customerIdentity,
-      dedupe: reservedDedupe,
-      message: input.message,
-      outboundMessage: outboundMessageDraft(input, answerTextValue, sendResult),
-      runtimeBranch: "answer",
-      ...(followUp ?? {}),
-      traceId: input.payload.traceId
-    });
-  } catch {
-    return input.gateway.persistAcceptedUpdate(
-      createHandoffPersistInput({
-        ...input,
-        dedupe: reservedDedupe,
-        reasonCode: "answer_runtime_error"
-      })
-    );
-  }
-}
-
-function dedupedAnswerResult(
-  payload: TelegramBotConversationJobPayload
-): RuntimeResult {
-  return {
-    providerUpdateId: payload.providerUpdateId,
-    runtimeBranch: "answer",
-    status: "deduped",
-    traceId: payload.traceId
-  };
-}
-
-function answerRequest(payload: TelegramBotConversationJobPayload) {
-  return {
-    channelConnectionId: payload.channelConnectionId,
-    chatExternalRef: payload.chatExternalRef,
-    orgId: payload.orgId,
-    providerUpdateId: payload.providerUpdateId,
-    tenantId: payload.tenantId,
-    text: requiredTextValue(payload.text, "telegram bot text"),
-    traceId: payload.traceId
-  };
-}
-
-function sendRequest(
-  payload: TelegramBotConversationJobPayload,
-  answerTextValue: string
-) {
-  return {
-    channelConnectionId: payload.channelConnectionId,
-    chatExternalRef: requiredTextValue(payload.chatExternalRef, "chatExternalRef"),
-    idempotencyKey: createAnswerIdempotencyKey(payload),
-    orgId: payload.orgId,
-    replyToMessageExternalRef: payload.messageExternalRef,
-    tenantId: payload.tenantId,
-    text: answerTextValue,
-    traceId: payload.traceId
-  };
-}
-
-function outboundMessageDraft(
-  input: {
-    conversationId: string;
-    payload: TelegramBotConversationJobPayload;
-  },
-  answerTextValue: string,
-  sendResult: TelegramBotOutboundSendResult
-): OutboundMessageDraft {
-  return {
-    channelConnectionId: input.payload.channelConnectionId,
-    content: safeOutboundMessageContent(answerTextValue, sendResult),
-    contentKind: "text",
-    conversationId: input.conversationId,
-    deliveryStatus: sendResult.status,
-    externalMessageRef: sendResult.providerMessageRef,
-    id: randomUUID(),
-    occurredAt: sendResult.sentAt,
-    orgId: input.payload.orgId,
-    tenantId: input.payload.tenantId
-  };
+  return processAdmittedTelegramBotConversationJob(payload, gateway, options);
 }
 
 export function createTelegramBotConversationBullmqProcessor(
@@ -348,80 +77,133 @@ export function createTelegramBotConversationBullmqWorker(options: {
   );
 }
 
-function createHandoffPersistInput(input: {
-  conversation: ConversationDraft;
-  customerIdentity?: TelegramBotCustomerIdentityDraft;
-  dedupe: DedupeDraft;
-  message: MessageDraft;
-  payload: TelegramBotConversationJobPayload;
-  reasonCode: string;
-}): HandoffPersistInput {
-  const followUp = createTelegramBotTicketFollowUp(input);
+export function preparationResult(
+  input: RuntimePersistInput,
+  disposition: PreparationResult["disposition"],
+  conversationId?: string,
+  ids: { outboundMessageId?: string; ticketId?: string } = {}
+): PreparationResult {
   return {
-    conversation: input.conversation,
-    customerIdentity: input.customerIdentity,
-    dedupe: input.dedupe,
-    message: input.message,
-    runtimeBranch: "handoff",
-    ...followUp,
-    traceId: input.payload.traceId
+    ...runtimeResult(input, disposition === "answer_ready" ? "answer" : "handoff", ids),
+    ...(conversationId ? { conversationId } : {}),
+    disposition,
+    status: disposition === "deduped" ? "deduped" : "accepted"
   };
 }
 
-function createAnswerFollowUp(
-  followUp: { reasonCode: string } | undefined,
-  conversation: ConversationDraft,
-  payload: TelegramBotConversationJobPayload
-) {
-  if (!followUp) return undefined;
-  return createTelegramBotTicketFollowUp({
-    conversation,
-    payload,
-    reasonCode: followUp.reasonCode
-  });
+export function runtimeResult(
+  input: { dedupe: DedupeDraft; traceId: string },
+  runtimeBranch: "answer" | "handoff",
+  ids: { outboundMessageId?: string; ticketId?: string } = {}
+): RuntimeResult {
+  return {
+    ...ids,
+    providerUpdateId: input.dedupe.providerUpdateId,
+    runtimeBranch,
+    status: "accepted",
+    traceId: input.traceId
+  };
 }
 
-function canAttemptAnswer(
-  payload: TelegramBotConversationJobPayload,
-  options: TelegramBotConversationRuntimeOptions
-): options is {
-  answerRuntime: TelegramBotAnswerRuntime;
-  sendPort: TelegramBotOutboundSendPort;
-} {
+export function isUnownedOpen(ticket: ConversationRow | undefined) {
+  return matchesOwnership(ticket, ["OPEN"], false, false);
+}
+
+function isAssignedOnly(ticket: ConversationRow | undefined) {
+  return matchesOwnership(ticket, ["CLAIMED", "REOPENED"], true, false);
+}
+
+function isFullyOwned(ticket: ConversationRow | undefined) {
+  return matchesOwnership(ticket, ["LOCKED", "ESCALATED"], true, true);
+}
+
+function matchesOwnership(
+  ticket: ConversationRow | undefined,
+  statuses: string[],
+  assigned: boolean,
+  locked: boolean
+) {
   return Boolean(
-    payload.contentKind === "text" &&
-    payload.text?.trim() &&
-    payload.chatExternalRef?.trim() &&
-    options.answerRuntime &&
-    options.sendPort
+    ticket &&
+    statuses.includes(String(ticket.status)) &&
+    Boolean(ticket.assignedUserId) === assigned &&
+    Boolean(ticket.lockedByUserId) === locked
   );
 }
 
-function createAnswerIdempotencyKey(payload: TelegramBotConversationJobPayload) {
-  return `telegram-bot-answer__${payload.orgId}__${payload.tenantId}__${payload.channelConnectionId}__${payload.providerUpdateId}`;
+const dispositionByStatus: Record<string, DispositionResolver> = {
+  CLOSED: (ticket) => (!ticket ? "closed" : undefined),
+  HANDOFF: (ticket) =>
+    ticket && (isAssignedOnly(ticket) || isFullyOwned(ticket)) ? "operator" : undefined,
+  OPEN: (ticket) =>
+    !ticket || isUnownedOpen(ticket)
+      ? "bot"
+      : isAssignedOnly(ticket)
+        ? "operator"
+        : undefined,
+  PENDING_HANDOFF: (ticket, allowPendingWithoutTicket) =>
+    !ticket && allowPendingWithoutTicket
+      ? "bot"
+      : isUnownedOpen(ticket) || isAssignedOnly(ticket)
+        ? "operator"
+        : undefined
+};
+
+export function conversationDisposition(
+  conversation: ConversationRow,
+  tickets: ConversationRow[],
+  allowPendingWithoutTicket = false
+): ConversationDisposition {
+  if (tickets.length > 1) throw ownershipConflict();
+  const status = requiredRowText(conversation.status, "conversation status");
+  const disposition = dispositionByStatus[status]?.(
+    tickets[0],
+    allowPendingWithoutTicket
+  );
+  if (!disposition) throw ownershipConflict();
+  return disposition;
 }
 
-function safeOutboundMessageContent(
-  answerTextValue: string,
-  sendResult: TelegramBotOutboundSendResult
+export function finalizedIntentMutation(
+  input: FinalizePreparedAnswerInput,
+  previousContent: Record<string, unknown>
 ) {
+  const outcome = finalOutcome[input.outcome];
+  const provider = input.sendResult;
+  const content = { ...previousContent };
+  delete content.deliveryUncertain;
   return {
-    providerMessageRef: sendResult.providerMessageRef,
-    text: answerTextValue
+    content: {
+      ...content,
+      ...(provider && {
+        dryRun: provider.dryRun,
+        providerMessageRef: provider.providerMessageRef,
+        requestId: provider.requestId
+      }),
+      ...outcome.content
+    },
+    deliveryStatus: outcome.deliveryStatus,
+    ...(provider && {
+      externalMessageRef: provider.providerMessageRef,
+      occurredAt: new Date(provider.sentAt)
+    })
   };
 }
 
-function rejectedResult(payload: TelegramBotConversationJobPayload): RuntimeResult {
-  return {
-    providerUpdateId: payload.providerUpdateId,
-    status: "rejected",
-    traceId: payload.traceId
-  };
-}
-
-function requiredTextValue(value: unknown, label: string): string {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`${label} is required`);
+const finalOutcome = {
+  failed: { content: { dispatchPhase: "terminal" }, deliveryStatus: "FAILED" },
+  sent: { content: { dispatchPhase: "terminal" }, deliveryStatus: "SENT" },
+  uncertain: {
+    content: { deliveryUncertain: true, dispatchPhase: "uncertain" },
+    deliveryStatus: "QUEUED"
   }
-  return value.trim();
+} as const;
+
+function requiredRowText(value: unknown, label: string) {
+  if (typeof value !== "string" || !value) throw new Error(`${label} is invalid`);
+  return value;
+}
+
+function ownershipConflict() {
+  return new Error("conversation ownership conflict");
 }

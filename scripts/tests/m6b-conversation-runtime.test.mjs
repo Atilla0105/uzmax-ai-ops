@@ -281,15 +281,29 @@ async function importWorkerConversationRuntime(channelsModuleUrl, inboundModuleU
     )
   );
   const dbUrl = transpileToTempModule("packages/db/src/index.ts");
+  const answerRuntimeUrl = transpileToTempModule(
+    "apps/worker/src/telegram-bot-answer-runtime.ts"
+  );
+  const flowUrl = moduleUrlFromSource(
+    transpileSource(
+      read("apps/worker/src/telegram-bot-conversation.flow.ts")
+        .replace("../../../packages/channels/src/index.ts", channelsModuleUrl)
+        .replace(
+          "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+          inboundModuleUrl
+        )
+        .replace("../../../packages/db/src/index.ts", dbUrl)
+        .replace("./telegram-bot-answer-runtime.ts", answerRuntimeUrl)
+        .replace("./telegram-bot-ticket-follow-up.ts", ticketFollowUpUrl)
+    )
+  );
   const source = read("apps/worker/src/conversation-runtime.ts")
     .replace("../../../packages/channels/src/index.ts", channelsModuleUrl)
     .replace(
       "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
       inboundModuleUrl
     )
-    .replace("../../../packages/capabilities/handoff/src/index.ts", handoffUrl)
-    .replace("../../../packages/db/src/index.ts", dbUrl)
-    .replace("./telegram-bot-ticket-follow-up.ts", ticketFollowUpUrl)
+    .replace("./telegram-bot-conversation.flow.ts", flowUrl)
     .replace('import { Worker, type Job, type QueueOptions } from "bullmq";', "");
   const moduleUrl = moduleUrlFromSource(transpileSource(source));
   return { module: await import(moduleUrl), moduleUrl };

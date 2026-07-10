@@ -123,10 +123,12 @@ export class InMemoryConversationTicketRepository implements ConversationTicketR
     this.atomicWriter = createInMemoryAtomicWriter({
       commit: (state) => {
         this.conversations = state.conversations;
+        this.messages = state.messages;
         this.tickets = state.tickets;
       },
       snapshot: () => ({
         conversations: this.conversations,
+        messages: this.messages,
         tickets: this.tickets
       })
     });

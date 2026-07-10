@@ -194,9 +194,26 @@ async function importWorkerConversationRuntime(channelsModuleUrl, inboundModuleU
   const handoffModule = await loadModuleFromRepo(
     "packages/capabilities/handoff/src/index.ts"
   );
+  const dbModule = await loadModuleFromRepo("packages/db/src/index.ts");
+  const answerRuntimeModule = await loadModuleFromRepo(
+    "apps/worker/src/telegram-bot-answer-runtime.ts"
+  );
   const ticketFollowUpModule = await loadModuleFromRepo(
     "apps/worker/src/telegram-bot-ticket-follow-up.ts",
     [["../../../packages/capabilities/handoff/src/index.ts", handoffModule.moduleUrl]]
+  );
+  const flowModule = await loadModuleFromRepo(
+    "apps/worker/src/telegram-bot-conversation.flow.ts",
+    [
+      ["../../../packages/channels/src/index.ts", channelsModuleUrl],
+      [
+        "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+        inboundModuleUrl
+      ],
+      ["../../../packages/db/src/index.ts", dbModule.moduleUrl],
+      ["./telegram-bot-answer-runtime.ts", answerRuntimeModule.moduleUrl],
+      ["./telegram-bot-ticket-follow-up.ts", ticketFollowUpModule.moduleUrl]
+    ]
   );
   return loadModuleFromRepo("apps/worker/src/conversation-runtime.ts", [
     ["../../../packages/channels/src/index.ts", channelsModuleUrl],
@@ -204,12 +221,8 @@ async function importWorkerConversationRuntime(channelsModuleUrl, inboundModuleU
       "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
       inboundModuleUrl
     ],
-    ["../../../packages/capabilities/handoff/src/index.ts", handoffModule.moduleUrl],
+    ["./telegram-bot-conversation.flow.ts", flowModule.moduleUrl],
     ["./telegram-bot-ticket-follow-up.ts", ticketFollowUpModule.moduleUrl],
-    [
-      "../../../packages/db/src/index.ts",
-      (await loadModuleFromRepo("packages/db/src/index.ts")).moduleUrl
-    ],
     ['import { Worker, type Job, type QueueOptions } from "bullmq";', ""]
   ]);
 }

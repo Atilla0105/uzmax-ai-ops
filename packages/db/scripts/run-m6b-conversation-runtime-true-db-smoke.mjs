@@ -122,7 +122,7 @@ try {
     dedupes: 2,
     messages: 2,
     readableTextMatches: 2,
-    tickets: 2
+    tickets: 1
   });
   assert.deepEqual(tenantB, {
     conversations: 1,

@@ -3,141 +3,117 @@ import {
   type RlsTenantContext
 } from "../../../packages/db/src/index.ts";
 import type {
-  RuntimePersistInput,
-  RuntimeResult,
-  TelegramBotConversationPersistenceGateway
-} from "./conversation-runtime.ts";
-import { createHash } from "node:crypto";
-type MaybePromise<T> = T | Promise<T>;
-type PrismaClientPort = {
-  $executeRawUnsafe(sql: string): MaybePromise<unknown>;
-  $queryRaw(
+  AnswerPersistInput,
+  DedupeDraft,
+  RuntimePersistInput
+} from "./telegram-bot-conversation.flow.ts";
+import { deterministicCustomerIdentityUuid } from "./telegram-bot-conversation.flow.ts";
+
+type AsyncRow = Promise<unknown>;
+type Methods<Name extends string> = Record<Name, (input: unknown) => AsyncRow>;
+type Delegate = Methods<"findFirst" | "findMany">;
+type MutableDelegate = Delegate &
+  Methods<"create" | "createMany" | "findUnique" | "update" | "updateMany" | "upsert">;
+export type TelegramConversationTransaction = {
+  $executeRawUnsafe(sql: string): AsyncRow;
+  $queryRaw<T = unknown>(
     strings: TemplateStringsArray,
     ...values: readonly unknown[]
-  ): MaybePromise<unknown>;
+  ): Promise<T>;
+  channelConversation: MutableDelegate;
+  channelMessage: MutableDelegate;
+  customer: Pick<MutableDelegate, "upsert">;
+  customerIdentity: Pick<
+    MutableDelegate,
+    "findFirst" | "findMany" | "findUnique" | "upsert"
+  >;
+  supportTicket: Pick<MutableDelegate, "create" | "findMany">;
+  supportTicketEvent: Pick<MutableDelegate, "create">;
+  telegramUpdateDedupe: Pick<
+    MutableDelegate,
+    "create" | "createMany" | "findFirst" | "updateMany"
+  >;
+};
+export type TelegramConversationPrismaPort = TelegramConversationTransaction & {
   $transaction<T>(
-    action: (tx: PrismaClientPort) => Promise<T>,
+    action: (tx: TelegramConversationTransaction) => Promise<T>,
     options?: { maxWait?: number; timeout?: number }
   ): Promise<T>;
-  channelConversation: { upsert(input: unknown): MaybePromise<{ id: string }> };
-  channelMessage: { create(input: unknown): MaybePromise<unknown> };
-  customer: { upsert(input: unknown): MaybePromise<{ id: string }> };
-  customerIdentity: {
-    findUnique(input: unknown): MaybePromise<{
-      customerId: string;
-      firstSeenAt: Date;
-      lastSeenAt?: Date | null;
-      metadata?: unknown;
-    } | null>;
-    upsert(input: unknown): MaybePromise<unknown>;
-  };
-  supportTicket: { create(input: unknown): MaybePromise<unknown> };
-  supportTicketEvent: { create(input: unknown): MaybePromise<unknown> };
-  telegramUpdateDedupe: {
-    createMany(input: unknown): MaybePromise<{ count: number }>;
-    updateMany(input: unknown): MaybePromise<unknown>;
-  };
 };
-type DedupeDraft = RlsTenantContext &
-  Record<"channelConnectionId" | "providerUpdateId" | "updateKind", string> & {
-    reserved?: boolean;
-  };
-type RuntimeDedupeResult = Record<"providerUpdateId" | "traceId", string> & {
-  status: "deduped" | "reserved";
-};
-type TicketPersistInput = RuntimePersistInput & {
-  ticket: {
-    conversationId: string;
-    id: string;
-    orgId: string;
-    summary: string;
-    tenantId: string;
-  };
-  ticketEvent: {
-    id: string;
-    orgId: string;
-    tenantId: string;
-    ticketId: string;
-    traceId: string;
-  };
+export type DbRow = Record<string, unknown>;
+export type Scope = { orgId: string; tenantId: string };
+export type LockedState = {
+  conversation: DbRow;
+  disposition: "bot" | "closed" | "operator";
+  tickets: DbRow[];
 };
 
-const TELEGRAM_RUNTIME_TRANSACTION_OPTIONS = { maxWait: 60_000, timeout: 60_000 };
+const transactionOptions = { maxWait: 60_000, timeout: 60_000 } as const;
 
-export class PrismaTelegramBotConversationPersistenceGateway implements TelegramBotConversationPersistenceGateway {
-  constructor(private readonly prisma: PrismaClientPort) {}
+export function runTelegramConversationTransaction<T>(
+  prisma: TelegramConversationPrismaPort,
+  scoped: Scope,
+  action: (tx: TelegramConversationTransaction) => Promise<T>
+) {
+  return prisma.$transaction(async (tx) => {
+    await applyRlsContext(tx, createRlsTransactionContext(scoped));
+    return action(tx);
+  }, transactionOptions);
+}
 
-  reserveProviderUpdate(
-    input: DedupeDraft & { traceId: string }
-  ): Promise<RuntimeDedupeResult> {
-    const context = createRlsTransactionContext(scope(input));
-    return this.prisma.$transaction(async (tx) => {
-      await applyRlsContext(tx, context);
-      const dedupe = await tx.telegramUpdateDedupe.createMany({
-        data: dedupeData(input),
-        skipDuplicates: true
-      });
-      return {
+export async function reserveDedupe(
+  tx: TelegramConversationTransaction,
+  input: DedupeDraft
+) {
+  const result = record(
+    await tx.telegramUpdateDedupe.createMany({
+      data: {
+        channelConnectionId: input.channelConnectionId,
+        orgId: input.orgId,
         providerUpdateId: input.providerUpdateId,
-        status: dedupe.count === 0 ? "deduped" : "reserved",
-        traceId: input.traceId
-      };
-    }, TELEGRAM_RUNTIME_TRANSACTION_OPTIONS);
-  }
-
-  persistAcceptedUpdate(input: RuntimePersistInput): Promise<RuntimeResult> {
-    const context = createRlsTransactionContext(scope(input.dedupe));
-    return this.prisma.$transaction(async (tx) => {
-      await applyRlsContext(tx, context);
-      if (!input.dedupe.reserved) {
-        const dedupe = await tx.telegramUpdateDedupe.createMany({
-          data: dedupeData(input.dedupe),
-          skipDuplicates: true
-        });
-        if (dedupe.count === 0) return dedupedResult(input);
-      }
-      if (input.customerIdentity) {
-        await persistCustomerIdentity(tx, input.customerIdentity);
-      }
-      const persisted = await persistConversationRuntime(tx, input);
-      return {
-        conversationId: persisted.conversationId,
-        messageId: input.message.id,
-        outboundMessageId:
-          input.runtimeBranch === "answer" ? input.outboundMessage.id : undefined,
-        providerUpdateId: input.dedupe.providerUpdateId,
-        runtimeBranch: input.runtimeBranch,
-        status: "accepted",
-        ticketId: input.ticket?.id,
-        traceId: input.traceId
-      };
-    }, TELEGRAM_RUNTIME_TRANSACTION_OPTIONS);
-  }
+        tenantId: input.tenantId,
+        updateKind: input.updateKind
+      },
+      skipDuplicates: true
+    }),
+    "dedupe reservation"
+  );
+  return Number(result.count ?? 0) === 1;
 }
 
 type CustomerIdentityDraft = NonNullable<RuntimePersistInput["customerIdentity"]>;
 
-async function persistCustomerIdentity(
-  tx: PrismaClientPort,
+export async function persistCustomerIdentity(
+  tx: TelegramConversationTransaction,
   input: CustomerIdentityDraft
 ) {
-  await lockCustomerIdentity(tx, input);
+  const lockKey = JSON.stringify([
+    input.orgId,
+    input.tenantId,
+    input.provider,
+    input.externalSubjectRef
+  ]);
+  await tx.$queryRaw`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))::text as lock_result`;
   const identityWhere = {
     orgId: input.orgId,
     tenantId: input.tenantId,
     provider: input.provider,
     externalSubjectRef: input.externalSubjectRef
   };
-  const existing = await tx.customerIdentity.findUnique({
-    select: {
-      customerId: true,
-      firstSeenAt: true,
-      lastSeenAt: true,
-      metadata: true
-    },
-    where: { orgId_tenantId_provider_externalSubjectRef: identityWhere }
-  });
-  const customerId = existing?.customerId ?? deterministicTenantUuid("customer", input);
+  const existing = optionalRecord(
+    await tx.customerIdentity.findUnique({
+      select: {
+        customerId: true,
+        firstSeenAt: true,
+        lastSeenAt: true,
+        metadata: true
+      },
+      where: { orgId_tenantId_provider_externalSubjectRef: identityWhere }
+    })
+  );
+  const customerId =
+    (existing?.customerId as string | undefined) ??
+    deterministicCustomerIdentityUuid("customer", input);
   await tx.customer.upsert({
     create: {
       displayLabelRef: input.externalSubjectRef,
@@ -156,125 +132,211 @@ async function persistCustomerIdentity(
       }
     }
   });
-  const metadata = mergedIdentityMetadata(existing?.metadata, input);
   const observedAt = new Date(input.seenAt);
-  const firstSeenAt =
-    existing && existing.firstSeenAt < observedAt ? existing.firstSeenAt : observedAt;
-  const seenAt = latestSeenAt(existing, observedAt);
+  const firstSeenAt = earlierDate(existing?.firstSeenAt, observedAt);
+  const lastSeenAt = laterDate(existing, observedAt);
   await tx.customerIdentity.upsert({
     create: {
       ...identityWhere,
       channelConnectionId: input.channelConnectionId,
       customerId,
       firstSeenAt,
-      id: deterministicTenantUuid("identity", input),
+      id: deterministicCustomerIdentityUuid("identity", input),
       identityKind: input.identityKind,
-      lastSeenAt: seenAt,
-      metadata,
+      lastSeenAt,
+      metadata: mergedIdentityMetadata(existing?.metadata, input),
       status: "ACTIVE"
     },
     update: {
       channelConnectionId: input.channelConnectionId,
       firstSeenAt,
-      lastSeenAt: seenAt,
-      metadata
+      lastSeenAt,
+      metadata: mergedIdentityMetadata(existing?.metadata, input)
     },
     where: { orgId_tenantId_provider_externalSubjectRef: identityWhere }
   });
 }
 
-async function lockCustomerIdentity(
-  tx: PrismaClientPort,
-  input: CustomerIdentityDraft
+export async function lockConversationRow(
+  tx: TelegramConversationTransaction,
+  scoped: Scope,
+  conversationId: string
 ) {
-  const lockKey = JSON.stringify([
-    input.orgId,
-    input.tenantId,
-    input.provider,
-    input.externalSubjectRef
-  ]);
-  await tx.$queryRaw`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))::text as lock_result`;
+  const locked = await tx.$queryRaw<DbRow[]>`
+    select id from conversation
+    where id = ${conversationId}::uuid and org_id = ${scoped.orgId}::uuid
+      and tenant_id = ${scoped.tenantId}::uuid for update
+  `;
+  if (!Array.isArray(locked) || locked.length !== 1) throw conflict();
 }
 
-function latestSeenAt(
-  existing: {
-    firstSeenAt: Date;
-    lastSeenAt?: Date | null;
-  } | null,
-  incoming: Date
+export async function lockActiveTickets(
+  tx: TelegramConversationTransaction,
+  scoped: Scope,
+  conversationId: string
 ) {
-  return new Date(
-    Math.max(
-      incoming.getTime(),
-      existing?.firstSeenAt.getTime() ?? 0,
-      existing?.lastSeenAt?.getTime() ?? 0
-    )
+  await tx.$queryRaw<DbRow[]>`
+    select id from ticket where conversation_id = ${conversationId}::uuid
+      and org_id = ${scoped.orgId}::uuid and tenant_id = ${scoped.tenantId}::uuid
+      and status <> 'closed'::ticket_status order by id for update
+  `;
+}
+
+export async function lockIntent(
+  tx: TelegramConversationTransaction,
+  scoped: Scope,
+  conversationId: string,
+  messageId: string
+) {
+  const locked = await tx.$queryRaw<DbRow[]>`
+    select id from message where id = ${messageId}::uuid
+      and conversation_id = ${conversationId}::uuid
+      and org_id = ${scoped.orgId}::uuid and tenant_id = ${scoped.tenantId}::uuid
+    for update
+  `;
+  if (!Array.isArray(locked) || locked.length !== 1) throw conflict();
+  return record(
+    await tx.channelMessage.findFirst({
+      where: { ...scoped, conversationId, id: messageId }
+    })
   );
 }
 
-function mergedIdentityMetadata(previous: unknown, input: CustomerIdentityDraft) {
-  const metadata = recordValue(previous);
-  const profile = {
-    ...recordValue(metadata.profile),
-    ...(input.participantProfile ?? {})
+export async function lockConversationByNaturalKey(
+  tx: TelegramConversationTransaction,
+  input: RuntimePersistInput
+) {
+  const c = input.conversation;
+  const found = await tx.$queryRaw<DbRow[]>`
+    select id from conversation where org_id = ${c.orgId}::uuid
+      and tenant_id = ${c.tenantId}::uuid
+      and channel_connection_id = ${c.channelConnectionId}::uuid
+      and external_conversation_ref = ${c.externalConversationRef} for update
+  `;
+  if (!Array.isArray(found) || found.length !== 1) throw conflict();
+  return text(found[0]?.id, "conversation id");
+}
+
+export async function updateIntent(
+  tx: TelegramConversationTransaction,
+  scoped: Scope,
+  marker: DbRow,
+  data: Record<string, unknown>
+) {
+  await tx.channelMessage.update({
+    data,
+    where: compoundWhere(scoped, text(marker.id, "intent id"))
+  });
+}
+
+export async function incrementUnread(
+  tx: TelegramConversationTransaction,
+  scoped: Scope,
+  conversationId: string
+) {
+  await tx.channelConversation.update({
+    data: { unreadCount: { increment: 1 } },
+    where: compoundWhere(scoped, conversationId)
+  });
+}
+
+export async function markProcessed(
+  tx: TelegramConversationTransaction,
+  dedupe: DedupeDraft
+) {
+  const result = record(
+    await tx.telegramUpdateDedupe.updateMany({
+      data: { processedAt: new Date() },
+      where: { ...dedupeWhere(dedupe), processedAt: null }
+    })
+  );
+  return Number(result.count ?? 0) === 1;
+}
+
+export function inboundMessageData(input: RuntimePersistInput, conversationId: string) {
+  return {
+    ...input.message,
+    contentKind: input.message.contentKind.toUpperCase(),
+    conversationId,
+    deliveryStatus: "RECEIVED",
+    direction: "INBOUND",
+    occurredAt: new Date(input.message.occurredAt)
   };
-  return Object.keys(profile).length > 0
-    ? { source: "telegram_bot", ...metadata, profile }
-    : { source: "telegram_bot", ...metadata };
 }
 
-function deterministicTenantUuid(kind: string, input: CustomerIdentityDraft) {
-  const namespace = Buffer.from("6ba7b8119dad11d180b400c04fd430c8", "hex");
-  const name = [
-    "urn:uzmax",
-    kind,
-    input.orgId,
-    input.tenantId,
-    input.provider,
-    input.externalSubjectRef
-  ].join(":");
-  const bytes = createHash("sha1")
-    .update(namespace)
-    .update(name, "utf8")
-    .digest()
-    .subarray(0, 16);
-  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x50;
-  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
-  const value = bytes.toString("hex");
-  return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+export function outboundMessageData(input: AnswerPersistInput, conversationId: string) {
+  return {
+    ...input.outboundMessage,
+    contentKind: "TEXT",
+    conversationId,
+    deliveryStatus: "QUEUED",
+    direction: "OUTBOUND",
+    occurredAt: new Date(input.outboundMessage.occurredAt)
+  };
 }
 
-function recordValue(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
+export function naturalKey(input: RuntimePersistInput) {
+  const c = input.conversation;
+  return {
+    channelConnectionId: c.channelConnectionId,
+    externalConversationRef: c.externalConversationRef,
+    orgId: c.orgId,
+    tenantId: c.tenantId
+  };
 }
 
-function scope(input: RlsTenantContext) {
-  return { orgId: input.orgId, tenantId: input.tenantId };
-}
-
-function dedupeData(input: DedupeDraft) {
+export function dedupeWhere(input: DedupeDraft) {
   return {
     channelConnectionId: input.channelConnectionId,
     orgId: input.orgId,
     providerUpdateId: input.providerUpdateId,
-    tenantId: input.tenantId,
-    updateKind: input.updateKind
+    tenantId: input.tenantId
   };
 }
 
-function dedupedResult(input: RuntimePersistInput): RuntimeResult {
-  return {
-    providerUpdateId: input.dedupe.providerUpdateId,
-    runtimeBranch: input.runtimeBranch,
-    status: "deduped",
-    traceId: input.traceId
-  };
+export function compoundWhere(scoped: Scope, id: string) {
+  return { id_orgId_tenantId: { id, ...scoped } };
+}
+
+export function scope(input: RlsTenantContext): Scope {
+  return { orgId: input.orgId, tenantId: input.tenantId };
+}
+
+export function markerPhase(marker: DbRow) {
+  return String(contentOf(marker).dispatchPhase ?? "");
+}
+
+export function contentOf(row: DbRow) {
+  return record(row.content, "message content");
+}
+
+export function ticketIdOf(state: { tickets: DbRow[] }) {
+  return state.tickets[0] ? text(state.tickets[0].id, "ticket id") : undefined;
+}
+
+export function rows(value: unknown): DbRow[] {
+  if (!Array.isArray(value)) throw conflict();
+  return value.map((row) => record(row));
+}
+
+export function record(value: unknown, label = "database row"): DbRow {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${label} is invalid`);
+  }
+  return value as DbRow;
+}
+
+export function text(value: unknown, label: string) {
+  if (typeof value !== "string" || !value) throw new Error(`${label} is invalid`);
+  return value;
+}
+
+export function conflict() {
+  return new Error("conversation ownership conflict");
 }
 
 async function applyRlsContext(
-  tx: PrismaClientPort,
+  tx: TelegramConversationTransaction,
   context: ReturnType<typeof createRlsTransactionContext>
 ) {
   await tx.$executeRawUnsafe(context.roleSql);
@@ -283,110 +345,33 @@ async function applyRlsContext(
   }
 }
 
-async function persistConversationRuntime(
-  tx: PrismaClientPort,
-  input: RuntimePersistInput
-) {
-  const c = input.conversation;
-  const conversationStatus =
-    input.runtimeBranch === "answer" ? "OPEN" : "PENDING_HANDOFF";
-  const conversation = await tx.channelConversation.upsert({
-    create: {
-      ...c,
-      lastMessageAt: new Date(c.lastMessageAt),
-      status: conversationStatus,
-      unreadCount: input.runtimeBranch === "answer" ? 0 : 1
-    },
-    update:
-      input.runtimeBranch === "answer"
-        ? { lastMessageAt: new Date(c.lastMessageAt), status: conversationStatus }
-        : {
-            lastMessageAt: new Date(c.lastMessageAt),
-            status: conversationStatus,
-            unreadCount: { increment: 1 }
-          },
-    where: {
-      orgId_tenantId_channelConnectionId_externalConversationRef: {
-        channelConnectionId: c.channelConnectionId,
-        externalConversationRef: c.externalConversationRef,
-        orgId: c.orgId,
-        tenantId: c.tenantId
-      }
-    }
-  });
-  const conversationId = conversation.id as string;
-  await tx.channelMessage.create({ data: inboundMessageData(input, conversationId) });
-  if (input.runtimeBranch === "answer") {
-    await persistOutboundMessage(tx, input, conversationId);
-    if (hasTicket(input)) await persistTicket(tx, input, conversationId);
-  } else await persistTicket(tx, input, conversationId);
-  await tx.telegramUpdateDedupe.updateMany({
-    data: { processedAt: new Date() },
-    where: {
-      channelConnectionId: input.dedupe.channelConnectionId,
-      orgId: input.dedupe.orgId,
-      providerUpdateId: input.dedupe.providerUpdateId,
-      tenantId: input.dedupe.tenantId
-    }
-  });
-  return { conversationId };
+function earlierDate(value: unknown, incoming: Date) {
+  return value instanceof Date && value < incoming ? value : incoming;
 }
 
-function inboundMessageData(input: RuntimePersistInput, conversationId: string) {
-  const m = input.message;
-  return {
-    ...m,
-    contentKind: m.contentKind.toUpperCase(),
-    conversationId,
-    deliveryStatus: "RECEIVED",
-    direction: "INBOUND",
-    occurredAt: new Date(m.occurredAt)
+function laterDate(existing: DbRow | undefined, incoming: Date) {
+  return new Date(
+    Math.max(
+      incoming.getTime(),
+      existing?.firstSeenAt instanceof Date ? existing.firstSeenAt.getTime() : 0,
+      existing?.lastSeenAt instanceof Date ? existing.lastSeenAt.getTime() : 0
+    )
+  );
+}
+
+function mergedIdentityMetadata(previous: unknown, input: CustomerIdentityDraft) {
+  const metadata = optionalRecord(previous) ?? {};
+  const profile = {
+    ...(optionalRecord(metadata.profile) ?? {}),
+    ...(input.participantProfile ?? {})
   };
+  return Object.keys(profile).length > 0
+    ? { source: "telegram_bot", ...metadata, profile }
+    : { source: "telegram_bot", ...metadata };
 }
 
-async function persistOutboundMessage(
-  tx: PrismaClientPort,
-  input: Extract<RuntimePersistInput, { runtimeBranch: "answer" }>,
-  conversationId: string
-) {
-  const m = input.outboundMessage;
-  await tx.channelMessage.create({
-    data: {
-      ...m,
-      contentKind: "TEXT",
-      conversationId,
-      deliveryStatus: m.deliveryStatus,
-      direction: "OUTBOUND",
-      occurredAt: new Date(m.occurredAt)
-    }
-  });
-}
-
-async function persistTicket(
-  tx: PrismaClientPort,
-  input: TicketPersistInput,
-  conversationId: string
-) {
-  await tx.supportTicket.create({
-    data: {
-      ...input.ticket,
-      conversationId,
-      priority: 3,
-      status: "OPEN"
-    }
-  });
-  await tx.supportTicketEvent.create({
-    data: {
-      eventType: "CREATED",
-      id: input.ticketEvent.id,
-      orgId: input.ticketEvent.orgId,
-      payload: { traceId: input.ticketEvent.traceId },
-      tenantId: input.ticketEvent.tenantId,
-      ticketId: input.ticketEvent.ticketId
-    }
-  });
-}
-
-function hasTicket(input: RuntimePersistInput): input is TicketPersistInput {
-  return Boolean(input.ticket && input.ticketEvent);
+function optionalRecord(value: unknown): DbRow | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as DbRow)
+    : undefined;
 }

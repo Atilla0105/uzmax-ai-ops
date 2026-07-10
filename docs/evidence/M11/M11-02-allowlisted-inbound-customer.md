@@ -1,7 +1,7 @@
 # M11-02 Allowlisted Inbound Customer Truth Evidence
 
 Spec: `docs/specs/M11-02-allowlisted-inbound-customer.md`
-Status: `local_gates_passed__ci_true_db_pending`
+Status: `ci_true_db_fix_pending_rerun`
 Recorded: 2026-07-10
 Branch: `codex/m11-02-allowlisted-inbound-customer`
 Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/m11-02-allowlisted-inbound-customer`
@@ -74,7 +74,9 @@ The schema and RLS transaction infrastructure already exist. This slice must ext
 | forbidden-term, doc-trigger, eval-trigger, workspace and worker-boundary guards | pass |
 | `git diff --check` | pass |
 | Local true-DB/Redis runners | not claimed; this checkout has no RLS DB or Redis connection configuration |
-| CI true-DB/Redis runners | pending first PR check; evidence will be updated with the exact run before merge |
+| CI run `29095747011` | failed at M6B conversation true-DB smoke after all static/source guards passed; Prisma rejected deserializing the advisory-lock function raw result because PostgreSQL returned `void` (`P2010`) |
+| CI failure repair | keep the same parameterized transaction advisory lock, but cast its discarded result to text so Prisma can deserialize the row; no admission, RLS, identity or product behavior was relaxed |
+| CI true-DB/Redis rerun | pending; merge remains blocked until the repaired M6B conversation, webhook/Redis and M8 API-readback smokes all pass |
 
 ## Spec-Compliance Review
 
@@ -92,4 +94,4 @@ All three were addressed with default-deny admission, mandatory BullMQ processor
 
 ## Closeout Truth
 
-M11-02 remains open until CI true-DB/Redis checks pass. No Value-0, staging, production, GA or 1.0 completion is claimed by this record.
+M11-02 remains open until the repaired CI true-DB/Redis checks pass. No Value-0, staging, production, GA or 1.0 completion is claimed by this record.

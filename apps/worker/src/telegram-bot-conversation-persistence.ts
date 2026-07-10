@@ -193,7 +193,7 @@ async function lockCustomerIdentity(
     input.provider,
     input.externalSubjectRef
   ]);
-  await tx.$queryRaw`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
+  await tx.$queryRaw`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))::text as lock_result`;
 }
 
 function latestSeenAt(

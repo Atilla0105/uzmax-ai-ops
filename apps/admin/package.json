@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2"
+  },
   "scripts": {
     "build": "node ../../node_modules/vite/bin/vite.js build . --emptyOutDir",
     "start": "__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=${__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS:-uzmax-admin.vercel.app} node ../../node_modules/vite/bin/vite.js preview --host 0.0.0.0 --port ${PORT:-4173}"

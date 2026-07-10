@@ -64,12 +64,13 @@ test("admin runtime fetcher targets staging API and adds authz scope headers", (
 });
 
 test("admin access panel supports Supabase sign-in and manual token fallback", () => {
-  assert.match(files.adminAuth, /signInWithPassword/);
-  assert.match(files.adminAuth, /\/auth\/v1\/token\?grant_type=password/);
-  assert.match(files.adminAuth, /apikey: config\.supabasePublishableKey/);
+  assert.match(files.adminAuth, /client\.auth\.signInWithPassword/);
+  assert.match(files.adminAuth, /client\.auth\.resetPasswordForEmail/);
+  assert.match(files.adminAuth, /client\.auth\.updateUser/);
+  assert.match(files.adminAuth, /client\.auth\.getSession/);
   assert.match(files.adminConfig, /window\.sessionStorage/);
   assert.match(files.adminAuth, /saveManualToken/);
-  assert.doesNotMatch(files.adminPackage, /@supabase\/supabase-js/);
+  assert.match(files.adminPackage, /@supabase\/supabase-js/);
   assert.match(files.accessPanel, /admin-runtime-sign-in/);
   assert.match(files.accessPanel, /admin-runtime-save-token/);
   assert.match(files.accessPanel, /API session required/);

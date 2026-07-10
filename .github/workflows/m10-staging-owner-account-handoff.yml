@@ -1,0 +1,72 @@
+name: M10 Staging Owner Account Handoff
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type M10-08 to request the staging owner invite or recovery email.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  owner-account-handoff:
+    if: inputs.confirm == 'M10-08'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: 24
+      - run: npm ci
+      - run: npm run -w @uzmax/db prisma:generate
+      - name: Request owner handoff and replace exact access facts
+        shell: bash
+        env:
+          UZMAX_RLS_DATABASE_URL: ${{ secrets.UZMAX_RLS_DATABASE_URL }}
+          UZMAX_STAGING_OWNER_EMAIL: ${{ secrets.UZMAX_STAGING_OWNER_EMAIL }}
+          UZMAX_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.UZMAX_SUPABASE_PUBLISHABLE_KEY }}
+          UZMAX_SUPABASE_SECRET_KEY: ${{ secrets.UZMAX_SUPABASE_SECRET_KEY }}
+          UZMAX_SUPABASE_URL: https://enyocaykcgcfcswycujg.supabase.co
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${UZMAX_RLS_DATABASE_URL}"
+          echo "::add-mask::${UZMAX_STAGING_OWNER_EMAIL}"
+          echo "::add-mask::${UZMAX_SUPABASE_PUBLISHABLE_KEY}"
+          echo "::add-mask::${UZMAX_SUPABASE_SECRET_KEY}"
+          node packages/authz/scripts/run-m10-staging-owner-account-handoff.mjs | tee m10-08-result.json
+      - name: Summarize sanitized handoff result
+        if: always() && hashFiles('m10-08-result.json') != ''
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const result = JSON.parse(fs.readFileSync("m10-08-result.json", "utf8"));
+          const lines = [
+            "## M10-08 Staging Owner Account Handoff",
+            "",
+            `status: \`${result.status}\``,
+            `emailHash: \`${result.emailHash}\``,
+            `emailRequestStatus: \`${result.emailRequestStatus}\``,
+            `permissionsBefore: \`${result.counts?.permissionsBefore ?? 0}\``,
+            `permissionsAfter: \`${result.counts?.permissionsAfter ?? 0}\``,
+            `membershipRowsUpserted: \`${result.counts?.membershipRowsUpserted ?? 0}\``,
+            `auditRowsWritten: \`${result.counts?.auditRowsWritten ?? 0}\``,
+            "",
+            "Accepted means the Auth API accepted the invite/recovery request; inbox delivery and owner acceptance require separate verification."
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('m10-08-result.json') != ''
+        with:
+          if-no-files-found: ignore
+          name: m10-08-owner-account-handoff-result
+          path: m10-08-result.json

@@ -202,6 +202,7 @@
   display: flex;
   flex: none;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--s-4);
   min-height: 40px;
   border-bottom: 1px solid var(--ink-150);
@@ -218,6 +219,11 @@
   align-items: center;
   gap: var(--s-3);
   min-width: 0;
+}
+
+.uz-runtime-access__forms {
+  flex: 1;
+  flex-wrap: wrap;
 }
 
 .uz-runtime-access__status strong {
@@ -241,9 +247,13 @@
 .uz-runtime-access__error {
   min-width: 0;
   overflow: hidden;
-  color: var(--state-human);
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--state-human);
+}
+
+.uz-runtime-access__feedback {
+  color: var(--state-ok);
 }
 
 .uz-breadcrumb,

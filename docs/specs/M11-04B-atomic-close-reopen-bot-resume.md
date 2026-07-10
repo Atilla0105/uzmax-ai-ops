@@ -224,9 +224,12 @@ second state machine, repository, queue or provider adapter.
   React/Nest ceilings still apply.
 - Existing-baseline compiler allowance: `apps/api/scripts/runtime-compiler.mjs`
   is pr-shape `source` and starts at 581 nonblank lines on base `5520bc7`. It
-  may receive only the module registration/import rewrite required for the new
-  outbound helper and canonical audit mapper, must finish at <= baseline + 15
-  nonblank lines, and remains counted in source/net totals. No unrelated
+  may receive only the module registrations/import rewrites required for both
+  new helpers plus the canonical audit mapper, must finish at <= baseline + 25
+  nonblank lines, and remains counted in source/net totals. The 25-line cap is
+  the measured safe ceiling for two explicit module tuples plus atomic-state/
+  atomic-writer rewrites; the implementation must still report its exact
+  smaller delta. No unrelated
   refactor, reorder, formatter churn or third new source file is authorized.
 - Test/support: changed files <= 9, new files <= 2; no deletion, skip/only,
   weakened assertion, broad mock or snapshot expansion.
@@ -730,7 +733,7 @@ not race evidence.
 
 - Any schema/RLS-policy requirement -> stop and open a globally serial DB spec.
 - If source exceeds 600, the revised 12/2 touched/new file budget, TypeScript
-  400-line ceiling or the explicit compiler baseline+15 allowance -> narrow or
+  400-line ceiling or the explicit compiler baseline+25 allowance -> narrow or
   split serially; no silent exception or third helper.
 - If `audit_log` cannot be inserted in the same RLS transaction -> keep resume
   blocked; a post-commit best-effort audit is not accepted.

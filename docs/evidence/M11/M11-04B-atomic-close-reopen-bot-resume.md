@@ -119,6 +119,12 @@ Worktree:
   changed/new limits from 11/1 to 12/2, keeps net source <=600 and forbids a
   third helper. Existing WIP source remains uncommitted until this narrow
   amendment receives state/security and test/budget re-review.
+- First placement re-review accepted the single authoritative facade and both
+  helper boundaries but found the compiler allowance mentioned only outbound/
+  audit wiring. The docs-only correction now explicitly covers registrations
+  and rewrites for both helpers plus the audit mapper and freezes a measured
+  ceiling of baseline 581 + 25 nonblank lines; unrelated compiler churn remains
+  forbidden.
 
 ## Validation Record
 

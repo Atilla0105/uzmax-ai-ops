@@ -1,6 +1,6 @@
 # M11-03B Atomic Takeover And Ticket Actions Evidence
 
-Status: `implementation_fixed_locally__latest_sha_ci_pending`
+Status: `implementation_ci_passed__evidence_sha_pending`
 Spec: `docs/specs/M11-03B-atomic-takeover-ticket-actions.md`
 Base: `ebdb05c31ded16e160729ae4050249bdcd46baa1`
 Branch: `codex/m11-03b-atomic-takeover`
@@ -104,6 +104,10 @@ was addressed in the spec:
 - No rerun is being used to hide the failure. The production writer now passes
   the bounded options, its fake asserts them, and the legacy runner emits only
   an allowlisted fixed-stage diagnostic before the unchanged generic failure.
+- Corrected implementation SHA `9a3264f94768747c985a6e7171f363574dba3fd5`
+  passed PR #302 run `29112763723` / job `86428795199`. The existing M11 smoke
+  completed with read truth, legacy actions, tenant isolation and residue zero;
+  the new atomic smoke completed with races, RLS, exact events and residue zero.
 
 ## Validation Record
 
@@ -124,14 +128,13 @@ was addressed in the spec:
 | final implementation spec compliance review | pass | no implementation blocker/major/minor; stale evidence and RLS anchor corrected here |
 | code quality/security/RLS review | pass | no blocker/major/minor; the only test-fake fault-flag finding was fixed and spot-checked |
 | CodeRabbit | pass with transparent rerun boundary | complete review found no production issue; an independent review's only fake minor was fixed; latest remote rerun was rate-limited, so no fresh zero-issue claim is made |
-| PR latest-SHA CI | fail then latest-SHA pending | PR #302 run 29111103410 failed before the new atomic smoke; bounded production fix is locally validated |
+| PR implementation-SHA CI | pass after first failure | PR #302 run 29112763723 / job 86428795199 passed both M11 true-DB smokes and the complete path-scoped CI job |
+| evidence-only latest-SHA CI | pending | this evidence update must pass before merge; it does not replace the implementation-SHA true-DB proof |
 
 ## Current Conclusion
 
-M11-03B remains open after a real transaction-pooler failure on its first PR
-run. The bounded production transaction fix is locally validated, but the slice
-is not mergeable until controlled latest-SHA CI passes both the existing M11
-read smoke and the new true-PostgreSQL atomic race/RLS/residue smoke. M11-03
-overall also remains open until this slice merges. Worker ownership/send
-fencing, explicit Bot resume, aligned staging, production, GA and 1.0 remain
-open.
+M11-03B's implementation and controlled true-PostgreSQL proof are complete
+after a real transaction-pooler failure on the first PR run. The slice remains
+unmerged until this evidence-only latest SHA also passes CI. M11-03 overall
+remains open until the slice merges. Worker ownership/send fencing, explicit Bot
+resume, aligned staging, production, GA and 1.0 remain open.

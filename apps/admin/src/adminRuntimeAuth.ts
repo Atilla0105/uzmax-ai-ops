@@ -29,7 +29,7 @@ export type AdminRuntimeAccess = AdminRuntimeAccessState & {
   updatePassword(password: string): Promise<void>;
 };
 
-export const adminAuthRedirectUrl = "https://uzmax-admin.vercel.app/";
+const adminAuthRedirectUrl = "https://uzmax-admin.vercel.app/";
 const adminSupabaseSessionStorageKey = "uzmax.admin.supabase.session";
 
 export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeAccess {

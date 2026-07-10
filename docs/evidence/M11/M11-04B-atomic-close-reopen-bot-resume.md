@@ -92,6 +92,15 @@ Worktree:
 - Independent implementation-map audit found the corrected path feasible within
   changed source <=11, net source <=600 and one new helper, with no schema,
   migration, worker-source, audit-sink or app-module change.
+- Corrected state/security/RLS re-review: `GO source`; all prior replay, audit,
+  precedence, history, legacy-writer and in-memory parity findings are closed.
+- Corrected test/true-DB re-review: `GO source`; compiler allowance,
+  deterministic barriers/failpoint, readiness, exact fake matching, RLS,
+  sanitizer and source/test budgets are closed with no remaining blocker/major.
+- Implementation reminders are non-blocking but enforced: keep the M8 fixture
+  under its repository line gate through narrow behavior-equivalent cleanup,
+  extract outbound fencing before growing the writer, and keep the new true-DB
+  runner data-driven.
 
 ## Validation Record
 
@@ -102,8 +111,8 @@ Worktree:
 | schema/migration need | none | existing statuses, event payload, closedAt, audit table and RLS are sufficient |
 | initial spec frozen before source | pass | docs-only commit `a432b5c`; no source edit followed the NO-GO review |
 | corrected spec freeze | pass | docs-only commit `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`; no source edit |
-| independent corrected spec review | pending | must pass before source edits |
-| independent test-plan review | pending | must pass before source edits |
+| independent corrected spec review | pass | state/security/RLS reviewer returned `GO source`; no blocker/major |
+| independent test-plan review | pass | test/true-DB reviewer returned `GO source`; no blocker/major |
 | implementation | pending | no source edit started |
 | local gates | pending | no implementation claim |
 | true DB/CI | pending | no runtime claim |
@@ -112,9 +121,10 @@ Worktree:
 
 M11-04B still has no schema, migration, worker-source or owner-input blocker.
 The initial freeze correctly separated close/reopen/resume but was not safe
-enough to implement. The corrective contract now addresses every recorded
-blocker/major; implementation remains blocked until the corrective docs are
-committed and both independent reviewers return `GO source` on the exact SHA.
+enough to implement. Corrected freeze `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`
+addresses every recorded blocker/major, and both independent reviewers returned
+`GO source`. Source implementation may now begin within the frozen budgets;
+this is not a runtime, staging, production or completion claim.
 
 M11-05 and later Value-0 slices remain serially blocked until M11-04B
 implementation, true-DB/CI evidence, merge and branch/worktree cleanup complete.

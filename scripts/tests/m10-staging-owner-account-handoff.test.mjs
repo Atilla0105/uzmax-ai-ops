@@ -161,14 +161,8 @@ test("admin auth contract validates blanks and preserves manual token fallback",
   assert.match(auth, /storageKey: adminSupabaseSessionStorageKey/);
   assert.match(auth, /uzmax\.admin\.supabase\.session/);
   assert.doesNotMatch(auth, /localStorage/);
-  assert.match(
-    auth,
-    /isSessionSyncEvent[\s\S]*storeAccessToken\(accessToken\)/
-  );
-  assert.match(
-    auth,
-    /\["SIGNED_IN", "TOKEN_REFRESHED", "INITIAL_SESSION"\]/
-  );
+  assert.match(auth, /isSessionSyncEvent[\s\S]*storeAccessToken\(accessToken\)/);
+  assert.match(auth, /\["SIGNED_IN", "TOKEN_REFRESHED", "INITIAL_SESSION"\]/);
   assert.match(auth, /event === "SIGNED_OUT"[\s\S]*clearAccessToken\(\)/);
   assert.match(auth, /resetPasswordForEmail[\s\S]*adminAuthRedirectUrl/);
   assert.match(auth, /updateUser\(\{ password \}\)[\s\S]*getSession\(\)/);

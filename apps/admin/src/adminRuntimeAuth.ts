@@ -240,12 +240,10 @@ export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeA
   }, []);
 
   const signOut = useCallback(async () => {
-    if (state.source === "supabase" && clientRef.current) {
-      await clientRef.current.auth.signOut({ scope: "local" });
-    }
+    await clientRef.current?.auth.signOut({ scope: "local" });
     clearAccessToken();
     setState(readyState("none", ""));
-  }, [state.source]);
+  }, []);
 
   return {
     ...state,

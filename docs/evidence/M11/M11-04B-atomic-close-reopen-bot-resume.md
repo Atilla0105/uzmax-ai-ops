@@ -87,6 +87,11 @@ Worktree:
   runner-only PostgreSQL barriers/failpoint, exhaustive readiness/queue/RLS and
   sanitized-failure matrices. Source remains untouched pending corrected
   re-review.
+- Corrected spec freeze commit: `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`
+  (`M11-04B: harden lifecycle replay contract`), containing docs only.
+- Independent implementation-map audit found the corrected path feasible within
+  changed source <=11, net source <=600 and one new helper, with no schema,
+  migration, worker-source, audit-sink or app-module change.
 
 ## Validation Record
 
@@ -96,7 +101,7 @@ Worktree:
 | existing implementation search | pass | one API planner/writer path and one worker fence path; no parallel runtime authorized |
 | schema/migration need | none | existing statuses, event payload, closedAt, audit table and RLS are sufficient |
 | initial spec frozen before source | pass | docs-only commit `a432b5c`; no source edit followed the NO-GO review |
-| corrected spec freeze | pending commit/re-review | corrective docs only; record exact SHA before source |
+| corrected spec freeze | pass | docs-only commit `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`; no source edit |
 | independent corrected spec review | pending | must pass before source edits |
 | independent test-plan review | pending | must pass before source edits |
 | implementation | pending | no source edit started |

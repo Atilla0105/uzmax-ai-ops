@@ -44,27 +44,49 @@ Worktree:
   actions.
 - Close uses five exact result tokens plus one bounded required
   route/explanation, resets unread and keeps Bot suspended.
-- Human reopen selects only the latest complete closed ticket, assigns the
-  authorized reopener, returns `HANDOFF + REOPENED` and preserves close history.
+- Human reopen selects the latest closed candidate first, then requires that
+  candidate to be complete; it never falls back to older history. It assigns
+  the authorized reopener, returns `HANDOFF + REOPENED` and preserves history.
 - Explicit resume is a separate conversation endpoint. It requires closed
   state, zero unread, zero active ticket and zero all-origin queued outbound.
 - Resume leaves the ticket closed, does no LLM/send/replay, and atomically writes
   truthful `STATUS_CHANGED/bot_resumed` plus `audit_log`.
-- Exact state replay is no-op success; different payload/actor or race loser is
-  conflict/zero-write.
+- Close/reopen/resume require a client-stable request UUID plus the exact server
+  lifecycle-event anchor. Exact request replay is no-op success even after a
+  later lifecycle; reused request ID with different command data, stale anchor
+  or a race loser is conflict/zero-write.
+- Resume audit uses the canonical `conversation.bot_resumed` event token, a
+  server-owned audit UUID shared by event/row/response, and exact tenant-scoped
+  audit verification before any retry returns `auditRef`.
+- Closed-ticket selection chooses the newest candidate before completeness
+  validation and never falls back to an older valid-looking ticket.
+- The legacy ticket-only capability close/reopen path fails closed; the API
+  atomic planner is the only lifecycle writer.
 - One new outbound-fence helper is justified by the existing atomic writer's
   383-nonblank-line ceiling; it cannot own lifecycle decisions.
 
 ## Read-only Pre-reviews
 
-- State audit: no schema/worker-source blocker; identified controller payload,
-  closed-ticket lock, conversation persistence, mapper and queued-outbound gaps.
+- Initial freeze commit: `a432b5c` (`M11-04B: freeze close and Bot resume
+  contract`), containing docs only.
+- State/security/RLS audit result: `NO-GO source`. Blockers were cross-lifecycle
+  delayed replay without request/expected-event tokens, non-canonical audit
+  event type and conflicting unread precedence. Majors were latest-ticket
+  fallback, unverified auditRef, the parallel legacy capability writer and
+  missing in-memory audit parity.
 - Product/acceptance audit: required structured close result, human-only reopen,
   explicit resume, unread/queue gates, audit truth and no production/usable-UI
   overclaim.
-- Test/true-DB audit: required deterministic close/worker, closed-inbound,
-  reopen/resume, queue, audit rollback, RLS and residue matrices; existing
-  compilers/runners are reusable.
+- Test/true-DB audit result: `NO-GO source`. The frozen 400-line rule contradicted
+  the pre-existing runtime compiler, audit write ownership was underspecified,
+  race/audit failpoints were not deterministic, readiness proof was incomplete,
+  and fake/RLS/sanitizer coverage was too broad.
+- Corrective docs now freeze request-bound commands, canonical audit, exact
+  replay precedence, no-fallback history selection, stored in-memory audit,
+  fail-closed legacy lifecycle actions, the measured compiler allowance,
+  runner-only PostgreSQL barriers/failpoint, exhaustive readiness/queue/RLS and
+  sanitized-failure matrices. Source remains untouched pending corrected
+  re-review.
 
 ## Validation Record
 
@@ -73,7 +95,8 @@ Worktree:
 | root/worktree isolation | pass | clean synchronized root/main; assigned worktree/branch/base matched; independent dependencies |
 | existing implementation search | pass | one API planner/writer path and one worker fence path; no parallel runtime authorized |
 | schema/migration need | none | existing statuses, event payload, closedAt, audit table and RLS are sufficient |
-| spec frozen before source | pass on freeze commit | only this spec/evidence are changed; the commit SHA is recorded before implementation |
+| initial spec frozen before source | pass | docs-only commit `a432b5c`; no source edit followed the NO-GO review |
+| corrected spec freeze | pending commit/re-review | corrective docs only; record exact SHA before source |
 | independent corrected spec review | pending | must pass before source edits |
 | independent test-plan review | pending | must pass before source edits |
 | implementation | pending | no source edit started |
@@ -82,10 +105,11 @@ Worktree:
 
 ## Current Conclusion
 
-M11-04B now has a decision-complete draft contract and no known schema or owner
-blocker. Implementation remains blocked until this spec/evidence pair is
-committed and independent pre-reviews accept the exact lifecycle, history,
-unread, queued-outbound, audit, race and budget boundaries.
+M11-04B still has no schema, migration, worker-source or owner-input blocker.
+The initial freeze correctly separated close/reopen/resume but was not safe
+enough to implement. The corrective contract now addresses every recorded
+blocker/major; implementation remains blocked until the corrective docs are
+committed and both independent reviewers return `GO source` on the exact SHA.
 
 M11-05 and later Value-0 slices remain serially blocked until M11-04B
 implementation, true-DB/CI evidence, merge and branch/worktree cleanup complete.

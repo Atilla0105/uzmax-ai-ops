@@ -14,7 +14,7 @@ M10-08 closes the implementation gap between a fail-closed staging admin and a h
 - Invite/recovery rejection stops before all membership, permission and audit writes.
 - Successful email request is followed by one DB transaction that activates `owner_operator` org/tenant membership, replaces the exact 18-item permission set and writes before/after permission arrays to `audit_log` with explicit GitHub Actions system-actor semantics.
 - Public workflow output contains only a hash prefix, status, email-request status and counts.
-- Admin auth now uses the pinned Supabase JS client, keeps the existing session-storage access-token contract, preserves manual token fallback and supports sign-in, reset, invite/recovery password setup and token URL cleanup.
+- Admin auth now uses the pinned Supabase JS client, persists its refreshable session only in `sessionStorage` under a unique key, synchronizes refreshed/reloaded tokens into the existing API token contract, preserves manual token fallback and supports sign-in, reset, invite/recovery password setup and token URL cleanup.
 - Supabase is dynamically loaded into a separate chunk; the existing size limit remains green.
 
 ## Runtime Facts And Boundary
@@ -55,7 +55,8 @@ Focused Playwright used a controlled local Vite runtime and intercepted fake Sup
 |---|---|
 | blank sign-in/reset | buttons disabled; no Supabase request |
 | reset request | `resetPasswordForEmail` request observed; explicit success shown |
-| manual token | existing sessionStorage save/sign-out contract preserved |
+| manual token | existing sessionStorage save/sign-out contract survives reload when no Supabase session exists |
+| Supabase reload | persisted session restores and re-synchronizes the API access token; no Supabase session is written to localStorage |
 | unsupported `?code` callback | auth URL cleaned; fail-closed error shown; same-page password sign-in still succeeds |
 | invite implicit callback | callback session captured; URL tokens removed; password form shown |
 | `PASSWORD_RECOVERY` implicit callback | callback session captured; URL tokens removed; password form shown |
@@ -84,7 +85,7 @@ No token is rendered or logged. A missing post-update session/access token remai
 | `npm run lint` | pass | ESLint exit 0. |
 | `npm run build:admin` | pass | Supabase split to a separate dynamic chunk; existing Vite large-chunk warning remains. |
 | `npm run size` | pass | Admin bundle 226.61 kB brotlied under the 250 kB limit. |
-| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M10-08-staging-owner-account-handoff.md` | pass | 12 files; source 4; net source LOC 600; new source 1; test 3; docs 2; config 2; lock 1. |
+| `node scripts/guards/pr-shape.mjs --base origin/main --spec docs/specs/M10-08-staging-owner-account-handoff.md` | pass | 12 files; source 4; net source LOC 582; new source 1; test 3; docs 2; config 2; lock 1. |
 | `git diff --check` | pass | No whitespace errors. |
 
 ## Impeccable Review

@@ -61,6 +61,9 @@ test("validates blank controls, reset, manual token and same-page callback recov
   await page.getByTestId("admin-runtime-save-token").click();
   await expect(page.getByTestId("admin-runtime-sign-out")).toBeVisible();
   expect(await hasStoredToken(page)).toBe(true);
+  await page.reload();
+  await expect(page.getByTestId("admin-runtime-sign-out")).toBeVisible();
+  expect(await hasStoredToken(page)).toBe(true);
   await page.getByTestId("admin-runtime-sign-out").click();
   expect(await hasStoredToken(page)).toBe(false);
 
@@ -74,6 +77,17 @@ test("validates blank controls, reset, manual token and same-page callback recov
   await expect(signIn).toBeEnabled();
   await signIn.click();
   await expect(page.getByTestId("admin-runtime-sign-out")).toBeVisible();
+  expect(await sessionStorageState(page)).toEqual({
+    apiToken: true,
+    localSupabaseSession: false,
+    supabaseSession: true
+  });
+  await page.evaluate(() =>
+    sessionStorage.removeItem("uzmax.admin.runtime.accessToken")
+  );
+  await page.reload();
+  await expect(page.getByTestId("admin-runtime-sign-out")).toBeVisible();
+  expect(await hasStoredToken(page)).toBe(true);
   expect(calls.filter((call) => call === "recover")).toHaveLength(1);
   expect(calls.filter((call) => call === "password")).toHaveLength(1);
 });
@@ -170,6 +184,14 @@ async function hasStoredToken(page: Page) {
   return page.evaluate(() =>
     Boolean(sessionStorage.getItem("uzmax.admin.runtime.accessToken"))
   );
+}
+
+async function sessionStorageState(page: Page) {
+  return page.evaluate(() => ({
+    apiToken: Boolean(sessionStorage.getItem("uzmax.admin.runtime.accessToken")),
+    localSupabaseSession: Boolean(localStorage.getItem("uzmax.admin.supabase.session")),
+    supabaseSession: Boolean(sessionStorage.getItem("uzmax.admin.supabase.session"))
+  }));
 }
 
 async function waitForServer() {

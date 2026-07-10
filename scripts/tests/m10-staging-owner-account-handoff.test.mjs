@@ -155,10 +155,29 @@ test("admin auth contract validates blanks and preserves manual token fallback",
   assert.match(panel, /admin-runtime-password-setup/);
   assert.match(panel, /admin-runtime-save-token/);
   assert.match(auth, /flowType: "implicit"/);
+  assert.match(auth, /autoRefreshToken: true/);
+  assert.match(auth, /persistSession: true/);
+  assert.match(auth, /storage: window\.sessionStorage/);
+  assert.match(auth, /storageKey: adminSupabaseSessionStorageKey/);
+  assert.match(auth, /uzmax\.admin\.supabase\.session/);
+  assert.doesNotMatch(auth, /localStorage/);
+  assert.match(
+    auth,
+    /isSessionSyncEvent[\s\S]*storeAccessToken\(accessToken\)/
+  );
+  assert.match(
+    auth,
+    /\["SIGNED_IN", "TOKEN_REFRESHED", "INITIAL_SESSION"\]/
+  );
+  assert.match(auth, /event === "SIGNED_OUT"[\s\S]*clearAccessToken\(\)/);
   assert.match(auth, /resetPasswordForEmail[\s\S]*adminAuthRedirectUrl/);
   assert.match(auth, /updateUser\(\{ password \}\)[\s\S]*getSession\(\)/);
   assert.match(auth, /getSession\(\)[\s\S]*storeAccessToken\(accessToken\)/);
   assert.match(auth, /saveManualToken/);
+  assert.notEqual(
+    auth.match(/adminSupabaseSessionStorageKey = "([^"]+)"/)?.[1],
+    "uzmax.admin.runtime.accessToken"
+  );
   assert.doesNotMatch(auth, /update\.data\.session/);
   assert.doesNotMatch(auth, /console\.(?:log|error|warn)/);
 });

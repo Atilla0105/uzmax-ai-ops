@@ -100,7 +100,7 @@ Focused tests must derive the permission literals from all current `apps/api/src
 - Upsert active org/tenant membership, replace the exact selected-tenant permission set, and write one `audit_log` event in the same DB transaction.
 - Keep the CLI result to sanitized email hash, status, invite delivery-request status and counts only; mask workflow secrets and keep the service-role key server-side.
 - Add a dispatch-only workflow with exact confirmation and existing Supabase/DB secrets.
-- Replace the admin handwritten auth calls with the pinned Supabase JS client while preserving the existing access-token session-storage contract.
+- Replace the admin handwritten auth calls with the pinned Supabase JS client; persist its refreshable session only in `sessionStorage` under a unique key while preserving the existing API access-token contract.
 - Configure the browser client with explicit `flowType: "implicit"`; accept only complete implicit invite/recovery callbacks. Code-only PKCE or token callbacks without a recognized `type=invite|recovery` fail closed and are cleaned from the URL.
 - Add blank validation, recovery request state, invite/recovery callback state, password update state, URL cleanup and session activation.
 - Add focused Node/static and Playwright coverage plus evidence.
@@ -166,6 +166,7 @@ Read-only anchors:
 - Blank sign-in and blank reset controls remain disabled; submit handlers and the auth hook also reject blank values without calling Supabase.
 - Reset request uses `resetPasswordForEmail` with the approved redirect and shows loading/error/success.
 - `PASSWORD_RECOVERY` and invite callbacks (`SIGNED_IN` plus URL `type=invite`) show a compact new-password form. Password update uses `updateUser({ password })`, then calls `getSession()` and stores that current session's `access_token` through `storeAccessToken`; `updateUser` is not treated as a token response. URL token/code/type material is removed only after callback session capture, then the existing API session is entered.
+- Supabase Auth enables session persistence and automatic refresh with a unique `sessionStorage` key. `SIGNED_IN`, `TOKEN_REFRESHED` and reload-time `INITIAL_SESSION` synchronize the current access token into `uzmax.admin.runtime.accessToken`; `SIGNED_OUT` clears it. A missing Supabase session never clears an existing manual token.
 - A callback containing a session/token or code but no recognized invite/recovery type never enters password setup or API session, removes auth material from the URL, and shows a fail-closed error instead of remaining in a verifying state. Supabase client initialization still completes so normal sign-in/reset works in the same page without reload.
 - Manual token save/sign-out remains functional; no token is rendered or logged.
 - Focused tests, typecheck, lint, admin build, PR shape and diff checks pass.
@@ -179,6 +180,7 @@ Read-only anchors:
 - DB transaction failure: roll back membership, permission and audit changes; return sanitized failure.
 - Invite accepted before a later DB transaction failure can leave an Auth user with no UZMAX memberships/grants. This is fail-closed (no API authorization); rerunning M10-08 finds that user, sends recovery and retries the exact access transaction.
 - Callback has no valid session: remove auth material from the URL, keep API session signed out and show a recovery error.
+- Reload with no persisted Supabase session: retain any existing manual API token; do not interpret absence as sign-out.
 - Password update fails, or post-update `getSession()` has no session/access token: keep the callback form active, do not store a token, and show a sanitized Supabase error without token material.
 - Supabase runtime env absent in local preview: retain disabled Supabase controls and manual token fallback.
 

@@ -30,6 +30,7 @@ export type AdminRuntimeAccess = AdminRuntimeAccessState & {
 };
 
 export const adminAuthRedirectUrl = "https://uzmax-admin.vercel.app/";
+const adminSupabaseSessionStorageKey = "uzmax.admin.supabase.session";
 
 export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeAccess {
   const initialToken = readStoredAccessToken();
@@ -50,14 +51,7 @@ export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeA
     const callback = readAuthCallback(window.location);
     if (callback.isSupported) {
       clearAccessToken();
-      setState((current) => ({
-        ...current,
-        callbackKind: null,
-        error: "",
-        feedback: "正在验证安全链接…",
-        isSignedIn: false,
-        source: "none"
-      }));
+      setState(readyState("none", "正在验证安全链接…"));
     }
 
     let active = true;
@@ -65,49 +59,54 @@ export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeA
     const rejectAuthCallback = (error: string) => {
       clearAccessToken();
       clearAuthCallbackUrl();
-      setState((current) => ({
-        ...current,
-        callbackKind: null,
-        error,
-        feedback: "",
-        isSignedIn: false,
-        source: "none"
-      }));
+      setState({ ...readyState("none", ""), error });
     };
     const initializeClient = async () => {
       const { createClient } = await import("@supabase/supabase-js");
       if (!active) return;
       const client = createClient(config.supabaseUrl, config.supabasePublishableKey, {
         auth: {
-          autoRefreshToken: false,
+          autoRefreshToken: true,
           detectSessionInUrl: true,
           flowType: "implicit",
-          persistSession: false
+          persistSession: true,
+          storage: window.sessionStorage,
+          storageKey: adminSupabaseSessionStorageKey
         }
       });
       clientRef.current = client;
+      const urlCallbackKind = callback.isSupported ? callback.kind : null;
       const listener = client.auth.onAuthStateChange((event, session) => {
         if (!active) return;
-        const callbackKind = callback.isSupported
-          ? callbackKindForEvent(event, callback.kind)
-          : null;
-        if (!callbackKind) return;
-        if (!session?.access_token) {
+        const accessToken = session?.access_token?.trim();
+        if (event === "SIGNED_OUT") {
+          clearAccessToken();
+          setState(readyState("none", ""));
+          return;
+        }
+        const callbackKind = callbackKindForEvent(event, urlCallbackKind);
+        if (!callbackKind) {
+          if (accessToken && isSessionSyncEvent(event)) {
+            storeAccessToken(accessToken);
+            setState(readyState("supabase", ""));
+          }
+          return;
+        }
+        if (!accessToken) {
           rejectAuthCallback("安全链接无有效会话，请重新发送重置邮件。");
           return;
         }
+        storeAccessToken(accessToken);
         clearAuthCallbackUrl();
-        setState((current) => ({
-          ...current,
-          callbackKind,
-          error: "",
-          feedback:
+        setState({
+          ...readyState(
+            "none",
             callbackKind === "invite"
               ? "邀请已验证，请设置登录密码。"
-              : "重置链接已验证，请设置新密码。",
-          isSignedIn: false,
-          source: "none"
-        }));
+              : "重置链接已验证，请设置新密码。"
+          ),
+          callbackKind
+        });
       });
       unsubscribe = () => listener.data.subscription.unsubscribe();
 
@@ -128,45 +127,34 @@ export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeA
     };
   }, [config.supabasePublishableKey, config.supabaseUrl]);
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      if (!email.trim() || !password) {
-        setError(setState, "请输入邮箱和密码。");
-        return;
-      }
-      const client = clientRef.current;
-      if (!client) {
-        setError(setState, "Supabase runtime env is not configured.");
-        return;
-      }
-      setState((current) => ({
-        ...current,
-        error: "",
-        feedback: "",
-        isSigningIn: true
-      }));
-      const { data, error } = await client.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password
+  const signIn = useCallback(async (email: string, password: string) => {
+    if (!email.trim() || !password) {
+      setError(setState, "请输入邮箱和密码。");
+      return;
+    }
+    const client = clientRef.current;
+    if (!client) {
+      setError(setState, "Supabase runtime env is not configured.");
+      return;
+    }
+    setState((current) => ({
+      ...current,
+      error: "",
+      feedback: "",
+      isSigningIn: true
+    }));
+    const { error } = await client.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password
+    });
+    if (error) {
+      clearAccessToken();
+      setState({
+        ...readyState("none", ""),
+        error: safeAuthError(error, "Supabase sign-in failed.")
       });
-      const accessToken = data.session?.access_token?.trim();
-      if (error || !accessToken) {
-        clearAccessToken();
-        setState((current) => ({
-          ...current,
-          error: safeAuthError(error, "Supabase session was not returned."),
-          feedback: "",
-          isSignedIn: false,
-          isSigningIn: false,
-          source: "none"
-        }));
-        return;
-      }
-      storeAccessToken(accessToken);
-      setState(readyState(config, "supabase", "登录成功，API session active。"));
-    },
-    [config]
-  );
+    }
+  }, []);
 
   const requestPasswordReset = useCallback(async (email: string) => {
     if (!email.trim()) {
@@ -196,74 +184,68 @@ export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeA
     }));
   }, []);
 
-  const updatePassword = useCallback(
-    async (password: string) => {
-      if (!password) {
-        setError(setState, "请输入新密码。");
-        return;
-      }
-      const client = clientRef.current;
-      if (!client) {
-        setError(setState, "Supabase runtime env is not configured.");
-        return;
-      }
+  const updatePassword = useCallback(async (password: string) => {
+    if (!password) {
+      setError(setState, "请输入新密码。");
+      return;
+    }
+    const client = clientRef.current;
+    if (!client) {
+      setError(setState, "Supabase runtime env is not configured.");
+      return;
+    }
+    setState((current) => ({
+      ...current,
+      error: "",
+      feedback: "",
+      isUpdatingPassword: true
+    }));
+    const update = await client.auth.updateUser({ password });
+    if (update.error) {
       setState((current) => ({
         ...current,
-        error: "",
+        error: safeAuthError(update.error, "密码更新失败。"),
         feedback: "",
-        isUpdatingPassword: true
+        isUpdatingPassword: false
       }));
-      const update = await client.auth.updateUser({ password });
-      if (update.error) {
-        setState((current) => ({
-          ...current,
-          error: safeAuthError(update.error, "密码更新失败。"),
-          feedback: "",
-          isUpdatingPassword: false
-        }));
-        return;
-      }
-      const currentSession = await client.auth.getSession();
-      const accessToken = currentSession.data.session?.access_token?.trim();
-      if (currentSession.error || !accessToken) {
-        clearAccessToken();
-        setState((current) => ({
-          ...current,
-          error: safeAuthError(
-            currentSession.error,
-            "密码已更新，但安全会话缺失，请重新登录。"
-          ),
-          feedback: "",
-          isSignedIn: false,
-          isUpdatingPassword: false,
-          source: "none"
-        }));
-        return;
-      }
-      storeAccessToken(accessToken);
-      setState(readyState(config, "supabase", "密码已更新，API session active。"));
-    },
-    [config]
-  );
+      return;
+    }
+    const currentSession = await client.auth.getSession();
+    const accessToken = currentSession.data.session?.access_token?.trim();
+    if (currentSession.error || !accessToken) {
+      clearAccessToken();
+      setState((current) => ({
+        ...current,
+        error: safeAuthError(
+          currentSession.error,
+          "密码已更新，但安全会话缺失，请重新登录。"
+        ),
+        feedback: "",
+        isSignedIn: false,
+        isUpdatingPassword: false,
+        source: "none"
+      }));
+      return;
+    }
+    storeAccessToken(accessToken);
+    setState(readyState("supabase", "密码已更新，API session active。"));
+  }, []);
 
-  const saveManualToken = useCallback(
-    (token: string) => {
-      storeAccessToken(token);
-      setState({
-        ...readyState(config, token.trim() ? "manual" : "none", ""),
-        isSignedIn: Boolean(token.trim())
-      });
-    },
-    [config]
-  );
+  const saveManualToken = useCallback((token: string) => {
+    storeAccessToken(token);
+    setState({
+      ...readyState(token.trim() ? "manual" : "none", ""),
+      isSignedIn: Boolean(token.trim())
+    });
+  }, []);
 
   const signOut = useCallback(async () => {
     if (state.source === "supabase" && clientRef.current) {
       await clientRef.current.auth.signOut({ scope: "local" });
     }
     clearAccessToken();
-    setState(readyState(config, "none", ""));
-  }, [config, state.source]);
+    setState(readyState("none", ""));
+  }, [state.source]);
 
   return {
     ...state,
@@ -275,11 +257,7 @@ export function useAdminRuntimeAccess(config: AdminRuntimeConfig): AdminRuntimeA
   };
 }
 
-function readyState(
-  config: AdminRuntimeConfig,
-  source: SessionSource,
-  feedback: string
-): AdminRuntimeAccessState {
+function readyState(source: SessionSource, feedback: string): AdminRuntimeAccessState {
   return {
     callbackKind: null,
     error: "",
@@ -308,6 +286,10 @@ function callbackKindForEvent(
     return urlKind;
   }
   return null;
+}
+
+function isSessionSyncEvent(event: AuthChangeEvent) {
+  return ["SIGNED_IN", "TOKEN_REFRESHED", "INITIAL_SESSION"].includes(event);
 }
 
 function readAuthCallback(location: Location) {

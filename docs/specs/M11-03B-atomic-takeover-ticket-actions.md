@@ -96,6 +96,13 @@ the same fence.
 - existing read/action true-DB helper:
   `run-m10-conversation-ticket-actions-true-db-smoke.mjs`.
 
+ADR-001 keeps Prisma batch transactions as the repository default because the
+Supabase transaction pooler can reject interactive transactions at Prisma's
+default limits. This lock-driven write path is a narrow, explicit exception:
+it reuses the M8 worker's true-DB-proven interactive transaction timing contract
+and must not change the default read path or make interactive transactions a
+general repository convention.
+
 Two new source files are authorized because the existing repository is already
 430 physical lines/at its nonblank lint ceiling, while the stopped one-file
 shape reached 642 nonblank lines:
@@ -205,7 +212,10 @@ the hint and revalidates under locks in its own transaction.
 
 ## Atomic Takeover State Machine
 
-One Prisma interactive RLS transaction must execute in this order:
+One Prisma interactive RLS transaction must execute in this order. Both atomic
+entrypoints must pass the server-owned `{ maxWait: 60_000, timeout: 60_000 }`
+options already exercised by the M8 worker true-DB path; client input and env
+cannot widen them:
 
 1. `SET LOCAL ROLE uzmax_app_runtime` and set scoped org/tenant settings;
 2. parameterized scoped conversation `FOR UPDATE` lock;
@@ -336,8 +346,9 @@ Invalid action type or invalid text is 400; wrong tenant/missing ticket is opaqu
 
 - Any schema/RLS-policy need -> stop and open a globally serial DB spec.
 - If the existing Prisma client cannot support interactive transactions with
-  scoped role/settings -> keep M11-03B open and create an ADR-backed runtime
-  path; never fall back to batch/read-then-save writes.
+  scoped role/settings and the explicit bounded timing contract -> keep
+  M11-03B open and create an ADR-backed runtime path; never fall back to
+  batch/read-then-save writes.
 - If source exceeds 600 or either new module exceeds lint limits -> stop, narrow
   the implementation surface or open a serial source sub-spec; test splitting
   is not a source-budget remedy and no silent exception is allowed.

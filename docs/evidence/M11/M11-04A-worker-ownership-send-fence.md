@@ -1,6 +1,6 @@
 # M11-04A Worker Ownership And Send Fence Evidence
 
-Status: `spec_frozen__implementation_pending`
+Status: `implementation_complete__local_green__ci_true_db_pending`
 Spec: `docs/specs/M11-04A-worker-ownership-send-fence.md`
 Base: `da5e808b9bac377252acd953c9ca2d7335ba67c2`
 Branch: `codex/m11-04a-worker-fence`
@@ -62,25 +62,67 @@ Worktree:
   nonblocking precision suggestion was applied: both principal race barriers
   now return a follow-up draft so each ordering proves ticket non-duplication.
 
+## Implementation Result
+
+- The worker now persists scoped dedupe/customer/inbound state and a deterministic
+  `QUEUED/generating` AI intent before LLM/send, then uses a separate committed
+  claim as the one-send linearization point.
+- Existing valid `PENDING_HANDOFF`, `HANDOFF` and `CLOSED` ownership stores one
+  inbound and increments unread once with zero intent/LLM/send/new ticket; every
+  invalid or multi-ticket matrix rolls the transaction back.
+- `processedAt IS NULL` is the conditional once-latch for terminal work. Recovery,
+  stale worker completion and API-cancel retry cannot produce unread 0/2 or a
+  second ticket.
+- Claimed recovery terminalizes as `QUEUED/uncertain`; a late real `SENT/FAILED`
+  acknowledgement may only refine that intent. It clears `deliveryUncertain`
+  and cannot repeat handoff, ticket creation or unread increment.
+- Returned `FAILED`, returned `QUEUED` and thrown Telegram ambiguity are covered
+  separately. Only `SENT/FAILED` become `terminal`; ambiguity remains
+  `QUEUED/uncertain` and is never blindly resent.
+- API takeover cancels only exact scoped `OUTBOUND + QUEUED + telegram_bot_ai +
+  generating` rows. Claimed AI sends and future operator queued messages are not
+  cancelled; in-memory and Prisma paths use the same predicate.
+- The original compound-key defect found during production-shaped fake testing
+  was corrected: every Prisma compound update now receives only `{orgId,
+  tenantId}`, never the full dedupe draft.
+- No schema, migration, provider adapter, deployment, production secret or real
+  customer data was added or changed.
+
 ## Validation Record
 
 | Gate | Result | Evidence |
 |---|---|---|
-| spec frozen before source | pass | only this spec/evidence added |
+| spec frozen before source | pass | commit `f44b94a`; only this spec/evidence preceded source edits |
 | existing implementation search | pass | one existing worker/API path to refactor; two new source files justified by file ceilings |
 | root/worktree isolation | pass | root clean/read-only; assigned worktree/branch/base matched; dependencies independently copied |
 | schema/migration need | none | existing statuses, scoped keys and RLS are sufficient |
-| implementation | pending | no source edit yet |
-| focused/full/static/build | pending | run after implementation |
-| local true DB | not run | no local DB claim before implementation |
-| CI true DB | pending | required before merge |
+| implementation | pass | ownership matrix, intent preparation/claim/finalize, once-latch recovery, late ack refinement and exact takeover cancellation implemented |
+| focused regression | pass | 42/42 related M6B/M8/M9/M11 tests; M11-04A has 8 scenarios including both takeover-first outcomes, claim-first, crash recovery, late SENT and FAILED/QUEUED/throw |
+| full Node tests | pass | 573/573, zero skipped/cancelled/todo |
+| format/type/lint | pass | full Prettier check, TypeScript and repository-wide ESLint |
+| architecture/static | pass | dependency-cruiser, jscpd zero clones, knip, forbidden/eval/doc/workspace/write-boundary guards |
+| build/size/browser | pass | API/worker/cron/admin builds; 226.55 kB brotli <= 250 kB; Playwright 149/149 using the built admin preview |
+| source/test budget | pass | 8 source files including 2 new, net source +596 <= 600; 7 test/support files including 2 new; config 1; docs 2; all bounded files <= 400 nonblank lines |
+| local true DB | not run | `UZMAX_RLS_DATABASE_URL` is absent locally; no PostgreSQL pass is claimed |
+| no-DB sanitizer | pass | exit 1 and exactly `m11-worker-ownership-fence-true-db-smoke-failed`, with no raw cause, path or stack |
+| CI true DB | pending | new step is after M11 atomic takeover and before Redis smokes; latest-SHA CI required before merge |
 | pre-implementation spec compliance reviews | pass after fail/corrections | ownership matrix, retry recovery, cancellation scope/parity, budgets and both follow-up race orders accepted before source |
-| final implementation spec compliance review | pending | must precede quality review |
-| code quality/security/RLS review | pending | after compliance |
+| final implementation spec compliance review | pass | second independent review found no blocker/major and confirmed all pass conditions plus net source +596 |
+| code quality/security/RLS review | pass | second independent review confirmed once-latch, late ack refinement, lock order, enum/compound scope and network-outside-transaction semantics |
+| final verification/CI review | local GO | no blocker/major; commit/PR allowed, merge remains blocked on latest-SHA true-DB CI |
 
 ## Current Conclusion
 
-M11-04A is decision-complete and approved through M11-00, but implementation has
-not started. The spec/evidence freeze is ready to commit before source work.
-M11-04B and all later Value-0 slices remain serially blocked until this slice
-passes its real PostgreSQL race gate, merges and is cleaned.
+M11-04A implementation and all locally available gates are complete. Local
+evidence is GO for commit and PR, not for merge: no local database credential is
+present, so the real PostgreSQL/RLS race runner must pass on the PR's latest SHA.
+
+One nonblocking observability improvement remains outside this ownership slice:
+terminal `RuntimeResult` values do not consistently preserve every optional
+conversation/message/outbound ID. No current consumer or M11-04A safety contract
+depends on those optional fields; a later narrow compatibility slice may restore
+them without reopening this ownership/send fence.
+
+M11-04B and all later Value-0 slices remain serially blocked until M11-04A latest-
+SHA CI is green, this evidence records that run, the PR merges and the branch/
+worktree are cleaned.

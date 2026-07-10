@@ -153,45 +153,87 @@ export function payloadFor({
 
 export function createFakeGateway() {
   const reserved = new Set();
+  const summaries = new Map();
   const calls = { persist: [], reserve: [] };
+  const prepare = async (input) => {
+    const key = dedupeKey(input.dedupe);
+    if (reserved.has(key)) return deduped(input);
+    reserved.add(key);
+    calls.reserve.push(input.dedupe);
+    const summary = persistSummary(input);
+    summaries.set(key, summary);
+    calls.persist.push(summary);
+    return {
+      conversationId: input.conversation.id,
+      disposition: input.runtimeBranch === "answer" ? "answer_ready" : "handoff",
+      messageId: input.message.id,
+      outboundMessageId: input.outboundMessage?.id,
+      providerUpdateId: input.dedupe.providerUpdateId,
+      runtimeBranch: input.runtimeBranch,
+      status: "accepted",
+      ticketId: input.ticket?.id,
+      traceId: input.traceId
+    };
+  };
   return {
     calls,
-    async persistAcceptedUpdate(input) {
-      calls.persist.push(persistSummary(input));
-      if (!input.dedupe.reserved) {
-        const key = dedupeKey(input.dedupe);
-        if (reserved.has(key)) return deduped(input);
-        reserved.add(key);
+    async claimPreparedAnswer(input) {
+      const summary = summaries.get(dedupeKey(input.dedupe));
+      summary.messages[1].content = {
+        ...summary.messages[1].content,
+        dispatchPhase: "claimed",
+        text: input.answerText
+      };
+      summary.ticket = input.followUp?.ticket;
+      return {
+        claim: "claimed",
+        providerUpdateId: input.dedupe.providerUpdateId,
+        runtimeBranch: "answer",
+        status: "accepted",
+        ticketId: summary.ticket?.id,
+        traceId: input.traceId,
+        outboundMessageId: input.outboundMessageId
+      };
+    },
+    async finalizePreparedAnswer(input) {
+      const summary = summaries.get(dedupeKey(input.dedupe));
+      summary.messages[1].deliveryStatus =
+        input.outcome === "sent"
+          ? "SENT"
+          : input.outcome === "failed"
+            ? "FAILED"
+            : "QUEUED";
+      if (input.outcome !== "sent") {
+        summary.conversationStatus = "PENDING_HANDOFF";
+        summary.runtimeBranch = "handoff";
+        summary.ticket = input.ticket;
       }
       return {
-        conversationId: input.conversation.id,
-        messageId: input.message.id,
-        outboundMessageId:
-          input.runtimeBranch === "answer" ? input.outboundMessage.id : undefined,
         providerUpdateId: input.dedupe.providerUpdateId,
-        runtimeBranch: input.runtimeBranch,
+        runtimeBranch: input.outcome === "sent" ? "answer" : "handoff",
         status: "accepted",
-        ticketId: input.ticket?.id,
+        ticketId: summary.ticket?.id,
         traceId: input.traceId
       };
     },
-    async reserveProviderUpdate(input) {
-      calls.reserve.push(input);
-      const key = dedupeKey(input);
-      if (reserved.has(key)) {
-        return {
-          providerUpdateId: input.providerUpdateId,
-          status: "deduped",
-          traceId: input.traceId
-        };
-      }
-      reserved.add(key);
+    async handoffPreparedAnswer(input) {
+      const summary = summaries.get(dedupeKey(input.dedupe));
+      summary.conversationStatus = "PENDING_HANDOFF";
+      summary.messages = summary.messages.filter(
+        ({ direction }) => direction !== "OUTBOUND"
+      );
+      summary.runtimeBranch = "handoff";
+      summary.ticket = input.ticket;
       return {
-        providerUpdateId: input.providerUpdateId,
-        status: "reserved",
+        providerUpdateId: input.dedupe.providerUpdateId,
+        runtimeBranch: "handoff",
+        status: "accepted",
+        ticketId: input.ticket.id,
         traceId: input.traceId
       };
-    }
+    },
+    persistAcceptedUpdate: prepare,
+    prepareAcceptedUpdate: prepare
   };
 }
 
@@ -296,10 +338,19 @@ async function importWorkerConversationRuntime(channelsModuleUrl, inboundModuleU
     ],
     ['import { Worker, type Job, type QueueOptions } from "bullmq";', ""]
   ];
+  let flowSource = sourceOf("apps/worker/src/telegram-bot-conversation.flow.ts");
+  for (const [needle, value] of replacements) {
+    flowSource = flowSource.replace(needle, value);
+  }
+  const flowModuleUrl = dataModuleUrl(jsFromTs(flowSource));
   let runtimeSource = sourceOf("apps/worker/src/conversation-runtime.ts");
   for (const [needle, value] of replacements) {
     runtimeSource = runtimeSource.replace(needle, value);
   }
+  runtimeSource = runtimeSource.replace(
+    "./telegram-bot-conversation.flow.ts",
+    flowModuleUrl
+  );
   return import(dataModuleUrl(jsFromTs(runtimeSource)));
 }
 

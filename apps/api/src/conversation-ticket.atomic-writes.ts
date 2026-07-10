@@ -29,20 +29,16 @@ import {
   type AtomicMutationPlan
 } from "./conversation-ticket.atomic-state.ts";
 import type {
+  ConversationMessage,
   TakeoverInput,
   TakeoverResult,
   TicketActionInput
 } from "./conversation-ticket.types.ts";
 
 type AsyncRow = Promise<unknown>;
-type Delegate = {
-  findFirst(input: unknown): AsyncRow;
-  findMany(input: unknown): AsyncRow;
-};
-type MutableDelegate = Delegate & {
-  create(input: unknown): AsyncRow;
-  update(input: unknown): AsyncRow;
-};
+type Methods<Name extends string> = Record<Name, (input: unknown) => AsyncRow>;
+type Delegate = Methods<"findFirst" | "findMany">;
+type MutableDelegate = Delegate & Methods<"create" | "update" | "updateMany">;
 type AtomicPrismaTransaction = {
   $executeRawUnsafe(sql: string): AsyncRow;
   $queryRaw<T = unknown>(
@@ -50,6 +46,7 @@ type AtomicPrismaTransaction = {
     ...values: readonly unknown[]
   ): Promise<T>;
   channelConversation: Delegate & Pick<MutableDelegate, "update">;
+  channelMessage: Pick<MutableDelegate, "updateMany">;
   supportTicket: MutableDelegate;
   supportTicketEvent: Pick<MutableDelegate, "create" | "findMany">;
 };
@@ -74,6 +71,7 @@ export type AtomicWriter = {
 
 type MemoryState = {
   conversations: HandoffConversation[];
+  messages: ConversationMessage[];
   tickets: TicketState[];
 };
 type MemoryStore = {
@@ -137,7 +135,10 @@ async function memoryMutation(
   const plan = action
     ? planTicketAction(conversation, tickets, input, context.userId)
     : planTakeover(conversation, tickets, input.reason, context.userId);
-  if (plan.result !== "already_owned") commitMemoryPlan(store, state, plan);
+  if (plan.result !== "already_owned") {
+    if (!action) cancelMemoryAiIntents(state, context, conversationId);
+    commitMemoryPlan(store, state, plan);
+  }
   return plan;
 }
 
@@ -160,6 +161,9 @@ async function prismaMutation(
   const plan = action
     ? planTicketAction(locked.conversation, locked.tickets, input, context.userId)
     : planTakeover(locked.conversation, locked.tickets, input.reason, context.userId);
+  if (!action && plan.result !== "already_owned") {
+    await cancelPrismaAiIntents(transaction, context, conversationId);
+  }
   await persistPlan(transaction, locked.conversation, plan);
   return {
     ...plan,
@@ -202,22 +206,17 @@ async function lockState(
 ): Promise<LockedState> {
   const lockedConversation = await transaction.$queryRaw<DbRow[]>`
     select id from conversation
-    where id = ${conversationId}::uuid
-      and org_id = ${context.orgId}::uuid
-      and tenant_id = ${context.selectedTenantId}::uuid
-    for update
+    where id = ${conversationId}::uuid and org_id = ${context.orgId}::uuid
+      and tenant_id = ${context.selectedTenantId}::uuid for update
   `;
   if (!Array.isArray(lockedConversation) || lockedConversation.length !== 1) {
     throwNotFound(missing);
   }
   await transaction.$queryRaw<DbRow[]>`
     select id from ticket
-    where conversation_id = ${conversationId}::uuid
-      and org_id = ${context.orgId}::uuid
-      and tenant_id = ${context.selectedTenantId}::uuid
-      and status <> 'closed'::ticket_status
-    order by id
-    for update
+    where conversation_id = ${conversationId}::uuid and org_id = ${context.orgId}::uuid
+      and tenant_id = ${context.selectedTenantId}::uuid and status <> 'closed'::ticket_status
+    order by id for update
   `;
   const scoped = scopeFromAccessContext(context);
   const conversationRow = await transaction.channelConversation.findFirst({
@@ -269,6 +268,56 @@ async function persistPlan(
       data: toTicketEventCreateData(plan.ticket, event)
     });
   }
+}
+
+async function cancelPrismaAiIntents(
+  transaction: AtomicPrismaTransaction,
+  context: AccessContext,
+  conversationId: string
+) {
+  await transaction.$queryRaw<DbRow[]>`
+    select id from message
+    where conversation_id = ${conversationId}::uuid and org_id = ${context.orgId}::uuid
+      and tenant_id = ${context.selectedTenantId}::uuid
+      and direction = 'outbound'::message_direction and delivery_status = 'queued'::message_delivery_status
+      and content ->> 'runtimeOrigin' = 'telegram_bot_ai' and content ->> 'dispatchPhase' = 'generating'
+    order by id for update
+  `;
+  await transaction.channelMessage.updateMany({
+    data: { deliveryStatus: "CANCELLED" },
+    where: generatingAiIntentWhere(context, conversationId)
+  });
+}
+
+function cancelMemoryAiIntents(
+  state: MemoryState,
+  context: AccessContext,
+  conversationId: string
+) {
+  state.messages = state.messages.map((message) => {
+    const matches =
+      message.orgId === context.orgId &&
+      message.tenantId === context.selectedTenantId &&
+      message.conversationId === conversationId &&
+      message.direction === "outbound" &&
+      message.deliveryStatus === "queued" &&
+      message.content.runtimeOrigin === "telegram_bot_ai" &&
+      message.content.dispatchPhase === "generating";
+    return matches ? { ...message, deliveryStatus: "cancelled" } : message;
+  });
+}
+
+function generatingAiIntentWhere(context: AccessContext, conversationId: string) {
+  return {
+    ...scopeFromAccessContext(context),
+    AND: [
+      { content: { equals: "telegram_bot_ai", path: ["runtimeOrigin"] } },
+      { content: { equals: "generating", path: ["dispatchPhase"] } }
+    ],
+    conversationId,
+    deliveryStatus: "QUEUED",
+    direction: "OUTBOUND"
+  };
 }
 
 async function readback(

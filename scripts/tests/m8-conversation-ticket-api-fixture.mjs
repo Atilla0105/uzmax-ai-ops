@@ -1,3 +1,9 @@
+import {
+  applyM11FixtureData,
+  matchesM11FixtureWhere,
+  queryM11ConversationFixture
+} from "../../packages/db/scripts/tests/m8-active-answer-worker-smoke-support.mjs";
+
 export const ORG_ID = "11111111-1111-4111-8111-111111111111";
 export const TENANT_A = "22222222-2222-4222-8222-222222222222";
 export const TENANT_B = "33333333-3333-4333-8333-333333333333";
@@ -119,6 +125,8 @@ export function fakePrisma() {
         tenantId: TENANT_A
       }
     ],
+    customers: [],
+    dedupes: [],
     failNextEventCreate: false,
     tickets: [
       {
@@ -174,58 +182,30 @@ export function fakePrisma() {
 function prismaSurface(state, nextEventId, log) {
   return {
     $executeRawUnsafe: async (sql) => record(log, { kind: "role", sql }),
-    $queryRaw: async (strings, ...values) => queryRaw(state, strings, values, log),
+    $queryRaw: async (strings, ...values) =>
+      queryM11ConversationFixture(state, strings, values, log),
     channelConnection: delegate(state.channelConnections),
     channelConversation: delegate(state.conversations),
     channelMessage: delegate(state.messages),
+    customer: delegate(state.customers),
     customerIdentity: delegate(state.customerIdentities),
     supportTicket: delegate(state.tickets),
     supportTicketEvent: delegate(state.events, {
+      createDefaults: { actorUserId: null, occurredAt: new Date(NOW) },
       failCreate: () => {
         if (!state.failNextEventCreate) return false;
         state.failNextEventCreate = false;
         return true;
       },
       nextId: nextEventId
+    }),
+    telegramUpdateDedupe: delegate(state.dedupes, {
+      uniqueBy: (row) =>
+        [row.orgId, row.tenantId, row.channelConnectionId, row.providerUpdateId].join(
+          ":"
+        )
     })
   };
-}
-
-function queryRaw(state, strings, values, log) {
-  const sql = strings.join("?").replaceAll(/\s+/g, " ").trim().toLowerCase();
-  if (sql.includes("set_config")) {
-    return record(log, {
-      key: values[0],
-      kind: "set_config",
-      value: values[1]
-    });
-  }
-  if (sql.includes("from conversation")) {
-    const [id, orgId, tenantId] = values;
-    const rows = state.conversations
-      .filter(
-        (row) => row.id === id && row.orgId === orgId && row.tenantId === tenantId
-      )
-      .map(({ id: rowId }) => ({ id: rowId }));
-    record(log, { ids: rows.map((row) => row.id), kind: "conversation_lock" });
-    return rows;
-  }
-  if (sql.includes("from ticket")) {
-    const [conversationId, orgId, tenantId] = values;
-    const rows = state.tickets
-      .filter(
-        (row) =>
-          row.conversationId === conversationId &&
-          row.orgId === orgId &&
-          row.tenantId === tenantId &&
-          row.status !== "CLOSED"
-      )
-      .sort((left, right) => left.id.localeCompare(right.id))
-      .map(({ id }) => ({ id }));
-    record(log, { ids: rows.map((row) => row.id), kind: "ticket_lock" });
-    return rows;
-  }
-  throw new Error("unsupported fake raw query");
 }
 
 function record(log, value) {
@@ -237,7 +217,9 @@ function cloneState(fake) {
   return {
     channelConnections: globalThis.structuredClone(fake.channelConnections),
     conversations: globalThis.structuredClone(fake.conversations),
+    customers: globalThis.structuredClone(fake.customers),
     customerIdentities: globalThis.structuredClone(fake.customerIdentities),
+    dedupes: globalThis.structuredClone(fake.dedupes),
     events: globalThis.structuredClone(fake.events),
     failNextEventCreate: fake.failNextEventCreate,
     messages: globalThis.structuredClone(fake.messages),
@@ -298,11 +280,17 @@ function delegate(rows, options = {}) {
   return {
     create: async ({ data }) => {
       if (options.failCreate?.()) throw new Error("synthetic event write failure");
-      const row = { ...data, id: data.id ?? options.nextId?.() };
+      const row = {
+        ...(options.createDefaults ?? {}),
+        ...data,
+        id: data.id ?? options.nextId?.()
+      };
       rows.push(row);
       return row;
     },
     findFirst: async ({ where = {} }) =>
+      rows.find((row) => matchesWhere(row, where)) ?? null,
+    findUnique: async ({ where = {} }) =>
       rows.find((row) => matchesWhere(row, where)) ?? null,
     findMany: async ({ orderBy, where = {} }) => {
       const selected = rows.filter((row) => matchesWhere(row, where));
@@ -311,8 +299,22 @@ function delegate(rows, options = {}) {
     update: async ({ data, where = {} }) => {
       const row = rows.find((candidate) => matchesWhere(candidate, where));
       if (!row) throw new Error("record not found");
-      Object.assign(row, data, { updatedAt: new Date("2026-06-17T00:30:00.000Z") });
+      applyM11FixtureData(row, data);
+      row.updatedAt = new Date("2026-06-17T00:30:00.000Z");
       return row;
+    },
+    updateMany: async ({ data, where = {} }) => {
+      const selected = rows.filter((row) => matchesM11FixtureWhere(row, where));
+      for (const row of selected) applyM11FixtureData(row, data);
+      return { count: selected.length };
+    },
+    createMany: async ({ data }) => {
+      const key = options.uniqueBy?.(data);
+      if (key && rows.some((row) => options.uniqueBy(row) === key)) {
+        return { count: 0 };
+      }
+      rows.push({ ...data, processedAt: data.processedAt ?? null });
+      return { count: 1 };
     },
     upsert: async ({ create, update, where = {} }) => {
       const row = rows.find((candidate) => matchesWhere(candidate, where));
@@ -332,18 +334,7 @@ function delegate(rows, options = {}) {
 }
 
 function matchesWhere(row, where) {
-  return Object.entries(where).every(([key, value]) => {
-    if (key === "id_orgId_tenantId" && isRecord(value)) {
-      return (
-        row.id === value.id &&
-        row.orgId === value.orgId &&
-        row.tenantId === value.tenantId
-      );
-    }
-    if (isRecord(value) && Array.isArray(value.in)) return value.in.includes(row[key]);
-    if (isRecord(value) && "not" in value) return row[key] !== value.not;
-    return row[key] === value;
-  });
+  return matchesM11FixtureWhere(row, where);
 }
 
 function sortRows(rows, orderBy) {
@@ -358,10 +349,6 @@ function sortRows(rows, orderBy) {
 
 function sortableValue(value) {
   return value instanceof Date ? value.getTime() : value;
-}
-
-function isRecord(value) {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function createMutex() {
@@ -401,6 +388,18 @@ export function ticketEventTypes(fake, ticketId) {
 
 export function ids(rows) {
   return rows.map((row) => row.id);
+}
+
+export function m11SyntheticSendResult(request, status = "SENT") {
+  return {
+    dryRun: true,
+    provider: "telegram_bot",
+    providerMessageRef: `dry-run:${request.idempotencyKey}`,
+    requestId: request.idempotencyKey,
+    sentAt: "2026-07-10T00:00:01.000Z",
+    status,
+    traceId: request.traceId
+  };
 }
 
 export function renderConfigPatterns() {

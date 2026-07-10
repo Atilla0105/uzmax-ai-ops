@@ -1,6 +1,6 @@
 # M11-03A Conversation Customer Read Truth Evidence
 
-Status: `implementation_ci_passed__evidence_refresh_sha_pending`
+Status: `implementation_and_controlled_ci_passed__merge_live_gate_required`
 Spec: `docs/specs/M11-03A-conversation-customer-read-truth.md`
 Base: `9b49a779af4ec88e37f2ff6321383df7c184d164`
 Branch: `codex/m11-03a-conversation-customer-read`
@@ -48,7 +48,7 @@ implementation continued:
 | four application builds | pass | API, worker, cron and admin build; existing admin chunk-size warning only |
 | spec compliance review | pass | final read contract, mismatch precedence, identity/customer edge cases and operator matrix reviewed after fixes |
 | code quality/privacy/RLS review | pass | final review after explicit identity/customer/channel-connection selects found no blocker, major or minor issue |
-| PR CI | pass for implementation SHA | PR #301 run `29102870268` completed successfully in 21m38s; latest evidence-only SHA must still pass before merge |
+| PR CI | pass for implementation SHA | PR #301 run `29102870268` completed successfully in 21m38s; merge still requires GitHub's live latest-SHA check |
 
 ## Data-Minimization and Safety Review
 
@@ -76,12 +76,12 @@ implementation continued:
 The true-DB runner now exercises message/customer/identity detail plus tenant
 isolation and RLS in CI. PR #301 run `29102870268` passed the explicit M11 step,
 the existing M4/M6B/M8 true-DB and Redis/worker steps, the forced M5R closeout,
-the full repository tests and all builds. The evidence-only commit containing
-this record must still pass as the PR's latest SHA before merge.
+the full repository tests and all builds. This record changes no runtime source;
+branch protection must still show the PR's live latest-SHA check green at merge.
 
 ## Current Conclusion
 
-M11-03A implementation and controlled true-DB proof passed on the implementation
-SHA, but the slice is not merge-complete until this evidence refresh is itself
-green on the PR's latest SHA. Atomic takeover, M11-03 overall, aligned staging,
-production, GA and 1.0 remain open.
+M11-03A implementation and controlled true-DB proof passed. Merge remains gated
+by GitHub's live latest-SHA check rather than a self-referential status rewrite.
+Atomic takeover, M11-03 overall, aligned staging, production, GA and 1.0 remain
+open.

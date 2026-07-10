@@ -11,13 +11,14 @@ import {
   createTicketState,
   type TicketAction
 } from "../../../packages/capabilities/handoff/src/index.ts";
-
 import { requireFound } from "./conversation-ticket.errors.ts";
+import { operatorStateFor } from "./conversation-ticket.ownership.ts";
 import type { ConversationTicketRepositoryPort } from "./conversation-ticket.repository.ts";
 import type {
   ConversationListFilters,
   TicketActionInput
 } from "./conversation-ticket.types.ts";
+import { value0SupportSlaPolicyRef } from "./conversation-ticket.types.ts";
 
 @Injectable()
 export class ConversationTicketService {
@@ -38,14 +39,28 @@ export class ConversationTicketService {
       "conversation_not_found",
       "conversation not found"
     );
-    const [messages, tickets] = await Promise.all([
+    const [customerContext, messages, tickets] = await Promise.all([
+      this.repository.getCustomerContext(accessContext, conversation),
       this.repository.listMessages(accessContext, conversationId),
       this.repository.listTickets(accessContext, conversationId)
     ]);
+    const readTickets = tickets.map((ticket) => ({
+      ...ticket,
+      sla: { ...ticket.sla, policyRef: value0SupportSlaPolicyRef }
+    }));
+    const operatorState = operatorStateFor(
+      conversation,
+      readTickets,
+      accessContext.userId
+    );
     return {
       conversation,
+      customerContext,
       messages,
-      tickets
+      operatorState,
+      slaPolicyRef: value0SupportSlaPolicyRef,
+      takeoverReadiness: "blocked_pending_m11_03b",
+      tickets: readTickets
     };
   }
 

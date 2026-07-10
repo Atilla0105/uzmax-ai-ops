@@ -8,6 +8,8 @@ export const CONVERSATION_A_HANDOFF = "88888888-8888-4888-888888888888";
 export const TICKET_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 export const MESSAGE_INBOUND = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 export const MESSAGE_OUTBOUND = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const CUSTOMER_ID = "12121212-1212-4212-8212-121212121212";
+const IDENTITY_ID = "13131313-1313-4313-8313-131313131313";
 const CONVERSATION_B = "99999999-9999-4999-8999-999999999999";
 const EVENT_CREATED = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const EVENT_NOTE = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
@@ -78,6 +80,44 @@ export function fakePrisma() {
         tenantId: TENANT_B
       })
     ],
+    channelConnections: [
+      {
+        id: CHANNEL_ID,
+        orgId: ORG_ID,
+        provider: "telegram_bot",
+        tenantId: TENANT_A
+      }
+    ],
+    customerIdentities: [
+      {
+        channelConnectionId: "14141414-1414-4414-8414-141414141414",
+        customer: {
+          id: CUSTOMER_ID,
+          orgId: ORG_ID,
+          preferredLanguage: "  controlled-language  ",
+          status: "ACTIVE",
+          tenantId: TENANT_A
+        },
+        customerId: CUSTOMER_ID,
+        externalSubjectRef: "telegram:user:handoff",
+        firstSeenAt: new Date("2026-06-16T00:00:00.000Z"),
+        id: IDENTITY_ID,
+        lastSeenAt: new Date("2026-06-17T00:05:00.000Z"),
+        metadata: {
+          profile: {
+            displayName: "untrusted stored display",
+            firstName: "Ada",
+            languageCode: "en",
+            unknown: "must-not-escape",
+            username: "ada_support"
+          }
+        },
+        orgId: ORG_ID,
+        provider: "telegram_bot",
+        status: "ACTIVE",
+        tenantId: TENANT_A
+      }
+    ],
     tickets: [
       {
         assignedUserId: null,
@@ -107,8 +147,10 @@ export function fakePrisma() {
       fake.transactions.push(result);
       return result;
     },
+    channelConnection: delegate(fake.channelConnections),
     channelConversation: delegate(fake.conversations),
     channelMessage: delegate(fake.messages),
+    customerIdentity: delegate(fake.customerIdentities),
     supportTicket: delegate(fake.tickets),
     supportTicketEvent: delegate(fake.events, { nextId: nextEventId })
   });
@@ -148,7 +190,9 @@ function messageRow(patch) {
     content: { contentKind: "text", textLength: 12, traceId: "m8-02:message" },
     contentKind: "TEXT",
     conversationId: patch.conversationId ?? CONVERSATION_A_HANDOFF,
+    deliveryStatus: patch.direction === "OUTBOUND" ? "SENT" : "RECEIVED",
     direction: patch.direction,
+    externalMessageRef: `telegram:message:${patch.id}`,
     id: patch.id,
     occurredAt: new Date(patch.occurredAt),
     orgId: ORG_ID,

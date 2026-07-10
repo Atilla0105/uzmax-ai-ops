@@ -9,9 +9,23 @@ const TENANT_A_ID = "22222222-2222-4222-8222-222222222901";
 const TENANT_B_ID = "33333333-3333-4333-8333-333333333901";
 const USER_ID = "44444444-4444-4444-8444-444444444901";
 const CHANNEL_CONNECTION_ID = "55555555-5555-4555-8555-555555555901";
+const LATEST_CHANNEL_CONNECTION_ID = "55555555-5555-4555-8555-555555555902";
 const CONVERSATION_ID = "66666666-6666-4666-8666-666666666901";
+const CUSTOMER_ID = "77777777-7777-4777-8777-777777777901";
+const IDENTITY_ID = "88888888-8888-4888-8888-888888888901";
+const MESSAGE_ID = "99999999-9999-4999-8999-999999999901";
+const PARTICIPANT_REF = "telegram:user:9901";
+const READ_TEXT = "controlled-m11-03a-read";
 
 export async function runM10ConversationTicketActionsTrueDbSmoke() {
+  try {
+    await runConversationTicketTrueDbSmoke();
+  } catch {
+    throw new Error("conversation-ticket-true-db-smoke-failed");
+  }
+}
+
+async function runConversationTicketTrueDbSmoke() {
   const databaseUrl = readRlsDatabaseUrl();
   const prisma = await createSmokePrismaClient(databaseUrl);
 
@@ -30,6 +44,20 @@ export async function runM10ConversationTicketActionsTrueDbSmoke() {
     const service = new api.service.ConversationTicketService(repository);
     const tenantA = accessContext(TENANT_A_ID, ["conversation:read", "ticket:write"]);
     const tenantB = accessContext(TENANT_B_ID, ["conversation:read", "ticket:write"]);
+
+    const initialDetail = await service.getConversationDetail(tenantA, CONVERSATION_ID);
+    assert.equal(initialDetail.slaPolicyRef, "value0-staging-support-default-v1");
+    assert.equal(initialDetail.takeoverReadiness, "blocked_pending_m11_03b");
+    assert.equal(initialDetail.customerContext.state, "linked");
+    assert.equal(initialDetail.customerContext.customer.id, CUSTOMER_ID);
+    assert.equal(initialDetail.customerContext.customer.preferredLanguage.length, 64);
+    assert.equal(initialDetail.customerContext.identity.id, IDENTITY_ID);
+    assert.equal(initialDetail.customerContext.profile.displayName, "Controlled");
+    assert.equal("unknown" in initialDetail.customerContext.profile, false);
+    assert.equal(initialDetail.messages[0].content.text, READ_TEXT);
+    assert.equal(initialDetail.messages[0].deliveryStatus, "received");
+    assert.equal(initialDetail.messages[0].externalMessageRef.length, 256);
+    assert.equal("canTakeover" in initialDetail.operatorState, false);
 
     await assert.rejects(
       () =>
@@ -105,24 +133,28 @@ export async function runM10ConversationTicketActionsTrueDbSmoke() {
 
     assert.deepEqual(await countVisibleRows(prisma, TENANT_A_ID), {
       conversations: 1,
+      customers: 1,
       events: 6,
+      identities: 1,
+      messages: 1,
       tickets: 1
     });
     assert.deepEqual(await countVisibleRows(prisma, TENANT_B_ID), {
       conversations: 0,
+      customers: 0,
       events: 0,
+      identities: 0,
+      messages: 0,
       tickets: 0
     });
     await cleanupSyntheticRows(prisma);
     assert.equal(await syntheticResidueCount(prisma), 0);
     console.log(
-      "m10-conversation-ticket-actions-true-db-smoke: passed synthetic handoff/actions, tenant isolation and residue=0"
+      "conversation-ticket-true-db-smoke: passed read truth, legacy actions, tenant isolation and residue=0"
     );
   } finally {
-    await cleanupSyntheticRows(prisma).catch((error) => {
-      console.error(
-        `m10-conversation-ticket-actions-true-db-smoke: cleanup failed: ${error.message}`
-      );
+    await cleanupSyntheticRows(prisma).catch(() => {
+      console.error("conversation-ticket-true-db-smoke: cleanup_failed");
     });
     await prisma.$disconnect();
   }
@@ -175,6 +207,45 @@ async function seedSyntheticRows(prisma) {
       tenantId: TENANT_A_ID
     }
   });
+  await prisma.channelConnection.create({
+    data: {
+      capabilities: { conversationCustomerReadSmoke: true },
+      externalAccountRef: "controlled://channel/m11-03a-latest",
+      id: LATEST_CHANNEL_CONNECTION_ID,
+      metadata: { synthetic_spec: SYNTHETIC_SPEC },
+      orgId: ORG_ID,
+      provider: "telegram_bot",
+      tenantId: TENANT_A_ID
+    }
+  });
+  await prisma.customer.create({
+    data: {
+      id: CUSTOMER_ID,
+      orgId: ORG_ID,
+      preferredLanguage: "p".repeat(80),
+      tenantId: TENANT_A_ID
+    }
+  });
+  await prisma.customerIdentity.create({
+    data: {
+      channelConnectionId: LATEST_CHANNEL_CONNECTION_ID,
+      customerId: CUSTOMER_ID,
+      externalSubjectRef: PARTICIPANT_REF,
+      id: IDENTITY_ID,
+      identityKind: "channel_subject",
+      metadata: {
+        profile: {
+          displayName: "untrusted",
+          firstName: "Controlled",
+          languageCode: "en",
+          unknown: "drop"
+        }
+      },
+      orgId: ORG_ID,
+      provider: "telegram_bot",
+      tenantId: TENANT_A_ID
+    }
+  });
   await prisma.channelConversation.create({
     data: {
       channelConnectionId: CHANNEL_CONNECTION_ID,
@@ -182,10 +253,25 @@ async function seedSyntheticRows(prisma) {
       id: CONVERSATION_ID,
       lastMessageAt: new Date("2026-07-09T10:00:00.000Z"),
       orgId: ORG_ID,
-      participantExternalRef: "controlled://participant/m10-01",
+      participantExternalRef: PARTICIPANT_REF,
       status: "OPEN",
       tenantId: TENANT_A_ID,
       unreadCount: 1
+    }
+  });
+  await prisma.channelMessage.create({
+    data: {
+      channelConnectionId: CHANNEL_CONNECTION_ID,
+      content: { contentKind: "text", text: READ_TEXT },
+      contentKind: "TEXT",
+      conversationId: CONVERSATION_ID,
+      deliveryStatus: "RECEIVED",
+      direction: "INBOUND",
+      externalMessageRef: `controlled:${"r".repeat(280)}`,
+      id: MESSAGE_ID,
+      occurredAt: new Date("2026-07-09T10:00:00.000Z"),
+      orgId: ORG_ID,
+      tenantId: TENANT_A_ID
     }
   });
 }
@@ -220,6 +306,9 @@ async function countVisibleRows(prisma, tenantId) {
     prisma.$queryRaw`
       select
         (select count(*) from conversation where id::text = ${CONVERSATION_ID})::int as conversations,
+        (select count(*) from customer where id::text = ${CUSTOMER_ID})::int as customers,
+        (select count(*) from customer_identity where id::text = ${IDENTITY_ID})::int as identities,
+        (select count(*) from message where id::text = ${MESSAGE_ID})::int as messages,
         (select count(*) from ticket where conversation_id::text = ${CONVERSATION_ID})::int as tickets,
         (select count(*) from ticket_event where org_id::text = ${ORG_ID})::int as events
     `
@@ -227,7 +316,10 @@ async function countVisibleRows(prisma, tenantId) {
   const row = results.at(-1)?.[0] ?? {};
   return {
     conversations: Number(row.conversations ?? -1),
+    customers: Number(row.customers ?? -1),
     events: Number(row.events ?? -1),
+    identities: Number(row.identities ?? -1),
+    messages: Number(row.messages ?? -1),
     tickets: Number(row.tickets ?? -1)
   };
 }

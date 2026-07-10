@@ -5,13 +5,18 @@ import type {
 } from "../../../packages/capabilities/handoff/src/index.ts";
 
 import {
+  cloneValue as clone,
   compareConversationPriority,
   compareOccurredAt,
   compareTicketEventRows,
+  compoundScopeWhere,
   matchesConversationFilters,
   record,
   requiredText,
   rowArray,
+  scopeFromAccessContext,
+  scopeFromEntity,
+  scoped,
   toConversation,
   toConversationUpdateData,
   toMessage,
@@ -19,9 +24,15 @@ import {
   toTicketCreateData,
   toTicketEventCreateData,
   toTicketUpdateData,
+  upsertById,
   type DbRow
 } from "./conversation-ticket.db-mappers.ts";
+import {
+  readCustomerContext,
+  type RlsReadRunner
+} from "./conversation-ticket.ownership.ts";
 import type {
+  ConversationCustomerContext,
   ConversationListFilters,
   ConversationMessage,
   ConversationTicketSeed
@@ -59,16 +70,15 @@ type ConversationTicketPrismaClientPort = {
   $transaction<T extends readonly DbOperation[]>(
     operations: T
   ): Promise<{ [K in keyof T]: Awaited<T[K]> }>;
+  channelConnection: Pick<PrismaDelegate, "findFirst">;
   channelConversation: PrismaUpdateDelegate;
   channelMessage: Pick<PrismaDelegate, "findMany">;
+  customerIdentity: Pick<PrismaDelegate, "findMany">;
   supportTicket: PrismaUpsertDelegate;
   supportTicketEvent: PrismaTicketEventDelegate;
 };
-type ConversationTicketRlsTransactionRunner = <T>(input: {
-  map?(rows: readonly unknown[]): T;
-  ops(client: ConversationTicketPrismaClientPort): readonly DbOperation[];
-  scope: RlsScope;
-}) => Promise<T>;
+type ConversationTicketRlsTransactionRunner =
+  RlsReadRunner<ConversationTicketPrismaClientPort>;
 export type ConversationTicketRepositoryPort = {
   getConversation(
     accessContext: AccessContext,
@@ -79,6 +89,10 @@ export type ConversationTicketRepositoryPort = {
     accessContext: AccessContext,
     filters: ConversationListFilters
   ): MaybeConversations;
+  getCustomerContext(
+    accessContext: AccessContext,
+    conversation: HandoffConversation
+  ): MaybePromise<ConversationCustomerContext>;
   listMessages(accessContext: AccessContext, conversationId: string): MaybeMessages;
   listTickets(accessContext: AccessContext, conversationId: string): MaybeTickets;
   saveConversation(
@@ -108,11 +122,13 @@ const rlsSettings = { orgId: "app.org_id", tenantId: "app.tenant_id" } as const;
 
 export class InMemoryConversationTicketRepository implements ConversationTicketRepositoryPort {
   private conversations: HandoffConversation[];
+  private customerContexts: NonNullable<ConversationTicketSeed["customerContexts"]>;
   private messages: ConversationMessage[];
   private tickets: TicketState[];
 
   constructor(seed: ConversationTicketSeed = {}) {
     this.conversations = [...(seed.conversations ?? [])];
+    this.customerContexts = [...(seed.customerContexts ?? [])];
     this.messages = [...(seed.messages ?? [])];
     this.tickets = [...(seed.tickets ?? [])];
   }
@@ -129,6 +145,18 @@ export class InMemoryConversationTicketRepository implements ConversationTicketR
       scoped(this.conversations, accessContext).find(
         (conversation) => conversation.id === conversationId
       )
+    );
+  }
+
+  getCustomerContext(
+    accessContext: AccessContext,
+    conversation: HandoffConversation
+  ): ConversationCustomerContext {
+    const item = scoped(this.customerContexts, accessContext).find(
+      (candidate) => candidate.conversationId === conversation.id
+    );
+    return clone(
+      item?.context ?? ({ state: "identity_missing" } as ConversationCustomerContext)
     );
   }
 
@@ -200,6 +228,13 @@ class RlsPrismaConversationTicketRepository implements ConversationTicketReposit
       ],
       scope
     });
+  }
+
+  async getCustomerContext(
+    accessContext: AccessContext,
+    conversation: HandoffConversation
+  ): Promise<ConversationCustomerContext> {
+    return readCustomerContext(this.transaction, accessContext, conversation);
   }
 
   listMessages(
@@ -365,45 +400,6 @@ async function createDefaultConversationTicketPrismaClient(
   return new PrismaClient({
     datasources: { db: { url: databaseUrl } }
   }) as unknown as ConversationTicketPrismaClientPort;
-}
-
-function scopeFromAccessContext(accessContext: AccessContext): RlsScope {
-  return { orgId: accessContext.orgId, tenantId: accessContext.selectedTenantId };
-}
-
-function scopeFromEntity(entity: { orgId: string; tenantId: string }): RlsScope {
-  return { orgId: entity.orgId, tenantId: entity.tenantId };
-}
-
-function compoundScopeWhere(entity: { id: string; orgId: string; tenantId: string }) {
-  return {
-    id_orgId_tenantId: {
-      id: entity.id,
-      orgId: entity.orgId,
-      tenantId: entity.tenantId
-    }
-  };
-}
-
-function scoped<T extends { orgId: string; tenantId: string }>(
-  items: readonly T[],
-  accessContext: AccessContext
-): T[] {
-  return items.filter(
-    (item) =>
-      item.orgId === accessContext.orgId &&
-      item.tenantId === accessContext.selectedTenantId
-  );
-}
-
-function upsertById<T extends { id: string }>(items: readonly T[], item: T): T[] {
-  return items.some((candidate) => candidate.id === item.id)
-    ? items.map((candidate) => (candidate.id === item.id ? clone(item) : candidate))
-    : [...items, clone(item)];
-}
-
-function clone<T>(value: T): T {
-  return structuredClone(value);
 }
 
 function readConversationTicketRepositoryRuntimeMode(env: RuntimeEnv): RuntimeMode {

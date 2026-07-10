@@ -141,7 +141,7 @@ describe("M2-03 conversation handoff ticket API contract", () => {
     );
   });
 
-  it("lists and updates conversations only inside the selected tenant context", async () => {
+  it("lists and atomically takes over only inside the selected tenant", async () => {
     const api = await importConversationTicketApiSource();
     const repository = new api.module.InMemoryConversationTicketRepository({
       conversations: [
@@ -190,28 +190,43 @@ describe("M2-03 conversation handoff ticket API contract", () => {
 
     const handoffResult = await service.createHandoffTicket(accessContext, {
       conversationId: CONVERSATION_A_OPEN,
-      reason: "customer asked for a human",
-      slaPolicyRef: "sla-policy:tenant-default"
+      reason: "customer asked for a human"
     });
-    assert.equal(handoffResult.conversation.status, "pending_handoff");
-    assert.equal(handoffResult.ticket.sla.policyRef, "sla-policy:tenant-default");
+    assert.equal(handoffResult.result, "created");
+    assert.equal(handoffResult.conversation.status, "handoff");
+    assert.equal(handoffResult.ticket.status, "locked");
+    assert.equal(
+      handoffResult.ticket.sla.policyRef,
+      "value0-staging-support-default-v1"
+    );
+    assert.deepEqual(
+      handoffResult.ticket.events.map((event) => event.type),
+      ["created", "claimed", "locked"]
+    );
 
-    const locked = await service.applyTicketAction(accessContext, {
-      actorUserId: USER_A,
+    const retry = await service.createHandoffTicket(accessContext, {
+      conversationId: CONVERSATION_A_OPEN,
+      reason: "retry cannot duplicate the ticket"
+    });
+    assert.equal(retry.result, "already_owned");
+    assert.equal(retry.ticket.id, handoffResult.ticket.id);
+
+    const noted = await service.applyTicketAction(accessContext, {
+      actorUserId: USER_B,
+      note: "client actor and time are ignored",
       now: NOW,
       ticketId: handoffResult.ticket.id,
-      type: "lock"
+      type: "note"
     });
-    assert.equal(locked.ticket.lockedByUserId, USER_A);
+    assert.equal(noted.ticket.events.at(-1).actorUserId, USER_A);
     await assert.rejects(
       () =>
         service.applyTicketAction(contextFor(USER_B, TENANT_A, ["ticket:write"]), {
-          actorUserId: USER_B,
-          now: NOW,
+          note: "another actor cannot overwrite ownership",
           ticketId: handoffResult.ticket.id,
-          type: "lock"
+          type: "note"
         }),
-      /ticket is locked by another user/
+      /support state conflict/
     );
   });
 

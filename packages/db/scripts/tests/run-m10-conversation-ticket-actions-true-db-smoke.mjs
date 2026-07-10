@@ -18,14 +18,18 @@ const PARTICIPANT_REF = "telegram:user:9901";
 const READ_TEXT = "controlled-m11-03a-read";
 
 export async function runM10ConversationTicketActionsTrueDbSmoke() {
+  let failureStage = "bootstrap";
   try {
-    await runConversationTicketTrueDbSmoke();
+    await runConversationTicketTrueDbSmoke((stage) => {
+      failureStage = stage;
+    });
   } catch {
+    console.error(`conversation-ticket-true-db-smoke-diagnostic:${failureStage}`);
     throw new Error("conversation-ticket-true-db-smoke-failed");
   }
 }
 
-async function runConversationTicketTrueDbSmoke() {
+async function runConversationTicketTrueDbSmoke(markStage) {
   const databaseUrl = readRlsDatabaseUrl();
   const prisma = await createSmokePrismaClient(databaseUrl);
 
@@ -45,9 +49,11 @@ async function runConversationTicketTrueDbSmoke() {
     const tenantA = accessContext(TENANT_A_ID, ["conversation:read", "ticket:write"]);
     const tenantB = accessContext(TENANT_B_ID, ["conversation:read", "ticket:write"]);
 
+    markStage("read_contract");
     const initialDetail = await service.getConversationDetail(tenantA, CONVERSATION_ID);
     assert.equal(initialDetail.slaPolicyRef, "value0-staging-support-default-v1");
-    assert.equal(initialDetail.takeoverReadiness, "blocked_pending_m11_03b");
+    assert.equal(initialDetail.takeoverReadiness, "atomic_ready");
+    assert.notEqual(initialDetail.takeoverReadiness, "blocked_pending_m11_03b");
     assert.equal(initialDetail.customerContext.state, "linked");
     assert.equal(initialDetail.customerContext.customer.id, CUSTOMER_ID);
     assert.equal(initialDetail.customerContext.customer.preferredLanguage.length, 64);
@@ -57,66 +63,71 @@ async function runConversationTicketTrueDbSmoke() {
     assert.equal(initialDetail.messages[0].content.text, READ_TEXT);
     assert.equal(initialDetail.messages[0].deliveryStatus, "received");
     assert.equal(initialDetail.messages[0].externalMessageRef.length, 256);
-    assert.equal("canTakeover" in initialDetail.operatorState, false);
+    assert.equal(initialDetail.operatorState.canTakeover, true);
 
+    markStage("wrong_tenant");
     await assert.rejects(
       () =>
         service.createHandoffTicket(tenantB, {
           conversationId: CONVERSATION_ID,
-          reason: "controlled wrong tenant handoff",
-          slaPolicyRef: "controlled://sla/m10-01"
+          reason: "controlled wrong tenant handoff"
         }),
       /conversation not found/
     );
+    markStage("takeover_create");
     const handoff = await service.createHandoffTicket(tenantA, {
       conversationId: CONVERSATION_ID,
-      reason: "controlled handoff request",
-      slaPolicyRef: "controlled://sla/m10-01"
+      reason: "controlled handoff request"
     });
     const ticketId = handoff.ticket.id;
-    assert.equal(handoff.conversation.status, "pending_handoff");
-    assert.equal(handoff.ticket.status, "open");
-    const [claimAt, lockAt, noteAt, closeAt, reopenAt, wrongTenantAt] =
-      futureActionTimes();
+    assert.equal(handoff.result, "created");
+    assert.equal(handoff.conversation.status, "handoff");
+    assert.equal(handoff.ticket.status, "locked");
+    assert.equal(handoff.ticket.sla.policyRef, "value0-staging-support-default-v1");
+    assert.deepEqual(
+      handoff.ticket.events.map((event) => event.type),
+      ["created", "claimed", "locked"]
+    );
+    markStage("ticket_actions");
+    const retry = await service.createHandoffTicket(tenantA, {
+      conversationId: CONVERSATION_ID,
+      reason: "controlled same actor retry"
+    });
+    assert.equal(retry.result, "already_owned");
+    assert.equal(retry.ticket.id, ticketId);
+    await assert.rejects(
+      () => service.applyTicketAction(tenantA, { ticketId, type: "claim" }),
+      /support state conflict/
+    );
 
     await service.applyTicketAction(tenantA, {
-      now: claimAt,
-      ticketId,
-      type: "claim"
-    });
-    await service.applyTicketAction(tenantA, {
-      now: lockAt,
-      ticketId,
-      type: "lock"
-    });
-    await service.applyTicketAction(tenantA, {
       note: "controlled operator note",
-      now: noteAt,
       ticketId,
       type: "note"
     });
-    await service.applyTicketAction(tenantA, {
-      destination: "handled_in_admin",
-      now: closeAt,
-      result: "resolved",
+    const escalated = await service.applyTicketAction(tenantA, {
+      reason: "controlled senior review",
       ticketId,
-      type: "close"
+      type: "escalate"
     });
-    const reopened = await service.applyTicketAction(tenantA, {
-      now: reopenAt,
-      reason: "controlled reopen",
-      ticketId,
-      type: "reopen"
-    });
-    assert.equal(reopened.ticket.status, "reopened");
+    assert.equal(escalated.ticket.status, "escalated");
     assert.deepEqual(
-      reopened.ticket.events.map((event) => event.type),
-      ["created", "claimed", "locked", "note_added", "closed", "reopened"]
+      escalated.ticket.events.map((event) => event.type),
+      ["created", "claimed", "locked", "note_added", "escalated"]
+    );
+    await assert.rejects(
+      () => service.applyTicketAction(tenantA, { ticketId, type: "close" }),
+      /support state conflict/
+    );
+    await assert.rejects(
+      () => service.applyTicketAction(tenantA, { ticketId, type: "reopen" }),
+      /support state conflict/
     );
 
+    markStage("isolation");
     const detail = await service.getConversationDetail(tenantA, CONVERSATION_ID);
     assert.equal(detail.tickets[0].id, ticketId);
-    assert.equal(detail.tickets[0].events.length, 6);
+    assert.equal(detail.tickets[0].events.length, 5);
     await assert.rejects(
       () => service.getConversationDetail(tenantB, CONVERSATION_ID),
       /conversation not found/
@@ -124,17 +135,17 @@ async function runConversationTicketTrueDbSmoke() {
     await assert.rejects(
       () =>
         service.applyTicketAction(tenantB, {
-          now: wrongTenantAt,
           ticketId,
-          type: "claim"
+          type: "close"
         }),
       /ticket not found/
     );
 
+    markStage("rls_counts");
     assert.deepEqual(await countVisibleRows(prisma, TENANT_A_ID), {
       conversations: 1,
       customers: 1,
-      events: 6,
+      events: 5,
       identities: 1,
       messages: 1,
       tickets: 1
@@ -147,6 +158,7 @@ async function runConversationTicketTrueDbSmoke() {
       messages: 0,
       tickets: 0
     });
+    markStage("cleanup");
     await cleanupSyntheticRows(prisma);
     assert.equal(await syntheticResidueCount(prisma), 0);
     console.log(
@@ -289,13 +301,6 @@ function accessContext(selectedTenantId, permissions) {
     tenantIds: [TENANT_A_ID, TENANT_B_ID],
     userId: USER_ID
   };
-}
-
-function futureActionTimes() {
-  const base = Date.now() + 60_000;
-  return Array.from({ length: 6 }, (_, index) =>
-    new Date(base + index * 60_000).toISOString()
-  );
 }
 
 async function countVisibleRows(prisma, tenantId) {

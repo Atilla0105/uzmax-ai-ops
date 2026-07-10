@@ -23,7 +23,8 @@ import type {
   ConversationFilterStatus,
   ConversationListFilters,
   HandoffBody,
-  TicketActionBody
+  TicketActionBody,
+  TicketActionRequest
 } from "./conversation-ticket.types.ts";
 
 @Controller("conversation-ticket")
@@ -64,8 +65,7 @@ export class ConversationTicketController {
       const handoffBody = readBodyObject<HandoffBody>(body);
       return this.service.createHandoffTicket(requireAccessContext(request), {
         conversationId,
-        reason: requireText(handoffBody.reason, "reason"),
-        slaPolicyRef: requireText(handoffBody.slaPolicyRef, "slaPolicyRef")
+        reason: requireBoundedText(handoffBody.reason, "reason", 500)
       });
     });
   }
@@ -80,8 +80,7 @@ export class ConversationTicketController {
       const accessContext = requireAccessContext(request);
       const actionBody = readBodyObject<TicketActionBody>(body);
       return this.service.applyTicketAction(accessContext, {
-        ...actionBody,
-        actorUserId: accessContext.userId,
+        ...readTicketAction(actionBody),
         ticketId
       });
     });
@@ -126,6 +125,31 @@ function requireAccessContext(request: ApiRequestWithContext): AccessContext {
 function readBodyObject<T extends Record<string, unknown>>(body: unknown): Partial<T> {
   if (!body || typeof body !== "object" || Array.isArray(body)) return {};
   return body as Partial<T>;
+}
+
+function readTicketAction(body: Partial<TicketActionBody>): TicketActionRequest {
+  const type = typeof body.type === "string" ? body.type.trim() : "";
+  if (["claim", "close", "lock", "reopen"].includes(type)) {
+    return { type: type as "claim" | "close" | "lock" | "reopen" };
+  }
+  if (type === "note") {
+    return { note: requireBoundedText(body.note, "note", 2_000), type };
+  }
+  if (type === "escalate") {
+    return {
+      reason: requireBoundedText(body.reason, "reason", 500),
+      type
+    };
+  }
+  throw validationError("ticket action type is invalid");
+}
+
+function requireBoundedText(value: unknown, name: string, maximum: number): string {
+  const text = requireText(value, name);
+  if (text.length > maximum) {
+    throw validationError(`${name} must be at most ${maximum} characters`);
+  }
+  return text;
 }
 
 function readBoolean(value: string | string[] | undefined): boolean | undefined {

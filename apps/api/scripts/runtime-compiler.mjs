@@ -358,6 +358,28 @@ function conversationTicketModules() {
       { ...authz, ...handoff, ...types }
     ],
     [
+      "apps/api/src/conversation-ticket.atomic-state.ts",
+      "conversation-ticket.atomic-state.mjs",
+      {
+        ...handoff,
+        "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        ...types
+      }
+    ],
+    [
+      "apps/api/src/conversation-ticket.atomic-writes.ts",
+      "conversation-ticket.atomic-writes.mjs",
+      {
+        ...authz,
+        ...dbMappers,
+        ...handoff,
+        "./conversation-ticket.atomic-state.ts":
+          "./conversation-ticket.atomic-state.mjs",
+        "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        ...types
+      }
+    ],
+    [
       "apps/api/src/conversation-ticket.ownership.ts",
       "conversation-ticket.ownership.mjs",
       {
@@ -376,6 +398,8 @@ function conversationTicketModules() {
         ...authz,
         ...dbMappers,
         ...handoff,
+        "./conversation-ticket.atomic-writes.ts":
+          "./conversation-ticket.atomic-writes.mjs",
         "./conversation-ticket.ownership.ts": "./conversation-ticket.ownership.mjs",
         ...types
       }
@@ -386,6 +410,8 @@ function conversationTicketModules() {
       {
         ...authz,
         ...handoff,
+        "./conversation-ticket.atomic-state.ts":
+          "./conversation-ticket.atomic-state.mjs",
         "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
         "./conversation-ticket.ownership.ts": "./conversation-ticket.ownership.mjs",
         "./conversation-ticket.repository.ts": "./conversation-ticket.repository.mjs",

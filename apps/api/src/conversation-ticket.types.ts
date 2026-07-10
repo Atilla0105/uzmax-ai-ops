@@ -1,7 +1,6 @@
 import type { AccessContext } from "../../../packages/authz/src/index.ts";
 import type {
   HandoffConversation,
-  TicketAction,
   TicketState
 } from "../../../packages/capabilities/handoff/src/index.ts";
 
@@ -33,9 +32,15 @@ export const value0SupportSlaPolicyRef = "value0-staging-support-default-v1";
 
 export type ConversationOperatorState = {
   activeTicketId?: string;
+  canTakeover?: boolean;
   mode: "awaiting_operator" | "bot" | "closed" | "conflict" | "human";
   ownership: "conflict" | "none" | "other" | "self" | "unassigned";
 };
+export type ConversationDetailOperatorState = ConversationOperatorState & {
+  canTakeover: boolean;
+};
+
+export type TakeoverReadiness = "atomic_ready" | "permission_blocked" | "state_blocked";
 
 type CustomerRead = {
   id: string;
@@ -93,14 +98,27 @@ export type ApiRequestWithContext = { accessContext?: AccessContext };
 
 export type HandoffBody = {
   reason?: unknown;
-  slaPolicyRef?: unknown;
-};
-
-export type TicketActionBody = Partial<TicketAction> & {
-  actorUserId?: string;
   [key: string]: unknown;
 };
 
-export type TicketActionInput = TicketActionBody & {
-  ticketId: string;
+export type TicketActionBody = {
+  note?: unknown;
+  reason?: unknown;
+  type?: unknown;
+  [key: string]: unknown;
+};
+
+export type TicketActionRequest =
+  | { type: "claim" | "close" | "lock" | "reopen" }
+  | { note: string; type: "note" }
+  | { reason: string; type: "escalate" };
+
+export type TicketActionInput = TicketActionRequest & { ticketId: string };
+
+export type TakeoverInput = { conversationId: string; reason: string };
+
+export type TakeoverResult = {
+  conversation: HandoffConversation;
+  result: "already_owned" | "created" | "reused";
+  ticket: TicketState;
 };

@@ -15,6 +15,17 @@ Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/m11-03a
 - M11-03A now owns read truth; M11-03B will own atomic takeover/action locks only
   after this slice merges.
 
+## Split-Spec Pre-Review
+
+The read-slice pre-review required and recorded three hardening decisions before
+implementation continued:
+
+- SLA/readiness live only at detail root; the nested conversation has no SLA or
+  actionable takeover signal, preserving the current admin's blocked state;
+- exact ownership mapping is defined separately from mode mapping;
+- the reviewed M11-03B lock/event/action/race contract is preserved in the 03A
+  appendix so squash merge and branch cleanup cannot erase it.
+
 ## Preflight
 
 - M11-02 merged as PR #300 at `9b49a779af4ec88e37f2ff6321383df7c184d164`.

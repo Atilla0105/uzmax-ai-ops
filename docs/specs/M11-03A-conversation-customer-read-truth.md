@@ -137,6 +137,27 @@ Read-only anchors:
 `GET /conversation-ticket/conversations/:conversationId` keeps existing fields
 and still requires only `conversation:read`.
 
+Its exact root shape is:
+
+```ts
+{
+  conversation, // existing HandoffConversation only
+  messages,
+  tickets,
+  customerContext,
+  operatorState,
+  slaPolicyRef: "value0-staging-support-default-v1",
+  takeoverReadiness: "blocked_pending_m11_03b"
+}
+```
+
+M11-03A must not add `slaPolicyRef`, `takeoverReadiness`, `canTakeover` or any
+other actionable takeover signal inside the nested `conversation`. The current
+admin treats `conversation.slaPolicyRef` as permission to call the legacy
+non-atomic handoff, so root-only placement is a safety boundary. Focused tests
+must prove the nested conversation has none of those fields and the existing
+admin remains blocked by its missing nested SLA signal.
+
 ### Message truth
 
 Each message includes `deliveryStatus` and optional `externalMessageRef`.
@@ -206,6 +227,75 @@ Ownership is `none | unassigned | self | other | conflict`. M11-03A returns
 `canTakeover`; M11-03B owns permission-aware eligibility and atomic mutation.
 Closed conversation `aiState` is `suspended`.
 
+Ownership maps exactly: no active ticket -> `none`; one valid unowned `OPEN`
+ticket -> `unassigned`; one valid assigned-only or assigned+locked ticket ->
+`self`/`other` by comparing `assignedUserId` with the requesting
+`AccessContext.userId`; invalid/multiple ticket state -> `conflict`. In the mode
+table, “same-owner” means `assignedUserId === lockedByUserId`; it does not mean
+the requesting user until the separate ownership comparison is performed.
+
+## M11-03B Durable Handoff Contract
+
+This appendix preserves the already reviewed next-slice contract after squash
+merge/branch cleanup. M11-03B may narrow implementation shape but must not weaken
+these decisions without a new owner-visible spec decision.
+
+### Atomic takeover
+
+- Endpoint remains `POST /conversation-ticket/conversations/:id/handoff` and
+  requires `conversation:read` plus `ticket:write`.
+- Actor is only `AccessContext.userId`; client actor/SLA/owner/lock/time are
+  ignored. `reason` is trimmed, required and rejected above 500 characters.
+- One Prisma interactive RLS transaction executes: set runtime role and tenant
+  settings -> lock scoped conversation -> lock all non-closed tickets in stable
+  ID order -> validate -> ticket/conversation/events -> readback.
+- Only `OPEN` with no ticket may create. `OPEN`/`PENDING_HANDOFF` may reuse one
+  unassigned `OPEN`. `PENDING_HANDOFF` without a ticket is 409/zero-write.
+- A same-actor `CLAIMED`/`REOPENED` ticket advances to `LOCKED`; a same-actor
+  `HANDOFF` + `LOCKED`/`ESCALATED` is `already_owned`, no event/de-escalation.
+- Closed conversation, multiple active tickets, invalid matrix, other owner, or
+  fully owned ticket while conversation is not `HANDOFF` is opaque 409 and zero
+  writes. Wrong tenant/not found remains opaque 404.
+- Success sets conversation `HANDOFF`, ticket assigned+locked to actor and
+  status `LOCKED`; it returns `created | reused | already_owned`.
+
+### Events and concurrency
+
+- New ticket events: `CREATED`, `CLAIMED`, `LOCKED`; reused unassigned:
+  `CLAIMED`, `LOCKED`; assigned-only same actor: `LOCKED`.
+- Events use one server base instant plus monotonic 1ms increments and stable
+  UUIDs, so semantic order is deterministic. Payload may contain bounded reason
+  and transition metadata, never message/profile/raw request.
+- Same-actor serial/concurrent retries yield one ticket/one event sequence;
+  different actors yield one success/one 409 with no owner overwrite.
+
+### Existing ticket actions
+
+- To start from ticket ID without reversing lock order: perform one scoped
+  unlocked lookup for immutable conversation ID, lock conversation, then lock
+  and re-read ticket; never lock ticket first.
+- `claim`: only `OPEN`/`PENDING_HANDOFF` + unowned `OPEN` -> assigned-only
+  `CLAIMED`.
+- `lock`: only `HANDOFF` + same-actor assigned-only `CLAIMED`/`REOPENED` ->
+  assigned+locked `LOCKED`.
+- `note`: only `HANDOFF` + valid actor-owned assigned/locked state; no ownership
+  change.
+- `escalate`: only `HANDOFF` + actor-owned `LOCKED` -> `ESCALATED`, preserving
+  assignment/lock.
+- `close` and `reopen`: opaque 409/zero-write until M11-04 performs atomic
+  conversation+ticket close/reopen and explicit Bot resume.
+- Resulting state is validated before update/event insert; OPEN-direct-lock,
+  LOCKED-reclaim and CLAIMED-direct-escalate are zero-write conflicts.
+
+### Required proof
+
+- In-memory behavior matches production outcomes; fake Prisma has transaction
+  snapshots/rollback and a real mutex/barrier, not eager Promise-all evidence.
+- True PostgreSQL proves same/different actor races, takeover-vs-legacy-claim,
+  reused ticket, multi-ticket/closed/pending-no-ticket/wrong-tenant failures,
+  exact events and residue=0.
+- CI failure output is sanitized and no message/profile/identity/DB URL appears.
+
 ## CI And True-DB Contract
 
 - Extend the existing M10 helper with M11-02 message/customer/identity seed and
@@ -241,6 +331,8 @@ Closed conversation `aiState` is `suspended`.
   when identity's latest connection differs from an older conversation.
 - Archived/merged/missing/mismatch states follow deterministic precedence.
 - Invalid/multiple ticket state is conflict; takeover readiness remains blocked.
+- Root SLA/readiness never appears on nested conversation and cannot enable the
+  existing admin's legacy handoff.
 - Tenant B sees zero tenant A rows.
 - CI explicitly runs the true-DB helper; cleanup residue=0 and logs are sanitized.
 - Focused tests, format/type/lint/depcruise/jscpd/knip, full tests/build,

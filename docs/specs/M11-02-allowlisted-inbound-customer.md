@@ -7,7 +7,7 @@ Timebox: one narrow implementation slice; stop after the approved-chat ingress a
 
 ## Spec 类型
 
-implementation
+feature
 
 ## Goal
 
@@ -28,7 +28,8 @@ Make inbound support data real and safe enough for the remaining Value-0 path:
 - `UZMAX智能运营系统-技术架构-v1.1.md`
 - `docs/adr/ADR-003-llm-data-processing.md`
 - `docs/adr/ADR-B01-telegram-business.md`
-- Telegram Bot API update and user/message contracts already represented by the existing generated/local channel adapter contract
+- Telegram Bot API `Chat.type`/message/user contract: <https://core.telegram.org/bots/api>
+- Telegram Bot API dialog ID ranges: <https://core.telegram.org/api/bots/ids>
 - Supabase RLS guidance: <https://supabase.com/docs/guides/database/postgres/row-level-security>
 - Supabase Prisma guidance: <https://supabase.com/docs/guides/database/prisma>
 
@@ -69,7 +70,9 @@ No new source module is justified. The existing Prisma schema already contains `
   - `docs/specs/M11-02-allowlisted-inbound-customer.md`
   - `docs/evidence/M11/M11-02-allowlisted-inbound-customer.md`
   - `packages/channels/src/index.ts`
+  - `packages/channels/src/telegram-bot-inbound-contract.ts`
   - `apps/api/src/telegram-bot.ts`
+  - `apps/api/scripts/runtime-compiler.mjs`
   - `apps/worker/src/conversation-runtime.ts`
   - `apps/worker/src/telegram-bot-conversation-persistence.ts`
   - `apps/worker/src/telegram-bot-worker-service-runtime.ts`
@@ -78,6 +81,12 @@ No new source module is justified. The existing Prisma schema already contains `
   - `scripts/tests/m6b-conversation-runtime.test.mjs`
   - `scripts/tests/m6b-worker-telegram-consumer.test.mjs`
   - `scripts/tests/m8-bot-runtime-answer-loop-v0.test.mjs`
+  - `scripts/tests/m8-bot-runtime-answer-loop-support.mjs`
+  - `scripts/tests/m6b-equivalent-bot-webhook-drive.test.mjs`
+  - `packages/db/scripts/run-m6b-conversation-runtime-true-db-smoke.mjs`
+  - `packages/db/scripts/run-m6b-webhook-worker-true-db-smoke.mjs`
+  - `packages/db/scripts/tests/run-m8-active-answer-worker-true-db-smoke.mjs`
+  - `packages/db/scripts/tests/m8-active-answer-worker-smoke-support.mjs`
 
 Read-only anchors:
 
@@ -89,20 +98,23 @@ Read-only anchors:
 
 ## Change Budget
 
-- Source: changed source files <= 6, net source LOC <= 500, new source files = 0.
-- Test: changed test files <= 4; no deleted tests, skipped tests, weakened assertions, enlarged snapshots or broad mocks.
+- Source: changed source files <= 10, net source LOC <= 600, new source files <= 1. The two existing true-DB smoke runners outside a `tests/` directory and the existing API runtime compiler are guard-classified as source even though they remain validation harnesses.
+- New-source justification: `packages/channels/src/telegram-bot-inbound-contract.ts` is one pure channel-boundary module shared by channels/API/worker. It owns canonical allowlist parsing/admission, bounded participant-profile normalization, worker-side revalidation, bounded inbound business-content shaping and the channel-subject identity draft; it imports no DB, worker runtime or persistence layer. Extraction is required to keep the existing channel and conversation runtime files under the enforced 400-line limit; `rg` found no existing source with these responsibilities.
+- Test: changed test files <= 8; no new/deleted tests, skipped tests, weakened assertions, enlarged snapshots or broad mocks. Existing dynamic TypeScript harnesses may only be updated to resolve the two extracted modules and assert the new contract.
 - Docs: this spec plus one evidence record.
 - Schema/migration/generated/lock/config/deploy: none.
 - Exceptions: none.
 
 ## Contract
 
-### Approved-chat admission
+### Approved private-chat and participant admission
 
 - Runtime env key: `UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS`.
 - Value format: comma-separated canonical refs matching `telegram:chat:-?\d+`; blanks, malformed entries and an empty effective set fail closed in real BullMQ API/worker composition.
-- The value is a secret deployment input and must never be echoed in an error or log.
-- A supported Telegram update whose canonical chat ref is not in the set returns `rejected`, performs zero queue insertion and exposes no distinction that would leak allowlist membership to the webhook caller beyond the existing acknowledged request contract.
+- Required companion env key: `UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS`, formatted as comma-separated canonical refs matching `telegram:user:\d+`; missing, malformed or empty also fails closed.
+- Both values are secret deployment inputs and must never be echoed in an error or log.
+- Value-0 admits only Telegram `Chat.type = private`, an approved canonical chat ref and an approved canonical participant ref. Group, supergroup, channel, missing-type, missing-participant or mismatched participant updates are rejected even if one configured ref matches.
+- A supported but unapproved/non-private Telegram update produces an internal queue result of `rejected` and performs zero queue insertion. The authenticated HTTP webhook caller still receives the same successful opaque acknowledgement shape as an admitted supported update; it must not learn allowlist membership from the response body.
 - The worker repeats the check before reserve/persistence/LLM/outbound. A rejected injected/stale job performs zero business writes, LLM calls and outbound calls.
 
 ### Participant profile
@@ -126,18 +138,19 @@ Read-only anchors:
 
 ## Implementation Steps
 
-1. Add bounded participant profile normalization to the current channel adapter contract.
-2. Parse and enforce the canonical allowlist in the BullMQ API ingress without changing disabled/local-only queue behavior.
+1. Add one focused pure channel inbound-contract module for the canonical allowlist parser/admission, bounded participant profile normalization, worker-side profile/content revalidation and channel-subject identity draft, then expose the required public types through the current channel adapter contract.
+2. Parse and enforce the canonical allowlist in the BullMQ API ingress without changing disabled/local-only queue behavior; map internal rejection to an opaque successful webhook acknowledgement.
 3. Require and inject the same allowlist in the real worker composition; reject before job reservation.
-4. Shape bounded readable business content and the customer-identity draft in the existing conversation runtime.
+4. Use the pure channel inbound contract from the worker to revalidate injected/stale queue data, shape bounded readable business content and create the customer-identity draft without coupling the processor to composition or persistence.
 5. Extend the current Prisma-shaped persistence port to upsert customer/identity inside the existing RLS transaction before completing the inbound message write.
-6. Update focused tests for retained business content/profile and add assertions for API rejection, worker defense, idempotent identity reuse and tenant isolation using existing test files only.
+6. Update focused tests and existing true-DB smoke runners for retained business content/profile and add assertions for API rejection, worker defense, idempotent identity reuse and tenant isolation using existing files only. Real BullMQ/API/worker harnesses must receive a synthetic allowlist rather than bypassing the production requirement.
 7. Run focused tests, formatter/lint/typecheck as applicable, full repo gates, spec-compliance review, then code-quality review.
 
 ## Pass Conditions
 
-- Missing/malformed/empty allowlist fails real BullMQ API and worker startup without logging the supplied value.
+- Missing/malformed/empty chat or participant allowlist fails real BullMQ API and worker startup without logging the supplied value.
 - Unknown chat: queue add = 0; DB business writes = 0; LLM calls = 0; Telegram outbound = 0.
+- Approved chat with an unapproved participant, or an approved ref in a non-private chat: the same zero-side-effect rejection applies.
 - Approved chat: queue add = 1 and worker persists bounded readable content under the correct tenant.
 - Normalized profile contains only the allowed bounded fields and never retains chat username/title or arbitrary update payload.
 - Two allowed updates from the same participant in one tenant resolve to one customer/identity; a second tenant does not reuse it.
@@ -164,9 +177,9 @@ Read-only anchors:
 
 ## Validation
 
-- Focused Node tests for the four listed test files.
+- Focused Node tests for every listed test/support file affected by the extracted contract.
+- Existing M6B and M8 true-DB runners when the CI database harness is available.
 - Repository formatter/lint/typecheck gates applicable to the changed workspaces.
 - `node scripts/guards/pr-shape.mjs --base main --spec docs/specs/M11-02-allowlisted-inbound-customer.md --include-worktree`
 - `git diff --check main...HEAD`
 - `git diff --check`
-

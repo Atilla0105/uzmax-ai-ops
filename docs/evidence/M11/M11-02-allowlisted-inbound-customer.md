@@ -44,7 +44,9 @@ The schema and RLS transaction infrastructure already exist. This slice must ext
 - Reuse: `apps/worker/src/conversation-runtime.ts` and `telegram-bot-worker-service-runtime.ts` for worker defense/business draft shaping.
 - Reuse: `apps/worker/src/telegram-bot-conversation-persistence.ts` for RLS-scoped customer/identity/message writes.
 - Reuse: `apps/worker/src/worker-service-shell.ts` for fail-closed runtime configuration.
-- Conclusion: no new source file or parallel ingest/customer path is justified.
+- Update: the existing M6B/M8 webhook, worker and true-DB harnesses must receive a synthetic approved-chat allowlist and assert readable business content/customer identity. Keeping their old no-plaintext assumption would contradict the new product contract, while bypassing allowlist startup would weaken the real runtime gate.
+- Extraction: the enforced 400-line limit would be exceeded by adding policy helpers to the already-large channel and conversation runtime files. The approved implementation therefore adds exactly one pure `packages/channels/src/telegram-bot-inbound-contract.ts` module shared by normalization, API admission and worker revalidation/draft shaping. It is an extraction within the existing path, not a parallel ingest/customer implementation.
+- Conclusion: no additional source file or parallel ingest/customer path is justified.
 
 ## Implementation Evidence
 

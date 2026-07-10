@@ -60,7 +60,11 @@ Turn the M11-02 tenant-scoped inbound rows into an operator-readable and safely 
 - Current non-atomic handoff: `getConversation -> saveConversation -> saveTicket` in `conversation-ticket.service.ts`.
 - Existing ticket actions also read then save in separate transactions and can race takeover.
 - Existing customer/identity rows: M11-02 writes one identity by `(orgId, tenantId, provider, externalSubjectRef)` and may update its latest `channelConnectionId`.
-- Existing bounded Telegram profile helper: `normalizeTelegramBotParticipantProfile` in `packages/channels/src/telegram-bot-inbound-contract.ts`, already exported by the channel package.
+- Existing bounded Telegram profile helper: `normalizeTelegramBotParticipantProfile`
+  is exported by the direct
+  `packages/channels/src/telegram-bot-inbound-contract.ts` module. It is already
+  compiled by the API runtime compiler but is not re-exported by the read-only
+  channel index, so M11-03 imports the direct module.
 - Existing conversation-ticket true-DB seam: `packages/db/scripts/run-m10-conversation-ticket-actions-true-db-smoke.mjs` and its helper under `packages/db/scripts/tests/`; CI does not currently call it.
 
 No parallel API, customer-asset service, DB runner or persistence path is justified. One new `conversation-ticket.ownership.ts` source file is justified because the existing repository is already over the ordinary 400-line source limit and ownership/state derivation plus transaction commands form one focused responsibility.
@@ -156,6 +160,22 @@ the other and this slice defines no synthetic display-language field.
 
 Archived/merged identity and archived/missing customer states remain visible as truth but are not presented as active. A missing context is not synthesized from `displayLabelRef` or participant ref.
 
+When conditions overlap, customer context uses this deterministic precedence:
+
+1. missing conversation connection/provider or a provider/subject/link mismatch
+   -> `identity_link_mismatch`, state only;
+2. zero identity -> `identity_missing`, state only; more than one exact identity
+   -> `identity_ambiguous`, state only;
+3. archived identity -> `identity_archived`; merged identity ->
+   `identity_merged`; include only the bounded identity/profile and include the
+   bounded customer only when that linked row exists;
+4. active identity with no linked customer -> `customer_missing`, with bounded
+   identity/profile only;
+5. active identity with archived customer -> `customer_archived`, with bounded
+   identity/profile/customer;
+6. active identity and active customer -> `linked`, with bounded
+   identity/profile/customer.
+
 ### Operator state and SLA
 
 The response adds:
@@ -187,6 +207,23 @@ active ticket or one valid unowned `OPEN` ticket, or a valid same-actor
 `CLAIMED`/`REOPENED` ticket that can advance to `LOCKED`. It is false for a
 reader without `ticket:write`, another operator, an already-owned `LOCKED`
 ticket, closed state or conflict.
+
+`mode` is deterministic:
+
+| Conversation | Active ticket truth | Mode |
+|---|---|---|
+| `CLOSED` | none | `closed` |
+| `OPEN` | none or valid unassigned `OPEN` | `bot` |
+| `OPEN` | valid assigned-only `CLAIMED`/`REOPENED` | `awaiting_operator` |
+| `PENDING_HANDOFF` | valid unassigned `OPEN` or assigned-only `CLAIMED`/`REOPENED` | `awaiting_operator` |
+| `HANDOFF` | valid assigned-only `CLAIMED`/`REOPENED` or same-owner `LOCKED`/`ESCALATED` | `human` |
+| any status | multiple tickets, invalid matrix, `CLOSED` with active ticket, `PENDING_HANDOFF` without a ticket, `HANDOFF` without a valid owned ticket, or `OPEN`/`PENDING_HANDOFF` with `LOCKED`/`ESCALATED` | `conflict` |
+
+For a valid same-owner `ESCALATED` ticket in `HANDOFF`, takeover is
+`already_owned`, writes no event, does not de-escalate and reports
+`canTakeover=false`; another actor receives ownership conflict. A valid fully
+owned `LOCKED`/`ESCALATED` ticket while the conversation is not `HANDOFF` is a
+state conflict and is not silently repaired.
 
 Client `slaPolicyRef`, actor, lock owner and timestamp fields are ignored. The
 top-level detail and every returned ticket use the same server constant
@@ -241,6 +278,23 @@ M11-04 supplies the atomic cross-row close/reopen/resume state machine. The M10
 smoke must replace its previous successful close/reopen expectation with this
 stronger fail-closed assertion; this is an intentional safety-contract change,
 not test weakening.
+
+After the locked re-read, ticket actions have these exact preconditions and
+every other transition returns opaque 409 with zero writes:
+
+- `claim`: conversation `OPEN` or `PENDING_HANDOFF`, ticket is unowned `OPEN`;
+  result is `CLAIMED` assigned to the actor with no lock;
+- `lock`: conversation is `HANDOFF`, ticket is `CLAIMED`/`REOPENED`, assigned to
+  the actor and unlocked; result is `LOCKED` with the same assignment/lock;
+- `note`: conversation is `HANDOFF` and the ticket is a valid actor-owned
+  `CLAIMED`/`REOPENED` or `LOCKED`/`ESCALATED`; ownership/status are unchanged;
+- `escalate`: conversation is `HANDOFF` and ticket is actor-owned `LOCKED`;
+  result is `ESCALATED` with assignment and lock preserved;
+- `close` and `reopen`: always 409/zero-write in M11-03 after scoped validation.
+
+The resulting ticket is validated against the ownership matrix before any
+update/event insert. Focused and true-DB tests must cover OPEN-direct-lock,
+LOCKED-reclaim and CLAIMED-direct-escalate as zero-write conflicts.
 
 ## Error Contract
 

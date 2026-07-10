@@ -42,6 +42,11 @@ adapter, one server SLA policy value, permission-aware `canTakeover`, executable
 ticket-action lock order, fake rollback/mutex requirements and sanitized CI
 failure output.
 
+A second pass closed the remaining ownership-matrix ambiguity by defining exact
+legacy action preconditions/zero-write conflicts, same-owner `ESCALATED`
+behavior, the complete operator-mode table and deterministic customer-context
+precedence. It also corrected the direct-module source of the profile normalizer.
+
 ## Validation Record
 
 | Gate | Result | Evidence |

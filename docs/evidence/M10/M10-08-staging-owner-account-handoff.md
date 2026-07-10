@@ -3,7 +3,7 @@
 > evidence_id: M10-08-staging-owner-account-handoff
 > spec: `docs/specs/M10-08-staging-owner-account-handoff.md`
 > branch: `codex/m10-08-staging-owner-account-handoff`
-> status: `evidence_ready_not_dispatched`
+> status: `invite_requested_owner_acceptance_pending`
 
 ## Summary
 
@@ -26,7 +26,7 @@ Coordinator preflight confirmed, without exposing the address:
 - The target org and tenant rows exist.
 - Existing permission rows are smoke grants only.
 
-This worker did not dispatch the workflow, send an email, mutate Supabase/DB, deploy, or verify an owner inbox. The implementation is evidence-ready; live handoff remains coordinator/owner work.
+The implementation worker did not dispatch the workflow. Coordinator follow-up later dispatched workflow run `29077638994`; the sanitized result was `m10_08_owner_access_ready_for_email_acceptance` with `invite_requested`, 18 permissions, two memberships and one audit event. This proves Supabase accepted the invite request and access facts were written; it does not prove inbox receipt, invite acceptance, password setup or real browser login. Those remain the M11-01 owner action and M11-09 live readback gate.
 
 ## Hosted SMTP Fail-Closed Boundary
 
@@ -96,10 +96,8 @@ No new visual system, route, modal, card or decorative motion was introduced.
 
 ## Remaining Coordinator/Owner Steps
 
-1. Merge the reviewed M10-08 PR and allow CI to pass.
-2. Dispatch the merged workflow with exact confirmation `M10-08`.
-3. Record sanitized workflow status. Stop on `email_address_not_authorized` or any non-success status; do not add custom SMTP in this slice.
-4. Owner verifies invite receipt, sets a password and signs in through the deployed admin callback.
-5. Coordinator verifies `/me/access-context`, conversations, tickets and confirmation queue with the real session without exposing the token or customer payload.
+1. Owner verifies invite receipt in the approved mailbox, sets a password and signs in through the deployed admin callback.
+2. Coordinator verifies `/me/access-context`, conversations, tickets and confirmation queue with the real session without exposing the token or customer payload.
+3. M11-09 provisions/reads back the later `conversation:reply` permission before the live Value-0 operator-send acceptance.
 
 This evidence does not approve production, GA, 1.0, real customer/order-data expansion, LLM/provider use, custom SMTP or release closure.

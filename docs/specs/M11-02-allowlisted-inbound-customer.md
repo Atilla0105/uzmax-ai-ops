@@ -61,7 +61,7 @@ Make inbound support data real and safe enough for the remaining Value-0 path:
 - Inbound business content shaping: `apps/worker/src/conversation-runtime.ts`.
 - Tenant RLS transaction and message/conversation writes: `apps/worker/src/telegram-bot-conversation-persistence.ts`.
 
-No new source module is justified. The existing Prisma schema already contains `customer`, `customer_identity`, `message` and the required compound identity uniqueness, so this spec forbids schema/migration work.
+No parallel runtime or persistence module is justified. One pure inbound-contract extraction is justified below to keep existing files within the enforced line limit. The existing Prisma schema already contains `customer`, `customer_identity`, `message` and the required compound identity uniqueness, so this spec forbids schema/migration work.
 
 ## 触碰模块/文件
 
@@ -100,7 +100,7 @@ Read-only anchors:
 
 - Source: changed source files <= 10, net source LOC <= 600, new source files <= 1. The two existing true-DB smoke runners outside a `tests/` directory and the existing API runtime compiler are guard-classified as source even though they remain validation harnesses.
 - New-source justification: `packages/channels/src/telegram-bot-inbound-contract.ts` is one pure channel-boundary module shared by channels/API/worker. It owns canonical allowlist parsing/admission, bounded participant-profile normalization, worker-side revalidation, bounded inbound business-content shaping and the channel-subject identity draft; it imports no DB, worker runtime or persistence layer. Extraction is required to keep the existing channel and conversation runtime files under the enforced 400-line limit; `rg` found no existing source with these responsibilities.
-- Test: changed test files <= 8; no new/deleted tests, skipped tests, weakened assertions, enlarged snapshots or broad mocks. Existing dynamic TypeScript harnesses may only be updated to resolve the two extracted modules and assert the new contract.
+- Test: changed test files <= 8; no new/deleted tests, skipped tests, weakened assertions, enlarged snapshots or broad mocks. Existing dynamic TypeScript harnesses may only be updated to resolve the one extracted module and assert the new contract.
 - Docs: this spec plus one evidence record.
 - Schema/migration/generated/lock/config/deploy: none.
 - Exceptions: none.

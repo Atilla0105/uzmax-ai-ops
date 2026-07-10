@@ -1,3 +1,20 @@
+import {
+  normalizeTelegramBotChatType,
+  normalizeTelegramBotMessageContent,
+  normalizeTelegramBotParticipantProfile,
+  type TelegramBotChatType,
+  type TelegramBotParticipantProfile
+} from "./telegram-bot-inbound-contract.ts";
+
+export {
+  parseTelegramBotAllowedChatExternalRefs,
+  parseTelegramBotAllowedParticipantExternalRefs
+} from "./telegram-bot-inbound-contract.ts";
+export type {
+  TelegramBotChatType,
+  TelegramBotParticipantProfile
+} from "./telegram-bot-inbound-contract.ts";
+
 export const packageName = "@uzmax/channels";
 
 export const telegramBotAllowedUpdates = ["message", "callback_query"] as const;
@@ -14,11 +31,14 @@ export type TelegramBotContentKind =
 export type NormalizedTelegramBotIngress = {
   callbackData?: string;
   chatExternalRef?: string;
+  chatType?: TelegramBotChatType;
   contentKind: TelegramBotContentKind;
+  // Telegram file_id values are bounded provider cache metadata, not durable assets.
   fileIds?: string[];
   messageExternalRef?: string;
   occurredAt?: string;
   participantExternalRef?: string;
+  participantProfile?: TelegramBotParticipantProfile;
   provider: "telegram_bot";
   providerUpdateId: string;
   text?: string;
@@ -167,7 +187,6 @@ const businessUpdateKeys = new Set([
 ]);
 const maxTextLength = 4096;
 const maxCallbackDataLength = 256;
-const maxFileIds = 4;
 
 export function normalizeTelegramBotUpdate(
   update: unknown
@@ -191,12 +210,17 @@ function normalizeTelegramMessage(
   providerUpdateId: string,
   message: UnknownRecord
 ): NormalizedTelegramBotIngress {
+  const chat = readRecordProperty(message, "chat");
   return dropUndefined({
-    ...normalizeMessageContent(message),
+    ...normalizeTelegramBotMessageContent(message),
     chatExternalRef: externalRef("chat", readNestedId(message, "chat")),
+    chatType: normalizeTelegramBotChatType(chat?.type),
     messageExternalRef: externalRef("message", readId(message.message_id)),
     occurredAt: readTelegramDate(message.date),
     participantExternalRef: externalRef("user", readNestedId(message, "from")),
+    participantProfile: normalizeTelegramBotParticipantProfile(
+      readRecordProperty(message, "from")
+    ),
     provider: "telegram_bot",
     providerUpdateId,
     updateKind: "message"
@@ -208,47 +232,25 @@ function normalizeTelegramCallbackQuery(
   callbackQuery: UnknownRecord
 ): NormalizedTelegramBotIngress {
   const message = readRecordProperty(callbackQuery, "message");
+  const chat = message ? readRecordProperty(message, "chat") : undefined;
   return dropUndefined({
     callbackData: boundedString(callbackQuery.data, maxCallbackDataLength),
     chatExternalRef: message
       ? externalRef("chat", readNestedId(message, "chat"))
       : undefined,
+    chatType: normalizeTelegramBotChatType(chat?.type),
     contentKind: "callback",
     messageExternalRef: message
       ? externalRef("message", readId(message.message_id))
       : undefined,
     participantExternalRef: externalRef("user", readNestedId(callbackQuery, "from")),
+    participantProfile: normalizeTelegramBotParticipantProfile(
+      readRecordProperty(callbackQuery, "from")
+    ),
     provider: "telegram_bot",
     providerUpdateId,
     updateKind: "callback_query"
   });
-}
-
-function normalizeMessageContent(
-  message: UnknownRecord
-): Pick<
-  NormalizedTelegramBotIngress,
-  "contentKind" | "fileIds" | "text" | "unsupportedReason"
-> {
-  const text = boundedString(message.text, maxTextLength);
-  if (text) {
-    return { contentKind: "text", text };
-  }
-
-  const photoFileIds = readPhotoFileIds(message.photo);
-  if (photoFileIds.length > 0) {
-    return { contentKind: "image", fileIds: photoFileIds };
-  }
-
-  const voiceFileId = readRecordProperty(message, "voice")?.file_id;
-  if (typeof voiceFileId === "string" && voiceFileId.trim()) {
-    return { contentKind: "voice", fileIds: [voiceFileId] };
-  }
-
-  return {
-    contentKind: "unsupported",
-    unsupportedReason: "message_content_unsupported"
-  };
 }
 
 function unsupportedUpdate(
@@ -409,23 +411,6 @@ function parseTelegramBotSendMessageResponse(
   const messageId = result ? readId(result.message_id) : undefined;
   if (!messageId) throw new Error("telegram sendMessage response missing message_id");
   return { messageId };
-}
-
-function readPhotoFileIds(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .flatMap((item) => (readRecordLike(item)?.file_id ?? []) as string[])
-    .filter((fileId) => typeof fileId === "string" && fileId.trim())
-    .slice(0, maxFileIds);
-}
-
-function readRecordLike(value: unknown): UnknownRecord | undefined {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as UnknownRecord)
-    : undefined;
 }
 
 function dropUndefined<T extends UnknownRecord>(value: T): T {

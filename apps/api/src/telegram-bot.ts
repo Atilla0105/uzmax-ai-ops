@@ -5,6 +5,11 @@ import {
   telegramBotConversationQueueDefaults,
   type NormalizedTelegramBotIngress
 } from "../../../packages/channels/src/index.ts";
+import {
+  isTelegramBotInboundAllowed,
+  parseTelegramBotAllowedChatExternalRefs,
+  parseTelegramBotAllowedParticipantExternalRefs
+} from "../../../packages/channels/src/telegram-bot-inbound-contract.ts";
 import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 
@@ -12,7 +17,11 @@ export const TELEGRAM_BOT_INGRESS_QUEUE = "TELEGRAM_BOT_INGRESS_QUEUE";
 export const TELEGRAM_BOT_SECRET_HEADER = "x-telegram-bot-api-secret-token";
 export const TELEGRAM_BOT_WEBHOOK_SECRET = "TELEGRAM_BOT_WEBHOOK_SECRET";
 
-export type TelegramBotQueueStatus = "accepted" | "deduped" | "unsupported";
+export type TelegramBotQueueStatus =
+  | "accepted"
+  | "deduped"
+  | "rejected"
+  | "unsupported";
 
 export type TelegramBotQueueResult = {
   contentKind: NormalizedTelegramBotIngress["contentKind"];
@@ -36,6 +45,8 @@ export type TelegramBotIngressRuntimeEnv = Partial<
     | "UZMAX_REDIS_URL"
     | "UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID"
     | "UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE"
+    | "UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS"
+    | "UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS"
     | "UZMAX_TELEGRAM_BOT_ORG_ID"
     | "UZMAX_TELEGRAM_BOT_TENANT_ID"
     | typeof TELEGRAM_BOT_WEBHOOK_SECRET,
@@ -97,6 +108,8 @@ export class DisabledTelegramBotIngressQueue implements TelegramBotIngressQueueP
 class BullmqTelegramBotIngressQueue implements TelegramBotIngressQueuePort {
   constructor(
     private readonly options: {
+      allowedChatExternalRefs: ReadonlySet<string>;
+      allowedParticipantExternalRefs: ReadonlySet<string>;
       channelConnectionId: string;
       orgId: string;
       queue: BullmqQueuePort;
@@ -106,6 +119,9 @@ class BullmqTelegramBotIngressQueue implements TelegramBotIngressQueuePort {
 
   async enqueue(update: NormalizedTelegramBotIngress): Promise<TelegramBotQueueResult> {
     if (update.contentKind === "unsupported") return queueResult(update, "unsupported");
+    if (!isTelegramBotInboundAllowed(update, this.options)) {
+      return queueResult(update, "rejected");
+    }
 
     const payload = createTelegramBotConversationJobPayload({
       channelConnectionId: this.options.channelConnectionId,
@@ -145,7 +161,11 @@ export class TelegramBotWebhookCore {
     this.assertSecret(input.headers);
     const normalized = this.normalize(input.body);
     const queueResult = await this.options.queue.enqueue(normalized);
-    return { ok: true, ...queueResult } as const;
+    const acknowledgement =
+      queueResult.status === "rejected"
+        ? { ...queueResult, status: "accepted" as const }
+        : queueResult;
+    return { ok: true, ...acknowledgement } as const;
   }
 
   private assertSecret(headers: TelegramBotWebhookInput["headers"]) {
@@ -205,6 +225,12 @@ export function createTelegramBotIngressQueueProviderFromEnv(
   if (mode === "disabled") return new DisabledTelegramBotIngressQueue();
 
   return new BullmqTelegramBotIngressQueue({
+    allowedChatExternalRefs: parseTelegramBotAllowedChatExternalRefs(
+      env.UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS
+    ),
+    allowedParticipantExternalRefs: parseTelegramBotAllowedParticipantExternalRefs(
+      env.UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS
+    ),
     channelConnectionId: requiredEnv(env, "UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID"),
     orgId: requiredEnv(env, "UZMAX_TELEGRAM_BOT_ORG_ID"),
     queue:

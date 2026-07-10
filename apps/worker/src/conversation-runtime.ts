@@ -10,11 +10,19 @@ import {
   type TelegramBotOutboundSendPort,
   type TelegramBotOutboundSendResult
 } from "../../../packages/channels/src/index.ts";
+import {
+  assertTelegramBotInboundPayload,
+  createTelegramBotCustomerIdentityDraft,
+  createTelegramBotInboundMessageContent,
+  isTelegramBotInboundAllowed,
+  type TelegramBotCustomerIdentityDraft,
+  type TelegramBotInboundAdmissionPolicy
+} from "../../../packages/channels/src/telegram-bot-inbound-contract.ts";
 import type { TelegramBotAnswerRuntime } from "./telegram-bot-answer-runtime.ts";
 import { createTelegramBotTicketFollowUp } from "./telegram-bot-ticket-follow-up.ts";
 
 type MaybePromise<T> = T | Promise<T>;
-type RuntimeStatus = "accepted" | "deduped";
+type RuntimeStatus = "accepted" | "deduped" | "rejected";
 type RuntimeBranch = "answer" | "handoff";
 type RuntimeIds = Partial<
   Record<"conversationId" | "messageId" | "outboundMessageId" | "ticketId", string>
@@ -31,6 +39,7 @@ type RuntimeDedupeResult = Record<"providerUpdateId" | "traceId", string> & {
 export type RuntimePersistInput = AnswerPersistInput | HandoffPersistInput;
 type BasePersistInput = {
   conversation: ConversationDraft;
+  customerIdentity?: TelegramBotCustomerIdentityDraft;
   dedupe: DedupeDraft;
   message: MessageDraft;
   runtimeBranch: RuntimeBranch;
@@ -91,6 +100,7 @@ export type TelegramBotConversationPersistenceGateway = {
 };
 
 export type TelegramBotConversationRuntimeOptions = {
+  admissionPolicy?: TelegramBotInboundAdmissionPolicy;
   answerRuntime?: TelegramBotAnswerRuntime;
   sendPort?: TelegramBotOutboundSendPort;
 };
@@ -106,7 +116,10 @@ export async function processTelegramBotConversationJob(
   gateway: TelegramBotConversationPersistenceGateway,
   options: TelegramBotConversationRuntimeOptions = {}
 ): Promise<RuntimeResult> {
-  assertPayload(payload);
+  assertTelegramBotInboundPayload(payload);
+  if (!isTelegramBotInboundAllowed(payload, options.admissionPolicy)) {
+    return rejectedResult(payload);
+  }
   const occurredAt = payload.occurredAt ?? payload.enqueuedAt;
   const conversationId = randomUUID();
   const messageId = randomUUID();
@@ -127,9 +140,10 @@ export async function processTelegramBotConversationJob(
     tenantId: payload.tenantId,
     updateKind: payload.updateKind
   };
+  const customerIdentity = createTelegramBotCustomerIdentityDraft(payload);
   const message = {
     channelConnectionId: payload.channelConnectionId,
-    content: safeMessageContent(payload),
+    content: createTelegramBotInboundMessageContent(payload),
     contentKind: payload.contentKind,
     conversationId,
     externalMessageRef: payload.messageExternalRef,
@@ -143,6 +157,7 @@ export async function processTelegramBotConversationJob(
     return processAnswerableTextJob({
       conversation,
       conversationId,
+      customerIdentity,
       dedupe,
       gateway,
       message,
@@ -154,6 +169,7 @@ export async function processTelegramBotConversationJob(
   return gateway.persistAcceptedUpdate(
     createHandoffPersistInput({
       conversation,
+      customerIdentity,
       dedupe,
       message,
       payload,
@@ -165,10 +181,14 @@ export async function processTelegramBotConversationJob(
 async function processAnswerableTextJob(input: {
   conversation: ConversationDraft;
   conversationId: string;
+  customerIdentity?: TelegramBotCustomerIdentityDraft;
   dedupe: DedupeDraft;
   gateway: TelegramBotConversationPersistenceGateway;
   message: MessageDraft;
-  options: Required<TelegramBotConversationRuntimeOptions>;
+  options: TelegramBotConversationRuntimeOptions & {
+    answerRuntime: TelegramBotAnswerRuntime;
+    sendPort: TelegramBotOutboundSendPort;
+  };
   payload: TelegramBotConversationJobPayload;
 }): Promise<RuntimeResult> {
   if (!input.gateway.reserveProviderUpdate) {
@@ -216,6 +236,7 @@ async function processAnswerableTextJob(input: {
 
     return input.gateway.persistAcceptedUpdate({
       conversation: input.conversation,
+      customerIdentity: input.customerIdentity,
       dedupe: reservedDedupe,
       message: input.message,
       outboundMessage: outboundMessageDraft(input, answerTextValue, sendResult),
@@ -297,8 +318,11 @@ function outboundMessageDraft(
 
 export function createTelegramBotConversationBullmqProcessor(
   gateway: TelegramBotConversationPersistenceGateway,
-  options: TelegramBotConversationRuntimeOptions = {}
+  options: TelegramBotConversationRuntimeOptions
 ) {
+  if (!options?.admissionPolicy) {
+    throw new Error("telegram bot inbound admission policy is required");
+  }
   return (job: RuntimeJob) => {
     if (job.name !== telegramBotConversationQueueDefaults.jobName) {
       throw new Error("telegram bot conversation job name is unsupported");
@@ -312,7 +336,7 @@ export function createTelegramBotConversationBullmqWorker(options: {
   gateway: TelegramBotConversationPersistenceGateway;
   prefix?: string;
   queueName?: string;
-  runtimeOptions?: TelegramBotConversationRuntimeOptions;
+  runtimeOptions: TelegramBotConversationRuntimeOptions;
 }) {
   return new Worker(
     options.queueName ?? telegramBotConversationQueueDefaults.queueName,
@@ -326,6 +350,7 @@ export function createTelegramBotConversationBullmqWorker(options: {
 
 function createHandoffPersistInput(input: {
   conversation: ConversationDraft;
+  customerIdentity?: TelegramBotCustomerIdentityDraft;
   dedupe: DedupeDraft;
   message: MessageDraft;
   payload: TelegramBotConversationJobPayload;
@@ -334,6 +359,7 @@ function createHandoffPersistInput(input: {
   const followUp = createTelegramBotTicketFollowUp(input);
   return {
     conversation: input.conversation,
+    customerIdentity: input.customerIdentity,
     dedupe: input.dedupe,
     message: input.message,
     runtimeBranch: "handoff",
@@ -379,18 +405,16 @@ function safeOutboundMessageContent(
   answerTextValue: string,
   sendResult: TelegramBotOutboundSendResult
 ) {
-  return removeUndefined({
+  return {
     providerMessageRef: sendResult.providerMessageRef,
     text: answerTextValue
-  });
+  };
 }
 
-function safeMessageContent(payload: TelegramBotConversationJobPayload) {
+function rejectedResult(payload: TelegramBotConversationJobPayload): RuntimeResult {
   return {
-    contentKind: payload.contentKind,
-    provider: payload.provider,
     providerUpdateId: payload.providerUpdateId,
-    textLength: payload.text?.length ?? 0,
+    status: "rejected",
     traceId: payload.traceId
   };
 }
@@ -400,22 +424,4 @@ function requiredTextValue(value: unknown, label: string): string {
     throw new Error(`${label} is required`);
   }
   return value.trim();
-}
-
-function removeUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)
-  ) as T;
-}
-
-function assertPayload(payload: TelegramBotConversationJobPayload) {
-  const requiredKeys = ["channelConnectionId", "orgId", "providerUpdateId", "tenantId"];
-  for (const key of requiredKeys) {
-    if (typeof payload[key as keyof TelegramBotConversationJobPayload] !== "string") {
-      throw new Error(`${key} is required`);
-    }
-  }
-  if (payload.contentKind === "unsupported") {
-    throw new Error("unsupported telegram bot updates are not conversation jobs");
-  }
 }

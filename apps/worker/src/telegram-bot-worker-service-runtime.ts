@@ -30,6 +30,8 @@ export type TelegramBotWorkerRuntimeConfig = {
   deepSeekModelId?: string;
   rlsDatabaseUrl?: string;
   telegramAiMemberKey?: string;
+  telegramAllowedChatExternalRefs: ReadonlySet<string>;
+  telegramAllowedParticipantExternalRefs: ReadonlySet<string>;
   telegramAnswerMode: TelegramAnswerMode;
   telegramBotApiBaseUrl?: string;
   telegramBotToken?: string;
@@ -77,7 +79,14 @@ export function createTelegramBotConversationRuntimeOptions(input: {
   log: WorkerLog;
   prisma?: TelegramBotWorkerPrismaClient;
 }): TelegramBotConversationRuntimeOptions {
-  if (input.config.telegramAnswerMode === "disabled") return {};
+  const admission = {
+    admissionPolicy: {
+      allowedChatExternalRefs: input.config.telegramAllowedChatExternalRefs,
+      allowedParticipantExternalRefs:
+        input.config.telegramAllowedParticipantExternalRefs
+    }
+  };
+  if (input.config.telegramAnswerMode === "disabled") return admission;
   const prisma = input.prisma;
   if (!prisma) {
     throw new Error(
@@ -85,6 +94,7 @@ export function createTelegramBotConversationRuntimeOptions(input: {
     );
   }
   return {
+    ...admission,
     answerRuntime: createDbBackedTelegramBotAnswerRuntime({
       aiMemberKey: requiredValue(
         input.config.telegramAiMemberKey,

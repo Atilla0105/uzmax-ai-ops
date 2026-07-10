@@ -213,9 +213,18 @@ export async function compileApiRuntime(options = {}) {
     );
   }
   await writeModule(outDir, "packages/db/src/prisma-runtime.ts", "prisma-runtime.mjs");
-  await writeModule(outDir, "packages/channels/src/index.ts", "channels-index.mjs");
+  await writeModule(
+    outDir,
+    "packages/channels/src/telegram-bot-inbound-contract.ts",
+    "telegram-bot-inbound-contract.mjs"
+  );
+  await writeModule(outDir, "packages/channels/src/index.ts", "channels-index.mjs", {
+    "./telegram-bot-inbound-contract.ts": "./telegram-bot-inbound-contract.mjs"
+  });
   await writeModule(outDir, "apps/api/src/telegram-bot.ts", "telegram-bot.mjs", {
-    "../../../packages/channels/src/index.ts": "./channels-index.mjs"
+    "../../../packages/channels/src/index.ts": "./channels-index.mjs",
+    "../../../packages/channels/src/telegram-bot-inbound-contract.ts":
+      "./telegram-bot-inbound-contract.mjs"
   });
   for (const [sourcePath, outputName, replacements] of orderImportModules()) {
     await writeModule(outDir, sourcePath, outputName, replacements);

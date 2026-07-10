@@ -1,7 +1,7 @@
 # M11-02 Allowlisted Inbound Customer Truth Evidence
 
 Spec: `docs/specs/M11-02-allowlisted-inbound-customer.md`
-Status: `implementation_in_progress`
+Status: `local_gates_passed__ci_true_db_pending`
 Recorded: 2026-07-10
 Branch: `codex/m11-02-allowlisted-inbound-customer`
 Worktree: `/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/m11-02-allowlisted-inbound-customer`
@@ -50,20 +50,46 @@ The schema and RLS transaction infrastructure already exist. This slice must ext
 
 ## Implementation Evidence
 
-Pending implementation.
+- The BullMQ API path now requires canonical private-chat and participant allowlists, rejects mismatches before queue insertion and returns the same opaque successful acknowledgement shape for admitted and rejected supported updates.
+- The real worker composition parses the same two allowlists and every BullMQ processor/worker fails construction when no admission policy is supplied. The processor repeats admission before dedupe, persistence, LLM or outbound work.
+- Worker-side payload validation bounds controlled provider/trace refs, validates update kind and dates, and rejects malformed injected jobs before business side effects. Telegram worker failure/completion telemetry no longer records exception text or untrusted BullMQ job ids.
+- Normalization retains only bounded participant profile fields. The worker revalidates those fields and writes bounded readable content only to tenant-scoped business message content.
+- Customer and identity upserts run inside the existing RLS transaction. A tenant/provider/participant-scoped transaction advisory lock serializes concurrent identity updates; the existing customer link and manual language remain unchanged, `firstSeenAt` tracks the earliest observed event and `lastSeenAt` advances monotonically.
+- No schema, migration, generated artifact, lockfile, committed configuration, deployment or secret was added.
+- Final guard classification before commit: 10 source files, 8 test/support files and 2 docs; one new source file; net source LOC exactly 600 of the approved 600 maximum.
 
 ## Validation Log
 
-Pending implementation and review.
+| Validation | Result |
+|---|---|
+| Focused M2/M6B/M8 ingress, worker defense and answer-loop tests | pass; 22/22 after security-review fixes |
+| Full `scripts/tests/*.test.mjs` suite | pass; 558/558 |
+| TypeScript no-emit typecheck | pass |
+| ESLint on every touched source/test file | pass |
+| API and worker TypeScript builds | pass |
+| dependency-cruiser | pass; 403 modules and 567 dependencies, zero violations |
+| jscpd | pass; zero clones |
+| knip | pass |
+| Prettier on every touched file | pass |
+| forbidden-term, doc-trigger, eval-trigger, workspace and worker-boundary guards | pass |
+| `git diff --check` | pass |
+| Local true-DB/Redis runners | not claimed; this checkout has no RLS DB or Redis connection configuration |
+| CI true-DB/Redis runners | pending first PR check; evidence will be updated with the exact run before merge |
 
 ## Spec-Compliance Review
 
-Pending.
+PASS after implementation stabilization. The formal read-only review confirmed the 10/8/2 touch classification, then-current budget, double admission fence, bounded profile/content path, tenant-RLS identity semantics, concurrency lock, preserved manual customer fields, strengthened tests and no out-of-scope schema/config/deploy work. The later security fixes only tightened worker admission/metadata validation and remain inside the same approved paths and 600-line hard budget; a final post-commit guard will re-confirm the exact numbers.
 
 ## Code-Quality Review
 
-Pending.
+The first manual review failed on two major issues and one minor issue rather than approving optimistically:
+
+- missing policy could fail open in a direct processor path;
+- injected job refs/dates were not controlled before persistence/telemetry;
+- concurrent identity handling did not explicitly preserve the earliest observation.
+
+All three were addressed with default-deny admission, mandatory BullMQ processor policy, pre-side-effect metadata validation, removal of untrusted job-id telemetry, serialized identity merging and earliest/last-seen handling. Focused and full local gates were rerun successfully. The final manual read-only re-review reported PASS with no remaining blocker, major or minor; it reconfirmed RLS-before-lock ordering, compound tenant identity scope, concurrency time semantics, privacy boundaries and exact net source LOC of 600.
 
 ## Closeout Truth
 
-M11-02 remains open. No Value-0, staging, production, GA or 1.0 completion is claimed by this in-progress record.
+M11-02 remains open until CI true-DB/Redis checks pass. No Value-0, staging, production, GA or 1.0 completion is claimed by this record.

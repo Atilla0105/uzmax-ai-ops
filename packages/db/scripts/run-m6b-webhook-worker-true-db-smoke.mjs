@@ -17,6 +17,7 @@ const TENANT_A_ID = "22222222-2222-4222-8222-222222222606";
 const TENANT_B_ID = "33333333-3333-4333-8333-333333333606";
 const CHANNEL_CONNECTION_ID = "44444444-4444-4444-8444-444444444606";
 const SECRET = "controlled-m6b-06b-secret";
+const FAILED_LOG_SENTINEL = "synthetic-failed-job-plaintext";
 
 const redisUrl = requireEnv("UZMAX_REDIS_URL");
 const prisma = new PrismaClient({
@@ -38,6 +39,8 @@ try {
     env: {
       UZMAX_REDIS_URL: redisUrl,
       UZMAX_RLS_DATABASE_URL: requireEnv("UZMAX_RLS_DATABASE_URL"),
+      UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "telegram:chat:7606",
+      UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS: "telegram:user:8606",
       UZMAX_WORKER_QUEUES: "telegram-bot-conversation",
       UZMAX_WORKER_TELEGRAM_BOT_PERSISTENCE_MODE: "rls_prisma_gateway"
     },
@@ -45,6 +48,17 @@ try {
       logs.push(entry);
     }
   });
+
+  await queue.add(
+    "telegram-bot.conversation.ingress",
+    { text: FAILED_LOG_SENTINEL },
+    { attempts: 1, jobId: "synthetic-invalid-m11-02" }
+  );
+  const failedLog = await waitForSanitizedFailure();
+  assert.equal(failedLog.errorCode, "telegram_bot_job_failed");
+  assert.equal("error" in failedLog, false);
+  assert.equal(JSON.stringify(logs).includes(FAILED_LOG_SENTINEL), false);
+  await queue.clean(0, 100, "failed");
 
   const queueProvider = runtime.api.createTelegramBotIngressQueueProviderFromEnv({
     env: telegramEnv(),
@@ -68,16 +82,20 @@ try {
   const tenantB = await countVisibleRows(TENANT_B_ID);
   assert.deepEqual(tenantA, {
     conversations: 1,
+    customerIdentities: 1,
+    customers: 1,
     dedupes: 1,
     messages: 1,
-    rawTextMatches: 0,
+    readableTextMatches: 1,
     tickets: 1
   });
   assert.deepEqual(tenantB, {
     conversations: 0,
+    customerIdentities: 0,
+    customers: 0,
     dedupes: 0,
     messages: 0,
-    rawTextMatches: 0,
+    readableTextMatches: 0,
     tickets: 0
   });
 
@@ -87,7 +105,7 @@ try {
   assert.equal(await syntheticResidueCount(), 0);
 
   console.log(
-    "m6b-webhook-worker-true-db-smoke: passed synthetic webhook->BullMQ Redis->worker service shell->DB/RLS ticket readback, tenant isolation and residue=0"
+    "m6b-webhook-worker-true-db-smoke: passed allowlisted private webhook->BullMQ->worker->readable DB/RLS customer ticket readback, sanitized failed log, tenant isolation and residue=0"
   );
 } finally {
   await service?.close("true-db-smoke-cleanup").catch(() => undefined);
@@ -110,6 +128,8 @@ function telegramEnv() {
   return {
     TELEGRAM_BOT_WEBHOOK_SECRET: SECRET,
     UZMAX_REDIS_URL: redisUrl,
+    UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "telegram:chat:7606",
+    UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS: "telegram:user:8606",
     UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID: CHANNEL_CONNECTION_ID,
     UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE: "bullmq",
     UZMAX_TELEGRAM_BOT_ORG_ID: ORG_ID,
@@ -120,11 +140,11 @@ function telegramEnv() {
 function syntheticTelegramUpdate() {
   return {
     message: {
-      chat: { id: 7606 },
+      chat: { id: 7606, type: "private" },
       date: 1782475200,
       from: { id: 8606 },
       message_id: 9606,
-      text: "synthetic webhook text must not be stored raw"
+      text: "synthetic readable webhook request"
     },
     update_id: 5606
   };
@@ -179,6 +199,8 @@ async function countVisibleRows(tenantId) {
     prisma.$queryRaw`
       select
         (select count(*) from conversation where org_id::text = ${ORG_ID})::int as conversations,
+        (select count(*) from customer where org_id::text = ${ORG_ID})::int as customers,
+        (select count(*) from customer_identity where org_id::text = ${ORG_ID})::int as "customerIdentities",
         (select count(*) from message where org_id::text = ${ORG_ID})::int as messages,
         (select count(*) from ticket where org_id::text = ${ORG_ID})::int as tickets,
         (select count(*) from telegram_update_dedupe where org_id::text = ${ORG_ID})::int as dedupes,
@@ -186,16 +208,21 @@ async function countVisibleRows(tenantId) {
           select count(*)
           from message
           where org_id::text = ${ORG_ID}
-            and content::text like '%synthetic webhook text must not be stored raw%'
-        )::int as "rawTextMatches"
+            and content->>'text' = 'synthetic readable webhook request'
+        )::int as "readableTextMatches"
     `
   ]);
   const row = results.at(-1)?.[0] ?? {};
   return Object.fromEntries(
-    ["conversations", "dedupes", "messages", "rawTextMatches", "tickets"].map((key) => [
-      key,
-      Number(row[key] ?? -1)
-    ])
+    [
+      "conversations",
+      "customerIdentities",
+      "customers",
+      "dedupes",
+      "messages",
+      "readableTextMatches",
+      "tickets"
+    ].map((key) => [key, Number(row[key] ?? -1)])
   );
 }
 
@@ -223,6 +250,18 @@ async function waitForLog(event) {
     await delay(100);
   }
   throw new Error(`timed out waiting for ${event}: ${JSON.stringify(logs)}`);
+}
+
+async function waitForSanitizedFailure() {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    const entry = logs.find(
+      (candidate) => candidate.event === "worker.telegram_bot.failed"
+    );
+    if (entry) return entry;
+    await delay(100);
+  }
+  throw new Error("sanitized Telegram worker failure log missing");
 }
 
 async function compileRuntimeModules() {

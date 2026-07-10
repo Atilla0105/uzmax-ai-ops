@@ -7,8 +7,14 @@ import ts from "typescript";
 
 const repoRoot = process.cwd();
 const channels = await importChannelsSource();
-const telegramApi = await importTelegramApiSource(channels.moduleUrl);
-const workerRuntime = await importWorkerConversationRuntime(channels.moduleUrl);
+const workerRuntime = await importWorkerConversationRuntime(
+  channels.moduleUrl,
+  channels.inboundModuleUrl
+);
+const telegramApi = await importTelegramApiSource(
+  channels.moduleUrl,
+  channels.inboundModuleUrl
+);
 const spec = read("docs/specs/M6B-05b-equivalent-bot-webhook-drive.md");
 
 describe("M6B-05b equivalent Bot webhook drive", () => {
@@ -25,6 +31,8 @@ describe("M6B-05b equivalent Bot webhook drive", () => {
       telegramApi.module.createTelegramBotIngressQueueProviderFromEnv({
         env: {
           UZMAX_REDIS_URL: "redis://127.0.0.1:6379",
+          UZMAX_TELEGRAM_BOT_ALLOWED_CHAT_REFS: "telegram:chat:7606",
+          UZMAX_TELEGRAM_BOT_ALLOWED_PARTICIPANT_REFS: "telegram:user:8606",
           UZMAX_TELEGRAM_BOT_CHANNEL_CONNECTION_ID:
             "44444444-4444-4444-8444-444444444506",
           UZMAX_TELEGRAM_BOT_INGRESS_QUEUE_MODE: "bullmq",
@@ -62,12 +70,14 @@ describe("M6B-05b equivalent Bot webhook drive", () => {
     const gateway = fakePersistenceGateway();
     const firstResult = await workerRuntime.module.processTelegramBotConversationJob(
       queued[0][1],
-      gateway
+      gateway,
+      admissionPolicy()
     );
     const duplicateResult =
       await workerRuntime.module.processTelegramBotConversationJob(
         queued[1][1],
-        gateway
+        gateway,
+        admissionPolicy()
       );
 
     assert.equal(firstResult.status, "accepted");
@@ -80,7 +90,7 @@ describe("M6B-05b equivalent Bot webhook drive", () => {
       gateway.visibleRowsFor("33333333-3333-4333-8333-333333333506").tickets,
       0
     );
-    assert.equal(gateway.rawTextStored, false);
+    assert.equal(gateway.readableTextStored, true);
   });
 
   it("keeps the slice narrow and records true DB/RLS as a separate evidence boundary", () => {
@@ -100,7 +110,7 @@ function fakePersistenceGateway() {
   const seen = new Set();
   const rowsByTenant = new Map();
   return {
-    rawTextStored: false,
+    readableTextStored: false,
     async persistAcceptedUpdate(input) {
       if (seen.has(input.dedupe.providerUpdateId)) {
         return {
@@ -121,10 +131,10 @@ function fakePersistenceGateway() {
       tenantRows.messages += 1;
       tenantRows.tickets += 1;
       rowsByTenant.set(input.dedupe.tenantId, tenantRows);
-      this.rawTextStored =
+      this.readableTextStored =
         JSON.stringify(input.message.content).includes(
           "synthetic text must not be stored raw"
-        ) || this.rawTextStored;
+        ) || this.readableTextStored;
       return {
         conversationId: input.conversation.id,
         messageId: input.message.id,
@@ -150,7 +160,7 @@ function fakePersistenceGateway() {
 function syntheticWebhookBody() {
   return {
     message: {
-      chat: { id: 7606 },
+      chat: { id: 7606, type: "private" },
       date: 1781654400,
       from: { id: 8606 },
       message_id: 9606,
@@ -161,16 +171,26 @@ function syntheticWebhookBody() {
 }
 
 async function importChannelsSource() {
-  return loadModuleFromRepo("packages/channels/src/index.ts");
+  const inbound = await loadModuleFromRepo(
+    "packages/channels/src/telegram-bot-inbound-contract.ts"
+  );
+  const channelsModule = await loadModuleFromRepo("packages/channels/src/index.ts", [
+    ["./telegram-bot-inbound-contract.ts", inbound.moduleUrl]
+  ]);
+  return { ...channelsModule, inboundModuleUrl: inbound.moduleUrl };
 }
 
-async function importTelegramApiSource(channelsModuleUrl) {
+async function importTelegramApiSource(channelsModuleUrl, inboundModuleUrl) {
   return loadModuleFromRepo("apps/api/src/telegram-bot.ts", [
-    ["../../../packages/channels/src/index.ts", channelsModuleUrl]
+    ["../../../packages/channels/src/index.ts", channelsModuleUrl],
+    [
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      inboundModuleUrl
+    ]
   ]);
 }
 
-async function importWorkerConversationRuntime(channelsModuleUrl) {
+async function importWorkerConversationRuntime(channelsModuleUrl, inboundModuleUrl) {
   const handoffModule = await loadModuleFromRepo(
     "packages/capabilities/handoff/src/index.ts"
   );
@@ -180,6 +200,10 @@ async function importWorkerConversationRuntime(channelsModuleUrl) {
   );
   return loadModuleFromRepo("apps/worker/src/conversation-runtime.ts", [
     ["../../../packages/channels/src/index.ts", channelsModuleUrl],
+    [
+      "../../../packages/channels/src/telegram-bot-inbound-contract.ts",
+      inboundModuleUrl
+    ],
     ["../../../packages/capabilities/handoff/src/index.ts", handoffModule.moduleUrl],
     ["./telegram-bot-ticket-follow-up.ts", ticketFollowUpModule.moduleUrl],
     [
@@ -190,9 +214,18 @@ async function importWorkerConversationRuntime(channelsModuleUrl) {
   ]);
 }
 
+function admissionPolicy() {
+  return {
+    admissionPolicy: {
+      allowedChatExternalRefs: new Set(["telegram:chat:7606"]),
+      allowedParticipantExternalRefs: new Set(["telegram:user:8606"])
+    }
+  };
+}
+
 async function loadModuleFromRepo(relativePath, replacements = []) {
   const source = replacements.reduce(
-    (current, [pattern, replacement]) => current.replace(pattern, replacement),
+    (current, [pattern, replacement]) => current.replaceAll(pattern, replacement),
     read(relativePath)
   );
   const compiled = ts.transpileModule(source, {

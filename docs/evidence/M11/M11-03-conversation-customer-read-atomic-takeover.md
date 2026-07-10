@@ -47,6 +47,10 @@ legacy action preconditions/zero-write conflicts, same-owner `ESCALATED`
 behavior, the complete operator-mode table and deterministic customer-context
 precedence. It also corrected the direct-module source of the profile normalizer.
 
+The final pre-implementation pass chose the fail-closed missing-ticket branch:
+`PENDING_HANDOFF` without an active ticket is conflict/409/zero-write, while only
+`OPEN` may create a missing takeover ticket.
+
 ## Validation Record
 
 | Gate | Result | Evidence |

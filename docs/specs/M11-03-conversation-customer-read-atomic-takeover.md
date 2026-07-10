@@ -202,11 +202,12 @@ conversation `aiState` is `suspended`.
 unowned `OPEN`, `self`/`other` by comparing the valid assigned user to
 `AccessContext.userId`, and `conflict` for every invalid matrix. `canTakeover`
 is true only when the access context contains `ticket:write` and a takeover
-would make a state transition: an `OPEN`/`PENDING_HANDOFF` conversation with no
-active ticket or one valid unowned `OPEN` ticket, or a valid same-actor
-`CLAIMED`/`REOPENED` ticket that can advance to `LOCKED`. It is false for a
-reader without `ticket:write`, another operator, an already-owned `LOCKED`
-ticket, closed state or conflict.
+would make a state transition: an `OPEN` conversation with no active ticket; an
+`OPEN`/`PENDING_HANDOFF` conversation with one valid unowned `OPEN` ticket; or a
+valid same-actor `CLAIMED`/`REOPENED` ticket that can advance to `LOCKED`. A
+`PENDING_HANDOFF` conversation without a ticket is conflict and is never
+repaired here. `canTakeover` is false for a reader without `ticket:write`,
+another operator, an already-owned `LOCKED` ticket, closed state or conflict.
 
 `mode` is deterministic:
 
@@ -248,7 +249,7 @@ The RLS Prisma production path uses one interactive transaction and this fixed o
 2. select the scoped conversation `FOR UPDATE`; missing/wrong tenant is the same 404;
 3. select every non-closed ticket for that conversation in stable ID order `FOR UPDATE`;
 4. reject closed conversation, more than one active ticket, contradictory ticket state or another operator ownership with 409 and zero writes;
-5. reuse one valid unassigned `OPEN` ticket, advance a valid same-actor `CLAIMED`/`REOPENED` ticket, or create one when none exists;
+5. reuse one valid unassigned `OPEN` ticket, advance a valid same-actor `CLAIMED`/`REOPENED` ticket, or create one only when an `OPEN` conversation has no active ticket; `PENDING_HANDOFF` without a ticket is 409/zero-write conflict;
 6. set ticket status `LOCKED`, `assignedUserId` and `lockedByUserId` to the authenticated actor;
 7. set conversation status `HANDOFF`;
 8. write only the required `CREATED`, `CLAIMED` and `LOCKED` ticket events in the same transaction;
@@ -343,6 +344,8 @@ Cross-tenant and absent rows remain `conversation_not_found`/`ticket_not_found` 
 - Takeover atomically sets conversation `HANDOFF`, reuses/creates one active ticket, assigns+locks it and writes exact events.
 - Same-actor serial/concurrent retry is idempotent; different actors yield exactly one winner and one opaque 409.
 - Multiple active tickets, closed conversation, contradictory ownership and wrong tenant are zero-write failures.
+- `PENDING_HANDOFF` without an active ticket is conflict/409/zero-write; only an
+  `OPEN` conversation may create a missing takeover ticket.
 - Existing ticket action cannot stale-overwrite a concurrent takeover.
 - Valid `CLAIMED`/`REOPENED` and `LOCKED`/`ESCALATED` ownership matrices remain
   readable, while invalid mixed ownership is conflict; close/reopen are opaque

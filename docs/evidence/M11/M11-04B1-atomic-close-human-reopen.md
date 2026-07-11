@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `split_spec_frozen__review_pending`
+Status: `split_spec_approved__implementation_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -34,8 +34,8 @@ Worktree:
 |---|---|---|
 | source-budget measurement | split required | approximately +984 > +600; untracked helpers counted manually |
 | parent behavior preservation | pass | B1 inherits close/reopen safety; B2 retains all resume/audit/queue obligations |
-| B1 state/security/spec review | pending | no source-resume authorization yet |
-| B1 test/budget review | pending | no source-resume authorization yet |
+| B1 state/security/spec review | pass | corrected `ccfea21`; reviewer GO with no blocker/major |
+| B1 test/budget review | pass | corrected `85ac2e7`; reviewer GO with no blocker/major |
 | implementation/local gates | pending | no B1 runtime claim |
 | true DB/CI | pending | no B1 runtime claim |
 
@@ -56,6 +56,15 @@ Worktree:
   now freezes each requirement without adding a third test file.
 - These are docs-only corrections. Source remains uncommitted and may not resume
   until corrected state/security and test/budget re-reviews both return GO.
+
+## Corrected Pre-review Result
+
+- State/security/spec re-review on `ccfea21` returned GO with no remaining
+  blocker/major.
+- Test/true-DB/budget re-review on `85ac2e7` returned GO with no remaining
+  blocker/major.
+- B1 source may now resume only by removing the parent resume/audit/queue/
+  readiness work and proving the real B1 diff stays within the child budget.
 
 ## Current Conclusion
 

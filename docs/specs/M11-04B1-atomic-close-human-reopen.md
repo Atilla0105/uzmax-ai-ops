@@ -1,7 +1,7 @@
 # M11-04B1 Atomic Close And Human Reopen
 
 Spec ID: M11-04B1
-Status: `draft_for_preimplementation_review`
+Status: `approved_for_execution`
 Owner confirmation point: the project owner authorized completion of the M11
 Value-0 customer-service loop. M11-00 authorizes serial splitting when a slice
 exceeds the repository source budget, and M11-04B has now measured that failure.

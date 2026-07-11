@@ -85,6 +85,12 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
       {}
     );
     assert.equal(conversations.length, 2);
+    const strictFake = fakePrisma();
+    await assert.rejects(
+      () =>
+        strictFake.$queryRaw`select id from ticket where id = ${TICKET_ID}::uuid for update`,
+      /unsupported fake ticket lock query/
+    );
     assert.match(appModuleSource, /CONVERSATION_TICKET_REPOSITORY/);
     assert.match(appModuleSource, /createConversationTicketRepositoryProviderFromEnv/);
     assert.match(
@@ -276,25 +282,44 @@ describe("M8-02 DB-backed conversation-ticket API", () => {
     });
     assert.equal(result.ticket.status, "escalated");
     const beforeBlockedEvents = fake.events.length;
-    await assert.rejects(
-      () =>
-        service.applyTicketAction(accessContext, {
-          ticketId: handoffTicketId,
-          type: "close"
-        }),
-      /support state conflict/
-    );
-    assert.equal(fake.events.length, beforeBlockedEvents);
+    result = await service.applyTicketAction(accessContext, {
+      destination: "resolved in controlled DB fixture",
+      expectedLifecycleEventId: result.ticket.events.at(-1).id,
+      requestId: "15151515-1515-4515-8515-151515151515",
+      result: "resolved",
+      ticketId: handoffTicketId,
+      type: "close"
+    });
+    assert.equal(result.result, "applied");
+    assert.equal(result.conversation.status, "closed");
+    assert.equal(result.ticket.status, "closed");
+    assert.equal(result.ticket.closeResult, "resolved");
+    assert.equal(fake.events.length, beforeBlockedEvents + 1);
     assert.deepEqual(ticketEventTypes(fake, handoffTicketId), [
       "CREATED",
       "CLAIMED",
       "LOCKED",
       "NOTE_ADDED",
-      "ESCALATED"
+      "ESCALATED",
+      "CLOSED"
     ]);
     assert.equal(
       new Set(result.ticket.events.map((event) => event.id)).size,
       result.ticket.events.length
+    );
+    const reopenTransaction = fake.transactions.length;
+    result = await service.applyTicketAction(accessContext, {
+      expectedClosedEventId: result.ticket.events.at(-1).id,
+      reason: "controlled fake closed-ticket lock proof",
+      requestId: "16161616-1616-4616-8616-161616161616",
+      ticketId: handoffTicketId,
+      type: "reopen"
+    });
+    assert.equal(result.ticket.status, "reopened");
+    assert.deepEqual(
+      fake.transactions[reopenTransaction].find(({ kind }) => kind === "ticket_lock")
+        .ids,
+      [handoffTicketId]
     );
     assert.ok(fake.transactionOptions.length >= 5);
     for (const options of fake.transactionOptions) {

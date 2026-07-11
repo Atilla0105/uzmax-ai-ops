@@ -115,19 +115,30 @@ async function runConversationTicketTrueDbSmoke(markStage) {
       escalated.ticket.events.map((event) => event.type),
       ["created", "claimed", "locked", "note_added", "escalated"]
     );
-    await assert.rejects(
-      () => service.applyTicketAction(tenantA, { ticketId, type: "close" }),
-      /support state conflict/
-    );
-    await assert.rejects(
-      () => service.applyTicketAction(tenantA, { ticketId, type: "reopen" }),
-      /support state conflict/
-    );
+    const closed = await service.applyTicketAction(tenantA, {
+      destination: "controlled M10 close",
+      expectedLifecycleEventId: escalated.ticket.events.at(-1).id,
+      requestId: "12121212-1212-4212-8212-121212121901",
+      result: "resolved",
+      ticketId,
+      type: "close"
+    });
+    assert.equal(closed.conversation.status, "closed");
+    assert.equal(closed.ticket.status, "closed");
+    const reopened = await service.applyTicketAction(tenantA, {
+      expectedClosedEventId: closed.ticket.events.at(-1).id,
+      reason: "controlled M10 human reopen",
+      requestId: "13131313-1313-4313-8313-131313131901",
+      ticketId,
+      type: "reopen"
+    });
+    assert.equal(reopened.conversation.status, "handoff");
+    assert.equal(reopened.ticket.status, "reopened");
 
     markStage("isolation");
     const detail = await service.getConversationDetail(tenantA, CONVERSATION_ID);
     assert.equal(detail.tickets[0].id, ticketId);
-    assert.equal(detail.tickets[0].events.length, 5);
+    assert.equal(detail.tickets[0].events.length, 7);
     await assert.rejects(
       () => service.getConversationDetail(tenantB, CONVERSATION_ID),
       /conversation not found/
@@ -145,7 +156,7 @@ async function runConversationTicketTrueDbSmoke(markStage) {
     assert.deepEqual(await countVisibleRows(prisma, TENANT_A_ID), {
       conversations: 1,
       customers: 1,
-      events: 5,
+      events: 7,
       identities: 1,
       messages: 1,
       tickets: 1
@@ -162,7 +173,7 @@ async function runConversationTicketTrueDbSmoke(markStage) {
     await cleanupSyntheticRows(prisma);
     assert.equal(await syntheticResidueCount(prisma), 0);
     console.log(
-      "conversation-ticket-true-db-smoke: passed read truth, legacy actions, tenant isolation and residue=0"
+      "conversation-ticket-true-db-smoke: passed read truth, atomic lifecycle actions, tenant isolation and residue=0"
     );
   } finally {
     await cleanupSyntheticRows(prisma).catch(() => {

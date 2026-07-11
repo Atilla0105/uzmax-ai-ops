@@ -6,13 +6,18 @@ import type {
   TicketState
 } from "../../../packages/capabilities/handoff/src/index.ts";
 import { stateConflict, validationError } from "./conversation-ticket.errors.ts";
-import type { TakeoverResult, TicketActionInput } from "./conversation-ticket.types.ts";
+import { planLifecycleTicketAction } from "./conversation-ticket.lifecycle-state.ts";
+import type {
+  TakeoverResult,
+  TicketActionInput,
+  TicketActionResult
+} from "./conversation-ticket.types.ts";
 import { value0SupportSlaPolicyRef } from "./conversation-ticket.types.ts";
 
 export type AtomicMutationPlan = {
   conversation: HandoffConversation;
   newEvents: TicketEvent[];
-  result?: TakeoverResult["result"];
+  result?: TakeoverResult["result"] | TicketActionResult["result"];
   ticket: TicketState;
 };
 
@@ -118,12 +123,14 @@ export function planTicketAction(
   input: TicketActionInput,
   actorUserId: string
 ): AtomicMutationPlan {
+  if (input.type === "close" || input.type === "reopen") {
+    return planLifecycleTicketAction(conversation, tickets, input, actorUserId);
+  }
   const activeTickets = active(tickets);
   const ticket = activeTickets[0];
   if (activeTickets.length !== 1 || ticket?.id !== input.ticketId) {
     throw stateConflict();
   }
-  if (input.type === "close" || input.type === "reopen") throw stateConflict();
   const shape = ticketShape(ticket);
   const relation = actorRelation(ticket, actorUserId);
   const key = [input.type, conversation.status, ticket.status, shape, relation].join(
@@ -139,6 +146,7 @@ export function planTicketAction(
   return {
     conversation,
     newEvents: [event],
+    result: "applied",
     ticket: {
       ...ticket,
       ...actionPatch(input.type, actorUserId),

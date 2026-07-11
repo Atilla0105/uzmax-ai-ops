@@ -1,5 +1,6 @@
 import type {
   HandoffConversation,
+  TicketCloseResult,
   TicketEvent,
   TicketState
 } from "../../../packages/capabilities/handoff/src/index.ts";
@@ -83,12 +84,16 @@ export function toMessage(row: DbRow): ConversationMessage {
 
 export function toTicket(row: DbRow, eventRows: readonly DbRow[]): TicketState {
   const id = requiredText(row.id, "ticket id");
+  const status = ticketStatus(row.status);
   const events = eventRows
     .filter((event) => text(event.ticketId) === id)
     .map(toTicketEvent)
     .sort(compareOccurredAt);
+  const close = [...events].reverse().find((event) => event.type === "closed");
   return clean({
     assignedUserId: text(row.assignedUserId),
+    closeDestination: status === "closed" ? close?.destination : undefined,
+    closeResult: status === "closed" ? close?.result : undefined,
     closedAt: iso(row.closedAt),
     conversationId: requiredText(row.conversationId, "ticket conversationId"),
     events,
@@ -101,7 +106,7 @@ export function toTicket(row: DbRow, eventRows: readonly DbRow[]): TicketState {
       policyRef: value0SupportSlaPolicyRef,
       source: "config_placeholder"
     }),
-    status: ticketStatus(row.status),
+    status,
     suggestedAction: ticketSuggestedAction,
     summary: text(row.summary) ?? "Support ticket",
     tenantId: requiredText(row.tenantId, "ticket tenantId")
@@ -245,21 +250,29 @@ function priority(conversation: HandoffConversation): number {
 function toTicketEvent(row: DbRow): TicketEvent {
   const payload = recordOrEmpty(row.payload);
   return clean({
+    action: ticketEventAction(payload.action),
     actorUserId: text(row.actorUserId) ?? systemActorUserId,
+    destination: text(payload.destination),
+    expectedLifecycleEventId: text(payload.expectedLifecycleEventId),
     id: requiredText(row.id, "ticket event id"),
     note: text(payload.note) ?? text(payload.comment),
     occurredAt: requiredIso(row.occurredAt, "ticket event occurredAt"),
     reason: text(payload.reason),
+    requestId: text(payload.requestId),
+    result: ticketCloseResult(payload.result),
     type: ticketEventType(row.eventType)
   }) as TicketEvent;
 }
 
 function ticketEventPayload(ticket: TicketState, event: TicketEvent): DbRow {
   return clean({
-    destination: event.type === "closed" ? ticket.closeDestination : undefined,
+    action: event.action,
+    destination: event.destination,
+    expectedLifecycleEventId: event.expectedLifecycleEventId,
     note: event.note,
     reason: event.reason,
-    result: event.type === "closed" ? ticket.closeResult : undefined
+    requestId: event.requestId,
+    result: event.result
   });
 }
 
@@ -343,6 +356,26 @@ function ticketEventType(value: unknown): TicketEvent["type"] {
     ["claimed", "closed", "created", "escalated", "locked", "note_added", "reopened"],
     "ticket event type"
   );
+}
+
+function ticketEventAction(value: unknown): TicketEvent["action"] {
+  const out = text(value);
+  return ["close", "reopen"].includes(out ?? "")
+    ? (out as TicketEvent["action"])
+    : undefined;
+}
+
+function ticketCloseResult(value: unknown): TicketCloseResult | undefined {
+  const out = text(value);
+  return [
+    "duplicate",
+    "invalid",
+    "no_response",
+    "resolved",
+    "transferred_to_human_channel"
+  ].includes(out ?? "")
+    ? (out as TicketCloseResult)
+    : undefined;
 }
 function enumValue<T extends string>(
   value: unknown,

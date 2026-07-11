@@ -108,7 +108,29 @@ describe("M2-07 conversation ticket API HTTP hardening", () => {
       400,
       /ticket action type is invalid/
     );
-
+    await assertRejectsHttp(
+      () =>
+        controller.applyTicketAction(request, TICKET_ID, {
+          destination: "controlled close",
+          expectedLifecycleEventId: "12121212-1212-4212-8212-121212121212",
+          result: "resolved",
+          type: "close"
+        }),
+      400,
+      /requestId is required/
+    );
+    await assertRejectsHttp(
+      () =>
+        controller.applyTicketAction(request, TICKET_ID, {
+          destination: "controlled close",
+          expectedLifecycleEventId: "12121212-1212-4212-8212-121212121212",
+          requestId: "13131313-1313-4313-8313-131313131313",
+          result: "not-a-result",
+          type: "close"
+        }),
+      400,
+      /close result is invalid/
+    );
     await assertRejectsHttp(
       () => priorityController(api).listConversations(request, {}),
       400,
@@ -150,6 +172,65 @@ describe("M2-07 conversation ticket API HTTP hardening", () => {
         return true;
       }
     );
+  });
+
+  it("enforces close destination and reopen reason bounds before repository calls", async () => {
+    const api = await importConversationTicketApiSource();
+    const calls = [];
+    const controller = new api.module.ConversationTicketController({
+      applyTicketAction(_context, input) {
+        calls.push(input);
+        return input;
+      }
+    });
+    const request = contextRequest(
+      contextFor(USER_A, TENANT_A, ["conversation:read", "ticket:write"])
+    );
+    const expectedEventId = "12121212-1212-4212-8212-121212121212";
+    for (const length of [1, 500]) {
+      const close = await controller.applyTicketAction(request, TICKET_ID, {
+        destination: "c".repeat(length),
+        expectedLifecycleEventId: expectedEventId,
+        requestId: `13131313-1313-4313-8313-${String(length).padStart(12, "0")}`,
+        result: "resolved",
+        type: "close"
+      });
+      assert.equal(close.destination.length, length);
+      const reopen = await controller.applyTicketAction(request, TICKET_ID, {
+        expectedClosedEventId: expectedEventId,
+        reason: "r".repeat(length),
+        requestId: `14141414-1414-4414-8414-${String(length).padStart(12, "0")}`,
+        type: "reopen"
+      });
+      assert.equal(reopen.reason.length, length);
+    }
+    for (const invalid of ["", "x".repeat(501)]) {
+      const before = calls.length;
+      await assertRejectsHttp(
+        () =>
+          controller.applyTicketAction(request, TICKET_ID, {
+            destination: invalid,
+            expectedLifecycleEventId: expectedEventId,
+            requestId: "15151515-1515-4515-8515-151515151515",
+            result: "resolved",
+            type: "close"
+          }),
+        400,
+        /destination/
+      );
+      await assertRejectsHttp(
+        () =>
+          controller.applyTicketAction(request, TICKET_ID, {
+            expectedClosedEventId: expectedEventId,
+            reason: invalid,
+            requestId: "16161616-1616-4616-8616-161616161616",
+            type: "reopen"
+          }),
+        400,
+        /reason/
+      );
+      assert.equal(calls.length, before);
+    }
   });
 
   it("keeps claim assignment distinct from lock ownership", () => {

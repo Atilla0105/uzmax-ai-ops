@@ -55,7 +55,7 @@ describe("M2-03 conversation handoff ticket API contract", () => {
     );
   });
 
-  it("applies ticket actions with lock ownership and close/reopen state", () => {
+  it("applies non-lifecycle actions and fail-closes ticket-only lifecycle writes", () => {
     assert.equal(typeof handoff.module.createTicketState, "function");
     assert.equal(typeof handoff.module.applyTicketAction, "function");
 
@@ -108,28 +108,19 @@ describe("M2-03 conversation handoff ticket API contract", () => {
           reason: "spoofed reopen should not bypass lock",
           type: "reopen"
         }),
-      /ticket is locked by another user/
+      /atomic conversation lifecycle writer/
     );
-
-    ticket = handoff.module.applyTicketAction(ticket, {
-      actorUserId: USER_A,
-      destination: "handled_in_admin",
-      now: NOW,
-      result: "resolved",
-      type: "close"
-    });
-    assert.equal(ticket.status, "closed");
-    assert.equal(ticket.closedAt, NOW);
-    assert.equal(ticket.closeResult, "resolved");
-
-    ticket = handoff.module.applyTicketAction(ticket, {
-      actorUserId: USER_B,
-      now: NOW,
-      reason: "customer replied again",
-      type: "reopen"
-    });
-    assert.equal(ticket.status, "reopened");
-    assert.equal(ticket.closedAt, undefined);
+    assert.throws(
+      () =>
+        handoff.module.applyTicketAction(ticket, {
+          actorUserId: USER_A,
+          destination: "handled_in_admin",
+          now: NOW,
+          result: "resolved",
+          type: "close"
+        }),
+      /atomic conversation lifecycle writer/
+    );
     assert.throws(
       () =>
         handoff.module.applyTicketAction(ticket, {

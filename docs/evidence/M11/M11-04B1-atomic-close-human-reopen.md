@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `split_spec_approved__implementation_pending`
+Status: `implementation_local_pass__true_db_ci_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -36,7 +36,14 @@ Worktree:
 | parent behavior preservation | pass | B1 inherits close/reopen safety; B2 retains all resume/audit/queue obligations |
 | B1 state/security/spec review | pass | corrected `ccfea21`; reviewer GO with no blocker/major |
 | B1 test/budget review | pass | corrected `85ac2e7`; reviewer GO with no blocker/major |
-| implementation/local gates | pending | no B1 runtime claim |
+| implementation budget | pass | source changed 10/new 1/net +496; test/support changed 9/new 2; compiler 581 -> 592 nonblank (+11) |
+| focused close/reopen | pass | 21/21 Node tests, including exact fake-lock rejection and HTTP bounds |
+| repository static gates | pass | format, prettier-ignore 89/89, typecheck, lint, dependency-cruiser, jscpd 0 clones, knip and all scoped guards |
+| full Node regression | pass | 578/578, 93 suites, zero skip/failure |
+| builds and size | pass | API, worker, cron and admin builds; admin 226.55 kB brotli <= 250 kB |
+| browser regression | pass | Playwright 149/149 against the built admin preview |
+| implementation spec review | pass | final current-WIP review: 0 blocker/major/minor; local implementation/evidence spec-compliant |
+| implementation code-quality review | pass | 0 blocker/major; exact-cancellation and fake-lock proof corrections applied |
 | true DB/CI | pending | no B1 runtime claim |
 
 ## First Pre-review Corrections
@@ -66,9 +73,61 @@ Worktree:
 - B1 source may now resume only by removing the parent resume/audit/queue/
   readiness work and proving the real B1 diff stays within the child budget.
 
+## Implemented B1 Boundary
+
+- Close and human reopen are implemented only through the existing atomic API
+  facade. The legacy capability lifecycle path returns
+  `atomic_lifecycle_required`.
+- Close validates request/event anchors and structured result/destination,
+  writes conversation plus ticket plus exact event/readback atomically, clears
+  unread/lock, preserves assignment and cancels only exact generating AI
+  intent. Reopen validates the newest closed lifecycle without fallback,
+  assigns the authorized reopener and preserves history/unread.
+- Exact command replay precedes current-state checks and returns
+  `already_applied`; collisions, stale anchors, malformed history, ownership or
+  tenant conflicts are zero-write failures.
+- B1 publishes no resume endpoint, lifecycle-readiness field, resume audit,
+  all-origin queue gate, UI or worker-source change. Those obligations remain
+  exclusively in B2.
+
+## Current Local Verification
+
+- Focused tests: 21 passed, 0 failed/skipped.
+- Full repository Node tests: 578 passed across 93 suites, 0 failed/skipped.
+- Static gates: formatting, frozen prettier-ignore boundary (89/89), typecheck,
+  full lint, dependency boundary, clone detection (0), knip, forbidden terms,
+  eval/doc triggers and workspace/worker isolation all passed.
+- Current builds: API, worker, cron and admin passed. Admin size is 226.55 kB
+  brotlied against a 250 kB limit. Playwright passed 149/149.
+- The true-DB runner is structured to prove both worker race orders, exact
+  close/reopen readback/replay, wrong-tenant/RLS isolation and cleanup. For
+  closed and human-reopened inbound it directly requires INBOUND +1, the exact
+  external-message row, processed dedupe, unchanged OUTBOUND count, correct
+  unread, then a `deduped` retry with the complete proof unchanged.
+- `UZMAX_RLS_DATABASE_URL` is absent locally and the local Docker daemon is not
+  available. Therefore this runner has only passed syntax/lint locally; its
+  PostgreSQL/RLS/transaction assertions remain a required CI gate and are not
+  claimed yet.
+- The first implementation compliance review found only the missing direct
+  inbound/dedupe/outbound/no-replay DB assertions plus the expected pending
+  evidence/CI state. The assertion gap is corrected within the runner's exact
+  400-line lint ceiling.
+- Code-quality review then found that event uniqueness inspected the first
+  response rather than retry readback; both close and reopen now count events
+  on the replay response. Raw proof SQL uses the database's lowercase message
+  enum values.
+- The M8 DB-backed fixture now executes close then reopen and requires the raw
+  all-ticket lock to return the closed ticket ID. Close-first true-DB setup also
+  seeds a nonmatching operator-origin queued outbound and requires it to remain
+  `QUEUED` while the exact AI-generating intent becomes `CANCELLED`.
+- Final independent spec compliance returned 0 blocker/major/minor. Final code
+  quality/security/RLS/concurrency review returned 0 blocker/major; its only
+  remaining maintenance note is future consolidation of the five currently
+  consistent close-result tokens. This is not a B1 correctness or merge block.
+
 ## Current Conclusion
 
-The split is a governance correction, not a product-scope reduction. M11-04B1
-must merge atomic close/reopen first; M11-04B2 must then merge explicit Bot
-resume before M11-05 can start. Nothing here claims a usable workbench,
-staging/production closure, GA or 1.0.
+M11-04B1 is locally implemented, regression-clean and independently reviewed,
+but it is not yet merged: current-SHA PostgreSQL CI remains mandatory. After it
+passes, M11-04B2 must still merge explicit Bot resume before M11-05 can start.
+Nothing here claims a usable workbench, staging/production closure, GA or 1.0.

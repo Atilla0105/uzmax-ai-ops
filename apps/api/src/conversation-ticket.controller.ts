@@ -129,8 +129,31 @@ function readBodyObject<T extends Record<string, unknown>>(body: unknown): Parti
 
 function readTicketAction(body: Partial<TicketActionBody>): TicketActionRequest {
   const type = typeof body.type === "string" ? body.type.trim() : "";
-  if (["claim", "close", "lock", "reopen"].includes(type)) {
-    return { type: type as "claim" | "close" | "lock" | "reopen" };
+  if (["claim", "lock"].includes(type)) {
+    return { type: type as "claim" | "lock" };
+  }
+  if (type === "close") {
+    return {
+      destination: requireBoundedText(body.destination, "destination", 500),
+      expectedLifecycleEventId: requireUuid(
+        body.expectedLifecycleEventId,
+        "expectedLifecycleEventId"
+      ),
+      requestId: requireUuid(body.requestId, "requestId"),
+      result: requireCloseResult(body.result),
+      type
+    };
+  }
+  if (type === "reopen") {
+    return {
+      expectedClosedEventId: requireUuid(
+        body.expectedClosedEventId,
+        "expectedClosedEventId"
+      ),
+      reason: requireBoundedText(body.reason, "reason", 500),
+      requestId: requireUuid(body.requestId, "requestId"),
+      type
+    };
   }
   if (type === "note") {
     return { note: requireBoundedText(body.note, "note", 2_000), type };
@@ -142,6 +165,36 @@ function readTicketAction(body: Partial<TicketActionBody>): TicketActionRequest 
     };
   }
   throw validationError("ticket action type is invalid");
+}
+
+function requireCloseResult(
+  value: unknown
+): Extract<TicketActionRequest, { type: "close" }>["result"] {
+  const result = typeof value === "string" ? value.trim() : "";
+  if (
+    [
+      "duplicate",
+      "invalid",
+      "no_response",
+      "resolved",
+      "transferred_to_human_channel"
+    ].includes(result)
+  ) {
+    return result as Extract<TicketActionRequest, { type: "close" }>["result"];
+  }
+  throw validationError("close result is invalid");
+}
+
+function requireUuid(value: unknown, name: string): string {
+  const text = requireText(value, name);
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      text
+    )
+  ) {
+    throw validationError(`${name} must be a UUID`);
+  }
+  return text;
 }
 
 function requireBoundedText(value: unknown, name: string, maximum: number): string {

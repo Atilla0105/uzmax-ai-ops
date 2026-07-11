@@ -1,6 +1,7 @@
 import type { AccessContext } from "../../../packages/authz/src/index.ts";
 import type {
   HandoffConversation,
+  TicketCloseResult,
   TicketState
 } from "../../../packages/capabilities/handoff/src/index.ts";
 
@@ -102,14 +103,32 @@ export type HandoffBody = {
 };
 
 export type TicketActionBody = {
+  destination?: unknown;
+  expectedClosedEventId?: unknown;
+  expectedLifecycleEventId?: unknown;
   note?: unknown;
   reason?: unknown;
+  requestId?: unknown;
+  result?: unknown;
   type?: unknown;
   [key: string]: unknown;
 };
 
 export type TicketActionRequest =
-  | { type: "claim" | "close" | "lock" | "reopen" }
+  | { type: "claim" | "lock" }
+  | {
+      destination: string;
+      expectedLifecycleEventId: string;
+      requestId: string;
+      result: TicketCloseResult;
+      type: "close";
+    }
+  | {
+      expectedClosedEventId: string;
+      reason: string;
+      requestId: string;
+      type: "reopen";
+    }
   | { note: string; type: "note" }
   | { reason: string; type: "escalate" };
 
@@ -122,3 +141,39 @@ export type TakeoverResult = {
   result: "already_owned" | "created" | "reused";
   ticket: TicketState;
 };
+
+export type TicketActionResult = {
+  conversation: HandoffConversation;
+  result: "already_applied" | "applied";
+  ticket: TicketState;
+};
+
+type MutationResultPlan = {
+  conversation: HandoffConversation;
+  result?: string;
+  ticket: TicketState;
+};
+
+export function ticketActionResultFrom(plan: MutationResultPlan): TicketActionResult {
+  if (plan.result !== "applied" && plan.result !== "already_applied") {
+    throw new Error("ticket action result is missing");
+  }
+  return structuredClone({
+    conversation: plan.conversation,
+    result: plan.result,
+    ticket: plan.ticket
+  });
+}
+
+export function takeoverResultFrom(plan: MutationResultPlan): TakeoverResult {
+  if (!isTakeoverResult(plan.result)) throw new Error("takeover result is missing");
+  return structuredClone({
+    conversation: plan.conversation,
+    result: plan.result,
+    ticket: plan.ticket
+  });
+}
+
+function isTakeoverResult(value: unknown): value is TakeoverResult["result"] {
+  return ["already_owned", "created", "reused"].includes(String(value ?? ""));
+}

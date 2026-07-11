@@ -1,6 +1,6 @@
 # M11-04B Atomic Close, Human Reopen And Explicit Bot Resume Evidence
 
-Status: `source_budget_split__M11-04B1_pending_review`
+Status: `source_budget_split__M11-04B1_local_pass_true_db_ci_pending`
 Spec: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
 Branch: `codex/m11-04b-close-resume`
@@ -151,23 +151,19 @@ Worktree:
 | independent corrected spec review | pass | state/security/RLS reviewer returned `GO source`; no blocker/major |
 | independent test-plan review | pass | test/true-DB reviewer returned `GO source`; no blocker/major |
 | implementation placement amendment | pass | two-helper/single-facade amendment plus compiler correction `781a1db9`; both reviewers returned GO |
-| implementation | split required | uncommitted WIP exceeded +600; B1 narrowing waits for child-spec GO |
-| local gates | pending | no implementation claim |
+| implementation | B1 reviewed local pass | source changed 10/new 1/net +496; final implementation reviews have 0 blocker/major; B2 unimplemented |
+| local gates | B1 pass | focused 21/21; repository 578/578; builds/size; Playwright 149/149 |
 | true DB/CI | pending | no runtime claim |
 
 ## Current Conclusion
 
 M11-04B still has no schema, migration, worker-source or owner-input blocker.
-The initial freeze correctly separated close/reopen/resume but was not safe
-enough to implement. Corrected freeze `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`
-addresses every recorded blocker/major, and both independent reviewers returned
-`GO source`. Implementation then proved the one-helper placement estimate could
-not satisfy the repository line gate. The narrow 12/2 two-helper amendment and
-compiler correction were independently accepted, but the full WIP then proved
-the parent net-source estimate false at approximately +984. The frozen failure
-branch is active: B1/B2 are serially split with no exception, and source may
-resume only against the reviewed child spec. This is not a runtime, staging,
-production or completion claim.
+The parent +984 WIP was correctly split without exception. B1 has now been
+narrowed to source changed 10/new 1/net +496 and its local static, 21 focused,
+578 repository, four-build, size and 149 browser gates pass. Final current-WIP
+spec and code-quality reviews have 0 blocker/major. True PostgreSQL CI remains
+mandatory before merge; B2 explicit Bot resume/audit/queue work has not started.
+This is not a staging, production or completion claim.
 
 M11-05 and later Value-0 slices remain serially blocked until M11-04B1 and
 M11-04B2 implementation, true-DB/CI evidence, merges and branch/worktree cleanup

@@ -1,7 +1,7 @@
 # M11-04B Atomic Close, Human Reopen And Explicit Bot Resume
 
 Spec ID: M11-04B
-Status: `approved_for_execution`
+Status: `split_into_M11-04B1_then_M11-04B2`
 Owner confirmation point: on 2026-07-10 the project owner asked the AI agents to
 complete the approved M11 Value-0 customer-service loop. M11-00 authorizes the
 serial M11 slices, and M11-04A explicitly leaves this atomic lifecycle slice to
@@ -14,6 +14,29 @@ Bot resume pass focused, full-repository and true-PostgreSQL/worker race gates.
 feature
 
 ## Split Decision
+
+### Source-budget split activation
+
+Implementation measurement after the two-helper amendment found 12 changed
+source files, two new source files and approximately +984 net source lines when
+the untracked helpers are counted. The guard's worktree summary cannot be used
+for the LOC conclusion because its `--include-worktree` mode adds worktree file
+names but computes numstat only from committed `base...HEAD`; it therefore
+reported a misleading zero for the uncommitted implementation.
+
+This activates the frozen failure branch and M11-00 serial-split permission.
+No `large_change_exception` is requested. This parent contract is implemented
+as two serial specs:
+
+1. `M11-04B1` owns atomic close and human reopen, including request-bound
+   replay/history truth and the close-versus-worker fence;
+2. `M11-04B2` starts only after B1 is merged and owns explicit Bot resume,
+   all-origin queued-outbound quiescence, lifecycle readiness and the canonical
+   same-transaction resume audit.
+
+The behavior and safety decisions below remain the parent source of truth. They
+are not weakened by the split. M11-05 remains blocked until both child specs
+merge and clean up.
 
 M11-04A closed the worker ownership/send race and is merged as
 `5520bc7f4522b73d92d9c896e0a59888058deec7`. This serial M11-04B slice owns only:

@@ -1,6 +1,6 @@
 # M11-04B Atomic Close, Human Reopen And Explicit Bot Resume Evidence
 
-Status: `spec_frozen__implementation_pending`
+Status: `source_budget_split__M11-04B1_pending_review`
 Spec: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
 Branch: `codex/m11-04b-close-resume`
@@ -128,6 +128,16 @@ Worktree:
 - Compiler correction commit:
   `781a1db9d88cdd4440004d030f0d80c18bd74395`; both independent reviewers
   returned `GO resume source` with no remaining blocker/major.
+- The completed WIP shape then measured approximately +984 net source lines:
+  +440 across tracked source edits plus 434/110 lines in the two untracked
+  helpers. This exceeds the unchanged +600 parent cap by roughly 384 lines.
+- `guard:pr-shape --include-worktree` listed all 12 source paths but displayed
+  net LOC/new source as zero because its numstat reader uses only
+  `base...HEAD`; that output is not accepted as budget evidence for uncommitted
+  source.
+- Per the parent failure branch and M11-00, implementation is now split
+  serially without a source-size exception. `M11-04B1` owns close/reopen first;
+  `M11-04B2` will own safe explicit resume after B1 is merged.
 
 ## Validation Record
 
@@ -141,7 +151,7 @@ Worktree:
 | independent corrected spec review | pass | state/security/RLS reviewer returned `GO source`; no blocker/major |
 | independent test-plan review | pass | test/true-DB reviewer returned `GO source`; no blocker/major |
 | implementation placement amendment | pass | two-helper/single-facade amendment plus compiler correction `781a1db9`; both reviewers returned GO |
-| implementation | in progress | source WIP exists only in assigned worktree; no source commit/runtime claim |
+| implementation | split required | uncommitted WIP exceeded +600; B1 narrowing waits for child-spec GO |
 | local gates | pending | no implementation claim |
 | true DB/CI | pending | no runtime claim |
 
@@ -153,8 +163,12 @@ enough to implement. Corrected freeze `736cb9d9ae4de90786661da2cc296d0cc0a05d3d`
 addresses every recorded blocker/major, and both independent reviewers returned
 `GO source`. Implementation then proved the one-helper placement estimate could
 not satisfy the repository line gate. The narrow 12/2 two-helper amendment and
-compiler correction are now independently accepted, so source work may resume;
-this is not a runtime, staging, production or completion claim.
+compiler correction were independently accepted, but the full WIP then proved
+the parent net-source estimate false at approximately +984. The frozen failure
+branch is active: B1/B2 are serially split with no exception, and source may
+resume only against the reviewed child spec. This is not a runtime, staging,
+production or completion claim.
 
-M11-05 and later Value-0 slices remain serially blocked until M11-04B
-implementation, true-DB/CI evidence, merge and branch/worktree cleanup complete.
+M11-05 and later Value-0 slices remain serially blocked until M11-04B1 and
+M11-04B2 implementation, true-DB/CI evidence, merges and branch/worktree cleanup
+complete.

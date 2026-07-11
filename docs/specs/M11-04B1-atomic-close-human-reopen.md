@@ -2,12 +2,15 @@
 
 Spec ID: M11-04B1
 Status: `draft_for_preimplementation_review`
-Spec type: feature
 Owner confirmation point: the project owner authorized completion of the M11
 Value-0 customer-service loop. M11-00 authorizes serial splitting when a slice
 exceeds the repository source budget, and M11-04B has now measured that failure.
 Timebox: one close/reopen API lifecycle slice; stop after focused, repository and
 true-PostgreSQL/worker-race gates pass within budget.
+
+## Spec 类型
+
+feature
 
 ## Split Decision And Goal
 
@@ -26,9 +29,12 @@ approved +600 limit. This child slice narrows the first mergeable invariant:
 5. event/readback, RLS, worker race orders and cleanup are true in memory and on
    PostgreSQL.
 
-M11-04B1 does not add a Bot-resume endpoint, resume readiness, all-origin queued
-outbound gate, `conversation.bot_resumed`, resume audit, LLM/provider call,
-operator-send path or admin UI. Those belong to M11-04B2 and later slices.
+M11-04B1 does not add a Bot-resume endpoint, any parent lifecycle-readiness
+response fields (`canClose`, `canReopen`, `canResumeBot` or
+`lifecycleReadiness`), an all-origin queued-outbound gate,
+`conversation.bot_resumed`, resume audit, LLM/provider call, operator-send path
+or admin UI. The entire lifecycle-readiness response contract belongs to
+M11-04B2 so B1 cannot publish a partial public shape.
 
 ## Source Of Truth
 
@@ -115,15 +121,17 @@ The legacy handoff capability's ticket-only close/reopen returns
 - Close-first: pause the real answer runtime after its generating intent commit;
   takeover cancels that original intent, seed one separate exact generating
   intent, commit close, verify close cancels it, release and require zero send.
-- Claim-first: pause at the send port after claimed commit, takeover and close,
-  release and allow at most that one already-claimed send; final state remains
-  `CLOSED` and no second send occurs.
+- Claim-first: pause at the successful synthetic send port after claimed commit,
+  takeover and close while provider completion is held, then release and
+  require exactly one send; final state remains `CLOSED` and no second send
+  occurs. This proof does not claim that an already-claimed production send can
+  be withdrawn.
 - Closed or reopened-human inbound is persisted/unread for the operator with
   zero LLM and zero outbound. No closed-period message is replayed.
 - Barriers signal exact persisted checkpoints; sleep, timeout and Promise start
   order are not race evidence.
 
-## Touched Modules And Files
+## 触碰模块/文件
 
 - `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 - `docs/evidence/M11/M11-04B-atomic-close-reopen-bot-resume.md`
@@ -192,7 +200,8 @@ only `m11-conversation-close-reopen-true-db-smoke-failed`.
 2. Obtain independent state/security/spec and test/budget GO. Until then, do not
    continue or commit the parent WIP source.
 3. Narrow the uncommitted parent WIP to this touched list and behavior; remove
-   all resume/audit/all-origin queue work from the B1 diff.
+   all resume/audit/all-origin queue work and all lifecycle-readiness response
+   fields from the B1 diff.
 4. Run focused static/tests, true PostgreSQL CI, repository guards and full
    build/test gates.
 5. Run spec compliance first, then code quality/security/RLS review; merge only
@@ -226,4 +235,3 @@ only `m11-conversation-close-reopen-true-db-smoke-failed`.
 Explicit Bot resume/readiness/audit/queued gate (M11-04B2), LLM accounting
 (M11-05), operator reply/send (M11-06/07), admin workbench (M11-08), deploy/E2E
 (M11-09), production/real customers/Telegram Business/orders/GA/1.0.
-

@@ -39,6 +39,18 @@ Worktree:
 | implementation/local gates | pending | no B1 runtime claim |
 | true DB/CI | pending | no B1 runtime claim |
 
+## First Pre-review Corrections
+
+- State/security/spec pre-review returned `NO-GO` on the first child draft.
+- The execution spec now uses the exact machine-readable `## Spec 类型` and
+  `## 触碰模块/文件` headings required by `pr-shape`.
+- The claim-first success fixture now requires exactly one send after release,
+  with final conversation still CLOSED and no second send.
+- B1 now explicitly forbids every parent lifecycle-readiness response field;
+  the complete readiness contract is owned only by B2.
+- These are docs-only corrections. Source remains uncommitted and may not resume
+  until corrected state/security and test/budget re-reviews both return GO.
+
 ## Current Conclusion
 
 The split is a governance correction, not a product-scope reduction. M11-04B1

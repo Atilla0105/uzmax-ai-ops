@@ -123,9 +123,10 @@ The legacy handoff capability's ticket-only close/reopen returns
   intent, commit close, verify close cancels it, release and require zero send.
 - Claim-first: pause at the successful synthetic send port after claimed commit,
   takeover and close while provider completion is held, then release and
-  require exactly one send; final state remains `CLOSED` and no second send
-  occurs. This proof does not claim that an already-claimed production send can
-  be withdrawn.
+  require exactly one send. Its one intent reaches `SENT`; conversation and
+  ticket remain `CLOSED`, finalization never overwrites CLOSED, and no second
+  send or outbound row occurs. This proof does not claim that an already-claimed
+  production send can be withdrawn.
 - Closed or reopened-human inbound is persisted/unread for the operator with
   zero LLM and zero outbound. No closed-period message is replayed.
 - Barriers signal exact persisted checkpoints; sleep, timeout and Promise start
@@ -182,17 +183,37 @@ existing read-only fallback; an unknown write/lock query fails.
 
 ## Focused And True-DB Proof
 
-Focused tests table-drive both active statuses, five close results, 1/500 length
-bounds, validation, exact retry after later lifecycle, request collision, stale
-anchor, wrong owner/tenant, multiple active tickets, latest-history no-fallback,
-equal-time ticket-ID tie, unread preservation and legacy fail-closed behavior.
-Every rejected transactional case compares a complete before/after snapshot.
+Focused tests table-drive both active statuses and all five close results.
+Destination and reopen reason independently prove lengths 1 and 500 succeed,
+while empty and 501 fail before repository mutation. A different authorized
+human may reopen and becomes the assignee. Positive close/reopen each create
+exactly one event; readback preserves result/destination in close history while
+the reopened ticket clears current close fields.
+
+Failure tables cover exact retry after a later lifecycle, a request UUID with
+multiple matching events, same-request payload collision, a new request with a
+stale anchor, wrong owner/tenant, multiple active tickets and equal-closedAt
+ticket-ID tie selection. The newest candidate never falls back when its
+`closedAt`, CLOSED event, request/expected metadata are missing, or when its
+time/actor differs from the ticket. Every rejected transactional case compares
+the complete conversation, messages, tickets and embedded events before/after.
+Legacy ticket-only close/reopen remains fail closed. No lifecycle-readiness
+field is added or asserted in B1.
 
 The sanitized PostgreSQL CI runner runs after M11-04A's ownership fence and
-proves close/result readback and retry, human reopen and retry, close-first and
-claim-first worker orders, closed/reopened inbound behavior, wrong-tenant RLS,
-event uniqueness and privileged cleanup residue zero. Its failure path emits
-only `m11-conversation-close-reopen-true-db-smoke-failed`.
+proves close result/destination readback, close/reopen exact retry and event
+uniqueness, both worker orders, and closed/reopened inbound behavior.
+
+Under the runtime role, Tenant B independently sees zero conversation, message,
+ticket, ticket_event, audit_log, dedupe, customer and identity rows. Wrong-tenant
+close and reopen return opaque not-found and leave a full scoped snapshot
+unchanged. The runner includes a controlled mid-run fatal child that has already
+created synthetic scoped rows, injects reason/message/DB-URL/token sentinels,
+cleans up in `finally`, and exits nonzero; the parent requires empty stdout and
+stderr equal only to
+`m11-conversation-close-reopen-true-db-smoke-failed`. Privileged counts prove
+all listed tables have zero residue after both success and forced-failure paths.
+The sanitizer is inside this runner; no third test/support file is permitted.
 
 ## Implementation And Review Flow
 

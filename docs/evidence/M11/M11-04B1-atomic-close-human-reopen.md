@@ -48,6 +48,12 @@ Worktree:
   with final conversation still CLOSED and no second send.
 - B1 now explicitly forbids every parent lifecycle-readiness response field;
   the complete readiness contract is owned only by B2.
+- Test/budget pre-review also required exact SENT/final-state proof for the
+  claim-first order; explicit 1/500 and empty/501 field tables; no-fallback
+  corruption cases; full state snapshots; per-table Tenant-B RLS zero; opaque
+  wrong-tenant snapshots; and a mid-run fatal sanitizer whose success and
+  forced-failure paths both leave privileged residue zero. The corrected spec
+  now freezes each requirement without adding a third test file.
 - These are docs-only corrections. Source remains uncommitted and may not resume
   until corrected state/security and test/budget re-reviews both return GO.
 

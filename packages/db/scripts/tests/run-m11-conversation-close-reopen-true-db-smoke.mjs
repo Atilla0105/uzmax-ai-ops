@@ -31,11 +31,8 @@ let prisma, worker, gateway, service, api;
 const failure = { fatalRowsSeeded: false, stage: "bootstrap" };
 const staged = (name, action) => ((failure.stage = name), action());
 
-export function runM11ConversationCloseReopenTrueDbSmoke() {
-  return runSmoke().catch(() => {
-    throw new Error(MARKER);
-  });
-}
+export const runM11ConversationCloseReopenTrueDbSmoke = () =>
+  runSmoke().catch(() => Promise.reject(new Error(MARKER)));
 
 async function runSmoke() {
   if (process.env.UZMAX_M11_CLOSE_REOPEN_FATAL_TEST === "1") return runFatalChild();
@@ -336,7 +333,8 @@ const seedQueued = (messageId, conversationId, runtimeOrigin = "telegram_bot_ai"
   });
 
 async function assertClosedPair(conversationId, ticketId) {
-  assert.equal((await conversationById(conversationId)).status, "CLOSED");
+  const conversation = await conversationById(conversationId);
+  assert.deepEqual([conversation.status, conversation.unreadCount], ["CLOSED", 0]);
   assert.equal(
     (await prisma.supportTicket.findUnique({ where: { id: ticketId } })).status,
     "CLOSED"

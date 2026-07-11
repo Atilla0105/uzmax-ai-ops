@@ -19,6 +19,7 @@ import {
 } from "./m8-conversation-ticket-api-fixture.mjs";
 
 const CHANNEL_ID = "66666666-6666-4666-8666-666666666666";
+const uuid = (suffix) => `42000000-0000-4000-8000-${String(suffix).padStart(12, "0")}`;
 const worker = await compileM8ActiveAnswerRuntimeModules({
   repoRoot: process.cwd(),
   tempDir: path.join(process.cwd(), "node_modules/.cache/m11-04a-worker-focused")
@@ -36,19 +37,8 @@ const [repositoryModule, serviceModule] = await Promise.all([
 describe("M11-04A worker ownership and send fence", () => {
   it("stores human and closed-state inbound without LLM, send or new tickets", async () => {
     const cases = [
-      {
-        status: "PENDING_HANDOFF",
-        ticket: ticketRow("41000000-0000-4000-8000-000000000001", "OPEN")
-      },
-      {
-        status: "HANDOFF",
-        ticket: ticketRow(
-          "41000000-0000-4000-8000-000000000002",
-          "LOCKED",
-          USER_A,
-          USER_A
-        )
-      },
+      { status: "PENDING_HANDOFF", ticket: ticketRow(uuid(1), "OPEN") },
+      { status: "HANDOFF", ticket: ticketRow(uuid(2), "LOCKED", USER_A, USER_A) },
       { status: "CLOSED" }
     ];
     for (const [index, item] of cases.entries()) {
@@ -56,9 +46,8 @@ describe("M11-04A worker ownership and send fence", () => {
       const input = payload(`91${index + 1}1`);
       const conversation = conversationRow(input, item.status);
       db.conversations.push(conversation);
-      if (item.ticket) {
+      if (item.ticket)
         db.tickets.push({ ...item.ticket, conversationId: conversation.id });
-      }
       const calls = { answer: 0, send: 0 };
       const gateway = productionGateway(db);
       const result = await run(input, gateway, calls);
@@ -76,19 +65,20 @@ describe("M11-04A worker ownership and send fence", () => {
     }
   });
 
-  it("suppresses send when takeover commits during LLM and discards follow-up", async () => {
-    for (const [index, decision] of ["answered", "handoff"].entries()) {
+  it("keeps a newer human takeover or close authoritative during LLM", async () => {
+    const decisions = "answered handoff closed_answered closed_handoff closed_recovery";
+    for (const [index, decision] of decisions.split(" ").entries()) {
       const db = emptyPrisma();
       const input = payload(`920${index + 1}`);
-      const answerEntered = deferred();
-      const answerRelease = deferred();
+      const gateway = productionGateway(db);
+      const [answerEntered, answerRelease] = [deferred(), deferred()];
       const calls = { answer: 0, send: 0 };
-      const job = run(input, productionGateway(db), calls, {
+      const job = run(input, gateway, calls, {
         async answer() {
           calls.answer += 1;
           answerEntered.resolve();
           await answerRelease.promise;
-          if (decision === "handoff")
+          if (decision.endsWith("handoff"))
             return {
               reasonCode: "requires_operator_review",
               status: "handoff_required",
@@ -102,57 +92,57 @@ describe("M11-04A worker ownership and send fence", () => {
         }
       });
       await answerEntered.promise;
-      const conversationId = db.conversations[0].id;
-      const support = await supportService(db);
-      await support.createHandoffTicket(operatorContext(), {
-        conversationId,
-        reason: "operator takeover"
-      });
+      const closed = decision.startsWith("closed");
+      if (closed) await closeCurrent(db, uuid(20 + index));
+      else await takeControl(db);
       assert.equal(aiIntent(db).deliveryStatus, "CANCELLED");
-      assert.equal((await run(input, productionGateway(db), calls)).status, "deduped");
+      if (!closed || decision.endsWith("recovery"))
+        assert.equal((await run(input, gateway, calls)).status, "deduped");
       answerRelease.resolve();
       const result = await job;
 
       assert.equal(result.runtimeBranch, "handoff");
       assert.deepEqual(calls, { answer: 1, send: 0 });
-      assert.equal(db.conversations[0].status, "HANDOFF");
+      assert.equal(db.conversations[0].status, closed ? "CLOSED" : "HANDOFF");
       assert.equal(db.tickets.length, 1);
-      assert.equal(db.tickets[0].lockedByUserId, USER_A);
-      assert.equal(db.conversations[0].unreadCount, 1);
+      if (!closed) assert.equal(db.tickets[0].lockedByUserId, USER_A);
+      assert.equal(db.conversations[0].unreadCount, closed ? 0 : 1);
       assert.ok(db.dedupes[0].processedAt instanceof Date);
     }
   });
 
-  it("allows one claimed send while later takeover remains authoritative", async () => {
-    const db = emptyPrisma();
-    const input = payload("9211");
-    const sendEntered = deferred();
-    const sendRelease = deferred();
-    const calls = { answer: 0, send: 0 };
-    const job = run(
-      input,
-      productionGateway(db),
-      calls,
-      answeredRuntime(calls, true),
-      blockedSend(calls, sendEntered, sendRelease)
-    );
-    await sendEntered.promise;
-    assert.equal(aiIntent(db).content.dispatchPhase, "claimed");
-    const support = await supportService(db);
-    await support.createHandoffTicket(operatorContext(), {
-      conversationId: db.conversations[0].id,
-      reason: "claim-first takeover"
-    });
-    assert.equal(aiIntent(db).deliveryStatus, "QUEUED");
-    sendRelease.resolve();
-    const result = await job;
+  it("keeps claimed send outcomes behind a newer human state", async () => {
+    for (const [index, outcome] of ["SENT", "FAILED"].entries()) {
+      const db = emptyPrisma();
+      const input = payload(`921${index + 1}`);
+      const [entered, release] = [deferred(), deferred()];
+      const calls = { answer: 0, send: 0 };
+      const job = run(
+        input,
+        productionGateway(db),
+        calls,
+        answeredRuntime(calls, true),
+        blockedSend(calls, entered, release, outcome)
+      );
+      await entered.promise;
+      assert.equal(aiIntent(db).content.dispatchPhase, "claimed");
+      if (outcome === "FAILED") await closeCurrent(db, uuid(30 + index));
+      else await takeControl(db);
+      assert.equal(aiIntent(db).deliveryStatus, "QUEUED");
+      release.resolve();
+      const result = await job;
 
-    assert.equal(result.runtimeBranch, "answer");
-    assert.deepEqual(calls, { answer: 1, send: 1 });
-    assert.equal(aiIntent(db).deliveryStatus, "SENT");
-    assert.equal(db.conversations[0].status, "HANDOFF");
-    assert.equal(db.tickets.length, 1);
-    assert.equal(db.tickets[0].lockedByUserId, USER_A);
+      assert.equal(result.runtimeBranch, outcome === "SENT" ? "answer" : "handoff");
+      assert.deepEqual(calls, { answer: 1, send: 1 });
+      assert.equal(aiIntent(db).deliveryStatus, outcome);
+      assert.equal(
+        db.conversations[0].status,
+        outcome === "SENT" ? "HANDOFF" : "CLOSED"
+      );
+      assert.equal(db.conversations[0].unreadCount, 0);
+      assert.equal(db.tickets.length, 1);
+      assert.equal(db.tickets[0].lockedByUserId, outcome === "SENT" ? USER_A : null);
+    }
   });
 
   it("recovers a generating crash without repeating LLM or send", async () => {
@@ -174,30 +164,34 @@ describe("M11-04A worker ownership and send fence", () => {
   });
 
   it("persists a late SENT acknowledgement after claimed recovery", async () => {
-    const db = emptyPrisma();
-    const input = payload("9302");
-    const gateway = productionGateway(db);
-    const calls = { answer: 0, send: 0 };
-    const [entered, release] = [deferred(), deferred()];
-    const job = run(
-      input,
-      gateway,
-      calls,
-      answeredRuntime(calls),
-      blockedSend(calls, entered, release)
-    );
-    await entered.promise;
-    await run(input, gateway, calls, answeredRuntime(calls));
-    assert.equal(aiIntent(db).content.dispatchPhase, "uncertain");
-    release.resolve();
-    await job;
+    for (const [index, closed] of [false, true].entries()) {
+      const db = emptyPrisma();
+      const input = payload(`930${index + 2}`);
+      const gateway = productionGateway(db);
+      const calls = { answer: 0, send: 0 };
+      const [entered, release] = [deferred(), deferred()];
+      const job = run(
+        input,
+        gateway,
+        calls,
+        answeredRuntime(calls),
+        blockedSend(calls, entered, release)
+      );
+      await entered.promise;
+      if (closed) await closeCurrent(db, uuid(40 + index));
+      await run(input, gateway, calls, answeredRuntime(calls));
+      assert.equal(aiIntent(db).content.dispatchPhase, "uncertain");
+      release.resolve();
+      await job;
 
-    assert.deepEqual(calls, { answer: 1, send: 1 });
-    assert.equal(aiIntent(db).deliveryStatus, "SENT");
-    assert.equal(aiIntent(db).content.dispatchPhase, "terminal");
-    assert.equal(Boolean(aiIntent(db).content.deliveryUncertain), false);
-    assert.equal(db.conversations[0].unreadCount, 1);
-    assert.equal(db.tickets.length, 1);
+      assert.deepEqual(calls, { answer: 1, send: 1 });
+      assert.equal(aiIntent(db).deliveryStatus, "SENT");
+      assert.equal(aiIntent(db).content.dispatchPhase, "terminal");
+      assert.equal(Boolean(aiIntent(db).content.deliveryUncertain), false);
+      assert.equal(db.conversations[0].status, closed ? "CLOSED" : "PENDING_HANDOFF");
+      assert.equal(db.conversations[0].unreadCount, closed ? 0 : 1);
+      assert.equal(db.tickets.length, 1);
+    }
   });
 
   it("reuses one automatic-handoff ticket when takeover follows", async () => {
@@ -216,11 +210,7 @@ describe("M11-04A worker ownership and send fence", () => {
     });
     assert.equal(db.conversations[0].status, "PENDING_HANDOFF");
     assert.equal(db.tickets.length, 1);
-    const support = await supportService(db);
-    await support.createHandoffTicket(operatorContext(), {
-      conversationId: db.conversations[0].id,
-      reason: "operator accepts handoff"
-    });
+    await takeControl(db);
     assert.equal(db.conversations[0].status, "HANDOFF");
     assert.equal(db.tickets.length, 1);
     assert.equal(db.tickets[0].lockedByUserId, USER_A);
@@ -274,9 +264,8 @@ describe("M11-04A worker ownership and send fence", () => {
   });
 });
 
-function productionGateway(db) {
-  return new worker.persistence.PrismaTelegramBotConversationPersistenceGateway(db);
-}
+const productionGateway = (db) =>
+  new worker.persistence.PrismaTelegramBotConversationPersistenceGateway(db);
 
 async function run(input, gateway, calls, answerRuntime, sendPort) {
   return worker.conversationRuntime.processTelegramBotConversationJob(
@@ -284,12 +273,7 @@ async function run(input, gateway, calls, answerRuntime, sendPort) {
     gateway,
     runtimeOptions(
       input,
-      answerRuntime ?? {
-        async answer() {
-          calls.answer += 1;
-          return { answerText: "bounded answer", status: "answered" };
-        }
-      },
+      answerRuntime ?? answeredRuntime(calls),
       sendPort ?? {
         async sendMessage(request) {
           calls.send += 1;
@@ -324,13 +308,13 @@ function answeredRuntime(calls, followUp = false) {
   };
 }
 
-function blockedSend(calls, entered, release) {
+function blockedSend(calls, entered, release, outcome = "SENT") {
   return {
     async sendMessage(request) {
       calls.send += 1;
       entered.resolve();
       await release.promise;
-      return sent(request);
+      return sent(request, outcome);
     }
   };
 }
@@ -355,6 +339,25 @@ async function supportService(db) {
       prismaClient: db
     });
   return new serviceModule.ConversationTicketService(repository);
+}
+
+async function takeControl(db) {
+  const support = await supportService(db);
+  const input = { conversationId: db.conversations[0].id, reason: "operator takeover" };
+  const takeover = await support.createHandoffTicket(operatorContext(), input);
+  return { support, takeover };
+}
+
+async function closeCurrent(db, requestId) {
+  const { support, takeover } = await takeControl(db);
+  return support.applyTicketAction(operatorContext(), {
+    destination: "controlled resolution",
+    expectedLifecycleEventId: takeover.ticket.events.at(-1).id,
+    requestId,
+    result: "resolved",
+    ticketId: takeover.ticket.id,
+    type: "close"
+  });
 }
 
 function emptyPrisma() {
@@ -414,13 +417,11 @@ function ticketRow(id, status, assignedUserId, lockedByUserId) {
   };
 }
 
-function operatorContext() {
-  return contextFor(TENANT_A, ["conversation:read", "ticket:write"]);
-}
+const operatorContext = () =>
+  contextFor(TENANT_A, ["conversation:read", "ticket:write"]);
 
-function aiIntent(db) {
-  return db.messages.find(
+const aiIntent = (db) =>
+  db.messages.find(
     (row) =>
       row.direction === "OUTBOUND" && row.content.runtimeOrigin === "telegram_bot_ai"
   );
-}

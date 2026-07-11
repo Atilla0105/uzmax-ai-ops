@@ -49,6 +49,7 @@ Worktree:
 | second CI attempt | B1 true-DB failure | run `29139984354` passed PR shape and every prior step through M11 worker ownership fence, then the new close/reopen runner failed with its sanitized marker; later gates were skipped |
 | third CI attempt | `closed_inbound` failure | run `29140478175` again passed every prior gate through worker ownership fence; the new runner failed only after close-first and claim-first, inside the closed/reopened inbound lifecycle stage |
 | fourth CI attempt | `ci1` failure | run `29141063208` passed the same full prechain and failed in the first inbound processed while the conversation was CLOSED, before human reopen |
+| fifth CI attempt | superseded diagnostic | run `29141577862` was cancelled during typecheck by the follow-up checkpoint refinement and is not runtime evidence |
 | true DB/CI | diagnosis pending | no B1 runtime claim and no merge |
 
 ## First Pre-review Corrections

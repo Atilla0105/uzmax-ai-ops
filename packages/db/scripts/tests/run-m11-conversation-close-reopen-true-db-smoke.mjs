@@ -164,6 +164,7 @@ async function assertClosedInboundReopen(closed) {
 async function assertInbound(closed, updateId, calls, unread, stage) {
   const cid = ((failure.stage = stage), closed.conversation.id);
   const before = await inboundProof(((failure.stage += "b"), cid), updateId);
+  failure.stage += "j";
   const first = await runJob(updateId, closed.threadId, calls, answer(calls));
   assert.equal(((failure.stage += "s"), first.status), "accepted");
   const after = await inboundProof(((failure.stage += "a"), cid), updateId);

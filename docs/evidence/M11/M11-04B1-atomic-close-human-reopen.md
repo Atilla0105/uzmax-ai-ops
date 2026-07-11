@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `pr_304_true_db_ci1_persist_or_retry_failure__field_diagnosis_pending`
+Status: `pr_304_true_db_unread_race__worker_fence_amendment_pending_review`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -23,8 +23,9 @@ Worktree:
 
 - Root/main remains read-only at merged M11-04A SHA `5520bc7`.
 - Assigned worktree/branch remain the only edit location.
-- No schema, migration, worker source, deployment, production, secret or real
-  customer/order-data mutation is required.
+- No schema, migration, deployment, production, secret or real customer/order-
+  data mutation is required. Run `29142185412` now requires one exact existing
+  worker atomic-write unread-fence correction within this B1 spec.
 - Existing parent WIP has no source commit and makes no runtime claim. It must be
   narrowed only after both B1 reviews return GO.
 
@@ -51,7 +52,8 @@ Worktree:
 | fourth CI attempt | `ci1` failure | run `29141063208` passed the same full prechain and failed in the first inbound processed while the conversation was CLOSED, before human reopen |
 | fifth CI attempt | superseded diagnostic | run `29141577862` was cancelled during typecheck by the follow-up checkpoint refinement and is not runtime evidence |
 | sixth CI attempt | `ci1bjsap` failure | run `29141615539` proved pre-read, worker execution, accepted status and post-read all completed; failure is in persisted-field comparison or the immediately following dedupe retry |
-| true DB/CI | diagnosis pending | no B1 runtime claim and no merge |
+| seventh CI attempt | `ci1bjsapdimou` failure | run `29142185412`, job `86517340101`, passed dedupe, inbound delta, exact-message and unchanged-outbound assertions; only unread failed before retry |
+| true DB/CI | exact correction pending | no B1 runtime claim and no merge; the failure-derived worker fence must pass focused review and current-head CI |
 
 ## First Pre-review Corrections
 
@@ -94,8 +96,9 @@ Worktree:
   `already_applied`; collisions, stale anchors, malformed history, ownership or
   tenant conflicts are zero-write failures.
 - B1 publishes no resume endpoint, lifecycle-readiness field, resume audit,
-  all-origin queue gate, UI or worker-source change. Those obligations remain
-  exclusively in B2.
+  all-origin queue gate or UI. Its only worker-source amendment is the exact
+  close-reset unread fence exposed by B1's own PostgreSQL race proof. All B2
+  obligations remain exclusively in B2.
 
 ## Current Local Verification
 
@@ -169,10 +172,37 @@ Worktree:
   split into dedupe, inbound count, exact-message count, outbound count and
   unread checkpoints, followed by an explicit retry checkpoint. This preserves
   every assertion while revealing only which contract field failed.
+- Run `29142185412`, job `86517340101`, returned `ci1bjsapdimou`. The processed
+  dedupe count, inbound delta, exact external-message row and unchanged outbound
+  count all passed; the next unread assertion failed. The close-first runtime
+  had prepared the original inbound before close, takeover/close cancelled its
+  AI intent and reset unread to zero, then release entered the worker's late
+  suppressed-claim path, which terminalized the dedupe and unconditionally
+  incremented unread. The first genuinely new closed-period inbound therefore
+  observed two unread instead of one.
+
+## Failure-derived B1 Amendment
+
+- The defect is inside B1's close-first invariant, not explicit Bot resume or a
+  later feature. Opening B2 or M11-05 would leave the current PR's true-DB gate
+  red and is forbidden.
+- The existing worker atomic-write module may suppress unread increments only
+  on late terminal paths when a newer locked state is `CLOSED`. Preparation of
+  a genuinely new inbound while already `CLOSED` continues to increment unread
+  once; human-owned non-closed states retain their existing unread behavior.
+- The focused worker fence must reproduce prepare -> human close/reset -> late
+  release and require zero send plus unread zero. The true-DB close-first stage
+  must assert unread zero before accepting the new closed-period inbound.
+- This amendment adds one existing worker source and one existing focused test
+  to scope. It uses the already-approved source changed-file limit of 11 and
+  raises only test/support changed files from 9 to 10; source net remains capped
+  at 600 and no new source/test file is added.
 
 ## Current Conclusion
 
-M11-04B1 is locally implemented, regression-clean and independently reviewed,
-but it is not yet merged: current-SHA PostgreSQL CI remains mandatory. After it
-passes, M11-04B2 must still merge explicit Bot resume before M11-05 can start.
-Nothing here claims a usable workbench, staging/production closure, GA or 1.0.
+M11-04B1 remains unmerged. Its original local implementation is regression-
+clean, but true PostgreSQL exposed one exact close-first unread race that must
+now be corrected and independently re-reviewed on the current PR. After it
+passes and merges, work must pause for owner confirmation; M11-04B2 is not
+started here. Nothing claims a usable workbench, staging/production closure,
+GA or 1.0.

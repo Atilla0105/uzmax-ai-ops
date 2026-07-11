@@ -58,7 +58,10 @@ close/reopen. If this child conflicts with those safety rules, the parent wins.
   the selected authenticated scope.
 - This slice uses controlled local/CI staging fixtures only. It does not deploy,
   mutate secrets, use production or real customer/order data, or change schema,
-  migrations, RLS policy, provider adapters, worker source or permissions.
+  migrations, RLS policy, provider adapters or permissions. The only worker
+  source change is the failure-derived unread fence in the existing atomic-write
+  module: a late terminal path for an inbound persisted before a newer `CLOSED`
+  transition must not undo close's unread reset.
 - Result/destination/reason are tenant records in ticket events. Tests/evidence
   use synthetic bounded values and sanitized failure output.
 - `CLOSED` is an internal support disposition, not proof that the customer's
@@ -129,6 +132,12 @@ The legacy handoff capability's ticket-only close/reopen returns
   production send can be withdrawn.
 - Closed or reopened-human inbound is persisted/unread for the operator with
   zero LLM and zero outbound. No closed-period message is replayed.
+- The close-first release terminalizes the pre-close inbound's marker/dedupe but
+  preserves unread zero. Only a new inbound prepared after the conversation is
+  already `CLOSED` increments unread exactly once. Late claim, handoff,
+  duplicate-recovery or failed-finalization paths preserve the newer close
+  reset; equivalent human-owned states continue to surface unread to the
+  operator.
 - Barriers signal exact persisted checkpoints; sleep, timeout and Promise start
   order are not race evidence.
 
@@ -148,6 +157,7 @@ The legacy handoff capability's ticket-only close/reopen returns
 - `apps/api/src/conversation-ticket.repository.ts`
 - `apps/api/src/conversation-ticket.service.ts`
 - `apps/api/src/conversation-ticket.types.ts`
+- `apps/worker/src/telegram-bot-conversation.atomic-writes.ts`
 - `packages/capabilities/handoff/src/index.ts`
 - `scripts/tests/m2-conversation-ticket-api-contract.test.mjs`
 - `scripts/tests/m2-conversation-ticket-test-harness.mjs`
@@ -156,11 +166,12 @@ The legacy handoff capability's ticket-only close/reopen returns
 - `scripts/tests/m8-db-backed-conversation-ticket-api.test.mjs`
 - `scripts/tests/m11-atomic-takeover.test.mjs`
 - `scripts/tests/m11-conversation-close-reopen.test.mjs`
+- `scripts/tests/m11-worker-ownership-fence.test.mjs`
 - `packages/db/scripts/tests/run-m10-conversation-ticket-actions-true-db-smoke.mjs`
 - `packages/db/scripts/tests/run-m11-conversation-close-reopen-true-db-smoke.mjs`
 
-Read-only: worker M11-04A runtime/fence files, schema/migrations, audit sink,
-`packages/db/src/index.ts`, and all admin/provider/deploy paths.
+Read-only: all other worker M11-04A runtime/fence files, schema/migrations,
+audit sink, `packages/db/src/index.ts`, and all admin/provider/deploy paths.
 
 ## Change Budget
 
@@ -170,7 +181,7 @@ Read-only: worker M11-04A runtime/fence files, schema/migrations, audit sink,
 - Runtime compiler begins at parent baseline 581 nonblank lines and may add only
   close/reopen helper registration/rewrite, finishing at <= baseline + 15; the
   actual smaller delta must be reported.
-- Test/support: changed files <= 9, new files <= 2; no deletion, skip/only,
+- Test/support: changed files <= 10, new files <= 2; no deletion, skip/only,
   weakened assertion, broad fallback/mock or snapshot expansion.
 - Config: one CI workflow edit. Docs: parent split record plus this spec/evidence.
 - Schema/migration/generated/lock/deploy/provider/permission: none.
@@ -203,6 +214,8 @@ field is added or asserted in B1.
 The sanitized PostgreSQL CI runner runs after M11-04A's ownership fence and
 proves close result/destination readback, close/reopen exact retry and event
 uniqueness, both worker orders, and closed/reopened inbound behavior.
+It asserts unread remains zero immediately after the paused close-first answer
+runtime is released, before any new closed-period inbound is accepted.
 
 Under the runtime role, Tenant B independently sees zero conversation, message,
 ticket, ticket_event, audit_log, dedupe, customer and identity rows. Wrong-tenant
@@ -223,11 +236,15 @@ The sanitizer is inside this runner; no third test/support file is permitted.
 3. Narrow the uncommitted parent WIP to this touched list and behavior; remove
    all resume/audit/all-origin queue work and all lifecycle-readiness response
    fields from the B1 diff.
-4. Run focused static/tests, true PostgreSQL CI, repository guards and full
+4. If true PostgreSQL exposes a B1 race absent from the local fake, first amend
+   this spec/evidence, then change only the existing authorized seam and add an
+   exact focused regression. Do not open B2 or another feature slice.
+5. Run focused static/tests, true PostgreSQL CI, repository guards and full
    build/test gates.
-5. Run spec compliance first, then code quality/security/RLS review; merge only
+6. Run spec compliance first, then code quality/security/RLS review; merge only
    on current-head CI green and clean up branch/worktree.
-6. Create M11-04B2 from the merged B1 main; do not carry an unreviewed hidden
+7. Create M11-04B2 only after separate owner confirmation from merged B1 main;
+   do not carry an unreviewed hidden
    branch or local-only runtime claim.
 
 ## Pass Conditions
@@ -248,8 +265,9 @@ The sanitizer is inside this runner; no third test/support file is permitted.
 - Schema/RLS-policy need -> stop and open a globally serial DB spec.
 - Close/reopen cannot remain atomic or races cannot be deterministic on true DB
   -> keep B1 open; fake-only proof is insufficient.
-- Hidden cross-tenant/write, raw failure output, test weakening or worker-source
-  change -> stop, preserve evidence and correct before implementation resumes.
+- Hidden cross-tenant/write, raw failure output, test weakening or any worker
+  source change outside the exact atomic unread fence -> stop, preserve evidence
+  and correct before implementation resumes.
 
 ## Out Of Scope
 

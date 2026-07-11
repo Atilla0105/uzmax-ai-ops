@@ -168,15 +168,15 @@ async function assertInbound(closed, updateId, calls, unread, stage) {
   const first = await runJob(updateId, closed.threadId, calls, answer(calls));
   assert.equal(((failure.stage += "s"), first.status), "accepted");
   const after = await inboundProof(((failure.stage += "a"), cid), updateId);
-  assert.deepEqual(((failure.stage += "p"), after), {
-    dedupes: 1,
-    inbound: before.inbound + 1,
-    messages: 1,
-    outbound: before.outbound,
-    unread
-  });
+  failure.stage += "p";
+  assert.equal(((failure.stage += "d"), after.dedupes), 1);
+  assert.equal(((failure.stage += "i"), after.inbound), before.inbound + 1);
+  assert.equal(((failure.stage += "m"), after.messages), 1);
+  assert.equal(((failure.stage += "o"), after.outbound), before.outbound);
+  assert.equal(((failure.stage += "u"), after.unread), unread);
+  failure.stage += "t";
   const retry = await runJob(updateId, closed.threadId, calls, answer(calls));
-  assert.equal(((failure.stage += "d"), retry.status), "deduped");
+  assert.equal(((failure.stage += "q"), retry.status), "deduped");
   assert.deepEqual(await inboundProof(((failure.stage += "r"), cid), updateId), after);
 }
 

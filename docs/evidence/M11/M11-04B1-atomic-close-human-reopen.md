@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `pr_304_true_db_ci1_failure__checkpoint_diagnosis_pending`
+Status: `pr_304_true_db_ci1_persist_or_retry_failure__field_diagnosis_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -50,6 +50,7 @@ Worktree:
 | third CI attempt | `closed_inbound` failure | run `29140478175` again passed every prior gate through worker ownership fence; the new runner failed only after close-first and claim-first, inside the closed/reopened inbound lifecycle stage |
 | fourth CI attempt | `ci1` failure | run `29141063208` passed the same full prechain and failed in the first inbound processed while the conversation was CLOSED, before human reopen |
 | fifth CI attempt | superseded diagnostic | run `29141577862` was cancelled during typecheck by the follow-up checkpoint refinement and is not runtime evidence |
+| sixth CI attempt | `ci1bjsap` failure | run `29141615539` proved pre-read, worker execution, accepted status and post-read all completed; failure is in persisted-field comparison or the immediately following dedupe retry |
 | true DB/CI | diagnosis pending | no B1 runtime claim and no merge |
 
 ## First Pre-review Corrections
@@ -161,8 +162,13 @@ Worktree:
 - `ci1`/`ci2` now append bounded checkpoint letters for the pre-read, first
   worker result, accepted-status assertion, post-read, persisted-delta
   comparison, dedupe retry and final no-replay comparison. The runner remains
-  below its 400-line lint ceiling and does not expose actual assertion values or
-  data.
+  exactly at its 400-line lint ceiling and does not expose actual assertion
+  values or data.
+- Run `29141615539` returned `ci1bjsap`: the first CLOSED inbound was accepted
+  and the post-read query completed. The aggregate persisted comparison is now
+  split into dedupe, inbound count, exact-message count, outbound count and
+  unread checkpoints, followed by an explicit retry checkpoint. This preserves
+  every assertion while revealing only which contract field failed.
 
 ## Current Conclusion
 

@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `implementation_local_pass__true_db_ci_pending`
+Status: `pr_304_metadata_corrected__true_db_ci_rerun_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -44,6 +44,8 @@ Worktree:
 | browser regression | pass | Playwright 149/149 against the built admin preview |
 | implementation spec review | pass | final current-WIP review: 0 blocker/major/minor; local implementation/evidence spec-compliant |
 | implementation code-quality review | pass | 0 blocker/major; exact-cancellation and fake-lock proof corrections applied |
+| PR shape | pass after metadata correction | PR #304; source 10/new 1/net +496; exact 24-path scope |
+| initial CI attempt | metadata-only failure | run `29139932722` read the pre-correction backticked spec path and stopped at `guard:pr-shape`; all true-DB/runtime steps were skipped |
 | true DB/CI | pending | no B1 runtime claim |
 
 ## First Pre-review Corrections
@@ -124,6 +126,22 @@ Worktree:
   quality/security/RLS/concurrency review returned 0 blocker/major; its only
   remaining maintenance note is future consolidation of the five currently
   consistent close-result tokens. This is not a B1 correctness or merge block.
+
+## PR And CI Record
+
+- Implementation commit: `641e82c99fafe3208a82216b9b5d5045ecbe95eb`.
+- PR: `#304`, `M11-04B1: atomic close and human reopen`.
+- The committed-diff `pr-shape` result is exact: 24 changed paths, categories
+  config 1/source 10/docs 4/test 9, source net +496 and one new source file.
+- Initial CI run `29139932722` used the pull-request event payload created
+  before the PR body correction. Its `Spec file` value still contained Markdown
+  backticks, so `guard:pr-shape` tried to open a backticked path and failed.
+  Prisma generation, every true-DB smoke, full tests, builds and Playwright were
+  skipped; this run is not runtime evidence.
+- The live PR body now contains the plain machine-readable spec path and the
+  same local PR guard passes. This evidence-only follow-up commit intentionally
+  triggers a fresh PR event/CI run; merge remains blocked until that current
+  head passes all steps.
 
 ## Current Conclusion
 

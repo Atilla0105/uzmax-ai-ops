@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `pr_304_true_db_closed_inbound_failure__substage_diagnosis_pending`
+Status: `pr_304_true_db_ci1_failure__checkpoint_diagnosis_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -48,6 +48,7 @@ Worktree:
 | initial CI attempt | metadata-only failure | run `29139932722` read the pre-correction backticked spec path and stopped at `guard:pr-shape`; all true-DB/runtime steps were skipped |
 | second CI attempt | B1 true-DB failure | run `29139984354` passed PR shape and every prior step through M11 worker ownership fence, then the new close/reopen runner failed with its sanitized marker; later gates were skipped |
 | third CI attempt | `closed_inbound` failure | run `29140478175` again passed every prior gate through worker ownership fence; the new runner failed only after close-first and claim-first, inside the closed/reopened inbound lifecycle stage |
+| fourth CI attempt | `ci1` failure | run `29141063208` passed the same full prechain and failed in the first inbound processed while the conversation was CLOSED, before human reopen |
 | true DB/CI | diagnosis pending | no B1 runtime claim and no merge |
 
 ## First Pre-review Corrections
@@ -154,9 +155,13 @@ Worktree:
   close-first and claim-first completed before failure; it does not identify a
   cause yet.
 - The closed-inbound stage is now split into safe `ci1`, `reopen` and `ci2`
-  tokens. The runner remains exactly within its 400-line lint ceiling and the
-  next CI run will distinguish first closed inbound, reopen/replay, or second
-  human-owned inbound/reclose without exposing assertion values or data.
+  tokens. Run `29141063208` returned `ci1`, proving the failure precedes human
+  reopen.
+- `ci1`/`ci2` now append bounded checkpoint letters for the pre-read, first
+  worker result, accepted-status assertion, post-read, persisted-delta
+  comparison, dedupe retry and final no-replay comparison. The runner remains
+  below its 400-line lint ceiling and does not expose actual assertion values or
+  data.
 
 ## Current Conclusion
 

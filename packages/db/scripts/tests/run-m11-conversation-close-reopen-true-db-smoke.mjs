@@ -56,9 +56,7 @@ async function runSmoke() {
     service = await supportService(prisma);
     const closeFirst = await staged("close_first", assertCloseFirst);
     const claimFirst = await staged("claim_first", assertClaimFirst);
-    const reclosed = await staged("closed_inbound", () =>
-      assertClosedInboundReopen(closeFirst)
-    );
+    const reclosed = await assertClosedInboundReopen(closeFirst);
     await staged("isolation", () => assertIsolation(claimFirst, reclosed));
     await staged("cleanup", cleanup);
     assert.equal(await residue(), 0);
@@ -134,7 +132,7 @@ async function assertClaimFirst() {
 
 async function assertClosedInboundReopen(closed) {
   const calls = { answer: 0, send: 0 };
-  await ((failure.stage = "ci1"), assertInbound(closed, "9512", calls, 1));
+  await assertInbound(closed, "9512", calls, 1, "ci1");
   const closedEvent = ((failure.stage = "reopen"), closed.ticket.events.at(-1));
   const command = reopenInput(closed.ticket.id, closedEvent.id, id(31));
   const reopened = await service.applyTicketAction(context(TENANT_A), command);
@@ -146,7 +144,7 @@ async function assertClosedInboundReopen(closed) {
   const replay = await service.applyTicketAction(context(TENANT_A), command);
   assert.equal(replay.result, "already_applied");
   assert.equal(eventCount(replay.ticket, "reopened"), 1);
-  await ((failure.stage = "ci2"), assertInbound(closed, "9513", calls, 2));
+  await assertInbound(closed, "9513", calls, 2, "ci2");
   assert.deepEqual(calls, { answer: 0, send: 0 });
   const locked = await service.applyTicketAction(context(TENANT_A), {
     ticketId: reopened.ticket.id,
@@ -163,12 +161,13 @@ async function assertClosedInboundReopen(closed) {
   return { ...reclosed, reopenInput: command };
 }
 
-async function assertInbound(closed, updateId, calls, unread) {
-  const before = await inboundProof(closed.conversation.id, updateId);
+async function assertInbound(closed, updateId, calls, unread, stage) {
+  const cid = ((failure.stage = stage), closed.conversation.id);
+  const before = await inboundProof(((failure.stage += "b"), cid), updateId);
   const first = await runJob(updateId, closed.threadId, calls, answer(calls));
-  assert.equal(first.status, "accepted");
-  const after = await inboundProof(closed.conversation.id, updateId);
-  assert.deepEqual(after, {
+  assert.equal(((failure.stage += "s"), first.status), "accepted");
+  const after = await inboundProof(((failure.stage += "a"), cid), updateId);
+  assert.deepEqual(((failure.stage += "p"), after), {
     dedupes: 1,
     inbound: before.inbound + 1,
     messages: 1,
@@ -176,8 +175,8 @@ async function assertInbound(closed, updateId, calls, unread) {
     unread
   });
   const retry = await runJob(updateId, closed.threadId, calls, answer(calls));
-  assert.equal(retry.status, "deduped");
-  assert.deepEqual(await inboundProof(closed.conversation.id, updateId), after);
+  assert.equal(((failure.stage += "d"), retry.status), "deduped");
+  assert.deepEqual(await inboundProof(((failure.stage += "r"), cid), updateId), after);
 }
 
 async function assertIsolation(claimFirst, reclosed) {

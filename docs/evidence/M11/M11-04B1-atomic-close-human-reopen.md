@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `pr_304_true_db_unread_race__worker_fence_amendment_pending_review`
+Status: `pr_304_unread_fence_local_go__current_head_ci_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -37,15 +37,16 @@ Worktree:
 | parent behavior preservation | pass | B1 inherits close/reopen safety; B2 retains all resume/audit/queue obligations |
 | B1 state/security/spec review | pass | corrected `ccfea21`; reviewer GO with no blocker/major |
 | B1 test/budget review | pass | corrected `85ac2e7`; reviewer GO with no blocker/major |
-| implementation budget | pass | source changed 10/new 1/net +496; test/support changed 9/new 2; compiler 581 -> 592 nonblank (+11) |
+| implementation budget | pass | committed guard: 26 paths; source changed 11/new 1/net +506; test/support changed 10/new 2; config 1/docs 4; compiler 581 -> 592 nonblank (+11) |
 | focused close/reopen | pass | 21/21 Node tests, including exact fake-lock rejection and HTTP bounds |
+| failure-derived worker fence | pass locally | 8/8 focused worker tests; claim, handoff, terminal/nonterminal recovery and failed-finalize preserve newer CLOSED unread reset while original human/non-CLOSED assertions remain |
 | repository static gates | pass | format, prettier-ignore 89/89, typecheck, lint, dependency-cruiser, jscpd 0 clones, knip and all scoped guards |
 | full Node regression | pass | 578/578, 93 suites, zero skip/failure |
 | builds and size | pass | API, worker, cron and admin builds; admin 226.55 kB brotli <= 250 kB |
 | browser regression | pass | Playwright 149/149 against the built admin preview |
-| implementation spec review | pass | final current-WIP review: 0 blocker/major/minor; local implementation/evidence spec-compliant |
-| implementation code-quality review | pass | 0 blocker/major; exact-cancellation and fake-lock proof corrections applied |
-| PR shape | pass after metadata correction | PR #304; source 10/new 1/net +496; exact 24-path scope |
+| implementation spec review | pass | failure-derived final review: 0 blocker/major/minor; no B2/05 scope and no weakened assertion |
+| implementation code-quality review | pass | failure-derived final review: 0 blocker/major/minor; five late paths and lock linearization reviewed |
+| PR shape | pass after amendment | PR #304; source 11/new 1/net +506; exact 26-path scope |
 | initial CI attempt | metadata-only failure | run `29139932722` read the pre-correction backticked spec path and stopped at `guard:pr-shape`; all true-DB/runtime steps were skipped |
 | second CI attempt | B1 true-DB failure | run `29139984354` passed PR shape and every prior step through M11 worker ownership fence, then the new close/reopen runner failed with its sanitized marker; later gates were skipped |
 | third CI attempt | `closed_inbound` failure | run `29140478175` again passed every prior gate through worker ownership fence; the new runner failed only after close-first and claim-first, inside the closed/reopened inbound lifecycle stage |
@@ -53,7 +54,7 @@ Worktree:
 | fifth CI attempt | superseded diagnostic | run `29141577862` was cancelled during typecheck by the follow-up checkpoint refinement and is not runtime evidence |
 | sixth CI attempt | `ci1bjsap` failure | run `29141615539` proved pre-read, worker execution, accepted status and post-read all completed; failure is in persisted-field comparison or the immediately following dedupe retry |
 | seventh CI attempt | `ci1bjsapdimou` failure | run `29142185412`, job `86517340101`, passed dedupe, inbound delta, exact-message and unchanged-outbound assertions; only unread failed before retry |
-| true DB/CI | exact correction pending | no B1 runtime claim and no merge; the failure-derived worker fence must pass focused review and current-head CI |
+| true DB/CI | current-head run pending | local correction/reviews pass, but no B1 runtime claim and no merge until the pushed current head passes the complete CI chain |
 
 ## First Pre-review Corrections
 
@@ -103,6 +104,10 @@ Worktree:
 ## Current Local Verification
 
 - Focused tests: 21 passed, 0 failed/skipped.
+- Failure-derived focused worker fence: 8/8 passed, including direct CLOSED
+  claim/handoff, terminal duplicate recovery, claimed uncertain recovery and
+  failed finalization; original human ownership and non-CLOSED unread=1 cases
+  remain asserted.
 - Full repository Node tests: 578 passed across 93 suites, 0 failed/skipped.
 - Static gates: formatting, frozen prettier-ignore boundary (89/89), typecheck,
   full lint, dependency boundary, clone detection (0), knip, forbidden terms,
@@ -114,6 +119,9 @@ Worktree:
   closed and human-reopened inbound it directly requires INBOUND +1, the exact
   external-message row, processed dedupe, unchanged OUTBOUND count, correct
   unread, then a `deduped` retry with the complete proof unchanged.
+- The true-DB close-first checkpoint now also requires `CLOSED + unread=0`
+  immediately after releasing the paused pre-close answer, before any new
+  closed-period inbound can increment unread.
 - `UZMAX_RLS_DATABASE_URL` is absent locally and the local Docker daemon is not
   available. Therefore this runner has only passed syntax/lint locally; its
   PostgreSQL/RLS/transaction assertions remain a required CI gate and are not
@@ -134,13 +142,20 @@ Worktree:
   quality/security/RLS/concurrency review returned 0 blocker/major; its only
   remaining maintenance note is future consolidation of the five currently
   consistent close-result tokens. This is not a B1 correctness or merge block.
+- The failure-derived amendment received a fresh final spec review and fresh
+  code-quality/security/concurrency review, both with 0 blocker/major/minor.
+  Review verified all five late paths, preserved preparation-time CLOSED +1,
+  and rejected no tests as weakened.
 
 ## PR And CI Record
 
 - Implementation commit: `641e82c99fafe3208a82216b9b5d5045ecbe95eb`.
+- Failure-derived spec amendment: `6bfe37b`.
+- Failure-derived unread fence and regression commit: `9f7e985`.
 - PR: `#304`, `M11-04B1: atomic close and human reopen`.
-- The committed-diff `pr-shape` result is exact: 24 changed paths, categories
-  config 1/source 10/docs 4/test 9, source net +496 and one new source file.
+- The amended committed-diff `pr-shape` result is exact: 26 changed paths,
+  categories config 1/source 11/docs 4/test 10, source net +506 and one new
+  source file.
 - Initial CI run `29139932722` used the pull-request event payload created
   before the PR body correction. Its `Spec file` value still contained Markdown
   backticks, so `guard:pr-shape` tried to open a backticked path and failed.
@@ -197,12 +212,19 @@ Worktree:
   to scope. It uses the already-approved source changed-file limit of 11 and
   raises only test/support changed files from 9 to 10; source net remains capped
   at 600 and no new source/test file is added.
+- Commit `9f7e985` applies one helper only to late claim/handoff/recovery/failed-
+  finalize paths when their current locked disposition is `closed`. The two
+  preparation-time increments remain unchanged, so a genuinely new CLOSED
+  inbound still increments once.
+- Local full verification after the correction passed 578/578 Node tests across
+  93 suites, all static/governance gates, four builds, 226.55 kB admin size and
+  Playwright 149/149. This does not substitute for true PostgreSQL CI.
 
 ## Current Conclusion
 
-M11-04B1 remains unmerged. Its original local implementation is regression-
-clean, but true PostgreSQL exposed one exact close-first unread race that must
-now be corrected and independently re-reviewed on the current PR. After it
-passes and merges, work must pause for owner confirmation; M11-04B2 is not
-started here. Nothing claims a usable workbench, staging/production closure,
-GA or 1.0.
+M11-04B1 remains unmerged. The exact close-first unread race is now corrected,
+locally regression-clean and independently re-reviewed, but the amended current
+head has not yet passed GitHub CI/true PostgreSQL. Only a green current-head run
+allows merge. After merge and cleanup, work pauses for owner confirmation;
+M11-04B2 is not started here. Nothing claims a usable workbench, staging/
+production closure, GA or 1.0.

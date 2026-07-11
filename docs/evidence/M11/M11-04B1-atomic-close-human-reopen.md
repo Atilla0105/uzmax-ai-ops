@@ -1,0 +1,237 @@
+# M11-04B1 Atomic Close And Human Reopen Evidence
+
+Status: `pr_304_source_equivalent_ci_passed__evidence_head_ci_pending`
+Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
+Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
+Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
+Branch: `codex/m11-04b-close-resume`
+Worktree:
+`/Users/atilla/.config/superpowers/worktrees/UZMAX智能运营/m11-04b-close-resume`
+
+## Split Trigger
+
+- Parent implementation remained uncommitted after its pre-reviews.
+- Tracked source edits measured +440 net lines and the two untracked helpers
+  added 434 and 110 physical lines, approximately +984 total.
+- Parent budget is +600. The apparent guard net-zero result is invalid for WIP
+  accounting because `--include-worktree` does not include worktree numstat.
+- Parent failure rules and M11-00 require a serial split; no exception is used.
+- B1 owns atomic close/human reopen. B2 will own explicit safe Bot resume after
+  B1 merge/cleanup.
+
+## Preflight Truth
+
+- Root/main remains read-only at merged M11-04A SHA `5520bc7`.
+- Assigned worktree/branch remain the only edit location.
+- No schema, migration, deployment, production, secret or real customer/order-
+  data mutation is required. Run `29142185412` now requires one exact existing
+  worker atomic-write unread-fence correction within this B1 spec.
+- Existing parent WIP has no source commit and makes no runtime claim. It must be
+  narrowed only after both B1 reviews return GO.
+
+## Validation Record
+
+| Gate | Result | Evidence |
+|---|---|---|
+| source-budget measurement | split required | approximately +984 > +600; untracked helpers counted manually |
+| parent behavior preservation | pass | B1 inherits close/reopen safety; B2 retains all resume/audit/queue obligations |
+| B1 state/security/spec review | pass | corrected `ccfea21`; reviewer GO with no blocker/major |
+| B1 test/budget review | pass | corrected `85ac2e7`; reviewer GO with no blocker/major |
+| implementation budget | pass | committed guard: 26 paths; source changed 11/new 1/net +506; test/support changed 10/new 2; config 1/docs 4; compiler 581 -> 592 nonblank (+11) |
+| focused close/reopen | pass | 21/21 Node tests, including exact fake-lock rejection and HTTP bounds |
+| failure-derived worker fence | pass locally | 8/8 focused worker tests; claim, handoff, terminal/nonterminal recovery and failed-finalize preserve newer CLOSED unread reset while original human/non-CLOSED assertions remain |
+| repository static gates | pass | format, prettier-ignore 89/89, typecheck, lint, dependency-cruiser, jscpd 0 clones, knip and all scoped guards |
+| full Node regression | pass | 578/578, 93 suites, zero skip/failure |
+| builds and size | pass | API, worker, cron and admin builds; admin 226.55 kB brotli <= 250 kB |
+| browser regression | pass | Playwright 149/149 against the built admin preview |
+| implementation spec review | pass | failure-derived final review: 0 blocker/major/minor; no B2/05 scope and no weakened assertion |
+| implementation code-quality review | pass | failure-derived final review: 0 blocker/major/minor; five late paths and lock linearization reviewed |
+| PR shape | pass after amendment | PR #304; source 11/new 1/net +506; exact 26-path scope |
+| initial CI attempt | metadata-only failure | run `29139932722` read the pre-correction backticked spec path and stopped at `guard:pr-shape`; all true-DB/runtime steps were skipped |
+| second CI attempt | B1 true-DB failure | run `29139984354` passed PR shape and every prior step through M11 worker ownership fence, then the new close/reopen runner failed with its sanitized marker; later gates were skipped |
+| third CI attempt | `closed_inbound` failure | run `29140478175` again passed every prior gate through worker ownership fence; the new runner failed only after close-first and claim-first, inside the closed/reopened inbound lifecycle stage |
+| fourth CI attempt | `ci1` failure | run `29141063208` passed the same full prechain and failed in the first inbound processed while the conversation was CLOSED, before human reopen |
+| fifth CI attempt | superseded diagnostic | run `29141577862` was cancelled during typecheck by the follow-up checkpoint refinement and is not runtime evidence |
+| sixth CI attempt | `ci1bjsap` failure | run `29141615539` proved pre-read, worker execution, accepted status and post-read all completed; failure is in persisted-field comparison or the immediately following dedupe retry |
+| seventh CI attempt | `ci1bjsapdimou` failure | run `29142185412`, job `86517340101`, passed dedupe, inbound delta, exact-message and unchanged-outbound assertions; only unread failed before retry |
+| true DB/CI | source-equivalent pass | head `cd4c4e9`; run `29143334953`, job `86520434178`; B1 true-DB plus every selected prior/later DB/Redis gate, full tests and builds passed; evidence-only final head still requires CI |
+
+## First Pre-review Corrections
+
+- State/security/spec pre-review returned `NO-GO` on the first child draft.
+- The execution spec now uses the exact machine-readable `## Spec 类型` and
+  `## 触碰模块/文件` headings required by `pr-shape`.
+- The claim-first success fixture now requires exactly one send after release,
+  with final conversation still CLOSED and no second send.
+- B1 now explicitly forbids every parent lifecycle-readiness response field;
+  the complete readiness contract is owned only by B2.
+- Test/budget pre-review also required exact SENT/final-state proof for the
+  claim-first order; explicit 1/500 and empty/501 field tables; no-fallback
+  corruption cases; full state snapshots; per-table Tenant-B RLS zero; opaque
+  wrong-tenant snapshots; and a mid-run fatal sanitizer whose success and
+  forced-failure paths both leave privileged residue zero. The corrected spec
+  now freezes each requirement without adding a third test file.
+- These are docs-only corrections. Source remains uncommitted and may not resume
+  until corrected state/security and test/budget re-reviews both return GO.
+
+## Corrected Pre-review Result
+
+- State/security/spec re-review on `ccfea21` returned GO with no remaining
+  blocker/major.
+- Test/true-DB/budget re-review on `85ac2e7` returned GO with no remaining
+  blocker/major.
+- B1 source may now resume only by removing the parent resume/audit/queue/
+  readiness work and proving the real B1 diff stays within the child budget.
+
+## Implemented B1 Boundary
+
+- Close and human reopen are implemented only through the existing atomic API
+  facade. The legacy capability lifecycle path returns
+  `atomic_lifecycle_required`.
+- Close validates request/event anchors and structured result/destination,
+  writes conversation plus ticket plus exact event/readback atomically, clears
+  unread/lock, preserves assignment and cancels only exact generating AI
+  intent. Reopen validates the newest closed lifecycle without fallback,
+  assigns the authorized reopener and preserves history/unread.
+- Exact command replay precedes current-state checks and returns
+  `already_applied`; collisions, stale anchors, malformed history, ownership or
+  tenant conflicts are zero-write failures.
+- B1 publishes no resume endpoint, lifecycle-readiness field, resume audit,
+  all-origin queue gate or UI. Its only worker-source amendment is the exact
+  close-reset unread fence exposed by B1's own PostgreSQL race proof. All B2
+  obligations remain exclusively in B2.
+
+## Current Local Verification
+
+- Focused tests: 21 passed, 0 failed/skipped.
+- Failure-derived focused worker fence: 8/8 passed, including direct CLOSED
+  claim/handoff, terminal duplicate recovery, claimed uncertain recovery and
+  failed finalization; original human ownership and non-CLOSED unread=1 cases
+  remain asserted.
+- Full repository Node tests: 578 passed across 93 suites, 0 failed/skipped.
+- Static gates: formatting, frozen prettier-ignore boundary (89/89), typecheck,
+  full lint, dependency boundary, clone detection (0), knip, forbidden terms,
+  eval/doc triggers and workspace/worker isolation all passed.
+- Current builds: API, worker, cron and admin passed. Admin size is 226.55 kB
+  brotlied against a 250 kB limit. Playwright passed 149/149.
+- The true-DB runner is structured to prove both worker race orders, exact
+  close/reopen readback/replay, wrong-tenant/RLS isolation and cleanup. For
+  closed and human-reopened inbound it directly requires INBOUND +1, the exact
+  external-message row, processed dedupe, unchanged OUTBOUND count, correct
+  unread, then a `deduped` retry with the complete proof unchanged.
+- The true-DB close-first checkpoint now also requires `CLOSED + unread=0`
+  immediately after releasing the paused pre-close answer, before any new
+  closed-period inbound can increment unread.
+- `UZMAX_RLS_DATABASE_URL` is absent locally and the local Docker daemon is not
+  available. Therefore this runner has only passed syntax/lint locally; its
+  PostgreSQL/RLS/transaction assertions remain a required CI gate and are not
+  claimed yet.
+- The first implementation compliance review found only the missing direct
+  inbound/dedupe/outbound/no-replay DB assertions plus the expected pending
+  evidence/CI state. The assertion gap is corrected within the runner's exact
+  400-line lint ceiling.
+- Code-quality review then found that event uniqueness inspected the first
+  response rather than retry readback; both close and reopen now count events
+  on the replay response. Raw proof SQL uses the database's lowercase message
+  enum values.
+- The M8 DB-backed fixture now executes close then reopen and requires the raw
+  all-ticket lock to return the closed ticket ID. Close-first true-DB setup also
+  seeds a nonmatching operator-origin queued outbound and requires it to remain
+  `QUEUED` while the exact AI-generating intent becomes `CANCELLED`.
+- Final independent spec compliance returned 0 blocker/major/minor. Final code
+  quality/security/RLS/concurrency review returned 0 blocker/major; its only
+  remaining maintenance note is future consolidation of the five currently
+  consistent close-result tokens. This is not a B1 correctness or merge block.
+- The failure-derived amendment received a fresh final spec review and fresh
+  code-quality/security/concurrency review, both with 0 blocker/major/minor.
+  Review verified all five late paths, preserved preparation-time CLOSED +1,
+  and rejected no tests as weakened.
+
+## PR And CI Record
+
+- Implementation commit: `641e82c99fafe3208a82216b9b5d5045ecbe95eb`.
+- Failure-derived spec amendment: `6bfe37b`.
+- Failure-derived unread fence and regression commit: `9f7e985`.
+- PR: `#304`, `M11-04B1: atomic close and human reopen`.
+- The amended committed-diff `pr-shape` result is exact: 26 changed paths,
+  categories config 1/source 11/docs 4/test 10, source net +506 and one new
+  source file.
+- Initial CI run `29139932722` used the pull-request event payload created
+  before the PR body correction. Its `Spec file` value still contained Markdown
+  backticks, so `guard:pr-shape` tried to open a backticked path and failed.
+  Prisma generation, every true-DB smoke, full tests, builds and Playwright were
+  skipped; this run is not runtime evidence.
+- The live PR body now contains the plain machine-readable spec path and the
+  same local PR guard passes. This evidence-only follow-up commit intentionally
+  triggered fresh run `29139984354`.
+- Run `29139984354` passed static/shape/Prisma gates and the M4, M6B,
+  conversation/customer read, atomic-takeover and worker-ownership true-DB
+  smokes. The new close/reopen runner then emitted only its sanitized failure
+  marker after 119 seconds; no raw error or data was exposed. Redis, remaining
+  true-DB, full test/build/size and Playwright steps were skipped.
+- The runner now emits one bounded safe stage token only for ordinary failures,
+  while the controlled fatal child still emits exactly the original marker and
+  exit 17. Run `29140478175` returned `closed_inbound`, proving setup,
+  close-first and claim-first completed before failure; it does not identify a
+  cause yet.
+- The closed-inbound stage is now split into safe `ci1`, `reopen` and `ci2`
+  tokens. Run `29141063208` returned `ci1`, proving the failure precedes human
+  reopen.
+- `ci1`/`ci2` now append bounded checkpoint letters for the pre-read, first
+  worker result, accepted-status assertion, post-read, persisted-delta
+  comparison, dedupe retry and final no-replay comparison. The runner remains
+  exactly at its 400-line lint ceiling and does not expose actual assertion
+  values or data.
+- Run `29141615539` returned `ci1bjsap`: the first CLOSED inbound was accepted
+  and the post-read query completed. The aggregate persisted comparison is now
+  split into dedupe, inbound count, exact-message count, outbound count and
+  unread checkpoints, followed by an explicit retry checkpoint. This preserves
+  every assertion while revealing only which contract field failed.
+- Run `29142185412`, job `86517340101`, returned `ci1bjsapdimou`. The processed
+  dedupe count, inbound delta, exact external-message row and unchanged outbound
+  count all passed; the next unread assertion failed. The close-first runtime
+  had prepared the original inbound before close, takeover/close cancelled its
+  AI intent and reset unread to zero, then release entered the worker's late
+  suppressed-claim path, which terminalized the dedupe and unconditionally
+  incremented unread. The first genuinely new closed-period inbound therefore
+  observed two unread instead of one.
+- Corrected head `cd4c4e9ea52939f13ea1cdaaf8613b824cfdc7e0` passed CI run
+  `29143334953`, job `86520434178`. The exact B1 close/reopen true-DB step passed,
+  as did the M11 read/takeover/worker-fence predecessors, later webhook/active-
+  answer DB/Redis gates, full 578-test regression and all four builds. CI path
+  classification skipped size and Playwright; current local proofs remain
+  226.55 kB and 149/149. This evidence write is docs-only and must itself pass
+  final current-head CI before merge.
+
+## Failure-derived B1 Amendment
+
+- The defect is inside B1's close-first invariant, not explicit Bot resume or a
+  later feature. Opening B2 or M11-05 would leave the current PR's true-DB gate
+  red and is forbidden.
+- The existing worker atomic-write module may suppress unread increments only
+  on late terminal paths when a newer locked state is `CLOSED`. Preparation of
+  a genuinely new inbound while already `CLOSED` continues to increment unread
+  once; human-owned non-closed states retain their existing unread behavior.
+- The focused worker fence must reproduce prepare -> human close/reset -> late
+  release and require zero send plus unread zero. The true-DB close-first stage
+  must assert unread zero before accepting the new closed-period inbound.
+- This amendment adds one existing worker source and one existing focused test
+  to scope. It uses the already-approved source changed-file limit of 11 and
+  raises only test/support changed files from 9 to 10; source net remains capped
+  at 600 and no new source/test file is added.
+- Commit `9f7e985` applies one helper only to late claim/handoff/recovery/failed-
+  finalize paths when their current locked disposition is `closed`. The two
+  preparation-time increments remain unchanged, so a genuinely new CLOSED
+  inbound still increments once.
+- Local full verification after the correction passed 578/578 Node tests across
+  93 suites, all static/governance gates, four builds, 226.55 kB admin size and
+  Playwright 149/149. This does not substitute for true PostgreSQL CI.
+
+## Current Conclusion
+
+M11-04B1 remains unmerged. The exact close-first unread race is corrected,
+locally regression-clean, independently re-reviewed and true-PostgreSQL green
+on source-equivalent head `cd4c4e9`. The docs-only evidence head must now pass
+current-head CI before merge. After merge and cleanup, work pauses for owner
+confirmation; M11-04B2 is not started here. Nothing claims a usable workbench,
+staging/production closure, GA or 1.0.

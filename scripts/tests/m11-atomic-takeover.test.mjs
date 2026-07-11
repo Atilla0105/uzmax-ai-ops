@@ -175,10 +175,11 @@ describe("M11-03B atomic takeover and ticket actions", () => {
       await assert.rejects(
         () =>
           owned.service.applyTicketAction(actor(USER_A), {
+            requestId: "12121212-1212-4212-8212-121212121212",
             ticketId: ticketId("actions"),
             type
           }),
-        /support state conflict/
+        /expected lifecycle event id must be a UUID/
       );
     }
     const [afterBlocked] = await owned.repository.listTickets(

@@ -37,7 +37,8 @@ import type {
   ConversationTicketSeed,
   TakeoverInput,
   TakeoverResult,
-  TicketActionInput
+  TicketActionInput,
+  TicketActionResult
 } from "./conversation-ticket.types.ts";
 
 type MaybePromise<T> = T | Promise<T>;
@@ -69,7 +70,7 @@ export type ConversationTicketRepositoryPort = {
   applyTicketAction(
     accessContext: AccessContext,
     input: TicketActionInput
-  ): MaybePromise<TicketState>;
+  ): MaybePromise<TicketActionResult>;
   getConversation(
     accessContext: AccessContext,
     conversationId: string

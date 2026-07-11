@@ -148,12 +148,22 @@ async function importConversationTicketApiSource(context) {
     "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
     "./conversation-ticket.types.ts": typesModuleUrl
   });
+  const lifecycleStateModuleUrl = writeSource(
+    context,
+    "conversation-ticket.lifecycle-state",
+    {
+      "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
+      "./conversation-ticket.errors.ts": errorsModuleUrl,
+      "./conversation-ticket.types.ts": typesModuleUrl
+    }
+  );
   const atomicStateModuleUrl = writeSource(
     context,
     "conversation-ticket.atomic-state",
     {
       "../../../packages/capabilities/handoff/src/index.ts": context.handoff.moduleUrl,
       "./conversation-ticket.errors.ts": errorsModuleUrl,
+      "./conversation-ticket.lifecycle-state.ts": lifecycleStateModuleUrl,
       "./conversation-ticket.types.ts": typesModuleUrl
     }
   );

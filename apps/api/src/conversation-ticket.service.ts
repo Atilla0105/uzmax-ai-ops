@@ -79,8 +79,6 @@ export class ConversationTicketService {
 
   async applyTicketAction(accessContext: AccessContext, input: TicketActionInput) {
     assertPermission(accessContext, "ticket:write");
-    return {
-      ticket: await this.repository.applyTicketAction(accessContext, input)
-    };
+    return this.repository.applyTicketAction(accessContext, input);
   }
 }

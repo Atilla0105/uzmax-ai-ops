@@ -358,11 +358,22 @@ function conversationTicketModules() {
       { ...authz, ...handoff, ...types }
     ],
     [
+      "apps/api/src/conversation-ticket.lifecycle-state.ts",
+      "conversation-ticket.lifecycle-state.mjs",
+      {
+        ...handoff,
+        "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        ...types
+      }
+    ],
+    [
       "apps/api/src/conversation-ticket.atomic-state.ts",
       "conversation-ticket.atomic-state.mjs",
       {
         ...handoff,
         "./conversation-ticket.errors.ts": "./conversation-ticket.errors.mjs",
+        "./conversation-ticket.lifecycle-state.ts":
+          "./conversation-ticket.lifecycle-state.mjs",
         ...types
       }
     ],

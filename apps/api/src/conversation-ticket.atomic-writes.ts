@@ -28,11 +28,14 @@ import {
   planTicketAction,
   type AtomicMutationPlan
 } from "./conversation-ticket.atomic-state.ts";
-import type {
-  ConversationMessage,
-  TakeoverInput,
-  TakeoverResult,
-  TicketActionInput
+import {
+  takeoverResultFrom,
+  ticketActionResultFrom,
+  type ConversationMessage,
+  type TakeoverInput,
+  type TakeoverResult,
+  type TicketActionInput,
+  type TicketActionResult
 } from "./conversation-ticket.types.ts";
 
 type AsyncRow = Promise<unknown>;
@@ -62,7 +65,7 @@ export type AtomicWriter = {
   applyTicketAction(
     accessContext: AccessContext,
     input: TicketActionInput
-  ): Promise<TicketState>;
+  ): Promise<TicketActionResult>;
   takeoverConversation(
     accessContext: AccessContext,
     input: TakeoverInput
@@ -74,13 +77,10 @@ type MemoryState = {
   messages: ConversationMessage[];
   tickets: TicketState[];
 };
-type MemoryStore = {
-  commit(state: MemoryState): void;
-  snapshot(): MemoryState;
-};
+type MemoryStore = { commit(state: MemoryState): void; snapshot(): MemoryState };
 type LockedState = { conversation: HandoffConversation; tickets: TicketState[] };
-type NotFoundKind = "conversation" | "ticket";
 type MutationInput = TakeoverInput | TicketActionInput;
+type NotFoundKind = "conversation" | "ticket";
 
 const runtimeRoleSql = 'set local role "uzmax_app_runtime"';
 const rlsKeys = { orgId: "app.org_id", tenantId: "app.tenant_id" } as const;
@@ -88,11 +88,13 @@ const atomicTransactionOptions = { maxWait: 60_000, timeout: 60_000 } as const;
 
 export function createInMemoryAtomicWriter(store: MemoryStore): AtomicWriter {
   const mutex = createMutex();
+  const mutate = (context: AccessContext, input: MutationInput) =>
+    mutex(() => memoryMutation(store, context, input));
   return {
     applyTicketAction: async (context, input) =>
-      clone((await mutex(() => memoryMutation(store, context, input))).ticket),
+      ticketActionResultFrom(await mutate(context, input)),
     takeoverConversation: async (context, input) =>
-      takeoverResult(await mutex(() => memoryMutation(store, context, input)))
+      takeoverResultFrom(await mutate(context, input))
   };
 }
 
@@ -103,9 +105,10 @@ export function createPrismaAtomicWriter(prisma: AtomicPrismaPort): AtomicWriter
       atomicTransactionOptions
     );
   return {
-    applyTicketAction: async (context, input) => (await mutate(context, input)).ticket,
+    applyTicketAction: async (context, input) =>
+      ticketActionResultFrom(await mutate(context, input)),
     takeoverConversation: async (context, input) =>
-      takeoverResult(await mutate(context, input))
+      takeoverResultFrom(await mutate(context, input))
   };
 }
 
@@ -132,11 +135,15 @@ async function memoryMutation(
   const tickets = state.tickets.filter(
     (ticket) => ticket.conversationId === conversationId && inScope(ticket, context)
   );
-  const plan = action
-    ? planTicketAction(conversation, tickets, input, context.userId)
-    : planTakeover(conversation, tickets, input.reason, context.userId);
-  if (plan.result !== "already_owned") {
-    if (!action) cancelMemoryAiIntents(state, context, conversationId);
+  const plan = planMutation(conversation, tickets, input, context.userId);
+  if (hasWrites(plan)) {
+    if (needsGeneratingCancellation(input, plan)) {
+      state.messages = cancelMemoryGeneratingAiIntents(
+        state.messages,
+        context,
+        conversationId
+      );
+    }
     commitMemoryPlan(store, state, plan);
   }
   return plan;
@@ -156,13 +163,12 @@ async function prismaMutation(
     transaction,
     context,
     conversationId,
-    action ? "ticket" : "conversation"
+    action ? "ticket" : "conversation",
+    needsGeneratingLock(input)
   );
-  const plan = action
-    ? planTicketAction(locked.conversation, locked.tickets, input, context.userId)
-    : planTakeover(locked.conversation, locked.tickets, input.reason, context.userId);
-  if (!action && plan.result !== "already_owned") {
-    await cancelPrismaAiIntents(transaction, context, conversationId);
+  const plan = planMutation(locked.conversation, locked.tickets, input, context.userId);
+  if (needsGeneratingCancellation(input, plan)) {
+    await cancelPrismaGeneratingAiIntents(transaction, context, conversationId);
   }
   await persistPlan(transaction, locked.conversation, plan);
   return {
@@ -174,6 +180,18 @@ async function prismaMutation(
       action ? "ticket" : "conversation"
     ))
   };
+}
+
+function planMutation(
+  conversation: HandoffConversation,
+  tickets: readonly TicketState[],
+  input: MutationInput,
+  actorUserId: string
+): AtomicMutationPlan {
+  if ("ticketId" in input) {
+    return planTicketAction(conversation, tickets, input, actorUserId);
+  }
+  return planTakeover(conversation, tickets, input.reason, actorUserId);
 }
 
 async function ticketConversationId(
@@ -202,22 +220,23 @@ async function lockState(
   transaction: AtomicPrismaTransaction,
   context: AccessContext,
   conversationId: string,
-  missing: NotFoundKind
+  missing: NotFoundKind,
+  lockGenerating: boolean
 ): Promise<LockedState> {
-  const lockedConversation = await transaction.$queryRaw<DbRow[]>`
+  const rows = await transaction.$queryRaw<DbRow[]>`
     select id from conversation
     where id = ${conversationId}::uuid and org_id = ${context.orgId}::uuid
       and tenant_id = ${context.selectedTenantId}::uuid for update
   `;
-  if (!Array.isArray(lockedConversation) || lockedConversation.length !== 1) {
-    throwNotFound(missing);
-  }
+  if (!Array.isArray(rows) || rows.length !== 1) throwNotFound(missing);
   await transaction.$queryRaw<DbRow[]>`
     select id from ticket
     where conversation_id = ${conversationId}::uuid and org_id = ${context.orgId}::uuid
-      and tenant_id = ${context.selectedTenantId}::uuid and status <> 'closed'::ticket_status
-    order by id for update
+      and tenant_id = ${context.selectedTenantId}::uuid order by id for update
   `;
+  if (lockGenerating) {
+    await lockPrismaGeneratingAiIntents(transaction, context, conversationId);
+  }
   const scoped = scopeFromAccessContext(context);
   const conversationRow = await transaction.channelConversation.findFirst({
     where: { ...scoped, id: conversationId }
@@ -226,7 +245,7 @@ async function lockState(
   const ticketRows = rowArray(
     await transaction.supportTicket.findMany({
       orderBy: { id: "asc" },
-      where: { ...scoped, conversationId, status: { not: "CLOSED" } }
+      where: { ...scoped, conversationId }
     }),
     "ticket rows"
   );
@@ -246,7 +265,10 @@ async function persistPlan(
   before: HandoffConversation,
   plan: AtomicMutationPlan
 ): Promise<void> {
-  if (plan.result && before.status !== plan.conversation.status) {
+  if (
+    before.status !== plan.conversation.status ||
+    before.unreadCount !== plan.conversation.unreadCount
+  ) {
     await transaction.channelConversation.update({
       data: toConversationUpdateData(plan.conversation),
       where: compoundScopeWhere({
@@ -270,11 +292,11 @@ async function persistPlan(
   }
 }
 
-async function cancelPrismaAiIntents(
+async function lockPrismaGeneratingAiIntents(
   transaction: AtomicPrismaTransaction,
   context: AccessContext,
   conversationId: string
-) {
+): Promise<void> {
   await transaction.$queryRaw<DbRow[]>`
     select id from message
     where conversation_id = ${conversationId}::uuid and org_id = ${context.orgId}::uuid
@@ -283,41 +305,43 @@ async function cancelPrismaAiIntents(
       and content ->> 'runtimeOrigin' = 'telegram_bot_ai' and content ->> 'dispatchPhase' = 'generating'
     order by id for update
   `;
-  await transaction.channelMessage.updateMany({
+}
+
+function cancelPrismaGeneratingAiIntents(
+  transaction: AtomicPrismaTransaction,
+  context: AccessContext,
+  conversationId: string
+): AsyncRow {
+  return transaction.channelMessage.updateMany({
     data: { deliveryStatus: "CANCELLED" },
-    where: generatingAiIntentWhere(context, conversationId)
+    where: {
+      ...scopeFromAccessContext(context),
+      AND: [
+        { content: { equals: "telegram_bot_ai", path: ["runtimeOrigin"] } },
+        { content: { equals: "generating", path: ["dispatchPhase"] } }
+      ],
+      conversationId,
+      deliveryStatus: "QUEUED",
+      direction: "OUTBOUND"
+    }
   });
 }
 
-function cancelMemoryAiIntents(
-  state: MemoryState,
+function cancelMemoryGeneratingAiIntents(
+  messages: readonly ConversationMessage[],
   context: AccessContext,
   conversationId: string
-) {
-  state.messages = state.messages.map((message) => {
-    const matches =
-      message.orgId === context.orgId &&
-      message.tenantId === context.selectedTenantId &&
+): ConversationMessage[] {
+  return messages.map((message) => {
+    const exactIntent =
+      inScope(message, context) &&
       message.conversationId === conversationId &&
       message.direction === "outbound" &&
       message.deliveryStatus === "queued" &&
       message.content.runtimeOrigin === "telegram_bot_ai" &&
       message.content.dispatchPhase === "generating";
-    return matches ? { ...message, deliveryStatus: "cancelled" } : message;
+    return exactIntent ? { ...message, deliveryStatus: "cancelled" } : message;
   });
-}
-
-function generatingAiIntentWhere(context: AccessContext, conversationId: string) {
-  return {
-    ...scopeFromAccessContext(context),
-    AND: [
-      { content: { equals: "telegram_bot_ai", path: ["runtimeOrigin"] } },
-      { content: { equals: "generating", path: ["dispatchPhase"] } }
-    ],
-    conversationId,
-    deliveryStatus: "QUEUED",
-    direction: "OUTBOUND"
-  };
 }
 
 async function readback(
@@ -369,6 +393,13 @@ function commitMemoryPlan(
   store.commit(state);
 }
 
+const hasWrites = (plan: AtomicMutationPlan) =>
+    !["already_applied", "already_owned"].includes(plan.result ?? ""),
+  needsGeneratingLock = (input: MutationInput) =>
+    !("ticketId" in input) || input.type === "close",
+  needsGeneratingCancellation = (input: MutationInput, plan: AtomicMutationPlan) =>
+    hasWrites(plan) && needsGeneratingLock(input);
+
 function createMutex() {
   let tail = Promise.resolve();
   return async <T>(action: () => Promise<T>): Promise<T> => {
@@ -386,21 +417,8 @@ function createMutex() {
   };
 }
 
-function takeoverResult(plan: AtomicMutationPlan): TakeoverResult {
-  if (!plan.result) throw new Error("takeover result is missing");
-  return {
-    conversation: clone(plan.conversation),
-    result: plan.result,
-    ticket: clone(plan.ticket)
-  };
-}
-
-function inScope(
-  entity: { orgId: string; tenantId: string },
-  context: AccessContext
-): boolean {
-  return entity.orgId === context.orgId && entity.tenantId === context.selectedTenantId;
-}
+const inScope = (entity: { orgId: string; tenantId: string }, context: AccessContext) =>
+  entity.orgId === context.orgId && entity.tenantId === context.selectedTenantId;
 
 function throwNotFound(kind: NotFoundKind): never {
   throw new ConversationTicketApiError(`${kind}_not_found`, `${kind} not found`);

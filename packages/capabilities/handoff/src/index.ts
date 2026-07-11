@@ -31,19 +31,31 @@ export type TicketSlaContract = {
 type TicketStatus = "claimed" | "closed" | "escalated" | "locked" | "open" | "reopened";
 type TicketEventType = TicketStatus | "created" | "note_added";
 
+export type TicketCloseResult =
+  | "duplicate"
+  | "invalid"
+  | "no_response"
+  | "resolved"
+  | "transferred_to_human_channel";
+
 export type TicketEvent = {
+  action?: "close" | "reopen";
   actorUserId: string;
+  destination?: string;
+  expectedLifecycleEventId?: string;
   id?: string;
   note?: string;
   occurredAt: string;
   reason?: string;
+  requestId?: string;
+  result?: TicketCloseResult;
   type: TicketEventType;
 };
 
 export type TicketState = {
   assignedUserId?: string;
   closeDestination?: string;
-  closeResult?: string;
+  closeResult?: TicketCloseResult;
   closedAt?: string;
   conversationId: string;
   events: readonly TicketEvent[];
@@ -72,13 +84,17 @@ export type TicketAction =
   | { actorUserId: string; now?: string; type: "lock" }
   | { actorUserId: string; note: string; now?: string; type: "note" }
   | { actorUserId: string; now?: string; reason: string; type: "escalate" }
-  | ({ actorUserId: string; now?: string; type: "close" } & Record<
-      "destination" | "result",
-      string
-    >)
+  | {
+      actorUserId: string;
+      destination: string;
+      now?: string;
+      result: TicketCloseResult;
+      type: "close";
+    }
   | { actorUserId: string; now?: string; reason: string; type: "reopen" };
 
 export type TicketDomainErrorCode =
+  | "atomic_lifecycle_required"
   | "invalid_action_type"
   | "invalid_priority"
   | "locked_by_another_user"
@@ -150,22 +166,11 @@ export function applyTicketAction(ticket: TicketState, action: TicketAction) {
       assertLockOwner(ticket, action.actorUserId);
       return nextTicket(ticket, action, { status: "escalated" });
     case "close":
-      assertLockOwner(ticket, action.actorUserId);
-      return nextTicket(ticket, action, {
-        closeDestination: requireText(action.destination, "close destination"),
-        closeResult: requireText(action.result, "close result"),
-        closedAt: action.now ?? new Date().toISOString(),
-        lockedByUserId: undefined,
-        status: "closed"
-      });
     case "reopen":
-      assertLockOwner(ticket, action.actorUserId);
-      return nextTicket(ticket, action, {
-        closeDestination: undefined,
-        closeResult: undefined,
-        closedAt: undefined,
-        status: "reopened"
-      });
+      throw new TicketDomainError(
+        "atomic_lifecycle_required",
+        "close and reopen require the atomic conversation lifecycle writer"
+      );
     default:
       throw new TicketDomainError(
         "invalid_action_type",

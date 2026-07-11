@@ -158,7 +158,7 @@ async function recoverAtomicDuplicate(
     if (status === "CANCELLED" && state.disposition === "bot") throw conflict();
     const firstTerminal = await markProcessed(tx, input.dedupe);
     if (firstTerminal && status === "CANCELLED")
-      await incrementUnread(tx, scope(input.dedupe), conversationId);
+      await incrementLateUnread(tx, state, scope(input.dedupe), conversationId);
     return preparationResult(input, "deduped", conversationId, {
       outboundMessageId: input.outboundMessage.id,
       ticketId: ticketIdOf(state)
@@ -183,7 +183,7 @@ async function recoverAtomicDuplicate(
     input.recoveryTicket,
     input.recoveryTicketEvent
   );
-  await incrementUnread(tx, scope(input.dedupe), conversationId);
+  await incrementLateUnread(tx, state, scope(input.dedupe), conversationId);
   await markProcessed(tx, input.dedupe);
   return preparationResult(
     input,
@@ -206,7 +206,7 @@ async function handoffPreparedAtomic(
     });
   }
   const ticketId = await handoffIfBot(tx, state, input.ticket, input.ticketEvent);
-  await incrementUnread(tx, scope(input.dedupe), input.conversationId);
+  await incrementLateUnread(tx, state, scope(input.dedupe), input.conversationId);
   return runtimeResult(input, "handoff", { ticketId });
 }
 async function claimPreparedAtomic(
@@ -229,7 +229,7 @@ async function claimPreparedAtomic(
         deliveryStatus: "CANCELLED"
       });
     }
-    await incrementUnread(tx, scope(input.dedupe), input.conversationId);
+    await incrementLateUnread(tx, state, scope(input.dedupe), input.conversationId);
     return result;
   }
   if (
@@ -286,8 +286,18 @@ async function finalizePreparedAtomic(
       ? await handoffIfBot(tx, state, input.ticket, input.ticketEvent)
       : ticketIdOf(state);
   if (fresh && !sent)
-    await incrementUnread(tx, scope(input.dedupe), input.conversationId);
+    await incrementLateUnread(tx, state, scope(input.dedupe), input.conversationId);
   return runtimeResult(input, sent ? "answer" : "handoff", { ticketId });
+}
+async function incrementLateUnread(
+  tx: TelegramConversationTransaction,
+  state: LockedState,
+  scoped: Scope,
+  conversationId: string
+) {
+  if (state.disposition !== "closed") {
+    await incrementUnread(tx, scoped, conversationId);
+  }
 }
 function isTerminalRecovery(status: string, phase: string) {
   return ["SENT", "FAILED", "CANCELLED"].includes(status) || phase === "uncertain";

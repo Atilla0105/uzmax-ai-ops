@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `pr_304_true_db_failure__sanitized_stage_diagnosis_pending`
+Status: `pr_304_true_db_closed_inbound_failure__substage_diagnosis_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -47,6 +47,7 @@ Worktree:
 | PR shape | pass after metadata correction | PR #304; source 10/new 1/net +496; exact 24-path scope |
 | initial CI attempt | metadata-only failure | run `29139932722` read the pre-correction backticked spec path and stopped at `guard:pr-shape`; all true-DB/runtime steps were skipped |
 | second CI attempt | B1 true-DB failure | run `29139984354` passed PR shape and every prior step through M11 worker ownership fence, then the new close/reopen runner failed with its sanitized marker; later gates were skipped |
+| third CI attempt | `closed_inbound` failure | run `29140478175` again passed every prior gate through worker ownership fence; the new runner failed only after close-first and claim-first, inside the closed/reopened inbound lifecycle stage |
 | true DB/CI | diagnosis pending | no B1 runtime claim and no merge |
 
 ## First Pre-review Corrections
@@ -149,8 +150,13 @@ Worktree:
   true-DB, full test/build/size and Playwright steps were skipped.
 - The runner now emits one bounded safe stage token only for ordinary failures,
   while the controlled fatal child still emits exactly the original marker and
-  exit 17. This diagnostic change remains within the 400-line lint ceiling and
-  triggers a new CI run. It does not claim a cause or weaken sanitization.
+  exit 17. Run `29140478175` returned `closed_inbound`, proving setup,
+  close-first and claim-first completed before failure; it does not identify a
+  cause yet.
+- The closed-inbound stage is now split into safe `ci1`, `reopen` and `ci2`
+  tokens. The runner remains exactly within its 400-line lint ceiling and the
+  next CI run will distinguish first closed inbound, reopen/replay, or second
+  human-owned inbound/reclose without exposing assertion values or data.
 
 ## Current Conclusion
 

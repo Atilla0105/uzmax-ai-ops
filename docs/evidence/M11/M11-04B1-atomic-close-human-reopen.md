@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `pr_304_unread_fence_local_go__current_head_ci_pending`
+Status: `pr_304_source_equivalent_ci_passed__evidence_head_ci_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -54,7 +54,7 @@ Worktree:
 | fifth CI attempt | superseded diagnostic | run `29141577862` was cancelled during typecheck by the follow-up checkpoint refinement and is not runtime evidence |
 | sixth CI attempt | `ci1bjsap` failure | run `29141615539` proved pre-read, worker execution, accepted status and post-read all completed; failure is in persisted-field comparison or the immediately following dedupe retry |
 | seventh CI attempt | `ci1bjsapdimou` failure | run `29142185412`, job `86517340101`, passed dedupe, inbound delta, exact-message and unchanged-outbound assertions; only unread failed before retry |
-| true DB/CI | current-head run pending | local correction/reviews pass, but no B1 runtime claim and no merge until the pushed current head passes the complete CI chain |
+| true DB/CI | source-equivalent pass | head `cd4c4e9`; run `29143334953`, job `86520434178`; B1 true-DB plus every selected prior/later DB/Redis gate, full tests and builds passed; evidence-only final head still requires CI |
 
 ## First Pre-review Corrections
 
@@ -195,6 +195,13 @@ Worktree:
   suppressed-claim path, which terminalized the dedupe and unconditionally
   incremented unread. The first genuinely new closed-period inbound therefore
   observed two unread instead of one.
+- Corrected head `cd4c4e9ea52939f13ea1cdaaf8613b824cfdc7e0` passed CI run
+  `29143334953`, job `86520434178`. The exact B1 close/reopen true-DB step passed,
+  as did the M11 read/takeover/worker-fence predecessors, later webhook/active-
+  answer DB/Redis gates, full 578-test regression and all four builds. CI path
+  classification skipped size and Playwright; current local proofs remain
+  226.55 kB and 149/149. This evidence write is docs-only and must itself pass
+  final current-head CI before merge.
 
 ## Failure-derived B1 Amendment
 
@@ -222,9 +229,9 @@ Worktree:
 
 ## Current Conclusion
 
-M11-04B1 remains unmerged. The exact close-first unread race is now corrected,
-locally regression-clean and independently re-reviewed, but the amended current
-head has not yet passed GitHub CI/true PostgreSQL. Only a green current-head run
-allows merge. After merge and cleanup, work pauses for owner confirmation;
-M11-04B2 is not started here. Nothing claims a usable workbench, staging/
-production closure, GA or 1.0.
+M11-04B1 remains unmerged. The exact close-first unread race is corrected,
+locally regression-clean, independently re-reviewed and true-PostgreSQL green
+on source-equivalent head `cd4c4e9`. The docs-only evidence head must now pass
+current-head CI before merge. After merge and cleanup, work pauses for owner
+confirmation; M11-04B2 is not started here. Nothing claims a usable workbench,
+staging/production closure, GA or 1.0.

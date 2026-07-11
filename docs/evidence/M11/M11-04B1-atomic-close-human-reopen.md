@@ -1,6 +1,6 @@
 # M11-04B1 Atomic Close And Human Reopen Evidence
 
-Status: `pr_304_metadata_corrected__true_db_ci_rerun_pending`
+Status: `pr_304_true_db_failure__sanitized_stage_diagnosis_pending`
 Spec: `docs/specs/M11-04B1-atomic-close-human-reopen.md`
 Parent: `docs/specs/M11-04B-atomic-close-reopen-bot-resume.md`
 Base: `5520bc7f4522b73d92d9c896e0a59888058deec7`
@@ -46,7 +46,8 @@ Worktree:
 | implementation code-quality review | pass | 0 blocker/major; exact-cancellation and fake-lock proof corrections applied |
 | PR shape | pass after metadata correction | PR #304; source 10/new 1/net +496; exact 24-path scope |
 | initial CI attempt | metadata-only failure | run `29139932722` read the pre-correction backticked spec path and stopped at `guard:pr-shape`; all true-DB/runtime steps were skipped |
-| true DB/CI | pending | no B1 runtime claim |
+| second CI attempt | B1 true-DB failure | run `29139984354` passed PR shape and every prior step through M11 worker ownership fence, then the new close/reopen runner failed with its sanitized marker; later gates were skipped |
+| true DB/CI | diagnosis pending | no B1 runtime claim and no merge |
 
 ## First Pre-review Corrections
 
@@ -140,8 +141,16 @@ Worktree:
   skipped; this run is not runtime evidence.
 - The live PR body now contains the plain machine-readable spec path and the
   same local PR guard passes. This evidence-only follow-up commit intentionally
-  triggers a fresh PR event/CI run; merge remains blocked until that current
-  head passes all steps.
+  triggered fresh run `29139984354`.
+- Run `29139984354` passed static/shape/Prisma gates and the M4, M6B,
+  conversation/customer read, atomic-takeover and worker-ownership true-DB
+  smokes. The new close/reopen runner then emitted only its sanitized failure
+  marker after 119 seconds; no raw error or data was exposed. Redis, remaining
+  true-DB, full test/build/size and Playwright steps were skipped.
+- The runner now emits one bounded safe stage token only for ordinary failures,
+  while the controlled fatal child still emits exactly the original marker and
+  exit 17. This diagnostic change remains within the 400-line lint ceiling and
+  triggers a new CI run. It does not claim a cause or weaken sanitization.
 
 ## Current Conclusion
 

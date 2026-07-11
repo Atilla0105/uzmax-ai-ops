@@ -28,7 +28,8 @@ const FOLLOW_UP = {
 };
 const id = (suffix) => `95000000-0000-4000-8000-${String(suffix).padStart(12, "0")}`;
 let prisma, worker, gateway, service, api;
-let fatalRowsSeeded = false;
+const failure = { fatalRowsSeeded: false, stage: "bootstrap" };
+const staged = (name, action) => ((failure.stage = name), action());
 
 export function runM11ConversationCloseReopenTrueDbSmoke() {
   return runSmoke().catch(() => {
@@ -41,9 +42,9 @@ async function runSmoke() {
   prisma = client();
   try {
     await cleanup();
-    assertSanitizedFailure();
+    await staged("sanitizer", assertSanitizedFailure);
     assert.equal(await residue(), 0);
-    await seed();
+    await staged("setup", seed);
     worker = await compileM8ActiveAnswerRuntimeModules({
       repoRoot: process.cwd(),
       tempDir: path.join(tempDir, "worker")
@@ -53,11 +54,13 @@ async function runSmoke() {
     );
     api = await apiModules();
     service = await supportService(prisma);
-    const closeFirst = await assertCloseFirst();
-    const claimFirst = await assertClaimFirst();
-    const reclosed = await assertClosedInboundReopen(closeFirst);
-    await assertIsolation(claimFirst, reclosed);
-    await cleanup();
+    const closeFirst = await staged("close_first", assertCloseFirst);
+    const claimFirst = await staged("claim_first", assertClaimFirst);
+    const reclosed = await staged("closed_inbound", () =>
+      assertClosedInboundReopen(closeFirst)
+    );
+    await staged("isolation", () => assertIsolation(claimFirst, reclosed));
+    await staged("cleanup", cleanup);
     assert.equal(await residue(), 0);
   } finally {
     await cleanup().catch(() => undefined);
@@ -72,7 +75,7 @@ async function runFatalChild() {
   try {
     await cleanup();
     await seed();
-    fatalRowsSeeded = true;
+    failure.fatalRowsSeeded = true;
     throw new Error(`reason-sentinel message-sentinel token-sentinel ${databaseUrl()}`);
   } finally {
     await cleanup().catch(() => undefined);
@@ -421,7 +424,7 @@ function databaseUrl() {
 
 if (process.argv[1]?.endsWith("run-m11-conversation-close-reopen-true-db-smoke.mjs")) {
   await runM11ConversationCloseReopenTrueDbSmoke().catch(() => {
-    console.error(MARKER);
-    process.exitCode = fatalRowsSeeded ? 17 : 1;
+    console.error(failure.fatalRowsSeeded ? MARKER : `${MARKER}:${failure.stage}`);
+    process.exitCode = failure.fatalRowsSeeded ? 17 : 1;
   });
 }
